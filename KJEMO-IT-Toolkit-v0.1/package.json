@@ -1,0 +1,19 @@
+{
+  "name": "kjemo-it-toolkit",
+  "version": "0.1.0",
+  "description": "KJEMO IT Toolkit — assistants et scripts PowerShell pour administration Windows",
+  "type": "module",
+  "scripts": {
+    "generate": "node test/generate-ps1.mjs",
+    "test:identity": "node test/identity.test.mjs",
+    "test:browser": "node test/browser-identity.test.mjs",
+    "test": "node test/identity.test.mjs && node test/browser-identity.test.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.44.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
