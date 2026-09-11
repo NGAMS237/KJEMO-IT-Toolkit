@@ -84,15 +84,6 @@ const tools = [
     source: 'https://learn.microsoft.com/windows-hardware/drivers/devtest/pnputil-command-syntax'
   },
   {
-    id: 'disk-scan', icon: '◫', category: 'Stockage', title: 'Repérer les dossiers lourds', risk: 'diagnostic',
-    summary: 'Analyse un disque sans rien supprimer et exporte les résultats dans un CSV.',
-    fields: [{ id: 'path', label: 'Dossier ou disque à analyser', default: 'C:\\' }, { id: 'top', label: 'Nombre de résultats', type: 'number', default: '30' }],
-    generate: (v) => `# ANALYSE UNIQUEMENT — aucune suppression\n$TargetPath = '${esc(v.path)}'\n$Top = ${v.top}\n$ExportPath = Join-Path $env:USERPROFILE 'Desktop\\KJEMO-Disk-Scan.csv'\n\nif (-not (Test-Path -LiteralPath $TargetPath)) {\n    throw "Chemin introuvable : $TargetPath"\n}\n\n$Results = Get-ChildItem -LiteralPath $TargetPath -Directory -Force -ErrorAction SilentlyContinue |\n    ForEach-Object {\n        $bytes = (Get-ChildItem -LiteralPath $_.FullName -File -Recurse -Force -ErrorAction SilentlyContinue |\n            Measure-Object -Property Length -Sum).Sum\n        [PSCustomObject]@{\n            Dossier = $_.FullName\n            TailleGB = [math]::Round(($bytes / 1GB), 2)\n            TailleMB = [math]::Round(($bytes / 1MB), 0)\n        }\n    } | Sort-Object TailleGB -Descending\n\n$Results | Select-Object -First $Top | Format-Table -AutoSize\n$Results | Export-Csv -Path $ExportPath -NoTypeInformation -Encoding UTF8\nWrite-Host "Rapport créé : $ExportPath" -ForegroundColor Green\n\n# Examine les résultats avant toute suppression.\n# Ne supprime pas .git, .env, documents, bases de données ou sauvegardes sans vérification.`,
-    gui: ['Ouvrir Paramètres > Système > Stockage pour un résumé rapide.', 'Ouvrir l’Explorateur, cliquer droit sur un disque > Propriétés pour voir l’espace total.', 'Pour les projets, examiner d’abord node_modules, .next, dist, build et les caches : ils peuvent souvent être régénérés.', 'Mettre les éléments vérifiés dans la corbeille avant toute suppression définitive.'],
-    checks: ['Le scan peut prendre du temps sur un gros disque.', 'Le script ne supprime rien : il produit seulement un rapport CSV.', 'Pour un projet SaaS, ne touche jamais à .env ni à .git sans être certain.'],
-    source: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-childitem'
-  },
-  {
     id: 'gpo-password', icon: '⚿', category: 'GPO', title: 'Politique de mots de passe du domaine', risk: 'caution',
     summary: 'Prépare la politique par défaut du domaine avec validation et aperçu.',
     fields: [
@@ -107,6 +98,206 @@ const tools = [
     source: 'https://learn.microsoft.com/powershell/module/activedirectory/set-addefaultdomainpasswordpolicy'
   },
 ];
+
+function createDiskScanTool() {
+  return {
+    id: 'disk-scan', icon: '◫', category: 'Stockage', title: 'Analyser et libérer de l’espace disque', risk: 'diagnostic',
+    summary: 'Classe les fichiers et dossiers lourds, repère les artefacts recréables et propose une corbeille contrôlée.',
+    fields: [
+      { id: 'path', label: 'Disque ou dossier à analyser', default: 'C:\\', help: 'Exemples : C:\\, C:\\Users\\Blaise\\Projet ou D:\\.' },
+      { id: 'top', label: 'Nombre maximal de lignes dans le rapport', type: 'number', default: '50', min: '5', max: '200', help: 'Le scan parcourt les éléments; ce nombre limite seulement l’affichage et la sélection.' },
+      { id: 'minSize', label: 'Taille minimale en Go', type: 'number', default: '0.5', min: '0', max: '100000', step: '0.1', help: '0 inclut aussi les petits éléments; 0,5 cible les éléments d’au moins 500 Mo.' },
+      { id: 'report', label: 'Format du rapport', type: 'select', default: 'both', options: [['both', 'CSV + HTML — recommandé'], ['csv', 'CSV seulement'], ['html', 'HTML seulement']] },
+      { id: 'action', label: 'Après le rapport', type: 'select', default: 'report', options: [['report', 'Rapport uniquement — recommandé'], ['recycle', 'Permettre une sélection vers la corbeille']] },
+    ],
+    generate: (v) => {
+      const top = Math.min(200, Math.max(5, Number.parseInt(v.top, 10) || 50));
+      const minSize = Math.min(100000, Math.max(0, Number.parseFloat(v.minSize) || 0.5));
+      const report = ['both', 'csv', 'html'].includes(v.report) ? v.report : 'both';
+      const action = v.action === 'recycle' ? 'recycle' : 'report';
+      const lines = [
+        '# KJEMO IT TOOLKIT — ANALYSE DE DISQUE',
+        '# Windows PowerShell 5.1 ou PowerShell 7 sur Windows',
+        '# Lecture et rapport par défaut. Aucune suppression automatique.',
+        '',
+        "$TargetPath = '" + esc(v.path || 'C:\\') + "'",
+        '$Top = ' + top,
+        '$MinimumSizeGB = ' + minSize,
+        "$ReportFormat = '" + report + "'",
+        '$AllowRecycleSelection = $' + (action === 'recycle' ? 'true' : 'false'),
+        "$Desktop = [Environment]::GetFolderPath('Desktop')",
+        "$Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'",
+        "$ReportBase = Join-Path $Desktop ('KJEMO-Disk-Scan-' + $Stamp)",
+        '',
+        'function Test-PathWithin {',
+        '    param([string]$Path, [string]$Root)',
+        "    $PathFull = [IO.Path]::GetFullPath($Path)",
+        "    $RootFull = [IO.Path]::GetFullPath($Root)",
+        "    if ($PathFull.Length -gt 3) { $PathFull = $PathFull.TrimEnd('\\') }",
+        "    if ($RootFull.Length -gt 3) { $RootFull = $RootFull.TrimEnd('\\') }",
+        '    return $PathFull.Equals($RootFull, [StringComparison]::OrdinalIgnoreCase) -or',
+        "        $PathFull.StartsWith($RootFull + '\\', [StringComparison]::OrdinalIgnoreCase)",
+        '}',
+        '',
+        '$ProtectedRoots = @(',
+        '    $env:SystemRoot,',
+        '    $env:ProgramData,',
+        '    $env:ProgramFiles,',
+        "[Environment]::GetEnvironmentVariable('ProgramFiles(x86)'),",
+        "    (Join-Path $env:SystemDrive '$Recycle.Bin')",
+        ') | Where-Object { $_ -and (Test-Path -LiteralPath $_) }',
+        '',
+        'function Get-ProtectionReason {',
+        '    param([string]$FullPath)',
+        "    $Segments = $FullPath.TrimEnd('\\').Split([IO.Path]::DirectorySeparatorChar)",
+        "    $Leaf = Split-Path -Leaf $FullPath.TrimEnd('\\')",
+        '    $LowerLeaf = $Leaf.ToLowerInvariant()',
+        "    if ($Segments -contains '.git') { return '.git protégé' }",
+        "    if ($Segments | Where-Object { $_ -like '.env*' }) { return '.env / configuration sensible protégé' }",
+        "    if ($LowerLeaf -like '*backup*' -or $LowerLeaf -like '*sauvegarde*') { return 'sauvegarde protégée' }",
+        "    $SensitiveExtensions = @('.bak', '.backup', '.db', '.dump', '.ldf', '.mdf', '.ndf', '.sql', '.sqlite', '.sqlite3')",
+        "    if ($SensitiveExtensions -contains ([IO.Path]::GetExtension($Leaf).ToLowerInvariant())) { return 'base ou fichier de sauvegarde protégé' }",
+        '    foreach ($Root in $ProtectedRoots) {',
+        "        if (Test-PathWithin -Path $FullPath -Root $Root) { return 'zone système protégée' }",
+        '    }',
+        '    return $null',
+        '}',
+        '',
+        'function Get-Classification {',
+        '    param([string]$FullPath, [bool]$IsDirectory)',
+        "    $Segments = $FullPath.TrimEnd('\\').Split([IO.Path]::DirectorySeparatorChar)",
+        "    $Leaf = Split-Path -Leaf $FullPath.TrimEnd('\\')",
+        "    $ArtifactNames = @('node_modules', '.next', 'dist', 'build', 'out', 'coverage', '.turbo', '.cache', '__pycache__', 'vendor')",
+        '    if ($IsDirectory -and ($ArtifactNames -contains $Leaf.ToLowerInvariant())) {',
+        '        return "Artefact recréable de projet — $Leaf"',
+        '    }',
+        '    if ($Segments | Where-Object { $ArtifactNames -contains $_.ToLowerInvariant() }) {',
+        "        return 'Fichier dans un artefact recréable de projet'",
+        '    }',
+        "    if ($IsDirectory) { return 'Dossier volumineux — à examiner' }",
+        "    return 'Fichier volumineux — à examiner'",
+        '}',
+        '',
+        '$TargetItem = Get-Item -LiteralPath $TargetPath -Force -ErrorAction Stop',
+        "if (-not $TargetItem.PSIsContainer) { throw 'Le chemin doit être un disque ou un dossier.' }",
+        "if ($TargetItem.FullName -match '^[A-Za-z]:\\\\?$' -and $TargetItem.FullName -eq ($env:SystemDrive + '\\')) { Write-Warning 'Un scan de la racine système peut être très long.' }",
+        " $TargetResolved = $TargetItem.FullName",
+        " if ($TargetResolved.Length -gt 3) { $TargetResolved = $TargetResolved.TrimEnd('\\') }",
+        '$MinimumSizeBytes = [int64]($MinimumSizeGB * 1GB)',
+        '',
+        'Write-Host "Analyse de $TargetResolved en cours..." -ForegroundColor Cyan',
+        '$Files = @(Get-ChildItem -LiteralPath $TargetResolved -File -Force -Recurse -ErrorAction SilentlyContinue)',
+        '$DirectorySizes = @{}',
+        '',
+        '# Une seule énumération des fichiers; les tailles des dossiers sont additionnées par parent.',
+        'foreach ($File in $Files) {',
+        '    $Directory = Split-Path -Parent $File.FullName',
+        "    while ($Directory -and (Test-PathWithin -Path $Directory -Root $TargetResolved)) {",
+        '        if (-not $Directory.Equals($TargetResolved, [StringComparison]::OrdinalIgnoreCase)) {',
+        '            if (-not $DirectorySizes.ContainsKey($Directory)) { $DirectorySizes[$Directory] = [int64]0 }',
+        '            $DirectorySizes[$Directory] += [int64]$File.Length',
+        '        }',
+        '        if ($Directory.Equals($TargetResolved, [StringComparison]::OrdinalIgnoreCase)) { break }',
+        '        $Parent = Split-Path -Parent $Directory',
+        '        if ($Parent -eq $Directory) { break }',
+        '        $Directory = $Parent',
+        '    }',
+        '}',
+        '',
+        '$DirectoryResults = foreach ($Entry in $DirectorySizes.GetEnumerator()) {',
+        '    $Path = [string]$Entry.Key',
+        '    $Bytes = [int64]$Entry.Value',
+        '    if ($Bytes -ge $MinimumSizeBytes) {',
+        '        $Protection = Get-ProtectionReason -FullPath $Path',
+        '        $Classification = Get-Classification -FullPath $Path -IsDirectory $true',
+        '        [PSCustomObject]@{',
+        "            Type = 'Dossier'; Path = $Path; TailleGB = [math]::Round($Bytes / 1GB, 2); TailleMB = [math]::Round($Bytes / 1MB, 0)",
+        '            Classification = $Classification; Protege = [bool]$Protection; MotifProtection = $Protection',
+        "            SelectionPossible = [bool](-not $Protection -and $Classification -like 'Artefact recréable*')",
+        '        }',
+        '    }',
+        '}',
+        '',
+        '$FileResults = foreach ($File in $Files) {',
+        '    if ([int64]$File.Length -ge $MinimumSizeBytes) {',
+        '        $Protection = Get-ProtectionReason -FullPath $File.FullName',
+        '        [PSCustomObject]@{',
+        "            Type = 'Fichier'; Path = $File.FullName; TailleGB = [math]::Round($File.Length / 1GB, 2); TailleMB = [math]::Round($File.Length / 1MB, 0)",
+        '            Classification = Get-Classification -FullPath $File.FullName -IsDirectory $false; Protege = [bool]$Protection; MotifProtection = $Protection',
+        '            SelectionPossible = [bool](-not $Protection)',
+        '        }',
+        '    }',
+        '}',
+        '',
+        '$Results = @($DirectoryResults) + @($FileResults) | Sort-Object TailleGB -Descending',
+        '$ReportResults = @($Results | Select-Object -First $Top)',
+        "if ($ReportResults.Count -eq 0) { Write-Warning 'Aucun élément ne correspond à la taille minimale.' }",
+        'else { $ReportResults | Format-Table Type,TailleGB,Classification,Protege,Path -AutoSize }',
+        '',
+        '# Exporter les objets non formatés conserve des colonnes exploitables dans Excel et HTML.',
+        "if ($ReportFormat -in @('csv', 'both')) {",
+        '    $CsvPath = "$ReportBase.csv"',
+        '    $ReportResults | Export-Csv -LiteralPath $CsvPath -UseCulture -NoTypeInformation -Encoding UTF8',
+        '    Write-Host "CSV créé : $CsvPath" -ForegroundColor Green',
+        '}',
+        "if ($ReportFormat -in @('html', 'both')) {",
+        '    $HtmlPath = "$ReportBase.html"',
+        "    $Css = '<style>body{font-family:Segoe UI,Arial;margin:2rem} table{border-collapse:collapse} th,td{border:1px solid #bbb;padding:.4rem;text-align:left} th{background:#eee}</style>'",
+        '    $ReportResults | ConvertTo-Html -Title \'KJEMO — Analyse de disque\' -Head $Css -PreContent "<h1>Analyse de $TargetResolved</h1><p>Généré le $(Get-Date)</p>" | Out-File -LiteralPath $HtmlPath -Encoding UTF8',
+        '    Write-Host "HTML créé : $HtmlPath" -ForegroundColor Green',
+        '}',
+        '',
+        'if ($AllowRecycleSelection -and $ReportResults.Count -gt 0) {',
+        '    $Candidates = @($ReportResults | Where-Object { $_.SelectionPossible -eq $true })',
+        "    $CandidateFolders = @($Candidates | Where-Object { $_.Type -eq 'Dossier' })",
+        '    $Candidates = @($Candidates | Where-Object {',
+        "        $CurrentCandidate = $_",
+        "        $CurrentCandidate.Type -eq 'Dossier' -or -not ($CandidateFolders | Where-Object { Test-PathWithin -Path $CurrentCandidate.Path -Root $_.Path })",
+        '    })',
+        "    if ($Candidates.Count -eq 0) { Write-Host 'Aucun candidat non protégé n’est proposé pour la corbeille.' -ForegroundColor Yellow }",
+        '    else {',
+        '        Add-Type -AssemblyName Microsoft.VisualBasic -ErrorAction Stop',
+        "        Write-Host ''",
+        '        Write-Host \'Candidats proposés (les éléments protégés sont exclus) :\' -ForegroundColor Yellow',
+        '        for ($Index = 0; $Index -lt $Candidates.Count; $Index++) {',
+        '            Write-Host ("[{0}] {1} — {2} Go — {3}" -f ($Index + 1), $Candidates[$Index].Type, $Candidates[$Index].TailleGB, $Candidates[$Index].Path)',
+        '        }',
+        '        $Confirmation = Read-Host "Pour continuer, tape exactement CONFIRMER; toute autre réponse annule"',
+        "        if ($Confirmation -cne 'CONFIRMER') { Write-Host 'Opération annulée : aucun élément déplacé.' -ForegroundColor Cyan }",
+        '        else {',
+        "            $Selection = Read-Host 'Numéros à envoyer à la corbeille, séparés par des virgules (exemple : 1,3)'",
+        "            $Indexes = $Selection -split '[,; ]+' | ForEach-Object { $Parsed = 0; if ([int]::TryParse($_, [ref]$Parsed)) { $Parsed } }",
+        '            foreach ($Number in $Indexes) {',
+        '                if ($Number -lt 1 -or $Number -gt $Candidates.Count) { Write-Warning "Numéro ignoré : $Number"; continue }',
+        '                $Candidate = $Candidates[$Number - 1]',
+        '                try {',
+        "                    if ($Candidate.Type -eq 'Dossier') {",
+        '                        [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($Candidate.Path, [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs, [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin, [Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException)',
+        '                    }',
+        '                    else {',
+        '                        [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($Candidate.Path, [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs, [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin, [Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException)',
+        '                    }',
+        '                    Write-Host "Envoyé à la corbeille : $($Candidate.Path)" -ForegroundColor Green',
+        '                }',
+        '                catch { Write-Warning "Échec pour $($Candidate.Path) : $($_.Exception.Message)" }',
+        '            }',
+        '        }',
+        '    }',
+        '}',
+        '',
+        "Write-Host ''",
+        'Write-Host "Terminé. Les rapports restent sur le Bureau; vérifie-les avant toute autre action." -ForegroundColor Cyan',
+      ];
+      return lines.join('\n');
+    },
+    gui: ['Ouvrir Paramètres > Système > Stockage pour un résumé rapide.', 'Pour un dossier précis, ouvrir PowerShell et utiliser le chemin exact; l’Explorateur peut aussi afficher les propriétés du disque.', 'Dans un projet SaaS, examiner en priorité node_modules, .next, dist, build, out, coverage et les caches : ils peuvent souvent être régénérés après vérification.', 'Ne sélectionner pour la corbeille que des éléments non protégés dont l’absence est confirmée; ne jamais toucher à .git, .env, bases ou sauvegardes.'],
+    checks: ['Compatible avec Windows PowerShell 5.1 ou PowerShell 7 sur Windows; le scan peut prendre du temps sur un gros disque.', 'Le mode recommandé produit seulement un rapport CSV/HTML et ne supprime rien.', 'Les chemins contenant .git, .env, bases, sauvegardes et zones système sont marqués protégés et exclus de la sélection.', 'La corbeille demande CONFIRMER puis des numéros; les éléments verrouillés ou sans permission sont signalés sans arrêter tout le rapport.'],
+    source: 'https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem'
+  };
+}
+
+// Ajoute la fiche V0.2 sans réécrire le reste du catalogue.
+tools.push(createDiskScanTool());
 
 const categories = ['Tout', ...new Set(tools.map((tool) => tool.category))];
 let selectedCategory = 'Tout';
@@ -148,10 +339,24 @@ function renderHome() {
 }
 
 function formMarkup(tool) {
-  return tool.fields.map((field) => `<div class="field"><label for="${field.id}">${field.label}</label>${field.type === 'select' ? `<select id="${field.id}">${field.options.map(([value, label]) => `<option value="${value}" ${value === field.default ? 'selected' : ''}>${label}</option>`).join('')}</select>` : `<input id="${field.id}" type="${field.type || 'text'}" value="${field.default || ''}" />`}${field.help ? `<small>${field.help}</small>` : ''}</div>`).join('');
+  return tool.fields.map((field) => {
+    if (field.type === 'select') {
+      return `<div class="field"><label for="${field.id}">${field.label}</label><select id="${field.id}">${field.options.map(([value, label]) => `<option value="${value}" ${value === field.default ? 'selected' : ''}>${label}</option>`).join('')}</select>${field.help ? `<small>${field.help}</small>` : ''}</div>`;
+    }
+    const attributes = [field.min !== undefined ? `min="${field.min}"` : '', field.max !== undefined ? `max="${field.max}"` : '', field.step !== undefined ? `step="${field.step}"` : ''].filter(Boolean).join(' ');
+    if (field.type === 'checkbox') {
+      return `<div class="field checkbox-field"><label><input id="${field.id}" type="checkbox" ${field.default ? 'checked' : ''} /> ${field.label}</label>${field.help ? `<small>${field.help}</small>` : ''}</div>`;
+    }
+    return `<div class="field"><label for="${field.id}">${field.label}</label><input id="${field.id}" type="${field.type || 'text'}" value="${field.default || ''}" ${attributes} />${field.help ? `<small>${field.help}</small>` : ''}</div>`;
+  }).join('');
 }
 
-function getValues(tool) { return Object.fromEntries(tool.fields.map((field) => [field.id, document.querySelector(`#${field.id}`).value])); }
+function getValues(tool) {
+  return Object.fromEntries(tool.fields.map((field) => {
+    const element = document.querySelector(`#${field.id}`);
+    return [field.id, field.type === 'checkbox' ? element.checked : element.value];
+  }));
+}
 
 function textToCode(text) { return text.replace(/[&<>]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char])); }
 function normalizeScript(text) { return text.replace(/\\\n/g, String.fromCharCode(96) + '\n'); }
