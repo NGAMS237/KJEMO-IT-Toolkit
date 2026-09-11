@@ -1,8 +1,8 @@
 Import-Module ActiveDirectory
 
-$OuName = 'Test,OU'
+$OuName = 'Employes'
 $OuPath = 'DC=hopitalbn,DC=lan'
-$OuDn   = 'OU=Test\,OU,DC=hopitalbn,DC=lan'
+$OuDn   = 'OU=Employes,DC=hopitalbn,DC=lan'
 
 if (Get-ADOrganizationalUnit -Identity $OuDn -ErrorAction SilentlyContinue) {
     Write-Warning "L'OU existe déjà : $OuDn"

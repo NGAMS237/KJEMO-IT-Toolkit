@@ -1,4 +1,6 @@
-import { tools, normalizeScript, textToCode } from '../src/generators.mjs';
+// Point 2 (Codex) : import depuis './generators.mjs' — même répertoire dist/
+// GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
+import { tools, normalizeScript, textToCode } from './generators.mjs';
 
 const categories = ['Tout', ...new Set(tools.map((tool) => tool.category))];
 let selectedCategory = 'Tout';
@@ -91,6 +93,28 @@ function renderTool() {
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
   const script = normalizeScript(tool.generate(defaultValues));
   content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div></section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
+
+  // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
+  // Copier et Télécharger sont désactivés jusqu'à la prochaine génération valide.
+  const copyBtn     = content.querySelector('#copyButton');
+  const dlBtn       = content.querySelector('#downloadButton');
+  const preEl       = content.querySelector('#scriptOutput');
+  const feedbackEl  = content.querySelector('#copyFeedback');
+
+  function markDirty() {
+    copyBtn.disabled  = true;
+    dlBtn.disabled    = true;
+    feedbackEl.textContent = 'Aperçu obsolète — cliquez sur « Générer » pour actualiser.';
+    preEl.classList.add('stale');
+  }
+
+  tool.fields.forEach((field) => {
+    const el = content.querySelector(`#${field.id}`);
+    if (!el) return;
+    const evtType = (el.tagName === 'SELECT' || field.type === 'checkbox') ? 'change' : 'input';
+    el.addEventListener(evtType, markDirty);
+  });
+
   content.querySelector('#toolForm').addEventListener('submit', (event) => {
     event.preventDefault();
     const values = getValues(tool);
@@ -102,20 +126,31 @@ function renderTool() {
       if (firstEl) firstEl.focus();
       return;
     }
-    const output = normalizeScript(tool.generate(values));
-    content.querySelector('#scriptOutput').textContent = output;
-    content.querySelector('#copyFeedback').textContent = 'Aperçu actualisé.';
-  });
-  content.querySelector('#copyButton').addEventListener('click', async () => {
+    let output;
     try {
-      await navigator.clipboard.writeText(content.querySelector('#scriptOutput').textContent);
-      content.querySelector('#copyFeedback').textContent = 'Script copié dans le presse-papiers.';
+      output = normalizeScript(tool.generate(values));
+    } catch (err) {
+      feedbackEl.textContent = `Erreur de génération : ${err.message}`;
+      return;
+    }
+    preEl.textContent = output;
+    preEl.classList.remove('stale');
+    copyBtn.disabled  = false;
+    dlBtn.disabled    = false;
+    feedbackEl.textContent = 'Aperçu actualisé.';
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(preEl.textContent);
+      feedbackEl.textContent = 'Script copié dans le presse-papiers.';
     } catch {
-      content.querySelector('#copyFeedback').textContent = 'Copie impossible : sélectionne le texte manuellement.';
+      feedbackEl.textContent = 'Copie impossible : sélectionne le texte manuellement.';
     }
   });
-  content.querySelector('#downloadButton').addEventListener('click', () => {
-    const blob = new Blob([content.querySelector('#scriptOutput').textContent], { type: 'text/plain;charset=utf-8' });
+
+  dlBtn.addEventListener('click', () => {
+    const blob = new Blob([preEl.textContent], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `${tool.id}.ps1`;

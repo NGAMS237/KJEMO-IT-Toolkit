@@ -39,7 +39,7 @@ const ROOT      = resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 // Importer les générateurs depuis le module source (pas depuis dist/app.js)
 // ---------------------------------------------------------------------------
-const { tools, normalizeScript } = await import(resolve(ROOT, 'src', 'generators.mjs'));
+const { tools, normalizeScript } = await import(resolve(ROOT, 'dist', 'generators.mjs'));
 
 // ---------------------------------------------------------------------------
 // Serveur HTTP statique minimal pour dist/
@@ -53,25 +53,17 @@ const MIME = {
 };
 
 /**
- * Sert dist/ à la racine (/) et src/ sous /src/.
- * L'import dans dist/app.js est :  import { ... } from '../src/generators.mjs'
- * Ce qui, depuis http://localhost/app.js, résout en http://localhost/src/generators.mjs
+ * Sert uniquement dist/ à la racine (/).
+ * dist/app.js importe './generators.mjs' qui est dist/generators.mjs — aucune réécriture /src/ nécessaire.
  */
 function startServer(projectRoot) {
   const distDir = resolve(projectRoot, 'dist');
-  const srcDir  = resolve(projectRoot, 'src');
 
   return new Promise((res) => {
     const server = createServer((req, reply) => {
       const rawPath = req.url.split('?')[0];
       const urlPath = rawPath === '/' ? '/index.html' : rawPath;
-
-      let filePath;
-      if (urlPath.startsWith('/src/')) {
-        filePath = resolve(srcDir, urlPath.slice('/src/'.length));
-      } else {
-        filePath = resolve(distDir, '.' + urlPath);
-      }
+      const filePath = resolve(distDir, '.' + urlPath);
 
       try {
         const body = readFileSync(filePath);
@@ -273,8 +265,69 @@ for (const tool of tools) {
     const curlySingleAfterFill = /[‘’]/.test(preAfterTypo);
     assert(
       !curlySingleAfterFill,
-      `Aucun U+2018/U+2019 dans <pre> après saisie "O'Brien" (U+2019)`,
+      `Aucun U+2018/U+2019 dans <pre> après saisie "O’Brien" (U+2019)`,
     );
+  }
+
+  // -------------------------------------------------------------------------
+  // 6. Section B — modifier un champ vers invalide : boutons désactivés (stale)
+  //    puis soumettre : erreur visible, <pre> inchangé
+  // -------------------------------------------------------------------------
+  // Trouver un champ texte pour injecter une valeur invalide selon l'outil
+  const INVALID_INPUTS = {
+    'static-ip':     { fieldId: 'prefix', value: '99abc'   },
+    'ad-ou':         { fieldId: 'domain', value: 'nodot'    },
+    'ad-user':       { fieldId: 'sam',    value: ''         },
+    'shared-folder': { fieldId: 'path',   value: '\\\\UNC\\Partage' },
+    'second-dc':     { fieldId: 'source', value: 'nodot'   },
+    'gpo-password':  { fieldId: 'length', value: 'abc'     },
+  };
+
+  const invalidSpec = INVALID_INPUTS[tool.id];
+  if (invalidSpec) {
+    const fieldEl = page.locator(`#${invalidSpec.fieldId}`);
+    const tagName = await fieldEl.evaluate((el) => el.tagName.toLowerCase()).catch(() => null);
+    if (tagName) {
+      // Régénérer d'abord avec les valeurs par défaut pour repartir d'un état propre
+      await page.goto(BASE_URL);
+      await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+      const openButtons2 = page.locator('#toolGrid .open-tool');
+      await openButtons2.nth(toolIndex).click();
+      await page.waitForSelector('#scriptOutput', { timeout: 5000 });
+
+      // Saisir la valeur invalide — les boutons doivent passer en stale
+      const invEl = page.locator(`#${invalidSpec.fieldId}`);
+      if (tagName === 'select') {
+        // Select : on ne peut pas mettre une valeur hors liste, tester via soumettre direct
+      } else {
+        await invEl.fill(invalidSpec.value);
+        // Vérifier que Copier et Télécharger sont désactivés (état stale)
+        const copyDisabled = await page.$eval('#copyButton',    (el) => el.disabled);
+        const dlDisabled   = await page.$eval('#downloadButton', (el) => el.disabled);
+        assert(copyDisabled && dlDisabled, `${tool.id}/${invalidSpec.fieldId} : boutons désactivés après modification (stale)`);
+
+        // Soumettre le formulaire avec la valeur invalide
+        await page.click('#toolForm button[type="submit"]');
+        await page.waitForTimeout(300);
+
+        // Vérifier soit une erreur sur le champ, soit un message feedbackEl
+        const hasFieldError = await page.$eval(
+          `#${invalidSpec.fieldId}-error`,
+          (el) => el && !el.hidden && el.textContent.trim().length > 0,
+        ).catch(() => false);
+        const feedbackText  = await page.$eval('#copyFeedback', (el) => el.textContent ?? '').catch(() => '');
+        const hasError = hasFieldError || feedbackText.includes('Erreur') || feedbackText.includes('invalide');
+        assert(hasError, `${tool.id}/${invalidSpec.fieldId} : erreur visible après soumission invalide`);
+
+        // Les boutons doivent rester désactivés
+        const copyStillDisabled = await page.$eval('#copyButton',    (el) => el.disabled);
+        const dlStillDisabled   = await page.$eval('#downloadButton', (el) => el.disabled);
+        assert(
+          copyStillDisabled && dlStillDisabled,
+          `${tool.id}/${invalidSpec.fieldId} : boutons restent désactivés après soumission invalide`,
+        );
+      }
+    }
   }
 
   await context.close();

@@ -15,10 +15,11 @@ function Test-PathWithin {
     param([string]$Path, [string]$Root)
     $PathFull = [IO.Path]::GetFullPath($Path)
     $RootFull = [IO.Path]::GetFullPath($Root)
-    if ($PathFull.Length -gt 3) { $PathFull = $PathFull.TrimEnd('\') }
-    if ($RootFull.Length -gt 3) { $RootFull = $RootFull.TrimEnd('\') }
-    return $PathFull.Equals($RootFull, [StringComparison]::OrdinalIgnoreCase) -or
-        $PathFull.StartsWith($RootFull + '\', [StringComparison]::OrdinalIgnoreCase)
+    $PathNorm = if ($PathFull -match '^[A-Za-z]:\\$') { $PathFull } else { $PathFull.TrimEnd('\') }
+    $RootNorm = if ($RootFull -match '^[A-Za-z]:\\$') { $RootFull } else { $RootFull.TrimEnd('\') }
+    $RootSep = if ($RootNorm.EndsWith('\')) { $RootNorm } else { $RootNorm + '\' }
+    return $PathNorm.Equals($RootNorm, [StringComparison]::OrdinalIgnoreCase) -or
+        $PathNorm.StartsWith($RootSep, [StringComparison]::OrdinalIgnoreCase)
 }
 
 $ProtectedRoots = @(

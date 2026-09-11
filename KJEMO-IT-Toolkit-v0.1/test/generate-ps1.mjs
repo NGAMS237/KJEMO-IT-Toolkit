@@ -18,7 +18,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = resolve(__dirname, '..');
 const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
-const { tools, normalizeScript } = await import(resolve(ROOT, 'src', 'generators.mjs'));
+const { tools, normalizeScript } = await import(resolve(ROOT, 'dist', 'generators.mjs'));
 
 mkdirSync(OUT_DIR, { recursive: true });
 
@@ -69,9 +69,9 @@ const DATASETS = [
     },
   },
   {
-    name: 'chemin-unc',
+    name: 'chemin-racine-c',
     values: {
-      path: '\\\\SERVEUR01\\Partage\\Donn\u00e9es', share: 'TestUNC',
+      path: 'C:\\', share: 'RacineC',
       adapter: 'Ethernet', firstName: 'Marie', lastName: 'Tremblay',
       ou: 'Employes', domain: 'hopitalbn.lan', group: 'GG-Test-RW',
     },

@@ -33,8 +33,9 @@ import {
   validateIntegerStrict,
   validateFloatStrict,
   validateOuName,
+  validateWindowsLocalPath,
   domainToDn,
-} from '../src/generators.mjs';
+} from '../dist/generators.mjs';
 
 // ---------------------------------------------------------------------------
 // Comptage
@@ -321,8 +322,132 @@ for (const { id, field, value } of testTools) {
 }
 
 // ---------------------------------------------------------------------------
-// Résumé
+// 10. validateWindowsLocalPath
 // ---------------------------------------------------------------------------
+section('validateWindowsLocalPath');
+
+assert(validateWindowsLocalPath('C:\\Partages\\Data').ok === true, 'chemin local valide C:\\Partages\\Data');
+assert(validateWindowsLocalPath('D:\\').ok === true, 'chemin racine D:\\ valide');
+assert(validateWindowsLocalPath('\\\\SERVEUR01\\Partage').ok === false, 'chemin UNC \\\\ → invalide (SMB interdit)');
+assert(validateWindowsLocalPath('//server/share').ok === false, 'chemin UNC // → invalide');
+assert(validateWindowsLocalPath('').ok === false, 'chemin vide → invalide');
+assert(validateWindowsLocalPath('Relatif\\chemin').ok === false, 'chemin relatif → invalide');
+
+// ---------------------------------------------------------------------------
+// 11. LDAP RFC 4514 — assertions complètes
+// ---------------------------------------------------------------------------
+section('escapeLdapRdn — RFC 4514 complet');
+
+assert(escapeLdapRdn('Finance, Nord') === 'Finance\\, Nord', 'LDAP : virgule interne');
+assert(escapeLdapRdn('Direction + Ops') === 'Direction \\+ Ops', 'LDAP : plus interne');
+assert(escapeLdapRdn('key=value') === 'key\\=value', 'LDAP : égal → \\=');
+assert(escapeLdapRdn('"quoted"') === '\\"quoted\\"', 'LDAP : guillemets → \\"');
+assert(escapeLdapRdn('back\\slash') === 'back\\\\slash', 'LDAP : backslash → \\\\');
+assert(escapeLdapRdn('#Leading') === '\\#Leading', 'LDAP : # en début → \\#');
+assert(escapeLdapRdn(' leading') === '\\ leading', 'LDAP : espace en début');
+assert(escapeLdapRdn('trailing ') === 'trailing\\ ', 'LDAP : espace en fin');
+assert(escapeLdapRdn('Finance\u0000Null') === 'Finance\\00Null', 'LDAP : NUL → \\00');
+
+// Assertion intégration : OU=Finance\, Nord,OU=Direction \+ Ops,DC=example,DC=lan
+const ouLdap1   = escapeLdapRdn('Finance, Nord');
+const ouLdap2   = escapeLdapRdn('Direction + Ops');
+const dn        = `OU=${ouLdap1},OU=${ouLdap2},DC=example,DC=lan`;
+assert(
+  dn === 'OU=Finance\\, Nord,OU=Direction \\+ Ops,DC=example,DC=lan',
+  `LDAP DN intégration : ${dn}`,
+);
+
+// ---------------------------------------------------------------------------
+// 12. Section B — jeux invalides → generate() refusé / validate() erreur
+// ---------------------------------------------------------------------------
+section('Section B — entrées invalides → génération refusée');
+
+// static-ip : prefix "12abc" → generate() lève une exception
+const sipTool = tools.find((t) => t.id === 'static-ip');
+if (sipTool) {
+  const v = Object.fromEntries(sipTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.prefix = '12abc';
+  try {
+    sipTool.generate(v);
+    assert(false, 'static-ip prefix="12abc" : generate() doit lever une exception');
+  } catch (err) {
+    assert(true, `static-ip prefix="12abc" : exception levée (${err.message.slice(0, 60)})`);
+  }
+}
+
+// static-ip : IP invalide → validate() retourne erreur sur 'ip'
+if (sipTool) {
+  const v = Object.fromEntries(sipTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.ip = '999.0.0.1';
+  const errs = sipTool.validate(v);
+  assert('ip' in errs, "static-ip ip invalide → validate() erreur sur 'ip'");
+}
+
+// ad-ou : domaine invalide → validate() retourne erreur sur 'domain'
+const adOuTool = tools.find((t) => t.id === 'ad-ou');
+if (adOuTool) {
+  const v = Object.fromEntries(adOuTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.domain = 'nodot';
+  const errs = adOuTool.validate(v);
+  assert('domain' in errs, "ad-ou domaine sans point → validate() erreur sur 'domain'");
+}
+
+// ad-user : SAM vide → validate() retourne erreur sur 'sam'
+const adUserTool = tools.find((t) => t.id === 'ad-user');
+if (adUserTool) {
+  const v = Object.fromEntries(adUserTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.sam = '';
+  const errs = adUserTool.validate(v);
+  assert('sam' in errs, "ad-user SAM vide → validate() erreur sur 'sam'");
+}
+
+// ad-user : SAM trop long → validate() retourne erreur sur 'sam'
+if (adUserTool) {
+  const v = Object.fromEntries(adUserTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.sam = 'a'.repeat(21);
+  const errs = adUserTool.validate(v);
+  assert('sam' in errs, "ad-user SAM > 20 cars → validate() erreur sur 'sam'");
+}
+
+// shared-folder : chemin UNC → validate() retourne erreur sur 'path'
+const sfTool = tools.find((t) => t.id === 'shared-folder');
+if (sfTool) {
+  const v = Object.fromEntries(sfTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.path = '\\\\SERVEUR01\\Partage';
+  const errs = sfTool.validate(v);
+  assert('path' in errs, "shared-folder UNC → validate() erreur sur 'path'");
+  // generate() doit aussi lever une exception pour les chemins UNC
+  try {
+    sfTool.generate(v);
+    assert(false, 'shared-folder UNC : generate() doit lever une exception');
+  } catch (err) {
+    assert(true, `shared-folder UNC : exception levée (${err.message.slice(0, 60)})`);
+  }
+}
+
+// second-dc : source non-FQDN → validate() retourne erreur sur 'source'
+const sdcTool = tools.find((t) => t.id === 'second-dc');
+if (sdcTool) {
+  const v = Object.fromEntries(sdcTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.source = 'nodot';
+  const errs = sdcTool.validate(v);
+  assert('source' in errs, "second-dc source sans point → validate() erreur sur 'source'");
+}
+
+// gpo-password : longueur invalide ("abc") → generate() lève une exception
+const gpoTool = tools.find((t) => t.id === 'gpo-password');
+if (gpoTool) {
+  const v = Object.fromEntries(gpoTool.fields.map((f) => [f.id, String(f.default ?? '')]));
+  v.length = 'abc';
+  try {
+    gpoTool.generate(v);
+    assert(false, 'gpo-password length="abc" : generate() doit lever une exception');
+  } catch (err) {
+    assert(true, `gpo-password length="abc" : exception levée (${err.message.slice(0, 60)})`);
+  }
+}
+
+// Résumé
 console.log('');
 console.log(`Tests d'identité terminés : ${passed} OK, ${failed} ÉCHEC(S).`);
 if (failed > 0) process.exit(1);
