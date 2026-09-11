@@ -1,19 +1,20 @@
 # =============================================================================
 # ps-syntax-check.yml — LOT 0 · KJEMO IT Toolkit
 # =============================================================================
-# Vérifie la syntaxe PowerShell des huit assistants après chaque push ou PR.
+# Vérifie la syntaxe PowerShell des huit assistants après chaque push ou PR
+# sur les branches claude/** et main.
 #
-# Ce que ce CI fait réellement :
-#   1. Génère les 64 fichiers .ps1 (8 assistants × 8 jeux de données) via Node.js.
-#   2. Vérifie la syntaxe avec le parseur natif PowerShell 5.1 (windows-latest).
-#   3. Vérifie la syntaxe avec le parseur natif PowerShell 7 (pwsh).
-#   4. Exécute les tests fonctionnels Node.js (identity.test.mjs) — sans navigateur.
-#   5. Installe Playwright/Chromium et exécute les tests navigateur (browser-identity.test.mjs).
-#   6. Échoue si UNE SEULE erreur de parsing ou de test est trouvée.
+# Ce workflow délègue à validate.yml (workflow réutilisable) qui effectue :
+#   1. Génération des 64 fichiers .ps1 (8 assistants × 8 jeux de données).
+#   2. Vérification syntaxe avec PS 5.1 (powershell.exe) et PS 7 (pwsh).
+#   3. Tests fonctionnels Node.js (identity.test.mjs — sections A et B).
+#   4. Tests aller-retour Unicode (Test-PS-Roundtrip.ps1).
+#   5. Tests navigateur Playwright (browser-identity.test.mjs).
+#   6. Échec si UNE SEULE erreur de parsing ou de test est trouvée.
 #
 # Ce que ce CI ne fait PAS :
 #   - Il n'exécute pas les scripts PowerShell (pas de VM Windows active).
-#   - Il ne déploie pas sur GitHub Pages.
+#   - Il ne déploie pas sur GitHub Pages (voir deploy-pages.yml).
 #   - Il ne fusionne pas dans main sans autorisation explicite de Blaise.
 #
 # Contrainte : ne fusionner dans main et ne déployer qu'avec l'autorisation
@@ -32,162 +33,6 @@ on:
       - 'main'
 
 jobs:
-  ps-syntax:
-    name: Vérification syntaxe PowerShell (5.1 + 7) + Tests
-    runs-on: windows-latest
-
-    steps:
-      # -----------------------------------------------------------------------
-      # 1. Checkout
-      # -----------------------------------------------------------------------
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # -----------------------------------------------------------------------
-      # 2. Node.js 20
-      # -----------------------------------------------------------------------
-      - name: Configurer Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # -----------------------------------------------------------------------
-      # 3. Installer les dépendances (npm ci — utilise le package-lock.json)
-      # -----------------------------------------------------------------------
-      - name: Installer les dépendances Node.js
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: npm ci
-        shell: bash
-
-      # -----------------------------------------------------------------------
-      # 4. Vérification syntaxe Node.js des modules sources
-      # -----------------------------------------------------------------------
-      - name: Vérification syntaxe Node.js (src/generators.mjs)
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node --input-type=module --check < src/generators.mjs
-        shell: bash
-
-      - name: Vérification syntaxe Node.js (dist/app.js)
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node --input-type=module --check < dist/app.js
-        shell: bash
-
-      # -----------------------------------------------------------------------
-      # 5. Tests fonctionnels Node.js
-      # -----------------------------------------------------------------------
-      - name: Tests fonctionnels Node.js (identity.test.mjs)
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/identity.test.mjs
-        shell: bash
-
-      # -----------------------------------------------------------------------
-      # 6. Générer les .ps1
-      # -----------------------------------------------------------------------
-      - name: Générer les scripts .ps1
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/generate-ps1.mjs
-        shell: bash
-
-      # -----------------------------------------------------------------------
-      # 7. Lister les fichiers générés
-      # -----------------------------------------------------------------------
-      - name: Lister les fichiers générés
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: Get-ChildItem test/generated/*.ps1 | ForEach-Object { Write-Host $_.Name }
-        shell: pwsh
-
-      # -----------------------------------------------------------------------
-      # 8. Parsing PowerShell 5.1
-      # -----------------------------------------------------------------------
-      - name: Parsing PowerShell 5.1 (powershell.exe)
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        shell: powershell
-        run: |
-          $ErrorCount = 0
-          $Files = Get-ChildItem test\generated\*.ps1
-          foreach ($File in $Files) {
-              $Tokens      = $null
-              $ParseErrors = $null
-              [void][System.Management.Automation.Language.Parser]::ParseFile(
-                  $File.FullName,
-                  [ref]$Tokens,
-                  [ref]$ParseErrors
-              )
-              if ($ParseErrors.Count -gt 0) {
-                  Write-Host "[PS5.1 ECHEC] $($File.Name)" -ForegroundColor Red
-                  foreach ($Err in $ParseErrors) {
-                      Write-Host ("  Ligne {0}, col {1} : {2}" -f `
-                          $Err.Extent.StartLineNumber, `
-                          $Err.Extent.StartColumnNumber, `
-                          $Err.Message) -ForegroundColor Red
-                  }
-                  $ErrorCount++
-              } else {
-                  Write-Host "[PS5.1 OK]    $($File.Name)" -ForegroundColor Green
-              }
-          }
-          if ($ErrorCount -gt 0) {
-              Write-Error "$ErrorCount fichier(s) PS 5.1 en erreur de parsing."
-              exit 1
-          }
-
-      # -----------------------------------------------------------------------
-      # 9. Parsing PowerShell 7
-      # -----------------------------------------------------------------------
-      - name: Parsing PowerShell 7 (pwsh)
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        shell: pwsh
-        run: |
-          $ErrorCount = 0
-          $Files = Get-ChildItem test/generated/*.ps1
-          foreach ($File in $Files) {
-              $Tokens      = $null
-              $ParseErrors = $null
-              [void][System.Management.Automation.Language.Parser]::ParseFile(
-                  $File.FullName,
-                  [ref]$Tokens,
-                  [ref]$ParseErrors
-              )
-              if ($ParseErrors.Count -gt 0) {
-                  Write-Host "[PS7 ECHEC]   $($File.Name)" -ForegroundColor Red
-                  foreach ($Err in $ParseErrors) {
-                      Write-Host ("  Ligne {0}, col {1} : {2}" -f `
-                          $Err.Extent.StartLineNumber, `
-                          $Err.Extent.StartColumnNumber, `
-                          $Err.Message) -ForegroundColor Red
-                  }
-                  $ErrorCount++
-              } else {
-                  Write-Host "[PS7 OK]      $($File.Name)" -ForegroundColor Green
-              }
-          }
-          if ($ErrorCount -gt 0) {
-              Write-Error "$ErrorCount fichier(s) PS 7 en erreur de parsing."
-              exit 1
-          }
-
-      # -----------------------------------------------------------------------
-      # 10. Installer Playwright/Chromium et exécuter les tests navigateur
-      # -----------------------------------------------------------------------
-      - name: Installer les navigateurs Playwright
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: npx playwright install chromium --with-deps
-        shell: bash
-
-      - name: Tests navigateur Playwright (pipeline Copier/Télécharger)
-        working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/browser-identity.test.mjs
-        shell: bash
-        env:
-          PLAYWRIGHT_CHROMIUM_PATH: ''   # utilise le Chromium installé par playwright install
-
-      # -----------------------------------------------------------------------
-      # 11. Rapport d'artefact (toujours, même en cas d'échec)
-      # -----------------------------------------------------------------------
-      - name: Publier les .ps1 générés
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ps1-generated-${{ github.sha }}
-          path: KJEMO-IT-Toolkit-v0.1/test/generated/
-          retention-days: 14
+  validate:
+    name: Validation complète (syntaxe PS + tests)
+    uses: ./.github/workflows/validate.yml
