@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="KJEMO IT Toolkit — assistants et scripts de dépannage Windows et Active Directory." />
+    <title>KJEMO IT Toolkit</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Aller au contenu</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navigation principale">
+        <div class="brand"><span class="brand-mark">K</span><span>KJEMO <b>IT Toolkit</b></span></div>
+        <nav id="navigation"></nav>
+        <div class="sidebar-note">Scripts publics, exécutés localement.<br><b>Vérifie toujours l’aperçu.</b></div>
+      </aside>
+      <main id="main">
+        <header class="topbar">
+          <button id="menuButton" class="icon-button" aria-label="Ouvrir le menu">☰</button>
+          <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Rechercher un problème, une commande…" /></label>
+          <span class="version">Windows & AD · v0.1</span>
+        </header>
+        <section id="home" class="home-view">
+          <div class="eyebrow">ASSISTANTS DE DÉPANNAGE</div>
+          <h1>Résoudre, comprendre,<br><em>puis exécuter.</em></h1>
+          <p class="intro">Choisis une situation. L’assistant prépare un script PowerShell avec tes informations et montre aussi les étapes à faire dans l’interface Windows.</p>
+          <div class="notice"><b>Avant de lancer :</b> lis l’aperçu, teste en laboratoire et utilise <code>-WhatIf</code> quand il est proposé.</div>
+          <div class="section-heading"><h2>Outils prêts à utiliser</h2><span id="toolCount"></span></div>
+          <div id="toolGrid" class="tool-grid"></div>
+        </section>
+        <section id="toolView" class="tool-view" hidden></section>
+      </main>
+    </div>
+    <template id="toolTemplate">
+      <article class="tool-card">
+        <div class="tool-icon"></div>
+        <span class="tag"></span>
+        <h3></h3><p></p>
+        <button class="open-tool">Ouvrir l’assistant <span>→</span></button>
+      </article>
+    </template>
+    <script src="app.js"></script>
+  </body>
+</html>
