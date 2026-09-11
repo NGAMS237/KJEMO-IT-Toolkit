@@ -10,6 +10,7 @@ Date : 2026-09-11
 - Architecture conservée : HTML, CSS et JavaScript sans dépendance, publiables sur GitHub Pages.
 - V0.2 du module de stockage préparée pour publication par GitHub Actions.
 - Le workflow `.github/workflows/deploy-pages.yml` publie uniquement `KJEMO-IT-Toolkit-v0.1/dist`.
+- Un `index.html` racine charge les ressources de `KJEMO-IT-Toolkit-v0.1/dist` afin que le mode Pages historique depuis `main` affiche aussi l’application.
 
 ## Module livré localement
 
