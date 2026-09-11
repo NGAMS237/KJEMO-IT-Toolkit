@@ -4,6 +4,19 @@ Bibliothèque et générateur local de procédures de dépannage Windows et Acti
 
 Le site ne se connecte à aucun ordinateur et ne stocke aucune donnée : les formulaires génèrent un script PowerShell dans le navigateur. Lis toujours l’aperçu avant de copier ou de télécharger un script.
 
+## Analyse de disque
+
+L’assistant **Analyser et libérer de l’espace disque** fonctionne sur un disque ou un dossier Windows et :
+
+- classe les fichiers et dossiers lourds;
+- reconnaît notamment `node_modules`, `.next`, `dist`, `build`, `out`, `coverage`, `.turbo`, `.cache`, `__pycache__` et `vendor`;
+- marque comme protégés `.git`, `.env`, les bases, les sauvegardes et les zones système;
+- produit un rapport CSV, HTML ou les deux sur le Bureau;
+- reste en mode rapport par défaut;
+- peut proposer une sélection vers la corbeille après `CONFIRMER`.
+
+Le scan demande Windows PowerShell 5.1 ou PowerShell 7 sur Windows. La corbeille est réservée à une session interactive et peut échouer pour un fichier verrouillé ou sans permission; l’erreur est alors affichée sans supprimer définitivement l’élément.
+
 ## Première version
 
 - Configuration IPv4 statique et DNS
@@ -12,6 +25,7 @@ Le site ne se connecte à aucun ordinateur et ne stocke aucune donnée : les for
 - Ajout d’un deuxième contrôleur de domaine
 - Diagnostic / réinitialisation légère du Wi-Fi
 - Analyse non destructive des dossiers lourds
+- Analyse détaillée du disque avec rapports CSV/HTML et corbeille contrôlée
 - Politique de mots de passe du domaine
 - Étapes équivalentes dans l’interface graphique Windows
 
