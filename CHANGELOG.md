@@ -10,6 +10,7 @@
 - Ajout de bornes aux champs numériques du formulaire et prise en charge des attributs HTML `min`, `max` et `step`.
 - Mise à jour du titre, de la description et de la version affichée.
 - Ajout du workflow GitHub Actions qui publie le dossier statique `KJEMO-IT-Toolkit-v0.1/dist` sur GitHub Pages.
+- Ajout d’un `index.html` à la racine pour rester compatible avec la publication Pages historique depuis `main`.
 
 ### Validation
 
