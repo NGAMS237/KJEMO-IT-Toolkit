@@ -275,12 +275,12 @@ for (const tool of tools) {
   // -------------------------------------------------------------------------
   // Trouver un champ texte pour injecter une valeur invalide selon l'outil
   const INVALID_INPUTS = {
-    'static-ip':     { fieldId: 'prefix', value: '99abc'   },
+    'static-ip':     { fieldId: 'prefix', value: '99', isNumber: true },
     'ad-ou':         { fieldId: 'domain', value: 'nodot'    },
     'ad-user':       { fieldId: 'sam',    value: ''         },
     'shared-folder': { fieldId: 'path',   value: '\\\\UNC\\Partage' },
     'second-dc':     { fieldId: 'source', value: 'nodot'   },
-    'gpo-password':  { fieldId: 'length', value: 'abc'     },
+    'gpo-password':  { fieldId: 'length', value: '0', isNumber: true },
   };
 
   const invalidSpec = INVALID_INPUTS[tool.id];
@@ -299,6 +299,13 @@ for (const tool of tools) {
       const invEl = page.locator(`#${invalidSpec.fieldId}`);
       if (tagName === 'select') {
         // Select : on ne peut pas mettre une valeur hors liste, tester via soumettre direct
+      } else if (invalidSpec.isNumber) {
+        // input[type=number] : forcer la valeur via evaluate puis déclencher l'événement input
+        await invEl.evaluate((el, val) => {
+          el.value = val;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }, invalidSpec.value);
       } else {
         await invEl.fill(invalidSpec.value);
         // Vérifier que Copier et Télécharger sont désactivés (état stale)
