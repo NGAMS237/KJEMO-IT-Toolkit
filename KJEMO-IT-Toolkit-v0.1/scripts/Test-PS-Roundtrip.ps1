@@ -91,9 +91,15 @@ Assert-Equal -Expected $Expected3 -Actual $PathWithTypo `
 Write-Host "`n--- Fichiers .ps1 générés ---"
 
 $GeneratedDir = Join-Path $PSScriptRoot "..\test\generated"
-if (Test-Path $GeneratedDir) {
+if (-not (Test-Path $GeneratedDir)) {
+    Write-Host "  [FAIL]  Répertoire introuvable : $GeneratedDir (exécuter generate-ps1.mjs d'abord)" -ForegroundColor Red
+    $script:ErrorCount++
+} else {
     $Files = Get-ChildItem -Path $GeneratedDir -Filter "*.ps1" -ErrorAction SilentlyContinue
-    if ($Files.Count -gt 0) {
+    if ($Files.Count -eq 0) {
+        Write-Host "  [FAIL]  Aucun .ps1 dans $GeneratedDir (exécuter generate-ps1.mjs d'abord)" -ForegroundColor Red
+        $script:ErrorCount++
+    } else {
         foreach ($File in $Files) {
             $Content = Get-Content -Path $File.FullName -Raw -Encoding UTF8
             # Chercher U+2018 ou U+2019 hors d'un commentaire PS
@@ -107,11 +113,7 @@ if (Test-Path $GeneratedDir) {
                 Write-Host "  [OK]    $($File.Name)" -ForegroundColor Green
             }
         }
-    } else {
-        Write-Host "  [SKIP]  Aucun .ps1 dans $GeneratedDir (exécuter generate-ps1.mjs d'abord)" -ForegroundColor Yellow
     }
-} else {
-    Write-Host "  [SKIP]  Répertoire introuvable : $GeneratedDir" -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------
