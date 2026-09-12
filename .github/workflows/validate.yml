@@ -155,17 +155,17 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
-      # 10. Aller-retour Unicode (Test-PS-Roundtrip.ps1)
+      # 10. Aller-retour Unicode réel JS → PS1 → PowerShell (v2)
       # -----------------------------------------------------------------------
-      - name: Aller-retour Unicode PS 5.1
+      - name: Aller-retour Unicode réel PS 5.1
         working-directory: KJEMO-IT-Toolkit-v0.1
         shell: powershell
-        run: powershell.exe -File .\scripts\Test-PS-Roundtrip.ps1
+        run: powershell.exe -File .\scripts\Test-PS-Roundtrip-v2.ps1
 
-      - name: Aller-retour Unicode PS 7
+      - name: Aller-retour Unicode réel PS 7
         working-directory: KJEMO-IT-Toolkit-v0.1
         shell: pwsh
-        run: pwsh -File .\scripts\Test-PS-Roundtrip.ps1
+        run: pwsh -File .\scripts\Test-PS-Roundtrip-v2.ps1
 
       # -----------------------------------------------------------------------
       # 11. Installer Playwright/Chromium et exécuter les tests navigateur

@@ -150,7 +150,10 @@ function renderTool() {
   });
 
   dlBtn.addEventListener('click', () => {
-    const blob = new Blob([preEl.textContent], { type: 'text/plain;charset=utf-8' });
+    // BOM UTF-8 (EF BB BF) requis pour PowerShell 5.1
+    const bom  = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const text = new TextEncoder().encode(preEl.textContent);
+    const blob = new Blob([bom, text], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `${tool.id}.ps1`;

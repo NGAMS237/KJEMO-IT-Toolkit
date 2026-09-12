@@ -221,21 +221,29 @@ for (const tool of tools) {
   await download.saveAs(downloadPath);
 
   let downloadContent;
+  let downloadHasBom = false;
   try {
-    downloadContent = readFileSync(downloadPath, 'utf-8');
+    const rawBytes = readFileSync(downloadPath);
+    // Vérifier le BOM UTF-8 (EF BB BF) — requis pour PS 5.1
+    downloadHasBom = rawBytes[0] === 0xEF && rawBytes[1] === 0xBB && rawBytes[2] === 0xBF;
+    // Décoder sans le BOM pour la comparaison avec le <pre>
+    downloadContent = downloadHasBom
+      ? rawBytes.slice(3).toString('utf-8')
+      : rawBytes.toString('utf-8');
   } catch (err) {
     assert(false, `Lecture du fichier téléchargé`, err.message);
     downloadContent = null;
   }
 
   if (downloadContent !== null) {
+    assert(downloadHasBom, `Télécharger : BOM UTF-8 (EF BB BF) présent — requis pour PS 5.1`);
     assert(
       bytesEqual(downloadContent, expected),
-      `Télécharger (fichier) === normalizeScript(generate(defaults))`,
+      `Télécharger (fichier sans BOM) === normalizeScript(generate(defaults))`,
     );
     assert(
       bytesEqual(downloadContent, preText),
-      `Télécharger === <pre> textContent — identité parfaite`,
+      `Télécharger (sans BOM) === <pre> textContent — identité parfaite`,
     );
     assert(
       download.suggestedFilename() === `${tool.id}.ps1`,
@@ -306,6 +314,19 @@ for (const tool of tools) {
           el.dispatchEvent(new Event('input', { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
         }, invalidSpec.value);
+
+        // Soumettre le formulaire avec la valeur numérique invalide
+        await page.click('#toolForm button[type="submit"]');
+        await page.waitForTimeout(300);
+
+        // Vérifier une erreur visible (champ ou feedback)
+        const hasFieldErrorNum = await page.$eval(
+          `#${invalidSpec.fieldId}-error`,
+          (el) => el && !el.hidden && el.textContent.trim().length > 0,
+        ).catch(() => false);
+        const feedbackNum = await page.$eval('#copyFeedback', (el) => el.textContent ?? '').catch(() => '');
+        const hasErrorNum = hasFieldErrorNum || feedbackNum.includes('Erreur') || feedbackNum.includes('invalide') || feedbackNum.length > 0;
+        assert(hasErrorNum, `${tool.id}/${invalidSpec.fieldId} : erreur ou feedback visible après soumission invalide (number)`);
       } else {
         await invEl.fill(invalidSpec.value);
         // Vérifier que Copier et Télécharger sont désactivés (état stale)

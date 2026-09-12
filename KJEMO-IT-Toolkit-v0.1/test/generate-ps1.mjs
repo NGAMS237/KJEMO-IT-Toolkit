@@ -10,9 +10,9 @@
  *          test/generated/report.json
  */
 
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, resolve }         from 'node:path';
-import { fileURLToPath }            from 'node:url';
+import { writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
+import { dirname, resolve }                               from 'node:path';
+import { fileURLToPath }                                  from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = resolve(__dirname, '..');
@@ -20,7 +20,19 @@ const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
 const { tools, normalizeScript } = await import(resolve(ROOT, 'dist', 'generators.mjs'));
 
+// BOM UTF-8 : requis pour PowerShell 5.1 (lit les fichiers comme UTF-8)
+const BOM = Buffer.from([0xEF, 0xBB, 0xBF]);
+
+// Vider le répertoire avant chaque génération pour éviter les fichiers obsolètes
 mkdirSync(OUT_DIR, { recursive: true });
+try {
+  const existing = readdirSync(OUT_DIR);
+  for (const f of existing) {
+    if (f.endsWith('.ps1') || f === 'report.json') {
+      rmSync(resolve(OUT_DIR, f));
+    }
+  }
+} catch { /* ignore */ }
 
 // ---------------------------------------------------------------------------
 // Jeux de données communs (par field.id, overrides)
@@ -109,8 +121,19 @@ for (const tool of tools) {
 
     const filename = `${tool.id}__${dataset.name}.ps1`;
     const outPath  = resolve(OUT_DIR, filename);
-    writeFileSync(outPath, content, 'utf-8');
-    report.generated.push({ tool: tool.id, dataset: dataset.name, file: filename, bytes: content.length });
+    // Écriture avec BOM UTF-8 (EF BB BF) pour PS 5.1
+    const contentBuf = Buffer.from(content, 'utf-8');
+    writeFileSync(outPath, Buffer.concat([BOM, contentBuf]));
+    // Vérification des 3 premiers octets
+    const written = Buffer.alloc(3);
+    const fd = (await import('node:fs')).openSync(outPath, 'r');
+    (await import('node:fs')).readSync(fd, written, 0, 3, 0);
+    (await import('node:fs')).closeSync(fd);
+    if (!written.equals(BOM)) {
+      console.error(`[BOM FAIL] ${filename} : premiers octets ${written.toString('hex')} ≠ efbbbf`);
+      report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM manquant' });
+    }
+    report.generated.push({ tool: tool.id, dataset: dataset.name, file: filename, bytes: contentBuf.length + 3 });
   }
 }
 

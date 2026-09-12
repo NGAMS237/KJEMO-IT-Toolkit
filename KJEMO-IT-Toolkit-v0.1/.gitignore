@@ -1,0 +1,12 @@
+# Dépendances Node.js
+node_modules/
+
+# Scripts .ps1 générés par les tests (ne jamais committer)
+test/generated/
+
+# Fichiers temporaires
+*.tmp
+*.log
+
+# Copie divergente interdite
+src/generators.mjs
