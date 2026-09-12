@@ -7,7 +7,9 @@
     "generate": "node test/generate-ps1.mjs",
     "test:identity": "node test/identity.test.mjs",
     "test:browser": "node test/browser-identity.test.mjs",
-    "test": "node test/identity.test.mjs && node test/browser-identity.test.mjs"
+    "test": "node test/identity.test.mjs && node test/browser-identity.test.mjs",
+    "test:roundtrip:emit": "node test/roundtrip.mjs emit test/generated/roundtrip",
+    "test:roundtrip:verify": "node test/roundtrip.mjs verify test/generated/roundtrip"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1"

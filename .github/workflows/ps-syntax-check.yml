@@ -8,7 +8,7 @@
 #   1. Génération des 64 fichiers .ps1 (8 assistants × 8 jeux de données).
 #   2. Vérification syntaxe avec PS 5.1 (powershell.exe) et PS 7 (pwsh).
 #   3. Tests fonctionnels Node.js (identity.test.mjs — sections A et B).
-#   4. Tests aller-retour Unicode (Test-PS-Roundtrip.ps1).
+#   4. Test aller-retour Unicode réel JS → PS1 → PowerShell (Test-PS-Roundtrip-v2.ps1).
 #   5. Tests navigateur Playwright (browser-identity.test.mjs).
 #   6. Échec si UNE SEULE erreur de parsing ou de test est trouvée.
 #

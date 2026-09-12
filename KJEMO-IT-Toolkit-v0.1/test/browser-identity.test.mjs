@@ -129,6 +129,40 @@ function bytesEqual(a, b) {
 }
 
 // ---------------------------------------------------------------------------
+// Champs Unicode par outil — chaque valeur a été vérifiée contre tool.validate()
+//
+// 6 outils disposent d'un champ texte qui ACCEPTE réellement O’Brien (U+2019).
+// 2 outils (second-dc, gpo-password) n'ont que des champs FQDN ou numériques :
+// une apostrophe y est refusée par conception (un nom de domaine ne peut pas en
+// contenir). Pour ceux-là on teste le chemin de REFUS, marqué rejects: true.
+// ---------------------------------------------------------------------------
+const UNICODE_INPUTS = {
+  'static-ip':     { fieldId: 'adapter',  value: 'Ethernet O’Brien' },
+  'ad-ou':         { fieldId: 'ou',       value: 'Employes O’Brien' },
+  'ad-user':       { fieldId: 'lastName', value: 'O’Brien' },
+  'shared-folder': { fieldId: 'share',    value: 'Comptabilite O’Brien' },
+  'wifi-repair':   { fieldId: 'adapter',  value: 'Wi-Fi O’Brien' },
+  'disk-scan':     { fieldId: 'path',     value: 'C:\\Donnees O’Brien' },
+  // Refus attendu — aucun champ de ces outils n'accepte U+2019 (FQDN / nombres)
+  'second-dc':     { fieldId: 'source',   value: 'srv O’Brien.hopitalbn.lan', rejects: true },
+  'gpo-password':  { fieldId: 'domain',   value: 'hopital O’Brien.lan',       rejects: true },
+};
+
+// ---------------------------------------------------------------------------
+// Valeurs invalides par outil — dont les deux champs numériques exigés :
+//   static-ip    prefix = 99  (hors plage 1-32)
+//   gpo-password length = 0   (hors plage)
+// ---------------------------------------------------------------------------
+const INVALID_INPUTS = {
+  'static-ip':     { fieldId: 'prefix', value: '99', isNumber: true },
+  'ad-ou':         { fieldId: 'domain', value: 'nodot' },
+  'ad-user':       { fieldId: 'sam',    value: '' },
+  'shared-folder': { fieldId: 'path',   value: '\\\\UNC\\Partage' },
+  'second-dc':     { fieldId: 'source', value: 'nodot' },
+  'gpo-password':  { fieldId: 'length', value: '0', isNumber: true },
+};
+
+// ---------------------------------------------------------------------------
 // Tests par outil
 // ---------------------------------------------------------------------------
 for (const tool of tools) {
@@ -261,102 +295,182 @@ for (const tool of tools) {
   );
 
   // -------------------------------------------------------------------------
-  // 5. Remplir un champ avec U+2019, soumettre, vérifier le <pre>
+  // 5. Champ Unicode RÉEL : saisir O’Brien (U+2019) dans un champ qui l'accepte,
+  //    soumettre, et vérifier que la génération réussit de bout en bout.
+  //    Aucun waitForTimeout : on attend des états observables du DOM.
   // -------------------------------------------------------------------------
-  const firstTextField = tool.fields.find((f) => !f.type || f.type === 'text');
-  if (firstTextField) {
-    await page.fill(`#${firstTextField.id}`, `Test O’Brien`);
-    await page.click('#toolForm button[type="submit"]');
-    // Attendre la mise à jour du <pre>
-    await page.waitForTimeout(200);
-    const preAfterTypo = await page.$eval('#scriptOutput', (el) => el.textContent);
-    const curlySingleAfterFill = /[‘’]/.test(preAfterTypo);
-    assert(
-      !curlySingleAfterFill,
-      `Aucun U+2018/U+2019 dans <pre> après saisie "O’Brien" (U+2019)`,
+  const uni = UNICODE_INPUTS[tool.id];
+  if (uni) {
+    // Repartir d'un état propre
+    await page.goto(BASE_URL);
+    await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+    await page.locator('#toolGrid .open-tool').nth(toolIndex).click();
+    await page.waitForSelector('#scriptOutput', { timeout: 5000 });
+
+    const preBefore = await page.$eval('#scriptOutput', (el) => el.textContent);
+
+    await page.fill(`#${uni.fieldId}`, uni.value);
+
+    // État observable n°1 : la modification marque l'aperçu obsolète
+    await page.waitForFunction(
+      () => document.querySelector('#copyButton')?.disabled === true
+         && document.querySelector('#scriptOutput')?.classList.contains('stale'),
+      { timeout: 5000 },
     );
-  }
+    assert(
+      true,
+      `${tool.id}/${uni.fieldId} Unicode : aperçu marqué obsolète + boutons désactivés après saisie`,
+    );
 
-  // -------------------------------------------------------------------------
-  // 6. Section B — modifier un champ vers invalide : boutons désactivés (stale)
-  //    puis soumettre : erreur visible, <pre> inchangé
-  // -------------------------------------------------------------------------
-  // Trouver un champ texte pour injecter une valeur invalide selon l'outil
-  const INVALID_INPUTS = {
-    'static-ip':     { fieldId: 'prefix', value: '99', isNumber: true },
-    'ad-ou':         { fieldId: 'domain', value: 'nodot'    },
-    'ad-user':       { fieldId: 'sam',    value: ''         },
-    'shared-folder': { fieldId: 'path',   value: '\\\\UNC\\Partage' },
-    'second-dc':     { fieldId: 'source', value: 'nodot'   },
-    'gpo-password':  { fieldId: 'length', value: '0', isNumber: true },
-  };
+    await page.click('#toolForm button[type="submit"]');
 
-  const invalidSpec = INVALID_INPUTS[tool.id];
-  if (invalidSpec) {
-    const fieldEl = page.locator(`#${invalidSpec.fieldId}`);
-    const tagName = await fieldEl.evaluate((el) => el.tagName.toLowerCase()).catch(() => null);
-    if (tagName) {
-      // Régénérer d'abord avec les valeurs par défaut pour repartir d'un état propre
-      await page.goto(BASE_URL);
-      await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
-      const openButtons2 = page.locator('#toolGrid .open-tool');
-      await openButtons2.nth(toolIndex).click();
-      await page.waitForSelector('#scriptOutput', { timeout: 5000 });
+    if (uni.rejects) {
+      // Ce champ (FQDN) refuse légitimement U+2019 : on attend l'erreur visible.
+      await page.waitForFunction(
+        (fid) => {
+          const span = document.querySelector(`#${fid}-error`);
+          return span && !span.hidden && span.textContent.trim().length > 0;
+        },
+        uni.fieldId,
+        { timeout: 5000 },
+      );
+      assert(true, `${tool.id}/${uni.fieldId} Unicode refusé (FQDN) : message d'erreur visible`);
 
-      // Saisir la valeur invalide — les boutons doivent passer en stale
-      const invEl = page.locator(`#${invalidSpec.fieldId}`);
-      if (tagName === 'select') {
-        // Select : on ne peut pas mettre une valeur hors liste, tester via soumettre direct
-      } else if (invalidSpec.isNumber) {
-        // input[type=number] : forcer la valeur via evaluate puis déclencher l'événement input
-        await invEl.evaluate((el, val) => {
-          el.value = val;
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-        }, invalidSpec.value);
+      const inputInvalid = await page.$eval(`#${uni.fieldId}`, (el) => el.classList.contains('field-invalid'));
+      assert(inputInvalid, `${tool.id}/${uni.fieldId} Unicode refusé : champ marqué field-invalid`);
 
-        // Soumettre le formulaire avec la valeur numérique invalide
-        await page.click('#toolForm button[type="submit"]');
-        await page.waitForTimeout(300);
+      const cDis = await page.$eval('#copyButton',     (el) => el.disabled);
+      const dDis = await page.$eval('#downloadButton', (el) => el.disabled);
+      assert(cDis && dDis, `${tool.id}/${uni.fieldId} Unicode refusé : Copier et Télécharger restent désactivés`);
 
-        // Vérifier une erreur visible (champ ou feedback)
-        const hasFieldErrorNum = await page.$eval(
-          `#${invalidSpec.fieldId}-error`,
-          (el) => el && !el.hidden && el.textContent.trim().length > 0,
-        ).catch(() => false);
-        const feedbackNum = await page.$eval('#copyFeedback', (el) => el.textContent ?? '').catch(() => '');
-        const hasErrorNum = hasFieldErrorNum || feedbackNum.includes('Erreur') || feedbackNum.includes('invalide') || feedbackNum.length > 0;
-        assert(hasErrorNum, `${tool.id}/${invalidSpec.fieldId} : erreur ou feedback visible après soumission invalide (number)`);
-      } else {
-        await invEl.fill(invalidSpec.value);
-        // Vérifier que Copier et Télécharger sont désactivés (état stale)
-        const copyDisabled = await page.$eval('#copyButton',    (el) => el.disabled);
-        const dlDisabled   = await page.$eval('#downloadButton', (el) => el.disabled);
-        assert(copyDisabled && dlDisabled, `${tool.id}/${invalidSpec.fieldId} : boutons désactivés après modification (stale)`);
+      const preUnchanged = await page.$eval('#scriptOutput', (el) => el.textContent);
+      assert(
+        bytesEqual(preUnchanged, preBefore),
+        `${tool.id}/${uni.fieldId} Unicode refusé : aperçu inchangé (ancien résultat non présenté comme valide)`,
+      );
+    } else {
+      // État observable n°2 : la génération a réussi
+      await page.waitForFunction(
+        () => document.querySelector('#copyFeedback')?.textContent === 'Aperçu actualisé.'
+           && document.querySelector('#copyButton')?.disabled === false
+           && document.querySelector('#downloadButton')?.disabled === false
+           && !document.querySelector('#scriptOutput')?.classList.contains('stale'),
+        { timeout: 5000 },
+      );
+      assert(true, `${tool.id}/${uni.fieldId} Unicode : génération réussie (feedback « Aperçu actualisé. »)`);
 
-        // Soumettre le formulaire avec la valeur invalide
-        await page.click('#toolForm button[type="submit"]');
-        await page.waitForTimeout(300);
+      const cEn = await page.$eval('#copyButton',     (el) => el.disabled === false);
+      const dEn = await page.$eval('#downloadButton', (el) => el.disabled === false);
+      assert(cEn && dEn, `${tool.id}/${uni.fieldId} Unicode : Copier et Télécharger réactivés`);
 
-        // Vérifier soit une erreur sur le champ, soit un message feedbackEl
-        const hasFieldError = await page.$eval(
-          `#${invalidSpec.fieldId}-error`,
-          (el) => el && !el.hidden && el.textContent.trim().length > 0,
-        ).catch(() => false);
-        const feedbackText  = await page.$eval('#copyFeedback', (el) => el.textContent ?? '').catch(() => '');
-        const hasError = hasFieldError || feedbackText.includes('Erreur') || feedbackText.includes('invalide');
-        assert(hasError, `${tool.id}/${invalidSpec.fieldId} : erreur visible après soumission invalide`);
+      const preAfter = await page.$eval('#scriptOutput', (el) => el.textContent);
+      assert(
+        !bytesEqual(preAfter, preBefore),
+        `${tool.id}/${uni.fieldId} Unicode : l'aperçu a changé après génération`,
+      );
 
-        // Les boutons doivent rester désactivés
-        const copyStillDisabled = await page.$eval('#copyButton',    (el) => el.disabled);
-        const dlStillDisabled   = await page.$eval('#downloadButton', (el) => el.disabled);
-        assert(
-          copyStillDisabled && dlStillDisabled,
-          `${tool.id}/${invalidSpec.fieldId} : boutons restent désactivés après soumission invalide`,
-        );
-      }
+      // La valeur exacte (U+2019 compris) doit être présente sous forme Base64
+      const b64 = Buffer.from(uni.value, 'utf-8').toString('base64');
+      assert(
+        preAfter.includes(b64),
+        `${tool.id}/${uni.fieldId} Unicode : Base64 de "${uni.value}" présent dans le script généré`,
+      );
+
+      // Identité complète avec la référence Node
+      const unicodeVals = { ...defaultVals, [uni.fieldId]: uni.value };
+      const expectedUnicode = normalizeScript(tool.generate(unicodeVals));
+      assert(
+        bytesEqual(preAfter, expectedUnicode),
+        `${tool.id}/${uni.fieldId} Unicode : <pre> === normalizeScript(generate(valeurs Unicode))`,
+      );
+
+      // Le script ne doit contenir aucun U+2018/U+2019 littéral (tout est en Base64)
+      assert(
+        !/[‘’]/.test(preAfter),
+        `${tool.id}/${uni.fieldId} Unicode : aucun U+2018/U+2019 littéral dans le script généré`,
+      );
     }
   }
+
+  // -------------------------------------------------------------------------
+  // 6. Valeur invalide : erreur visible, champ marqué, boutons désactivés,
+  //    soumission refusée, ancien résultat non présenté comme valide.
+  //    Couvre aussi les champs number (prefix=99, length=0).
+  // -------------------------------------------------------------------------
+  const invalidSpec = INVALID_INPUTS[tool.id];
+  if (invalidSpec) {
+    await page.goto(BASE_URL);
+    await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+    await page.locator('#toolGrid .open-tool').nth(toolIndex).click();
+    await page.waitForSelector('#scriptOutput', { timeout: 5000 });
+
+    const preBeforeInvalid = await page.$eval('#scriptOutput', (el) => el.textContent);
+    const invEl = page.locator(`#${invalidSpec.fieldId}`);
+
+    if (invalidSpec.isNumber) {
+      // input[type=number] : fill() refuse le texte, on force la valeur + événements
+      await invEl.evaluate((el, val) => {
+        el.value = val;
+        el.dispatchEvent(new Event('input',  { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }, invalidSpec.value);
+    } else {
+      await invEl.fill(invalidSpec.value);
+    }
+
+    // État observable : aperçu obsolète, boutons désactivés
+    await page.waitForFunction(
+      () => document.querySelector('#copyButton')?.disabled === true
+         && document.querySelector('#downloadButton')?.disabled === true
+         && document.querySelector('#scriptOutput')?.classList.contains('stale'),
+      { timeout: 5000 },
+    );
+    assert(
+      true,
+      `${tool.id}/${invalidSpec.fieldId}=${JSON.stringify(invalidSpec.value)} : boutons désactivés après modification (stale)`,
+    );
+
+    await page.click('#toolForm button[type="submit"]');
+
+    // État observable : message d'erreur affiché sur le champ fautif
+    await page.waitForFunction(
+      (fid) => {
+        const span = document.querySelector(`#${fid}-error`);
+        return span && !span.hidden && span.textContent.trim().length > 0;
+      },
+      invalidSpec.fieldId,
+      { timeout: 5000 },
+    );
+    const errText = await page.$eval(`#${invalidSpec.fieldId}-error`, (el) => el.textContent.trim());
+    assert(
+      errText.length > 0,
+      `${tool.id}/${invalidSpec.fieldId} : message d'erreur visible — « ${errText.slice(0, 60)} »`,
+    );
+
+    // Le champ est marqué invalide
+    const fieldInvalid = await page.$eval(`#${invalidSpec.fieldId}`, (el) => el.classList.contains('field-invalid'));
+    assert(fieldInvalid, `${tool.id}/${invalidSpec.fieldId} : champ marqué field-invalid`);
+
+    // Les DEUX boutons restent désactivés après la soumission invalide
+    const copyStill = await page.$eval('#copyButton',     (el) => el.disabled);
+    const dlStill   = await page.$eval('#downloadButton', (el) => el.disabled);
+    assert(
+      copyStill && dlStill,
+      `${tool.id}/${invalidSpec.fieldId} : Copier ET Télécharger restent désactivés après soumission invalide`,
+    );
+
+    // La soumission est refusée : l'aperçu n'a pas été régénéré
+    const preAfterInvalid = await page.$eval('#scriptOutput', (el) => el.textContent);
+    assert(
+      bytesEqual(preAfterInvalid, preBeforeInvalid),
+      `${tool.id}/${invalidSpec.fieldId} : aperçu inchangé — ancien résultat non présenté comme valide`,
+    );
+
+    // L'aperçu reste marqué obsolète
+    const stillStale = await page.$eval('#scriptOutput', (el) => el.classList.contains('stale'));
+    assert(stillStale, `${tool.id}/${invalidSpec.fieldId} : aperçu toujours marqué obsolète (stale)`);
+  }
+
 
   await context.close();
 }
