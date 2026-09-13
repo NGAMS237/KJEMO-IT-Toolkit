@@ -31,3 +31,9 @@ pre.cmd{background:#0b0e1c;border:1px solid #282e4e;border-radius:7px;color:#dbe
 .error-entry .err-cause,.error-entry .err-fix{margin:4px 0;font-size:13px;color:var(--muted);line-height:1.6}
 .error-entry strong{color:#c6cbe2}
 .common-errors{padding-bottom:4px}
+
+/* LOT 1 — moteur de recherche : motif de correspondance et erreur commune */
+.match-reason{margin:2px 0 8px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan);font-weight:650}
+.common-error-banner{border:1px solid var(--border);border-left:3px solid var(--warn);background:#11152a;border-radius:10px;padding:14px 16px;margin:0 0 18px}
+.common-error-banner .banner-title{margin:0 0 10px;font-size:14px;color:#ffe0a2}
+.common-error-banner .error-entry{margin:10px 0 4px}

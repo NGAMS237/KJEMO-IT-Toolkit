@@ -260,6 +260,76 @@ export function textToCode(text) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// Moteur de recherche
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalise une chaîne pour la recherche : minuscules, accents retirés,
+ * ponctuation réduite à des espaces. Permet à « reseau » de trouver « Réseau »
+ * et à « wi fi » de trouver « Wi-Fi ».
+ */
+export function normalizeSearch(v) {
+  return String(v ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/**
+ * Champs indexés d'un outil, groupés par motif de correspondance.
+ * L'ordre définit la priorité affichée à l'utilisateur.
+ */
+export function searchFields(tool) {
+  return [
+    { reason: 'titre',      weight: 100, text: tool.title },
+    { reason: 'mot-clé',    weight:  80, text: (tool.keywords ?? []).join(' ') },
+    { reason: 'description',weight:  60, text: tool.summary },
+    { reason: 'catégorie',  weight:  50, text: tool.category },
+    { reason: 'message d\u2019erreur', weight: 70,
+      text: (tool.commonErrors ?? []).map((e) => e.message).join(' ') },
+    { reason: 'cause ou correction', weight: 40,
+      text: (tool.commonErrors ?? []).map((e) => `${e.cause} ${e.fix}`).join(' ') },
+    { reason: 'prérequis',  weight:  30,
+      text: [...(tool.prereqs ?? []), ...(tool.os ?? [])].join(' ') },
+  ];
+}
+
+/**
+ * Recherche un outil. Tous les mots de la requête doivent être trouvés
+ * (ET logique), chacun pouvant l'être dans un champ différent.
+ *
+ * Retourne [{ tool, reason, score }] trié par pertinence décroissante.
+ * Une requête vide retourne tous les outils de la catégorie.
+ */
+export function searchTools(query, category = 'Tout', list = tools) {
+  const parCategorie = list.filter((t) => category === 'Tout' || t.category === category);
+  const mots = normalizeSearch(query).split(' ').filter(Boolean);
+  if (mots.length === 0) return parCategorie.map((tool) => ({ tool, reason: null, score: 0 }));
+
+  const resultats = [];
+  for (const tool of parCategorie) {
+    const champs = searchFields(tool).map((c) => ({ ...c, norm: normalizeSearch(c.text) }));
+    let score = 0;
+    let meilleur = null;
+    let tousTrouves = true;
+
+    for (const mot of mots) {
+      const trouve = champs.filter((c) => c.norm.includes(mot));
+      if (trouve.length === 0) { tousTrouves = false; break; }
+      const top = trouve.reduce((a, b) => (b.weight > a.weight ? b : a));
+      score += top.weight;
+      if (!meilleur || top.weight > meilleur.weight) meilleur = top;
+    }
+
+    if (tousTrouves) resultats.push({ tool, reason: meilleur?.reason ?? null, score });
+  }
+
+  return resultats.sort((a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title, 'fr'));
+}
+
+// ---------------------------------------------------------------------------
 // EXECUTION_NOTES — bloc commun à toutes les fiches
 // ---------------------------------------------------------------------------
 /**
@@ -375,6 +445,21 @@ export const EXECUTION_NOTES = {
   ],
 };
 
+
+/**
+ * Recherche dans les erreurs COMMUNES à tous les scripts (EXECUTION_NOTES).
+ * Un technicien qui tape « signé numériquement » cherche une explication, pas
+ * une liste des huit outils : on lui répond par l'explication elle-même.
+ */
+export function searchCommonErrors(query) {
+  const mots = normalizeSearch(query).split(' ').filter(Boolean);
+  if (mots.length === 0) return [];
+  return EXECUTION_NOTES.errors.filter((e) => {
+    const champ = normalizeSearch(`${e.message} ${e.code ?? ''} ${e.cause} ${e.fix}`);
+    return mots.every((mot) => champ.includes(mot));
+  });
+}
+
 export const tools = [
   // ── 1. IP statique ──────────────────────────────────────────────────────
   {
@@ -434,6 +519,20 @@ export const tools = [
       'Cliquer sur la carte concernée puis Modifier à côté de l\u2019attribution IP.',
       'Choisir Manuel, activer IPv4 et saisir IP, préfixe, passerelle et DNS.',
       'Enregistrer puis ouvrir une console et vérifier avec ipconfig /all.',
+    ],
+    keywords: [
+      'ip fixe',
+      'adresse ip',
+      'ipv4',
+      'passerelle',
+      'gateway',
+      'masque',
+      'prefixe',
+      'dns',
+      'carte reseau',
+      'tcp/ip',
+      'dhcp',
+      'configuration reseau',
     ],
     requiresAdmin: true,
     os: [
@@ -522,6 +621,16 @@ export const tools = [
       'Développer le domaine puis cliquer droit sur le conteneur parent.',
       'Choisir Nouveau > Unité d\u2019organisation.',
       'Saisir le nom et conserver la protection contre la suppression accidentelle.',
+    ],
+    keywords: [
+      'unite d organisation',
+      'ou',
+      'organizational unit',
+      'annuaire',
+      'active directory',
+      'conteneur',
+      'arborescence',
+      'ldap',
     ],
     requiresAdmin: false,
     os: [
@@ -626,6 +735,17 @@ export const tools = [
       'Saisir prénom, nom et identifiant.',
       '\u00ab L\u2019utilisateur doit changer le mot de passe \u00bb : cocher cette option.',
     ],
+    keywords: [
+      'utilisateur',
+      'compte',
+      'nouvel employe',
+      'embauche',
+      'samaccountname',
+      'upn',
+      'mot de passe',
+      'creation de compte',
+      'ad',
+    ],
     requiresAdmin: false,
     os: [
       'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
@@ -711,6 +831,17 @@ export const tools = [
       '\u00ab Partager ce dossier \u00bb : cocher, définir le nom et régler les autorisations.',
       "Dans l\u2019onglet Sécurité, ajouter le groupe AD et ses permissions NTFS.",
     ],
+    keywords: [
+      'partage',
+      'dossier partage',
+      'smb',
+      'cifs',
+      'ntfs',
+      'droits',
+      'permissions',
+      'acces reseau',
+      'lecteur reseau',
+    ],
     requiresAdmin: true,
     os: [
       'Windows 10 et 11',
@@ -792,6 +923,17 @@ export const tools = [
       'Cliquer sur la notification puis \u00ab Promouvoir ce serveur en contrôleur de domaine \u00bb.',
       "\u00ab Ajouter un contrôleur de domaine à un domaine existant \u00bb : saisir le domaine et les identifiants.",
     ],
+    keywords: [
+      'controleur de domaine',
+      'dc',
+      'second dc',
+      'replication',
+      'promotion',
+      'dcpromo',
+      'addsdeployment',
+      'redondance',
+      'tolerance de panne',
+    ],
     requiresAdmin: true,
     os: [
       'Windows Server 2012 et versions ultérieures uniquement',
@@ -867,6 +1009,17 @@ export const tools = [
       "Repérer la carte Wi-Fi puis choisir Désactiver l\u2019appareil et Réactiver l\u2019appareil.",
       "Si cela ne résout rien : clic droit > Désinstaller l\u2019appareil, puis Action > Rechercher les modifications sur le matériel.",
       "Télécharger le pilote depuis le fabricant seulement si Windows ne réinstalle pas la carte.",
+    ],
+    keywords: [
+      'wifi',
+      'wi-fi',
+      'sans fil',
+      'wlan',
+      'wlansvc',
+      'connexion',
+      'reseau sans fil',
+      'plus d internet',
+      'deconnexion',
     ],
     requiresAdmin: true,
     os: [
@@ -950,6 +1103,16 @@ export const tools = [
       "Développer la forêt, le domaine, puis clic droit sur Default Domain Policy > Modifier.",
       'Aller à Configuration ordinateur > Paramètres Windows > Paramètres de sécurité > Stratégies de compte.',
       'Configurer les stratégies de mot de passe et de verrouillage de compte.',
+    ],
+    keywords: [
+      'mot de passe',
+      'strategie de mot de passe',
+      'politique',
+      'complexite',
+      'verrouillage',
+      'expiration',
+      'gpo',
+      'domaine',
     ],
     requiresAdmin: false,
     os: [
@@ -1195,6 +1358,17 @@ function createDiskScanTool() {
       "Pour un dossier précis, ouvrir PowerShell et utiliser le chemin exact; l\u2019Explorateur peut aussi afficher les propriétés du disque.",
       'Dans un projet SaaS, examiner en priorité node_modules, .next, dist, build, out, coverage et les caches.',
       'Ne sélectionner pour la corbeille que des éléments non protégés; ne jamais toucher à .git, .env, bases ou sauvegardes.',
+    ],
+    keywords: [
+      'disque',
+      'espace disque',
+      'disque plein',
+      'gros fichiers',
+      'nettoyage',
+      'stockage',
+      'saturation',
+      'c: plein',
+      'manque de place',
     ],
     requiresAdmin: false,
     os: [

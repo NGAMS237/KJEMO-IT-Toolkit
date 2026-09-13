@@ -39,7 +39,7 @@ const ROOT      = resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 // Importer les générateurs depuis le module source (pas depuis dist/app.js)
 // ---------------------------------------------------------------------------
-const { tools, normalizeScript, EXECUTION_NOTES } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { tools, normalizeScript, EXECUTION_NOTES, searchTools, searchCommonErrors } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
 
 // ---------------------------------------------------------------------------
 // Serveur HTTP statique minimal pour dist/
@@ -627,6 +627,90 @@ for (const tool of tools) {
 
 
   await context.close();
+}
+
+
+// ---------------------------------------------------------------------------
+// LOT 1 — Moteur de recherche dans le navigateur
+// ---------------------------------------------------------------------------
+console.log('\n[recherche] — moteur de recherche et bandeau d\u2019erreur commune');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+
+  const nbCartes = () => page.locator('#toolGrid .open-tool').count();
+  const saisir = async (q) => {
+    await page.fill('#search', q);
+    // état observable : le compteur reflète le résultat attendu côté Node
+    const attendu = searchTools(q, 'Tout').length;
+    await page.waitForFunction(
+      (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+      attendu,
+      { timeout: 5000 },
+    ).catch(() => {});
+    return attendu;
+  };
+
+  assert(await nbCartes() === tools.length, `sans recherche : les ${tools.length} outils sont affichés`);
+
+  // Chaque requête doit donner en page exactement ce que searchTools donne en Node
+  for (const q of ['reseau', 'RÉSEAU', 'wifi', 'ip fixe', 'disque plein', 'RSAT', 'Install-WindowsFeature', 'mot de passe']) {
+    const attendu = await saisir(q);
+    const obtenu  = await nbCartes();
+    assert(obtenu === attendu, `« ${q} » : ${obtenu} carte(s) en page === ${attendu} attendue(s) par searchTools`);
+  }
+
+  // Insensibilité aux accents, vérifiée dans le navigateur
+  await saisir('reseau'); const sansAccent = await nbCartes();
+  await saisir('réseau'); const avecAccent = await nbCartes();
+  assert(sansAccent === avecAccent && sansAccent > 0,
+    `accents ignorés : « reseau » (${sansAccent}) === « réseau » (${avecAccent})`);
+
+  // Motif de correspondance affiché sur les cartes
+  await saisir('wifi');
+  const motifs = await page.locator('#toolGrid .match-reason').count();
+  assert(motifs > 0, 'le motif de correspondance est affiché sur les cartes trouvées');
+
+  await page.fill('#search', '');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 5000 },
+  );
+  const motifsVides = await page.locator('#toolGrid .match-reason').count();
+  assert(motifsVides === 0, 'sans recherche : aucun motif de correspondance affiché');
+
+  // Requête sans résultat
+  await page.fill('#search', 'zzzznexistepas');
+  await page.waitForFunction(
+    () => document.querySelector('#toolGrid .empty') !== null, { timeout: 5000 });
+  assert(await nbCartes() === 0, 'requête absurde : aucune carte');
+  const vide = await page.$eval('#toolGrid .empty', (el) => el.textContent);
+  assert(/message d\u2019erreur/.test(vide),
+    'le message vide suggère de coller le message d\u2019erreur');
+
+  // Bandeau d'erreur commune — le cas réellement rencontré
+  await page.fill('#search', 'signé numériquement');
+  await page.waitForFunction(
+    () => document.querySelector('#commonErrorBanner') !== null, { timeout: 5000 });
+  const banniere = await page.$eval('#commonErrorBanner', (el) => el.textContent);
+  assert(/tous les scripts/.test(banniere),
+    'bandeau : indique que l\u2019erreur concerne tous les scripts');
+  assert(/Unblock-File/.test(banniere),
+    'bandeau : donne la commande Unblock-File');
+  assert(!/Set-ExecutionPolicy/.test(banniere),
+    'bandeau : ne conseille pas Set-ExecutionPolicy');
+
+  // Pas de bandeau quand la requête ne vise pas une erreur commune
+  await page.fill('#search', 'wifi');
+  await page.waitForFunction(
+    () => (document.querySelector('#commonErrorZone')?.innerHTML ?? '') === '', { timeout: 5000 })
+    .catch(() => {});
+  const zoneVide = await page.$eval('#commonErrorZone', (el) => el.innerHTML.trim());
+  assert(zoneVide === '', '« wifi » : aucun bandeau d\u2019erreur commune');
+
+  await ctx.close();
 }
 
 await browser.close();

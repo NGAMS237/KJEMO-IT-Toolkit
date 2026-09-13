@@ -1,6 +1,7 @@
 // Point 2 (Codex) : import depuis './generators.mjs' — même répertoire dist/
 // GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
-import { tools, normalizeScript, textToCode, EXECUTION_NOTES } from './generators.mjs';
+import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
+         searchTools, searchCommonErrors } from './generators.mjs';
 
 const categories = ['Tout', ...new Set(tools.map((tool) => tool.category))];
 let selectedCategory = 'Tout';
@@ -18,25 +19,84 @@ function renderNavigation() {
   }));
 }
 
+function currentQuery() {
+  return document.querySelector('#search').value.trim();
+}
+
+/**
+ * Résultats de recherche enrichis : chaque entrée porte le motif de
+ * correspondance, affiché sur la carte pour que l'utilisateur comprenne
+ * POURQUOI cet outil lui est proposé.
+ */
+function searchResults() {
+  return searchTools(currentQuery(), selectedCategory);
+}
+
 function filteredTools() {
-  const query = document.querySelector('#search').value.trim().toLocaleLowerCase('fr');
-  return tools.filter((tool) => (selectedCategory === 'Tout' || tool.category === selectedCategory) && `${tool.title} ${tool.summary} ${tool.category}`.toLocaleLowerCase('fr').includes(query));
+  return searchResults().map((r) => r.tool);
+}
+
+/**
+ * Bandeau affiché quand la requête correspond à une erreur commune à tous les
+ * scripts. Répondre par l'explication vaut mieux que lister les huit outils.
+ */
+function commonErrorBanner(query) {
+  const hits = searchCommonErrors(query);
+  if (hits.length === 0) return '';
+  const blocs = hits.map((e) => `<div class="error-entry">`
+    + `<p class="err-msg">${textToCode(e.message)}`
+    + (e.code ? ` <span class="err-code">${textToCode(e.code)}</span>` : '')
+    + `</p>`
+    + `<p class="err-cause"><strong>Cause :</strong> ${textToCode(e.cause)}</p>`
+    + `<p class="err-fix"><strong>Correction :</strong> ${textToCode(e.fix)}</p>`
+    + (e.command ? `<pre class="cmd">${textToCode(e.command)}</pre>` : '')
+    + `</div>`).join('');
+  return `<div class="common-error-banner" id="commonErrorBanner">`
+    + `<p class="banner-title">Cette erreur concerne <strong>tous les scripts</strong>, pas un outil en particulier.</p>`
+    + blocs
+    + `</div>`;
 }
 
 function renderHome() {
-  const grid = document.querySelector('#toolGrid');
-  const list = filteredTools();
-  document.querySelector('#toolCount').textContent = `${list.length} outil${list.length > 1 ? 's' : ''}`;
+  const grid    = document.querySelector('#toolGrid');
+  const query   = currentQuery();
+  const results = searchResults();
+
+  // Bandeau d'erreur commune, inséré avant la grille
+  const zone = document.querySelector('#commonErrorZone');
+  if (zone) zone.innerHTML = commonErrorBanner(query);
+
+  document.querySelector('#toolCount').textContent =
+    `${results.length} outil${results.length > 1 ? 's' : ''}`;
+
   grid.innerHTML = '';
-  if (!list.length) { grid.innerHTML = '<div class="empty">Aucun outil ne correspond à cette recherche.</div>'; return; }
+  if (!results.length) {
+    grid.innerHTML = query
+      ? `<div class="empty">Aucun outil ne correspond à « ${textToCode(query)} ».<br />`
+        + `Essaie un mot plus court, ou colle le message d\u2019erreur que tu vois.</div>`
+      : '<div class="empty">Aucun outil dans cette catégorie.</div>';
+    return;
+  }
+
   const template = document.querySelector('#toolTemplate');
-  list.forEach((tool) => {
+  results.forEach(({ tool, reason }) => {
     const card = template.content.cloneNode(true);
     card.querySelector('.tool-icon').textContent = tool.icon;
     card.querySelector('.tag').textContent = tool.category.toUpperCase();
     card.querySelector('h3').textContent = tool.title;
     card.querySelector('p').textContent = tool.summary;
-    card.querySelector('.open-tool').addEventListener('click', () => { currentTool = tool; currentTab = 'assistant'; render(); });
+
+    // Motif de correspondance — seulement en situation de recherche
+    if (reason) {
+      const why = document.createElement('p');
+      why.className = 'match-reason';
+      why.textContent = `Correspond au ${reason}`;
+      card.querySelector('h3').after(why);
+    }
+
+    card.querySelector('.open-tool').addEventListener('click', () => {
+      currentTool = tool; currentTab = 'assistant'; render();
+    });
     grid.append(card);
   });
 }

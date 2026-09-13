@@ -28,6 +28,9 @@ import {
   escapePowerShellDoubleQuoted,
   escapeLdapRdn,
   EXECUTION_NOTES,
+  normalizeSearch,
+  searchTools,
+  searchCommonErrors,
   validateDomain,
   validateIPv4,
   validateSamAccountName,
@@ -644,6 +647,95 @@ assert(/-ExecutionPolicy Bypass -File/.test(toutLeTexte),
   'EXECUTION_NOTES : propose une session isolée (portée Process) comme repli');
 assert(EXECUTION_NOTES.sources.every((so) => /^https:\/\/learn\.microsoft\.com\//.test(so.url)),
   'EXECUTION_NOTES : toutes les sources sont sur Microsoft Learn');
+
+
+// ===========================================================================
+// SECTION LOT 1 — Moteur de recherche
+// ===========================================================================
+section('LOT 1 — normalizeSearch');
+
+assert(normalizeSearch('Réseau') === 'reseau', 'accents retirés : Réseau -> reseau');
+assert(normalizeSearch('Wi-Fi') === 'wi fi', 'ponctuation -> espace : Wi-Fi -> wi fi');
+assert(normalizeSearch('  IP   FIXE  ') === 'ip fixe', 'espaces multiples réduits');
+assert(normalizeSearch('É\u00c8\u00ca') === 'eee', 'majuscules accentuées normalisées');
+assert(normalizeSearch(null) === '', 'null -> chaîne vide');
+
+section('LOT 1 — searchTools');
+
+// Requête vide : tous les outils
+assert(searchTools('').length === tools.length,
+  `requête vide -> les ${tools.length} outils`);
+
+// Filtre par catégorie
+const cats = [...new Set(tools.map((t) => t.category))];
+for (const c of cats) {
+  const attendu = tools.filter((t) => t.category === c).length;
+  assert(searchTools('', c).length === attendu,
+    `catégorie « ${c} » -> ${attendu} outil(s)`);
+}
+
+// Insensibilité aux accents et à la casse
+assert(searchTools('reseau').length > 0, '« reseau » sans accent trouve des résultats');
+assert(searchTools('RÉSEAU').length === searchTools('reseau').length,
+  '« RÉSEAU » et « reseau » donnent le même nombre de résultats');
+
+// Recherche par mot-clé métier
+const parMotCle = [
+  ['wifi',        'wifi-repair'],
+  ['ip fixe',     'static-ip'],
+  ['disque plein','disk-scan'],
+  ['dcpromo',     'second-dc'],
+  ['ntfs',        'shared-folder'],
+];
+for (const [q, id] of parMotCle) {
+  const r = searchTools(q);
+  assert(r.some((x) => x.tool.id === id), `« ${q} » trouve ${id}`);
+}
+
+// Recherche par message d'erreur propre à un outil
+const parErreur = searchTools('Install-WindowsFeature');
+assert(parErreur.some((x) => x.tool.id === 'second-dc'),
+  '« Install-WindowsFeature » trouve second-dc par son message d\u2019erreur');
+
+// Recherche par prérequis
+assert(searchTools('RSAT').length >= 3, '« RSAT » trouve les outils Active Directory');
+
+// Tous les mots doivent correspondre (ET logique)
+assert(searchTools('wifi disque').length === 0,
+  'deux mots sans outil commun -> aucun résultat (ET logique)');
+
+// Requête sans correspondance
+assert(searchTools('zzzznexistepas').length === 0, 'requête absurde -> aucun résultat');
+
+// Motif de correspondance renseigné dès qu'il y a une requête
+const avecMotif = searchTools('wifi');
+assert(avecMotif.every((x) => typeof x.reason === 'string' && x.reason.length > 0),
+  'chaque résultat porte un motif de correspondance');
+assert(searchTools('')[0].reason === null,
+  'requête vide -> aucun motif de correspondance');
+
+// Tri par pertinence : un mot du titre passe avant un mot d'un prérequis
+const triMdp = searchTools('mot de passe');
+assert(triMdp.length >= 2 && triMdp[0].tool.id === 'gpo-password',
+  'tri par pertinence : « mot de passe » place gpo-password en tête');
+
+section('LOT 1 — searchCommonErrors');
+
+assert(searchCommonErrors('').length === 0, 'requête vide -> aucune erreur commune');
+assert(searchCommonErrors('zzzznexistepas').length === 0, 'requête absurde -> aucune erreur commune');
+
+// L'erreur réellement rencontrée doit être retrouvée
+const errSignee = searchCommonErrors('signé numériquement');
+assert(errSignee.length === 1, '« signé numériquement » trouve exactement 1 erreur commune');
+assert(errSignee[0] && /Unblock-File/.test(errSignee[0].command ?? ''),
+  'et sa correction est Unblock-File');
+
+// Même sans accents
+assert(searchCommonErrors('signe numeriquement').length === 1,
+  '« signe numeriquement » sans accent trouve la même erreur');
+
+assert(searchCommonErrors('Get-ADUser').length >= 1,
+  '« Get-ADUser » trouve l\u2019erreur de module ActiveDirectory manquant');
 
 // Résumé
 console.log('');
