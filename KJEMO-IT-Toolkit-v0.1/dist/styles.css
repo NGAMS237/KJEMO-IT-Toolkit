@@ -37,3 +37,17 @@ pre.cmd{background:#0b0e1c;border:1px solid #282e4e;border-radius:7px;color:#dbe
 .common-error-banner{border:1px solid var(--border);border-left:3px solid var(--warn);background:#11152a;border-radius:10px;padding:14px 16px;margin:0 0 18px}
 .common-error-banner .banner-title{margin:0 0 10px;font-size:14px;color:#ffe0a2}
 .common-error-banner .error-entry{margin:10px 0 4px}
+
+/* LOT 1 — favoris, historique et routes */
+.tool-card{position:relative}
+.fav-toggle{position:absolute;top:14px;right:14px;background:transparent;border:0;color:#5c6484;font-size:19px;line-height:1;cursor:pointer;padding:4px;border-radius:6px}
+.fav-toggle:hover{color:var(--warn);background:#242947}
+.fav-toggle.is-fav{color:var(--warn)}
+.shortcuts{margin:0 0 22px}
+.shortcuts h2{font-size:14px;color:var(--muted);margin:0 0 10px;font-weight:600;letter-spacing:.02em}
+.shortcut-row{display:flex;flex-wrap:wrap;gap:8px}
+.shortcut{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:7px 14px;cursor:pointer;transition:.12s border-color,.12s transform}
+.shortcut:hover{border-color:#646a9a;transform:translateY(-1px)}
+.shortcut-icon{font-size:15px}
+.shortcut.is-fav{border-color:#5b4a24}
+.shortcut.is-fav .shortcut-icon{color:var(--warn)}

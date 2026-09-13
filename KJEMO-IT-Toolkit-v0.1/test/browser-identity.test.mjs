@@ -713,6 +713,142 @@ console.log('\n[recherche] — moteur de recherche et bandeau d\u2019erreur comm
   await ctx.close();
 }
 
+
+// ---------------------------------------------------------------------------
+// LOT 1 — Routes directes, favoris et historique
+// ---------------------------------------------------------------------------
+console.log('\n[routes] — liens directs, favoris et historique local');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+
+  const cible = tools[2];   // ad-user
+  const autre = tools[5];   // wifi-repair
+
+  // --- 1. Lien direct : ouvrir #/outil/<id> ouvre la fiche au chargement ---
+  await page.goto(`${BASE_URL}/#/outil/${cible.id}`);
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const titreDirect = await page.$eval('.tool-header h1', (el) => el.textContent);
+  assert(titreDirect.includes(cible.title),
+    `lien direct #/outil/${cible.id} ouvre « ${cible.title} »`);
+
+  // --- 2. Rechargement : la fiche reste ouverte ---
+  await page.reload();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const titreApresReload = await page.$eval('.tool-header h1', (el) => el.textContent);
+  assert(titreApresReload.includes(cible.title), 'après rechargement, la fiche reste ouverte');
+
+  // --- 3. Identifiant inconnu : retour propre à l'accueil, sans plantage ---
+  await page.goto(`${BASE_URL}/#/outil/nexistepas`);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  const accueilVisible = await page.$eval('#home', (el) => el.hidden === false);
+  assert(accueilVisible, 'identifiant inconnu dans l\u2019URL : accueil affiché, aucune erreur');
+
+  // --- 4. Ouvrir depuis une carte met l'URL à jour ---
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  const idx = tools.indexOf(autre);
+  await page.locator('#toolGrid .open-tool').nth(idx).click();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const hashApresClic = await page.evaluate(() => location.hash);
+  assert(hashApresClic === `#/outil/${autre.id}`,
+    `clic sur une carte -> URL ${hashApresClic} === #/outil/${autre.id}`);
+
+  // --- 5. Bouton Retour du navigateur ---
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('#home')?.hidden === false, { timeout: 8000 });
+  const retourAccueil = await page.$eval('#home', (el) => el.hidden === false);
+  assert(retourAccueil, 'bouton Retour du navigateur : revient à l\u2019accueil');
+
+  // --- 6. Bouton Suivant ---
+  await page.goForward();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const titreSuivant = await page.$eval('.tool-header h1', (el) => el.textContent);
+  assert(titreSuivant.includes(autre.title), 'bouton Suivant : rouvre la fiche');
+
+  // --- 7. Bouton « Tous les outils » remet l'URL à #/ ---
+  await page.click('#backButton');
+  await page.waitForFunction(() => document.querySelector('#home')?.hidden === false, { timeout: 8000 });
+  const hashRetour = await page.evaluate(() => location.hash);
+  assert(hashRetour === '#/', `bouton « Tous les outils » -> URL ${hashRetour} === #/`);
+
+  // --- 8. Historique : les outils visités apparaissent en raccourci ---
+  await page.waitForSelector('#historiqueSection', { timeout: 8000 }).catch(() => {});
+  const histTexte = await page.$eval('#historiqueSection', (el) => el.textContent).catch(() => '');
+  assert(histTexte.includes(autre.title) && histTexte.includes(cible.title),
+    'historique : les deux outils consultés sont proposés en raccourci');
+
+  // --- 9. Favoris : marquer, vérifier la persistance après rechargement ---
+  const carteCible = page.locator('#toolGrid .tool-card').nth(tools.indexOf(cible));
+  await carteCible.locator('.fav-toggle').click();
+  await page.waitForSelector('#favorisSection', { timeout: 8000 });
+  const favTexte = await page.$eval('#favorisSection', (el) => el.textContent);
+  assert(favTexte.includes(cible.title), `favori ajouté : « ${cible.title} » apparaît dans Favoris`);
+
+  const pressed = await carteCible.locator('.fav-toggle').getAttribute('aria-pressed');
+  assert(pressed === 'true', 'le bouton favori porte aria-pressed="true"');
+
+  await page.reload();
+  await page.waitForSelector('#favorisSection', { timeout: 8000 });
+  const favApresReload = await page.$eval('#favorisSection', (el) => el.textContent);
+  assert(favApresReload.includes(cible.title), 'le favori survit au rechargement de la page');
+
+  // --- 10. Un favori n'apparaît pas en double dans l'historique ---
+  const histApres = await page.$eval('#historiqueSection', (el) => el.textContent).catch(() => '');
+  assert(!histApres.includes(cible.title),
+    'un outil en favori n\u2019est pas répété dans « Consultés récemment »');
+
+  // --- 11. Retirer le favori ---
+  await page.locator('#toolGrid .tool-card').nth(tools.indexOf(cible)).locator('.fav-toggle').click();
+  await page.waitForFunction(() => document.querySelector('#favorisSection') === null, { timeout: 8000 });
+  const plusDeFav = await page.$('#favorisSection');
+  assert(plusDeFav === null, 'favori retiré : la section Favoris disparaît');
+
+  // --- 12. Les raccourcis sont masqués pendant une recherche ---
+  await page.fill('#search', 'wifi');
+  await page.waitForFunction(
+    () => (document.querySelector('#shortcutsZone')?.innerHTML ?? '') === '', { timeout: 5000 })
+    .catch(() => {});
+  const zoneRaccourcis = await page.$eval('#shortcutsZone', (el) => el.innerHTML.trim());
+  assert(zoneRaccourcis === '', 'pendant une recherche, les raccourcis sont masqués');
+
+  await ctx.close();
+}
+
+// --- Stockage indisponible : l'application doit continuer de fonctionner ---
+console.log('\n[stockage] — dégradation propre quand localStorage est bloqué');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  // Faire échouer localStorage AVANT le chargement de l'application
+  await page.addInitScript(() => {
+    const jette = () => { throw new Error('stockage bloqué'); };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { return { getItem: jette, setItem: jette, removeItem: jette }; },
+    });
+  });
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  const cartes = await page.locator('#toolGrid .open-tool').count();
+  assert(cartes === tools.length,
+    `localStorage bloqué : les ${tools.length} outils s\u2019affichent quand même`);
+
+  await page.locator('#toolGrid .open-tool').first().click();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const preOk = await page.$eval('#scriptOutput', (el) => el.textContent.length > 0);
+  assert(preOk, 'localStorage bloqué : une fiche s\u2019ouvre et génère normalement');
+
+  const erreursConsole = [];
+  page.on('pageerror', (e) => erreursConsole.push(e.message));
+  await page.click('#backButton');
+  await page.waitForFunction(() => document.querySelector('#home')?.hidden === false, { timeout: 8000 });
+  assert(erreursConsole.length === 0,
+    `localStorage bloqué : aucune erreur JavaScript non rattrapée (${erreursConsole.length})`);
+
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 

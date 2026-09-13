@@ -15,8 +15,128 @@ function renderNavigation() {
     return `<button data-category="${category}" class="${category === selectedCategory ? 'active' : ''}">${category}<span class="nav-count">${count}</span></button>`;
   }).join('');
   nav.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
-    selectedCategory = button.dataset.category; currentTool = null; render(); document.querySelector('.sidebar').classList.remove('open');
+    selectedCategory = button.dataset.category; revenirAccueil(); document.querySelector('.sidebar').classList.remove('open');
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Stockage local — favoris et historique
+// Le stockage peut être indisponible (navigation privée, site bloqué) : toute
+// lecture et toute écriture sont protégées, et l'application fonctionne sans.
+// ---------------------------------------------------------------------------
+const CLE_FAVORIS     = 'kjemo.favoris.v1';
+const CLE_HISTORIQUE  = 'kjemo.historique.v1';
+const HISTORIQUE_MAX  = 6;
+
+function lireStockage(cle, defaut) {
+  try {
+    const brut = localStorage.getItem(cle);
+    if (!brut) return defaut;
+    const val = JSON.parse(brut);
+    return Array.isArray(val) ? val : defaut;
+  } catch {
+    return defaut;
+  }
+}
+
+function ecrireStockage(cle, valeur) {
+  try {
+    localStorage.setItem(cle, JSON.stringify(valeur));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** N'accepte que des identifiants d'outils réellement existants. */
+function idsValides(liste) {
+  const connus = new Set(tools.map((t) => t.id));
+  return liste.filter((id) => connus.has(id));
+}
+
+function lireFavoris()      { return idsValides(lireStockage(CLE_FAVORIS, [])); }
+function estFavori(id)      { return lireFavoris().includes(id); }
+function basculerFavori(id) {
+  const actuels = lireFavoris();
+  const suivants = actuels.includes(id) ? actuels.filter((x) => x !== id) : [...actuels, id];
+  ecrireStockage(CLE_FAVORIS, suivants);
+  return suivants.includes(id);
+}
+
+function lireHistorique() { return idsValides(lireStockage(CLE_HISTORIQUE, [])); }
+function noterConsultation(id) {
+  const sansDoublon = lireHistorique().filter((x) => x !== id);
+  ecrireStockage(CLE_HISTORIQUE, [id, ...sansDoublon].slice(0, HISTORIQUE_MAX));
+}
+
+// ---------------------------------------------------------------------------
+// Routes directes — #/outil/<id>
+// Permet de partager le lien d'une fiche, de recharger sans la perdre et
+// d'utiliser le bouton Retour du navigateur.
+// ---------------------------------------------------------------------------
+function outilDepuisHash() {
+  const m = /^#\/outil\/([A-Za-z0-9_-]+)$/.exec(location.hash || '');
+  if (!m) return null;
+  return tools.find((t) => t.id === m[1]) ?? null;
+}
+
+function ecrireHash(tool) {
+  const cible = tool ? `#/outil/${tool.id}` : '#/';
+  if (location.hash !== cible) {
+    history.pushState(null, '', cible);
+  }
+}
+
+/** Ouvre une fiche : met à jour l'état, l'URL et l'historique local. */
+function ouvrirOutil(tool, { pousserHash = true } = {}) {
+  currentTool = tool;
+  currentTab  = 'assistant';
+  noterConsultation(tool.id);
+  if (pousserHash) ecrireHash(tool);
+  render();
+}
+
+function revenirAccueil({ pousserHash = true } = {}) {
+  currentTool = null;
+  if (pousserHash) ecrireHash(null);
+  render();
+}
+
+/** Applique l'URL courante à l'état de l'application. */
+function appliquerHash() {
+  const tool = outilDepuisHash();
+  if (tool) {
+    if (currentTool?.id !== tool.id) ouvrirOutil(tool, { pousserHash: false });
+  } else if (currentTool) {
+    revenirAccueil({ pousserHash: false });
+  }
+}
+
+/**
+ * Raccourcis affichés en haut de l'accueil : favoris puis derniers consultés.
+ * Masqués pendant une recherche, qui a ses propres résultats.
+ */
+function raccourcisMarkup() {
+  if (currentQuery()) return '';
+  const parId = (id) => tools.find((t) => t.id === id);
+  const favoris = lireFavoris().map(parId).filter(Boolean);
+  const recents = lireHistorique().map(parId).filter(Boolean)
+    .filter((t) => !favoris.some((f) => f.id === t.id));
+
+  const puce = (t, cls) =>
+    `<button class="shortcut ${cls}" data-tool="${t.id}" type="button">`
+    + `<span class="shortcut-icon">${textToCode(t.icon)}</span>${textToCode(t.title)}</button>`;
+
+  let html = '';
+  if (favoris.length) {
+    html += `<section class="shortcuts" id="favorisSection"><h2>Favoris</h2>`
+      + `<div class="shortcut-row">${favoris.map((t) => puce(t, 'is-fav')).join('')}</div></section>`;
+  }
+  if (recents.length) {
+    html += `<section class="shortcuts" id="historiqueSection"><h2>Consultés récemment</h2>`
+      + `<div class="shortcut-row">${recents.map((t) => puce(t, 'is-recent')).join('')}</div></section>`;
+  }
+  return html;
 }
 
 function currentQuery() {
@@ -66,6 +186,15 @@ function renderHome() {
   const zone = document.querySelector('#commonErrorZone');
   if (zone) zone.innerHTML = commonErrorBanner(query);
 
+  const zoneRaccourcis = document.querySelector('#shortcutsZone');
+  if (zoneRaccourcis) {
+    zoneRaccourcis.innerHTML = raccourcisMarkup();
+    zoneRaccourcis.querySelectorAll('.shortcut').forEach((btn) => {
+      const t = tools.find((x) => x.id === btn.dataset.tool);
+      if (t) btn.addEventListener('click', () => ouvrirOutil(t));
+    });
+  }
+
   document.querySelector('#toolCount').textContent =
     `${results.length} outil${results.length > 1 ? 's' : ''}`;
 
@@ -94,9 +223,22 @@ function renderHome() {
       card.querySelector('h3').after(why);
     }
 
-    card.querySelector('.open-tool').addEventListener('click', () => {
-      currentTool = tool; currentTab = 'assistant'; render();
+    card.querySelector('.open-tool').addEventListener('click', () => ouvrirOutil(tool));
+
+    const fav = card.querySelector('.fav-toggle');
+    const peindreFav = (actif) => {
+      fav.textContent = actif ? '★' : '☆';
+      fav.setAttribute('aria-pressed', String(actif));
+      fav.title = actif ? 'Retirer des favoris' : 'Ajouter aux favoris';
+      fav.classList.toggle('is-fav', actif);
+    };
+    peindreFav(estFavori(tool.id));
+    fav.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      peindreFav(basculerFavori(tool.id));
+      renderHome();
     });
+
     grid.append(card);
   });
 }
@@ -201,7 +343,7 @@ function renderTool() {
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
   view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div><div class="tabs"><button class="tab ${currentTab === 'assistant' ? 'active' : ''}" data-tab="assistant">Assistant</button><button class="tab ${currentTab === 'script' ? 'active' : ''}" data-tab="script">Script</button><button class="tab ${currentTab === 'gui' ? 'active' : ''}" data-tab="gui">Interface graphique</button></div><div id="tabContent"></div>`;
-  view.querySelector('#backButton').addEventListener('click', () => { currentTool = null; render(); });
+  view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   view.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => { currentTab = tab.dataset.tab; renderTool(); }));
   const content = view.querySelector('#tabContent');
   if (currentTab === 'gui') {
@@ -289,4 +431,16 @@ function render() {
 
 document.querySelector('#search').addEventListener('input', () => { if (!currentTool) renderHome(); });
 document.querySelector('#menuButton').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('open'));
+
+// Bouton Retour / Suivant du navigateur, et lien partagé collé dans la barre d'adresse
+window.addEventListener('popstate', appliquerHash);
+window.addEventListener('hashchange', appliquerHash);
+
+// Ouvrir directement la fiche demandée par l'URL au chargement
+const outilInitial = outilDepuisHash();
+if (outilInitial) {
+  currentTool = outilInitial;
+  currentTab  = 'assistant';
+  noterConsultation(outilInitial.id);
+}
 render();
