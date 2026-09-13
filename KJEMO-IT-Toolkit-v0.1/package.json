@@ -9,7 +9,8 @@
     "test:browser": "node test/browser-identity.test.mjs",
     "test": "node test/identity.test.mjs && node test/browser-identity.test.mjs",
     "test:roundtrip:emit": "node test/roundtrip.mjs emit test/generated/roundtrip",
-    "test:roundtrip:verify": "node test/roundtrip.mjs verify test/generated/roundtrip"
+    "test:roundtrip:verify": "node test/roundtrip.mjs verify test/generated/roundtrip",
+    "test:bom": "node test/check-ps1-bom.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1"

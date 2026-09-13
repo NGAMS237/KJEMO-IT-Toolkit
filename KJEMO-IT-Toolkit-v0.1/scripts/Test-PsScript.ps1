@@ -1,4 +1,4 @@
-# Test-PsScript.ps1 — LOT 0 · KJEMO IT Toolkit
+﻿# Test-PsScript.ps1 — LOT 0 · KJEMO IT Toolkit
 # Vérifie la syntaxe PowerShell d'un fichier .ps1 sans l'exécuter.
 # Usage : powershell.exe -File .\scripts\Test-PsScript.ps1 -Path <chemin.ps1>
 # Exit 0 = OK, exit 1 = erreur de parsing.

@@ -1,4 +1,4 @@
-# Test-PS-Roundtrip-v2.ps1 — LOT 0 · KJEMO IT Toolkit
+﻿# Test-PS-Roundtrip-v2.ps1 — LOT 0 · KJEMO IT Toolkit
 # =============================================================================
 # VRAI test aller-retour  JS → .ps1 (BOM) → PowerShell → JSON → JS
 #

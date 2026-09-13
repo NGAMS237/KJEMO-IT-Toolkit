@@ -155,7 +155,28 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
-      # 10. Aller-retour Unicode réel JS → PS1 → PowerShell (v2)
+      # 10. Garde-fou : BOM UTF-8 sur les scripts .ps1 AVANT l'exécution PS 5.1
+      #     Sans BOM, PS 5.1 lit le fichier en CP1252 ; un tiret cadratin (—)
+      #     y devient un guillemet fermant et casse l'analyse syntaxique.
+      # -----------------------------------------------------------------------
+      - name: Vérifier le BOM UTF-8 des scripts PowerShell
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/check-ps1-bom.mjs
+
+      - name: Confirmer les 3 premiers octets de Test-PS-Roundtrip-v2.ps1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          $Bytes = [System.IO.File]::ReadAllBytes("scripts\Test-PS-Roundtrip-v2.ps1")[0..2]
+          $Hex = ($Bytes | ForEach-Object { '{0:X2}' -f $_ }) -join ' '
+          Write-Host "Premiers octets : $Hex"
+          if ($Bytes[0] -ne 0xEF -or $Bytes[1] -ne 0xBB -or $Bytes[2] -ne 0xBF) {
+              Write-Error "BOM UTF-8 absent : $Hex au lieu de EF BB BF"
+              exit 1
+          }
+
+      # -----------------------------------------------------------------------
+      # 11. Aller-retour Unicode réel JS → PS1 → PowerShell (v2)
       # -----------------------------------------------------------------------
       - name: Aller-retour Unicode réel PS 5.1
         working-directory: KJEMO-IT-Toolkit-v0.1
