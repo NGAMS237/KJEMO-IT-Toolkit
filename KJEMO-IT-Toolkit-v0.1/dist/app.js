@@ -1,6 +1,6 @@
 // Point 2 (Codex) : import depuis './generators.mjs' — même répertoire dist/
 // GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
-import { tools, normalizeScript, textToCode } from './generators.mjs';
+import { tools, normalizeScript, textToCode, EXECUTION_NOTES } from './generators.mjs';
 
 const categories = ['Tout', ...new Set(tools.map((tool) => tool.category))];
 let selectedCategory = 'Tout';
@@ -39,6 +39,64 @@ function renderHome() {
     card.querySelector('.open-tool').addEventListener('click', () => { currentTool = tool; currentTab = 'assistant'; render(); });
     grid.append(card);
   });
+}
+
+/**
+ * Bloc d'une erreur fréquente : message, cause, correction, commande éventuelle.
+ */
+function errorEntryMarkup(e) {
+  return `<div class="error-entry">`
+    + `<p class="err-msg">${textToCode(e.message)}`
+    + (e.code ? ` <span class="err-code">${textToCode(e.code)}</span>` : '')
+    + `</p>`
+    + `<p class="err-cause"><strong>Cause :</strong> ${textToCode(e.cause)}</p>`
+    + `<p class="err-fix"><strong>Correction :</strong> ${textToCode(e.fix)}</p>`
+    + (e.command ? `<pre class="cmd">${textToCode(e.command)}</pre>` : '')
+    + `</div>`;
+}
+
+/**
+ * Systèmes compatibles, prérequis, procédure d'exécution et erreurs fréquentes.
+ * La procédure d'exécution est commune à tous les outils (EXECUTION_NOTES) ;
+ * les prérequis et les erreurs propres viennent de l'outil lui-même.
+ */
+function prereqMarkup(tool) {
+  const n  = EXECUTION_NOTES;
+  const li = (x) => `<li>${textToCode(x)}</li>`;
+
+  const admin = tool.requiresAdmin
+    ? `<p class="admin-flag admin-required">Console PowerShell <strong>en tant qu\u2019administrateur</strong> obligatoire.</p>`
+    : `<p class="admin-flag admin-optional">Aucune élévation <strong>administrateur locale</strong> n\u2019est nécessaire. Les droits listés ci-dessous restent obligatoires.</p>`;
+
+  const steps = n.steps.map((st) =>
+    `<li><strong>${textToCode(st.label)}</strong><br />${textToCode(st.detail)}`
+    + (st.command ? `<pre class="cmd">${textToCode(st.command)}</pre>` : '')
+    + `</li>`).join('');
+
+  const policies = n.policies.map((po) =>
+    `<tr><td><code>${textToCode(po.name)}</code></td><td>${textToCode(po.local)}</td><td>${textToCode(po.internet)}</td></tr>`).join('');
+
+  const sources = n.sources.map((so) =>
+    `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`).join(' · ');
+
+  return `<div class="details prereqs" id="prereqBlock">`
+    + `<h3>Systèmes compatibles</h3><ul>${tool.os.map(li).join('')}</ul>`
+    + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
+    + `</div>`
+    + `<details class="details exec-notes" id="execNotes">`
+    + `<summary>${textToCode(n.title)}</summary>`
+    + `<p>${textToCode(n.intro)}</p>`
+    + `<ol class="exec-steps">${steps}</ol>`
+    + `<h4>Stratégies d\u2019exécution PowerShell</h4>`
+    + `<table class="policy-table"><thead><tr><th>Stratégie</th><th>Script local</th><th>Script téléchargé</th></tr></thead><tbody>${policies}</tbody></table>`
+    + `<p class="exec-warning">${textToCode(n.warning)}</p>`
+    + `<p class="exec-sources">${sources}</p>`
+    + `</details>`
+    + `<details class="details common-errors" id="commonErrors">`
+    + `<summary>Erreurs fréquentes</summary>`
+    + `<h4>Propres à cet outil</h4>${tool.commonErrors.map(errorEntryMarkup).join('')}`
+    + `<h4>Communes à tous les scripts</h4>${n.errors.map(errorEntryMarkup).join('')}`
+    + `</details>`;
 }
 
 function formMarkup(tool) {
@@ -92,7 +150,7 @@ function renderTool() {
   }
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
   const script = normalizeScript(tool.generate(defaultValues));
-  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div></section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
+  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div>${prereqMarkup(tool)}</section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
 
   // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
   // Copier et Télécharger sont désactivés jusqu'à la prochaine génération valide.

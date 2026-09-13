@@ -27,6 +27,7 @@ import {
   escapePowerShellSingleQuoted,
   escapePowerShellDoubleQuoted,
   escapeLdapRdn,
+  EXECUTION_NOTES,
   validateDomain,
   validateIPv4,
   validateSamAccountName,
@@ -557,6 +558,92 @@ if (adUserTool2) {
     assert(false, `ad-user : generate() valeurs par défaut → exception inattendue : ${err.message}`);
   }
 }
+
+
+// ===========================================================================
+// SECTION LOT 1 — Prérequis d'exécution
+// ===========================================================================
+section('LOT 1 — prérequis par outil');
+
+const RISQUES_ADMIN = ['caution', 'destructive'];
+
+for (const t of tools) {
+  assert(Array.isArray(t.os) && t.os.length > 0,
+    `${t.id} : systèmes compatibles renseignés (${t.os?.length ?? 0})`);
+  assert(Array.isArray(t.prereqs) && t.prereqs.length >= 2,
+    `${t.id} : au moins 2 prérequis (${t.prereqs?.length ?? 0})`);
+  assert(typeof t.requiresAdmin === 'boolean',
+    `${t.id} : requiresAdmin est un booléen`);
+  assert(Array.isArray(t.commonErrors) && t.commonErrors.length >= 2,
+    `${t.id} : au moins 2 erreurs fréquentes (${t.commonErrors?.length ?? 0})`);
+
+  for (const e of t.commonErrors ?? []) {
+    assert(
+      typeof e.message === 'string' && e.message.length > 0
+      && typeof e.cause === 'string' && e.cause.length > 0
+      && typeof e.fix === 'string' && e.fix.length > 0,
+      `${t.id} : erreur « ${String(e.message).slice(0, 40)}… » a message, cause et correction`,
+    );
+  }
+
+  // Aucun texte ne doit rester vide ou à remplir
+  const textes = [...t.os, ...t.prereqs, ...t.commonErrors.flatMap((e) => [e.message, e.cause, e.fix])];
+  assert(
+    textes.every((x) => typeof x === 'string' && x.trim().length > 10 && !/TODO|TBD|à compléter/i.test(x)),
+    `${t.id} : aucun texte vide ni marqueur TODO`,
+  );
+
+  // La source officielle reste un lien Microsoft Learn
+  assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
+    `${t.id} : source officielle Microsoft Learn`);
+}
+
+// Cohérence risque / élévation : un outil ATTENTION ou DESTRUCTIF exige l'admin
+for (const t of tools) {
+  if (RISQUES_ADMIN.includes(t.risk) && t.category !== 'Active Directory' && t.category !== 'GPO') {
+    assert(t.requiresAdmin === true,
+      `${t.id} : risque « ${t.risk} » hors AD/GPO ⇒ requiresAdmin = true`);
+  }
+}
+
+section('LOT 1 — bloc commun EXECUTION_NOTES');
+
+assert(typeof EXECUTION_NOTES === 'object' && EXECUTION_NOTES !== null,
+  'EXECUTION_NOTES est exporté');
+assert(EXECUTION_NOTES.steps.length >= 4,
+  `EXECUTION_NOTES : au moins 4 étapes (${EXECUTION_NOTES.steps.length})`);
+assert(EXECUTION_NOTES.policies.length === 5,
+  `EXECUTION_NOTES : les 5 stratégies d'exécution (${EXECUTION_NOTES.policies.length})`);
+
+const nomsPolitiques = EXECUTION_NOTES.policies.map((x) => x.name);
+for (const nom of ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass']) {
+  assert(nomsPolitiques.includes(nom), `EXECUTION_NOTES : stratégie ${nom} documentée`);
+}
+
+assert(EXECUTION_NOTES.errors.length >= 4,
+  `EXECUTION_NOTES : au moins 4 erreurs communes (${EXECUTION_NOTES.errors.length})`);
+
+// L'erreur réellement rencontrée par Blaise doit être couverte
+const errSignature = EXECUTION_NOTES.errors.find((e) => /signé numériquement/.test(e.message));
+assert(!!errSignature, 'EXECUTION_NOTES : l\'erreur « n\'est pas signé numériquement » est documentée');
+assert(errSignature && /Unblock-File/.test(errSignature.command ?? ''),
+  'EXECUTION_NOTES : sa correction propose Unblock-File');
+
+// Unblock-File doit apparaître dans les étapes
+assert(EXECUTION_NOTES.steps.some((st) => /Unblock-File/.test(st.command ?? '')),
+  'EXECUTION_NOTES : une étape donne la commande Unblock-File');
+assert(EXECUTION_NOTES.steps.some((st) => /Get-ExecutionPolicy -List/.test(st.command ?? '')),
+  'EXECUTION_NOTES : une étape donne Get-ExecutionPolicy -List');
+
+// SÉCURITÉ : ne jamais conseiller de changer la stratégie de toute la machine.
+// Set-ExecutionPolicy est interdit partout dans le bloc.
+const toutLeTexte = JSON.stringify(EXECUTION_NOTES);
+assert(!/Set-ExecutionPolicy/.test(toutLeTexte),
+  'EXECUTION_NOTES : ne conseille JAMAIS Set-ExecutionPolicy (sécurité machine préservée)');
+assert(/-ExecutionPolicy Bypass -File/.test(toutLeTexte),
+  'EXECUTION_NOTES : propose une session isolée (portée Process) comme repli');
+assert(EXECUTION_NOTES.sources.every((so) => /^https:\/\/learn\.microsoft\.com\//.test(so.url)),
+  'EXECUTION_NOTES : toutes les sources sont sur Microsoft Learn');
 
 // Résumé
 console.log('');

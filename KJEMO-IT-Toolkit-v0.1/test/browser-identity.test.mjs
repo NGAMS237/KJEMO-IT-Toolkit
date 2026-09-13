@@ -39,7 +39,7 @@ const ROOT      = resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 // Importer les générateurs depuis le module source (pas depuis dist/app.js)
 // ---------------------------------------------------------------------------
-const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { tools, normalizeScript, EXECUTION_NOTES } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
 
 // ---------------------------------------------------------------------------
 // Serveur HTTP statique minimal pour dist/
@@ -381,6 +381,72 @@ for (const tool of tools) {
     !curlySingleInPreText,
     `Aucun U+2018/U+2019 dans le <pre> généré`,
   );
+
+  // -------------------------------------------------------------------------
+  // 4 bis. LOT 1 — prérequis, procédure d'exécution et erreurs fréquentes
+  // -------------------------------------------------------------------------
+  const prereqTexte = await page.$eval('#prereqBlock', (el) => el.textContent).catch(() => null);
+  assert(prereqTexte !== null, `${tool.id} : bloc Prérequis présent dans la fiche`);
+
+  if (prereqTexte !== null) {
+    assert(
+      tool.os.every((o) => prereqTexte.includes(o)),
+      `${tool.id} : les ${tool.os.length} système(s) compatible(s) sont affichés`,
+    );
+    assert(
+      tool.prereqs.every((r) => prereqTexte.includes(r)),
+      `${tool.id} : les ${tool.prereqs.length} prérequis sont affichés`,
+    );
+    const mentionAdmin = /administrateur/i.test(prereqTexte);
+    assert(mentionAdmin, `${tool.id} : le niveau d'élévation requis est indiqué`);
+    const classeAdmin = await page.$eval('.admin-flag', (el) => el.className);
+    assert(
+      classeAdmin.includes(tool.requiresAdmin ? 'admin-required' : 'admin-optional'),
+      `${tool.id} : badge d'élévation cohérent avec requiresAdmin=${tool.requiresAdmin}`,
+    );
+  }
+
+  const execTexte = await page.$eval('#execNotes', (el) => el.textContent).catch(() => null);
+  assert(execTexte !== null, `${tool.id} : bloc « Avant d'exécuter » présent`);
+
+  if (execTexte !== null) {
+    assert(execTexte.includes('Unblock-File'), `${tool.id} : la commande Unblock-File est affichée`);
+    assert(
+      execTexte.includes('Get-ExecutionPolicy -List'),
+      `${tool.id} : la commande Get-ExecutionPolicy -List est affichée`,
+    );
+    assert(
+      EXECUTION_NOTES.policies.every((po) => execTexte.includes(po.name)),
+      `${tool.id} : les 5 stratégies d'exécution sont dans le tableau`,
+    );
+    // Sécurité : la fiche ne doit jamais proposer de changer la stratégie machine
+    assert(
+      !execTexte.includes('Set-ExecutionPolicy'),
+      `${tool.id} : la fiche ne conseille pas Set-ExecutionPolicy`,
+    );
+  }
+
+  const errTexte = await page.$eval('#commonErrors', (el) => el.textContent).catch(() => null);
+  assert(errTexte !== null, `${tool.id} : bloc « Erreurs fréquentes » présent`);
+
+  if (errTexte !== null) {
+    assert(
+      tool.commonErrors.every((e) => errTexte.includes(e.message) && errTexte.includes(e.fix)),
+      `${tool.id} : les ${tool.commonErrors.length} erreurs propres à l'outil, avec leur correction`,
+    );
+    assert(
+      errTexte.includes('signé numériquement'),
+      `${tool.id} : l'erreur de signature numérique est expliquée`,
+    );
+  }
+
+  // Les deux sections repliables doivent être fermées par défaut, pour ne pas
+  // noyer l'aperçu du script.
+  const repliees = await page.evaluate(() => ({
+    exec: document.querySelector('#execNotes')?.open === false,
+    err:  document.querySelector('#commonErrors')?.open === false,
+  }));
+  assert(repliees.exec && repliees.err, `${tool.id} : les deux sections sont repliées par défaut`);
 
   // -------------------------------------------------------------------------
   // 5. Champ Unicode RÉEL : saisir O’Brien (U+2019) dans un champ qui l'accepte,

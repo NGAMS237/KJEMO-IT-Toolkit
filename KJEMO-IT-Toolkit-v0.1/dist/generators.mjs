@@ -259,6 +259,122 @@ export function textToCode(text) {
 // Outils — 8 assistants
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// EXECUTION_NOTES — bloc commun à toutes les fiches
+// ---------------------------------------------------------------------------
+/**
+ * Un script téléchargé depuis ce site est un fichier .ps1 NON SIGNÉ provenant
+ * d'Internet. Windows le bloque par défaut. Ce bloc explique pourquoi et
+ * comment le débloquer proprement, sans jamais abaisser la sécurité de la
+ * machine entière.
+ *
+ * Sources officielles Microsoft :
+ *   about_Execution_Policies
+ *   https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies
+ *   Unblock-File
+ *   https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/unblock-file
+ */
+export const EXECUTION_NOTES = {
+  title: 'Avant d\u2019exécuter le script',
+  intro:
+    'Le fichier téléchargé est un script texte non signé. Windows marque tout fichier '
+    + 'venant d\u2019Internet, et la stratégie d\u2019exécution par défaut refuse alors de le lancer. '
+    + 'Ce n\u2019est pas une erreur du script : c\u2019est une protection normale de Windows.',
+
+  steps: [
+    {
+      label: 'Relire le script',
+      detail:
+        'L\u2019aperçu affiché ici est exactement le contenu du fichier téléchargé. '
+        + 'Ouvre-le dans le Bloc-notes si tu veux le relire avant de le lancer. '
+        + 'N\u2019exécute jamais un script que tu n\u2019as pas lu.',
+    },
+    {
+      label: 'Débloquer le fichier téléchargé',
+      detail:
+        'Retire la marque « provient d\u2019Internet » sur ce seul fichier. '
+        + 'La stratégie d\u2019exécution de la machine n\u2019est pas modifiée.',
+      command: 'Unblock-File -Path "$env:USERPROFILE\\Downloads\\<nom-du-script>.ps1"',
+    },
+    {
+      label: 'Ouvrir PowerShell avec les droits nécessaires',
+      detail:
+        'Les outils marqués ATTENTION ou DESTRUCTIF modifient la configuration du système '
+        + 'et exigent une console ouverte en tant qu\u2019administrateur. '
+        + 'Les outils DIAGNOSTIC se contentent le plus souvent d\u2019une session normale.',
+    },
+    {
+      label: 'Vérifier la stratégie en vigueur si le blocage persiste',
+      detail:
+        'Cette commande affiche la stratégie de chaque portée. La portée la plus prioritaire '
+        + 'l\u2019emporte : MachinePolicy et UserPolicy (stratégie de groupe), puis Process, '
+        + 'CurrentUser, et enfin LocalMachine.',
+      command: 'Get-ExecutionPolicy -List',
+    },
+  ],
+
+  // Tableau de référence — about_Execution_Policies
+  policies: [
+    { name: 'Restricted',   local: 'Aucun script autorisé',        internet: 'Aucun script autorisé' },
+    { name: 'AllSigned',    local: 'Signé par un éditeur approuvé', internet: 'Signé par un éditeur approuvé' },
+    { name: 'RemoteSigned', local: 'Autorisé',                      internet: 'Signé, ou débloqué avec Unblock-File' },
+    { name: 'Unrestricted', local: 'Autorisé',                      internet: 'Autorisé, avec avertissement' },
+    { name: 'Bypass',       local: 'Autorisé',                      internet: 'Autorisé, sans avertissement' },
+  ],
+
+  errors: [
+    {
+      message: 'n\u2019est pas signé numériquement. Vous ne pouvez pas exécuter ce script sur le système actuel.',
+      code: 'UnauthorizedAccess',
+      cause:
+        'Stratégie RemoteSigned (le cas le plus courant) et fichier marqué comme provenant '
+        + 'd\u2019Internet. Le script n\u2019étant pas signé, il est refusé.',
+      fix: 'Débloquer ce fichier précis avec Unblock-File, puis relancer.',
+      command: 'Unblock-File -Path "$env:USERPROFILE\\Downloads\\<nom-du-script>.ps1"',
+    },
+    {
+      message: 'L\u2019exécution de scripts est désactivée sur ce système.',
+      code: 'UnauthorizedAccess',
+      cause: 'Stratégie Restricted : aucun script n\u2019est autorisé, même local.',
+      fix:
+        'Lancer le script dans une session isolée, sans toucher à la configuration de la machine. '
+        + 'La portée Process disparaît à la fermeture de la fenêtre. '
+        + 'Si une stratégie de groupe impose Restricted, il faut passer par l\u2019administrateur du domaine.',
+      command: 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<chemin-du-script>.ps1"',
+    },
+    {
+      message: 'Accès refusé / Requested registry access is not allowed.',
+      code: 'PermissionDenied',
+      cause: 'La console PowerShell n\u2019a pas été ouverte en tant qu\u2019administrateur.',
+      fix: 'Fermer la fenêtre, puis rouvrir PowerShell avec un clic droit → Exécuter en tant qu\u2019administrateur.',
+    },
+    {
+      message: 'Le terme « Get-ADUser » n\u2019est pas reconnu comme nom d\u2019applet de commande.',
+      code: 'CommandNotFoundException',
+      cause:
+        'Le module ActiveDirectory est absent. Il est présent sur un contrôleur de domaine, '
+        + 'mais doit être installé séparément sur un poste de travail (RSAT).',
+      fix: 'Installer les outils RSAT Active Directory, puis rouvrir PowerShell.',
+      command: 'Add-WindowsCapability -Online -Name "Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0"',
+    },
+  ],
+
+  warning:
+    'Ne modifie pas la stratégie d\u2019exécution de toute la machine pour faire passer un script. '
+    + 'Débloquer le fichier concerné, ou utiliser une session isolée, suffit et reste réversible.',
+
+  sources: [
+    {
+      label: 'about_Execution_Policies (Microsoft Learn)',
+      url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies',
+    },
+    {
+      label: 'Unblock-File (Microsoft Learn)',
+      url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/unblock-file',
+    },
+  ],
+};
+
 export const tools = [
   // ── 1. IP statique ──────────────────────────────────────────────────────
   {
@@ -318,6 +434,28 @@ export const tools = [
       'Cliquer sur la carte concernée puis Modifier à côté de l\u2019attribution IP.',
       'Choisir Manuel, activer IPv4 et saisir IP, préfixe, passerelle et DNS.',
       'Enregistrer puis ouvrir une console et vérifier avec ipconfig /all.',
+    ],
+    requiresAdmin: true,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server 2012 et versions ultérieures',
+    ],
+    prereqs: [
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Modules NetTCPIP et DnsClient : intégrés à Windows depuis Windows 8 et Server 2012, aucune installation nécessaire.',
+      'Connaître le nom exact de la carte réseau : la commande Get-NetAdapter le liste.',
+    ],
+    commonErrors: [
+      {
+        message: 'Instance MSFT_NetIPAddress already exists.',
+        cause:   'Une adresse IP identique est déjà configurée sur la carte.',
+        fix:     'Supprimer l’ancienne adresse avec Remove-NetIPAddress avant de relancer, ou choisir une autre adresse.',
+      },
+      {
+        message: 'Aucune correspondance trouvée pour les critères de recherche : Name = ...',
+        cause:   'Le nom de la carte réseau saisi ne correspond à aucune carte existante.',
+        fix:     'Lister les cartes avec Get-NetAdapter et reprendre le nom exact, accents et espaces compris.',
+      },
     ],
     checks: [
       'La carte visée doit être la bonne : une erreur peut couper l\u2019accès réseau.',
@@ -384,6 +522,28 @@ export const tools = [
       'Développer le domaine puis cliquer droit sur le conteneur parent.',
       'Choisir Nouveau > Unité d\u2019organisation.',
       'Saisir le nom et conserver la protection contre la suppression accidentelle.',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
+      'Poste d’administration avec RSAT',
+    ],
+    prereqs: [
+      'Module ActiveDirectory : présent sur un contrôleur de domaine, à installer via RSAT sur un poste de travail.',
+      'Compte disposant du droit de créer une unité d’organisation dans le conteneur visé.',
+      'L’OU parente doit exister avant de créer une sous-OU.',
+    ],
+    commonErrors: [
+      {
+        message: 'Directory object not found.',
+        cause:   'Le conteneur parent indiqué n’existe pas dans l’annuaire.',
+        fix:     'Vérifier le chemin de l’OU parente, ou la créer d’abord.',
+      },
+      {
+        message: 'An attempt was made to add an object to the directory with a name that is already in use.',
+        cause:   'Une OU portant ce nom existe déjà au même niveau.',
+        fix:     'Choisir un autre nom, ou utiliser l’OU existante.',
+      },
     ],
     checks: [
       'Le module ActiveDirectory est disponible sur un contrôleur de domaine ou avec RSAT.',
@@ -466,6 +626,29 @@ export const tools = [
       'Saisir prénom, nom et identifiant.',
       '\u00ab L\u2019utilisateur doit changer le mot de passe \u00bb : cocher cette option.',
     ],
+    requiresAdmin: false,
+    os: [
+      'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
+      'Poste d’administration avec RSAT',
+    ],
+    prereqs: [
+      'Module ActiveDirectory : présent sur un contrôleur de domaine, à installer via RSAT sur un poste de travail.',
+      'Compte disposant du droit de créer des utilisateurs dans l’OU visée.',
+      'L’OU de destination doit exister.',
+      'La stratégie de mot de passe du domaine s’applique : un mot de passe trop faible sera refusé.',
+    ],
+    commonErrors: [
+      {
+        message: 'The password does not meet the length, complexity, or history requirement of the domain.',
+        cause:   'Le mot de passe saisi ne respecte pas la stratégie du domaine.',
+        fix:     'Utiliser un mot de passe conforme. L’assistant Stratégie de mot de passe permet de consulter les règles en vigueur.',
+      },
+      {
+        message: 'The specified account already exists.',
+        cause:   'Un compte portant le même identifiant de connexion existe déjà.',
+        fix:     'Choisir un autre identifiant, ou modifier le compte existant.',
+      },
+    ],
     checks: [
       'Le script ne stocke pas le mot de passe dans le fichier.',
       "Vérifier que l\u2019OU existe avant création.",
@@ -528,6 +711,29 @@ export const tools = [
       '\u00ab Partager ce dossier \u00bb : cocher, définir le nom et régler les autorisations.',
       "Dans l\u2019onglet Sécurité, ajouter le groupe AD et ses permissions NTFS.",
     ],
+    requiresAdmin: true,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server 2012 et versions ultérieures',
+    ],
+    prereqs: [
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Module SmbShare : intégré à Windows depuis Windows 8 et Server 2012.',
+      'Le lecteur de destination doit exister et être local : les chemins UNC sont refusés par l’assistant.',
+      'Le groupe auquel les droits sont accordés doit exister avant l’exécution.',
+    ],
+    commonErrors: [
+      {
+        message: 'Le partage est déjà configuré sur cet ordinateur.',
+        cause:   'Un partage portant ce nom existe déjà.',
+        fix:     'Supprimer l’ancien partage avec Remove-SmbShare, ou choisir un autre nom de partage.',
+      },
+      {
+        message: 'Aucune correspondance trouvée pour le nom de compte fourni.',
+        cause:   'Le groupe indiqué n’existe pas, ou n’est pas visible depuis cette machine.',
+        fix:     'Créer le groupe d’abord, ou vérifier son orthographe et son domaine.',
+      },
+    ],
     checks: [
       "Les permissions du partage et NTFS s\u2019additionnent : l\u2019accès réel est le plus restrictif.",
       'Utilise idéalement des groupes, pas des utilisateurs individuels.',
@@ -586,6 +792,29 @@ export const tools = [
       'Cliquer sur la notification puis \u00ab Promouvoir ce serveur en contrôleur de domaine \u00bb.',
       "\u00ab Ajouter un contrôleur de domaine à un domaine existant \u00bb : saisir le domaine et les identifiants.",
     ],
+    requiresAdmin: true,
+    os: [
+      'Windows Server 2012 et versions ultérieures uniquement',
+    ],
+    prereqs: [
+      'Windows Server obligatoire : Install-WindowsFeature n’existe pas sur Windows 10 ou 11.',
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Compte membre des groupes Administrateurs de l’entreprise et Administrateurs du domaine.',
+      'Le serveur doit déjà être joint au domaine et résoudre le contrôleur source par DNS.',
+      'Le serveur redémarre à la fin de la promotion : prévoir une fenêtre de maintenance.',
+    ],
+    commonErrors: [
+      {
+        message: 'Verification of prerequisites for Domain Controller promotion failed.',
+        cause:   'Un prérequis n’est pas rempli : DNS, appartenance au domaine, ou niveau fonctionnel.',
+        fix:     'Lire le détail affiché par le contrôle de prérequis ; il nomme la condition manquante.',
+      },
+      {
+        message: 'The term « Install-WindowsFeature » is not recognized.',
+        cause:   'La commande est exécutée sur Windows 10 ou 11 au lieu de Windows Server.',
+        fix:     'Exécuter cet assistant depuis un Windows Server.',
+      },
+    ],
     checks: [
       'Ne pas utiliser un DNS public sur le serveur à promouvoir.',
       'Vérifier le canal sécurisé et les ports avant la promotion.',
@@ -638,6 +867,29 @@ export const tools = [
       "Repérer la carte Wi-Fi puis choisir Désactiver l\u2019appareil et Réactiver l\u2019appareil.",
       "Si cela ne résout rien : clic droit > Désinstaller l\u2019appareil, puis Action > Rechercher les modifications sur le matériel.",
       "Télécharger le pilote depuis le fabricant seulement si Windows ne réinstalle pas la carte.",
+    ],
+    requiresAdmin: true,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server avec carte sans fil',
+    ],
+    prereqs: [
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Module NetAdapter : intégré à Windows.',
+      'La carte est désactivée puis réactivée : la connexion sera coupée quelques secondes.',
+      'À ne pas exécuter à distance via cette même carte, sous peine de perdre la session.',
+    ],
+    commonErrors: [
+      {
+        message: 'Aucune correspondance trouvée pour les critères de recherche : Name = ...',
+        cause:   'Le nom de la carte sans fil ne correspond à aucune carte présente.',
+        fix:     'Lister les cartes avec Get-NetAdapter et reprendre le nom exact.',
+      },
+      {
+        message: 'Le service ne peut pas être démarré.',
+        cause:   'Le service WLAN AutoConfig est désactivé, ou une stratégie l’interdit.',
+        fix:     'Vérifier le type de démarrage du service WlanSvc dans services.msc.',
+      },
     ],
     checks: [
       'Le nom de la carte doit être exact avant la désactivation.',
@@ -698,6 +950,29 @@ export const tools = [
       "Développer la forêt, le domaine, puis clic droit sur Default Domain Policy > Modifier.",
       'Aller à Configuration ordinateur > Paramètres Windows > Paramètres de sécurité > Stratégies de compte.',
       'Configurer les stratégies de mot de passe et de verrouillage de compte.',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
+      'Poste d’administration avec RSAT',
+    ],
+    prereqs: [
+      'Module ActiveDirectory : présent sur un contrôleur de domaine, à installer via RSAT sur un poste de travail.',
+      'Compte membre des Administrateurs du domaine.',
+      'La modification s’applique à TOUT le domaine et affecte chaque utilisateur au prochain changement de mot de passe.',
+      'Noter la configuration actuelle avant de la modifier : le script l’affiche en premier.',
+    ],
+    commonErrors: [
+      {
+        message: 'Insufficient access rights to perform the operation.',
+        cause:   'Le compte utilisé n’est pas administrateur du domaine.',
+        fix:     'Relancer avec un compte membre des Administrateurs du domaine.',
+      },
+      {
+        message: 'The server is unwilling to process the request.',
+        cause:   'Une valeur demandée est hors des limites acceptées par Active Directory.',
+        fix:     'Vérifier la cohérence des durées et de la longueur minimale.',
+      },
     ],
     checks: [
       "Cette politique touche les utilisateurs du domaine : teste d\u2019abord les seuils en laboratoire.",
@@ -920,6 +1195,29 @@ function createDiskScanTool() {
       "Pour un dossier précis, ouvrir PowerShell et utiliser le chemin exact; l\u2019Explorateur peut aussi afficher les propriétés du disque.",
       'Dans un projet SaaS, examiner en priorité node_modules, .next, dist, build, out, coverage et les caches.',
       'Ne sélectionner pour la corbeille que des éléments non protégés; ne jamais toucher à .git, .env, bases ou sauvegardes.',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server 2012 et versions ultérieures',
+    ],
+    prereqs: [
+      'Aucun module particulier : utilise Get-ChildItem, présent partout.',
+      'Une session normale suffit. Les droits administrateur ne servent qu’à parcourir les dossiers protégés.',
+      'Outil DIAGNOSTIC : il lit et rapporte, il ne supprime rien.',
+      'L’analyse d’un disque entier peut prendre plusieurs minutes.',
+    ],
+    commonErrors: [
+      {
+        message: 'L’accès au chemin d’accès est refusé.',
+        cause:   'Certains dossiers système sont protégés et ne peuvent pas être parcourus.',
+        fix:     'Message sans gravité : le script continue et ignore ces dossiers. Ouvrir PowerShell en administrateur pour les inclure.',
+      },
+      {
+        message: 'Le chemin d’accès spécifié est introuvable.',
+        cause:   'Le lecteur ou le dossier saisi n’existe pas.',
+        fix:     'Vérifier la lettre de lecteur avec Get-PSDrive.',
+      },
     ],
     checks: [
       'Compatible avec Windows PowerShell 5.1 ou PowerShell 7 sur Windows; le scan peut prendre du temps sur un gros disque.',
