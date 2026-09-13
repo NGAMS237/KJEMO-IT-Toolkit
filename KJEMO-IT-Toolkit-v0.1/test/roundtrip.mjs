@@ -19,13 +19,13 @@
 
 import { writeFileSync, readFileSync, mkdirSync, openSync, readSync, closeSync } from 'node:fs';
 import { dirname, resolve }  from 'node:path';
-import { fileURLToPath }     from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = resolve(__dirname, '..');
 
 // psB64 vient du module canonique — aucune réimplémentation ici.
-const { psB64 } = await import(resolve(ROOT, 'dist', 'generators.mjs'));
+const { psB64 } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
 
 const BOM = Buffer.from([0xEF, 0xBB, 0xBF]);
 

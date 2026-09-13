@@ -29,7 +29,7 @@
 import { chromium }              from '@playwright/test';
 import { createServer }          from 'node:http';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { fileURLToPath }         from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve, extname, join } from 'node:path';
 import { tmpdir }                from 'node:os';
 
@@ -39,7 +39,7 @@ const ROOT      = resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 // Importer les générateurs depuis le module source (pas depuis dist/app.js)
 // ---------------------------------------------------------------------------
-const { tools, normalizeScript } = await import(resolve(ROOT, 'dist', 'generators.mjs'));
+const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
 
 // ---------------------------------------------------------------------------
 // Serveur HTTP statique minimal pour dist/

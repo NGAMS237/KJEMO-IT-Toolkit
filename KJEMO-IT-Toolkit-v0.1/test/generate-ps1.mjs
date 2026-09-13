@@ -12,13 +12,13 @@
 
 import { writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
 import { dirname, resolve }                               from 'node:path';
-import { fileURLToPath }                                  from 'node:url';
+import { fileURLToPath, pathToFileURL }                   from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = resolve(__dirname, '..');
 const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
-const { tools, normalizeScript } = await import(resolve(ROOT, 'dist', 'generators.mjs'));
+const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
 
 // BOM UTF-8 : requis pour PowerShell 5.1 (lit les fichiers comme UTF-8)
 const BOM = Buffer.from([0xEF, 0xBB, 0xBF]);
