@@ -128,6 +128,50 @@ function bytesEqual(a, b) {
   return Buffer.from(a, 'utf-8').equals(Buffer.from(b, 'utf-8'));
 }
 
+/**
+ * Retourne la position et l'identité du PREMIER caractère divergent entre deux
+ * chaînes, ou null si elles sont identiques. Sert à prouver que l'unique écart
+ * entre le presse-papiers et la référence est bien CR (U+000D) et rien d'autre.
+ */
+function firstDivergence(a, b) {
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    if (a[i] !== b[i]) {
+      return {
+        index:  i,
+        aChar:  a[i],
+        bChar:  b[i],
+        aCode:  a.codePointAt(i),
+        bCode:  b.codePointAt(i),
+        context: JSON.stringify(a.slice(Math.max(0, i - 12), i + 12)),
+      };
+    }
+  }
+  if (a.length !== b.length) {
+    const longer = a.length > b.length ? a : b;
+    return {
+      index:  n,
+      aChar:  a.length > n ? a[n] : '(fin)',
+      bChar:  b.length > n ? b[n] : '(fin)',
+      aCode:  a.length > n ? a.codePointAt(n) : -1,
+      bCode:  b.length > n ? b.codePointAt(n) : -1,
+      context: JSON.stringify(longer.slice(Math.max(0, n - 12), n + 12)),
+    };
+  }
+  return null;
+}
+
+const hex4 = (c) => (c < 0 ? '(fin)' : 'U+' + c.toString(16).toUpperCase().padStart(4, '0'));
+
+/**
+ * Canonicalisation des fins de ligne — appliquée UNIQUEMENT au texte relu
+ * depuis le presse-papiers. Retire les CR ; tout autre caractère est conservé,
+ * donc une vraie différence de contenu reste détectée.
+ */
+function stripCR(s) {
+  return s.replace(/\r/g, '');
+}
+
 // ---------------------------------------------------------------------------
 // Champs Unicode par outil — chaque valeur a été vérifiée contre tool.validate()
 //
@@ -233,13 +277,57 @@ for (const tool of tools) {
   }
 
   if (clipboardText !== null) {
+    // -----------------------------------------------------------------------
+    // Sous Windows, l'API presse-papiers de Chromium convertit LF en CRLF.
+    // Le contenu n'est pas corrompu : seuls des CR sont insérés. On le PROUVE
+    // avant de canonicaliser, au lieu de relâcher la comparaison à l'aveugle.
+    // -----------------------------------------------------------------------
+
+    // a) La référence Node ne contient aucun CR — elle est en LF pur.
     assert(
-      bytesEqual(clipboardText, expected),
-      `Copier (clipboard) === normalizeScript(generate(defaults))`,
+      !/\r/.test(expected),
+      `Référence Node en LF pur (aucun CR)`,
+    );
+
+    // b) Diagnostic du premier caractère divergent AVANT canonicalisation.
+    //    S'il y a un écart, il doit s'agir d'un CR inséré par le presse-papiers.
+    const div = firstDivergence(clipboardText, expected);
+    if (div === null) {
+      assert(true, `Copier : identique au caractère près (plateforme sans conversion CRLF)`);
+    } else {
+      assert(
+        div.aCode === 0x0D,
+        `Copier : 1re divergence index ${div.index} = ${hex4(div.aCode)} côté presse-papiers `
+          + `vs ${hex4(div.bCode)} côté référence — doit être CR (U+000D)`,
+        `contexte ${div.context}`,
+      );
+    }
+
+    // c) Chaque CR du presse-papiers fait partie d'une séquence CRLF.
+    //    Un CR isolé signalerait autre chose qu'une conversion de fin de ligne.
+    assert(
+      !/\r(?!\n)/.test(clipboardText),
+      `Copier : aucun CR isolé — uniquement des séquences CRLF`,
+    );
+
+    // d) Une fois les CR retirés, l'identité doit être PARFAITE, octet par octet.
+    //    Tout caractère autre que CR qui différerait ferait échouer cette assertion.
+    const clipboardLF = stripCR(clipboardText);
+    assert(
+      bytesEqual(clipboardLF, expected),
+      `Copier (fins de ligne canonicalisées) === normalizeScript(generate(defaults))`,
+      div ? `1re divergence brute : index ${div.index} ${hex4(div.aCode)} vs ${hex4(div.bCode)}` : '',
     );
     assert(
-      bytesEqual(clipboardText, preText),
-      `Copier === <pre> textContent — identité parfaite`,
+      bytesEqual(clipboardLF, preText),
+      `Copier (fins de ligne canonicalisées) === <pre> textContent — identité parfaite`,
+    );
+
+    // e) Le nombre de caractères non-CR est identique : aucun ajout ni retrait
+    //    de contenu, seulement des CR insérés.
+    assert(
+      clipboardLF.length === expected.length,
+      `Copier : ${clipboardLF.length} caractères hors CR === ${expected.length} attendus`,
     );
   }
 
