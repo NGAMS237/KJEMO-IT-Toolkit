@@ -460,6 +460,129 @@ export function searchCommonErrors(query) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Audit de sécurité des procédures d'annulation
+// ---------------------------------------------------------------------------
+/**
+ * Cmdlets considérés comme destructifs par leur verbe. Toute occurrence dans
+ * une procédure d'annulation doit porter une confirmation réelle, ou figurer
+ * dans la liste d'exceptions ci-dessous.
+ */
+export const VERBES_DESTRUCTIFS = [
+  'Remove', 'Uninstall', 'Clear', 'Reset', 'Disable', 'Dismount', 'Format',
+];
+
+/**
+ * Exceptions explicites — cmdlets qui correspondent au filtre mais ne
+ * détruisent rien. La liste est volontairement courte et justifiée.
+ */
+export const CMDLETS_NON_DESTRUCTIFS = {
+  // Le verbe « Format- » vise Format-Volume, qui efface un disque. Les quatre
+  // cmdlets ci-dessous ne formatent que l'AFFICHAGE dans la console : elles ne
+  // touchent ni disque, ni annuaire, ni configuration.
+  'Format-Table':  'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+  'Format-List':   'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+  'Format-Wide':   'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+  'Format-Custom': 'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+};
+
+/**
+ * Extrait les cmdlets Verbe-Nom d'un bloc de commandes, en ignorant les lignes
+ * de commentaire : un cmdlet cité dans une explication n'est pas exécuté.
+ */
+export function cmdletsExecutes(bloc) {
+  return String(bloc ?? '')
+    .split(/\r?\n/)
+    .filter((ligne) => !/^\s*#/.test(ligne))
+    .join('\n')
+    .match(/\b[A-Z][a-zA-Z]*-[A-Z][A-Za-z0-9]*\b/g) ?? [];
+}
+
+/**
+ * Audite la procédure d'annulation d'un outil et retourne la liste des
+ * problèmes trouvés. Un tableau vide signifie « conforme ».
+ *
+ * Règles appliquées :
+ *   1. -Confirm:$false est interdit sur un cmdlet destructif.
+ *   2. -Force est interdit dans la procédure NORMALE sur un cmdlet destructif.
+ *   3. Tout cmdlet destructif de la procédure normale doit porter -Confirm.
+ *   4. Le bloc diagnostic ne doit contenir aucun cmdlet destructif sans -WhatIf.
+ *   5. Un bloc exceptionnel qui emploie -Force ou -ForceRemoval doit porter un
+ *      avertissement critique.
+ */
+export function auditerAnnulation(tool) {
+  const pbs = [];
+  const r = tool.rollback ?? {};
+
+  const exempte     = (c) => Object.prototype.hasOwnProperty.call(CMDLETS_NON_DESTRUCTIFS, c);
+  const estDestructif = (c) =>
+    VERBES_DESTRUCTIFS.some((v) => c.startsWith(v + '-')) && !exempte(c);
+
+  const lignesUtiles = (bloc) => String(bloc ?? '')
+    .split(/\r?\n/).filter((l) => l.trim() && !/^\s*#/.test(l.trim()));
+
+  const BLOCS = [
+    ['diagnostic',  r.diagnostic],
+    ['command',     r.command],
+    ['exceptional', r.exceptional],
+  ];
+
+  // --- RÈGLE 1 : -Confirm:$false est interdit PARTOUT dans une annulation.
+  //     Ce paramètre n'a qu'un seul effet possible : supprimer la demande de
+  //     confirmation. Aucun usage légitime dans une procédure documentée.
+  for (const [nom, bloc] of BLOCS) {
+    for (const ligne of lignesUtiles(bloc)) {
+      if (/-Confirm\s*:\s*\$false/i.test(ligne)) {
+        pbs.push(`${tool.id} : -Confirm:$false interdit (bloc ${nom})`);
+      }
+    }
+  }
+
+  // --- RÈGLE 2 : procédure NORMALE — confirmation exigée, -Force interdit.
+  for (const ligne of lignesUtiles(r.command)) {
+    const cmdlets = cmdletsExecutes(ligne);
+    const dangereux = cmdlets.filter(estDestructif);
+
+    if (/(^|\s)-Force(Removal)?\b/i.test(ligne) && !cmdlets.every(exempte)) {
+      const quoi = dangereux[0] ?? cmdlets[0] ?? 'la commande';
+      pbs.push(`${tool.id} : ${quoi} emploie -Force dans la procédure normale`);
+    }
+
+    for (const c of dangereux) {
+      if (!/(^|\s)-Confirm\b(?!\s*:\s*\$false)/i.test(ligne) && !/-WhatIf\b/i.test(ligne)) {
+        pbs.push(`${tool.id} : ${c} ne demande aucune confirmation dans la procédure normale`);
+      }
+    }
+  }
+
+  // --- RÈGLE 3 : bloc DIAGNOSTIC — constater, jamais modifier.
+  for (const ligne of lignesUtiles(r.diagnostic)) {
+    for (const c of cmdletsExecutes(ligne).filter(estDestructif)) {
+      if (!/-WhatIf\b/i.test(ligne)) {
+        pbs.push(`${tool.id} : ${c} dans le bloc diagnostic sans -WhatIf`);
+      }
+    }
+  }
+
+  // --- RÈGLE 4 : bloc EXCEPTIONNEL — -Force toléré, mais encadré.
+  const exc = String(r.exceptional ?? '');
+  if (exc.trim()) {
+    const sensible = /(^|\s)-Force(Removal)?\b/i.test(exc)
+      || /ntdsutil/i.test(exc)
+      || cmdletsExecutes(exc).some(estDestructif);
+    if (sensible) {
+      if (!/AVERTISSEMENT CRITIQUE/i.test(exc)) {
+        pbs.push(`${tool.id} : bloc exceptionnel sensible sans AVERTISSEMENT CRITIQUE`);
+      }
+      if (!/learn\.microsoft\.com/i.test(exc)) {
+        pbs.push(`${tool.id} : bloc exceptionnel sans renvoi à une procédure Microsoft officielle`);
+      }
+    }
+  }
+
+  return pbs;
+}
+
 export const tools = [
   // ── 1. IP statique ──────────────────────────────────────────────────────
   {
@@ -556,6 +679,19 @@ export const tools = [
         fix:     'Lister les cartes avec Get-NetAdapter et reprendre le nom exact, accents et espaces compris.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-NetIPConfiguration -InterfaceAlias \'<carte>\' affiche la nouvelle adresse, la passerelle et les DNS.',
+      'Test-NetConnection <passerelle> répond avec PingSucceeded = True.',
+      'Resolve-DnsName microsoft.com aboutit, ce qui valide les serveurs DNS.',
+    ],
+    rollback: {
+      summary:     'Repasser la carte en DHCP annule la configuration manuelle. Constater d\'abord l\'état actuel, simuler ensuite, et seulement alors appliquer avec confirmation.',
+      diagnostic:  '# 1. CONSTATER la configuration en place, et la noter avant de la défaire\nGet-NetIPConfiguration -InterfaceAlias \'<carte>\' | Format-List\nGet-NetIPAddress       -InterfaceAlias \'<carte>\' -AddressFamily IPv4\nGet-NetRoute           -InterfaceAlias \'<carte>\' -DestinationPrefix 0.0.0.0/0\nGet-DnsClientServerAddress -InterfaceAlias \'<carte>\' -AddressFamily IPv4\n\n# 2. SIMULER l\'annulation : -WhatIf montre ce qui serait fait, sans rien changer\nRemove-NetIPAddress -InterfaceAlias \'<carte>\' -WhatIf\nRemove-NetRoute     -InterfaceAlias \'<carte>\' -DestinationPrefix 0.0.0.0/0 -WhatIf',
+      command:     '# Chaque suppression demande confirmation. Répondre O pour valider, N pour refuser.\nRemove-NetIPAddress -InterfaceAlias \'<carte>\' -Confirm\nRemove-NetRoute     -InterfaceAlias \'<carte>\' -DestinationPrefix 0.0.0.0/0 -Confirm\n\n# Remise en DHCP — ces deux commandes ne suppriment rien, elles reconfigurent.\nSet-NetIPInterface         -InterfaceAlias \'<carte>\' -Dhcp Enabled\nSet-DnsClientServerAddress -InterfaceAlias \'<carte>\' -ResetServerAddresses',
+      exceptional: '',
+      warning:     'Si ta session est ouverte À DISTANCE par cette carte, l\'annulation la coupe et tu perds la main sur la machine. Prévoir un accès console, iLO/iDRAC ou physique avant de commencer.',
+    },
     checks: [
       'La carte visée doit être la bonne : une erreur peut couper l\u2019accès réseau.',
       'Si cette adresse existe déjà, supprimer ou modifier l\u2019ancienne configuration avant de lancer New-NetIPAddress.',
@@ -654,6 +790,18 @@ export const tools = [
         fix:     'Choisir un autre nom, ou utiliser l’OU existante.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADOrganizationalUnit -Identity \'<DN de l OU>\' retourne l\'objet créé.',
+      'L\'OU apparaît dans Utilisateurs et ordinateurs Active Directory après actualisation.',
+    ],
+    rollback: {
+      summary:     'Supprimer l\'OU. Elle est protégée contre la suppression accidentelle par défaut : il faut retirer cette protection d\'abord. Vérifier qu\'elle est vide avant tout.',
+      diagnostic:  '# 1. L\'OU contient-elle encore des objets ? S\'ils existent, ils seraient perdus.\nGet-ADObject -SearchBase \'<DN de l OU>\' -SearchScope Subtree -Filter * | Format-Table Name,ObjectClass\n\n# 2. État de la protection contre la suppression accidentelle\nGet-ADOrganizationalUnit -Identity \'<DN de l OU>\' -Properties ProtectedFromAccidentalDeletion |\n  Select-Object Name,ProtectedFromAccidentalDeletion\n\n# 3. SIMULER la suppression\nRemove-ADOrganizationalUnit -Identity \'<DN de l OU>\' -WhatIf',
+      command:     '# Retirer la protection, puis supprimer avec confirmation explicite.\nSet-ADOrganizationalUnit    -Identity \'<DN de l OU>\' -ProtectedFromAccidentalDeletion $false\nRemove-ADOrganizationalUnit -Identity \'<DN de l OU>\' -Confirm',
+      exceptional: '',
+      warning:     'Ne jamais supprimer une OU sans avoir vérifié qu\'elle est vide : les comptes, groupes et ordinateurs qu\'elle contient seraient supprimés avec elle.',
+    },
     checks: [
       'Le module ActiveDirectory est disponible sur un contrôleur de domaine ou avec RSAT.',
       'Créer l\u2019OU parente avant une sous-OU.',
@@ -769,6 +917,18 @@ export const tools = [
         fix:     'Choisir un autre identifiant, ou modifier le compte existant.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADUser -Identity \'<identifiant>\' -Properties * retourne le compte avec ses attributs.',
+      'Le compte apparaît dans l\'OU visée et son état Activé correspond à ce qui était voulu.',
+    ],
+    rollback: {
+      summary:     'Désactiver le compte est réversible et préserve l\'historique : c\'est la voie à privilégier. La suppression est définitive et détruit le SID.',
+      diagnostic:  '# Constater l\'état du compte et ce qui en dépend avant d\'agir\nGet-ADUser -Identity \'<identifiant>\' -Properties Enabled,MemberOf,LastLogonDate |\n  Select-Object Name,Enabled,LastLogonDate\nGet-ADUser -Identity \'<identifiant>\' -Properties MemberOf |\n  Select-Object -ExpandProperty MemberOf\n\n# SIMULER la suppression, si c\'est bien elle qui est envisagée\nRemove-ADUser -Identity \'<identifiant>\' -WhatIf',
+      command:     '# VOIE NORMALE — réversible, à privilégier.\n# Le compte est désactivé mais conservé : droits, SID et historique intacts.\nDisable-ADAccount -Identity \'<identifiant>\' -Confirm\n\n# Pour réactiver plus tard :\n# Enable-ADAccount -Identity \'<identifiant>\'',
+      exceptional: '# AVERTISSEMENT CRITIQUE — suppression DÉFINITIVE.\n# Le SID du compte est détruit avec lui. Un compte recréé plus tard avec le\n# même nom n\'aura PAS accès aux ressources de l\'ancien : partages, boîtes aux\n# lettres et permissions NTFS sont rattachés au SID, pas au nom.\n# N\'employer cette voie que si le compte a été créé par erreur et n\'a jamais servi.\n# Procédure officielle : https://learn.microsoft.com/powershell/module/activedirectory/remove-aduser\n#\n# Préférer Disable-ADAccount ci-dessus dans tous les autres cas.\nRemove-ADUser -Identity \'<identifiant>\' -Confirm',
+      warning:     'Supprimer un compte détruit son SID. Un compte recréé plus tard avec le même nom n\'aura PAS accès aux ressources de l\'ancien : partages, boîtes aux lettres et permissions NTFS sont rattachés au SID, pas au nom.',
+    },
     checks: [
       'Le script ne stocke pas le mot de passe dans le fichier.',
       "Vérifier que l\u2019OU existe avant création.",
@@ -865,6 +1025,19 @@ export const tools = [
         fix:     'Créer le groupe d’abord, ou vérifier son orthographe et son domaine.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-SmbShare -Name \'<partage>\' retourne le partage.',
+      'Get-SmbShareAccess -Name \'<partage>\' liste les droits accordés.',
+      'Depuis un autre poste, \\\\<serveur>\\<partage> s\'ouvre avec les droits attendus.',
+    ],
+    rollback: {
+      summary:     'Supprimer le partage retire l\'accès réseau. Le dossier et son contenu restent intacts sur le disque. Vérifier d\'abord que personne n\'a de fichier ouvert.',
+      diagnostic:  '# 1. QUELQU\'UN TRAVAILLE-T-IL DESSUS ? À vérifier impérativement avant de retirer le partage.\nGet-SmbOpenFile  | Where-Object { $_.Path -like \'*<partage>*\' } | Format-Table ClientUserName,Path\nGet-SmbSession   | Format-Table ClientComputerName,ClientUserName,NumOpens\n\n# 2. Revoir le partage et ses droits avant de les perdre de vue\nGet-SmbShare       -Name \'<partage>\' | Format-List\nGet-SmbShareAccess -Name \'<partage>\'\nGet-Acl \'<chemin du dossier>\' | Format-List\n\n# 3. SIMULER la suppression du partage\nRemove-SmbShare -Name \'<partage>\' -WhatIf',
+      command:     '# Suppression du partage avec confirmation explicite.\n# Les fichiers du dossier ne sont PAS supprimés : seul l\'accès réseau disparaît.\nRemove-SmbShare -Name \'<partage>\' -Confirm',
+      exceptional: '',
+      warning:     'Retirer un partage pendant qu\'un fichier y est ouvert peut faire perdre des modifications non enregistrées chez l\'utilisateur. Toujours passer par Get-SmbOpenFile d\'abord. Les droits NTFS ajoutés sur le dossier, eux, restent en place : les revoir séparément avec Get-Acl.',
+    },
     checks: [
       "Les permissions du partage et NTFS s\u2019additionnent : l\u2019accès réel est le plus restrictif.",
       'Utilise idéalement des groupes, pas des utilisateurs individuels.',
@@ -957,6 +1130,20 @@ export const tools = [
         fix:     'Exécuter cet assistant depuis un Windows Server.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADDomainController -Filter * liste le nouveau contrôleur.',
+      'repadmin /replsummary ne signale aucune erreur de réplication.',
+      'dcdiag /v sur le nouveau serveur passe tous les tests.',
+      'Les partages SYSVOL et NETLOGON sont publiés sur le nouveau contrôleur.',
+    ],
+    rollback: {
+      summary:     'Rétrograder un contrôleur de domaine est une opération lourde qui touche les rôles FSMO, le DNS, le catalogue global, la réplication et SYSVOL. Elle se prépare, puis s\'exécute de façon interactive.',
+      diagnostic:  '# ÉTAPE 1 — DIAGNOSTIC PRÉALABLE. Ne rien rétrograder avant que tout ceci soit clair.\n\n# Ce contrôleur détient-il des rôles FSMO ? Ils doivent être transférés AVANT.\nnetdom query fsmo\nGet-ADDomainController -Identity \'<serveur>\' | Select-Object Name,OperationMasterRoles\n\n# Est-il catalogue global, et reste-t-il un autre GC sur le site ?\nGet-ADDomainController -Filter * | Format-Table Name,Site,IsGlobalCatalog\n\n# Sert-il le DNS pour le domaine ? Un autre serveur doit prendre le relais.\nGet-DnsServerZone -ErrorAction SilentlyContinue | Format-Table ZoneName,ZoneType,IsDsIntegrated\n\n# La réplication est-elle saine ? Rétrograder un domaine déjà malade aggrave tout.\nrepadmin /replsummary\nrepadmin /showrepl\ndcdiag /v\n\n# SYSVOL et NETLOGON sont-ils publiés ailleurs ?\nGet-SmbShare -Name SYSVOL,NETLOGON -ErrorAction SilentlyContinue',
+      command:     '# ÉTAPE 2 — RÉTROGRADATION NORMALE, INTERACTIVE.\n# Prérequis : rôles FSMO transférés, un autre catalogue global disponible,\n# DNS assuré par un autre serveur, réplication saine.\n\n# a) Transférer chaque rôle FSMO détenu vers un contrôleur sain\nMove-ADDirectoryServerOperationMasterRole -Identity \'<autre DC sain>\' `\n  -OperationMasterRole PDCEmulator,RIDMaster,InfrastructureMaster,SchemaMaster,DomainNamingMaster\n\n# b) Rétrograder. La commande demande les identifiants et le mot de passe\n#    administrateur local du futur serveur membre, puis confirme chaque étape.\n#    NE PAS ajouter -Force : les contrôles de prérequis et la confirmation\n#    sont précisément ce qui protège le domaine.\nUninstall-ADDSDomainController -Credential (Get-Credential) -Confirm\n\n# Le serveur redémarre à la fin et devient un serveur membre du domaine.',
+      exceptional: '# ÉTAPE 3 — CAS EXCEPTIONNEL : contrôleur définitivement irrécupérable.\n#\n# AVERTISSEMENT CRITIQUE — à ne PAS utiliser comme procédure normale.\n# Cette voie force la rétrogradation sans contrôle de prérequis et laisse des\n# métadonnées dans l\'annuaire si elle est mal menée. Une erreur ici peut casser\n# la réplication de TOUT le domaine, pas seulement de ce serveur.\n#\n# Conditions : le serveur est hors service ou inaccessible, aucune rétrogradation\n# normale n\'est possible, et une sauvegarde de l\'état système d\'un contrôleur\n# SAIN existe.\n#\n# Suivre la procédure officielle Microsoft avant d\'exécuter quoi que ce soit :\n# https://learn.microsoft.com/windows-server/identity/ad-ds/deploy/ad-ds-metadata-cleanup\n#\n# Si le serveur répond encore :\n# Uninstall-ADDSDomainController -ForceRemoval -DemoteOperationMasterRole\n#\n# Si le serveur ne répond plus, nettoyer les métadonnées DEPUIS UN DC SAIN.\n# ntdsutil est interactif et se suit pas à pas : il n\'existe pas de version\n# en une ligne sans risque.\n#   ntdsutil\n#     metadata cleanup\n#     connections\n#     ...\n# Après nettoyage : vérifier DNS, sites et services, et relancer\n# repadmin /replsummary sur l\'ensemble des contrôleurs.',
+      warning:     'Ne jamais réinstaller simplement un contrôleur de domaine pour s\'en débarrasser : cela laisse son objet et ses métadonnées dans l\'annuaire, et casse la réplication. Avant toute rétrogradation, s\'assurer que les rôles FSMO sont transférés, qu\'un autre catalogue global existe, que le DNS est assuré ailleurs, que SYSVOL et NETLOGON sont publiés sur un autre contrôleur, et que la réplication est saine.',
+    },
     checks: [
       'Ne pas utiliser un DNS public sur le serveur à promouvoir.',
       'Vérifier le canal sécurisé et les ports avant la promotion.',
@@ -1044,6 +1231,19 @@ export const tools = [
         fix:     'Vérifier le type de démarrage du service WlanSvc dans services.msc.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-NetAdapter -Name \'<carte>\' affiche Status = Up.',
+      'netsh wlan show interfaces indique l\'état de la connexion et le SSID.',
+      'Test-NetConnection 8.8.8.8 confirme que le trafic sort.',
+    ],
+    rollback: {
+      summary:     'Aucune configuration n\'est modifiée durablement : la carte est désactivée puis réactivée. Si le script a été interrompu au milieu, il suffit de la rallumer.',
+      diagnostic:  '# État réel de la carte avant toute action\nGet-NetAdapter -Name \'<carte>\' | Format-Table Name,Status,LinkSpeed\nnetsh wlan show interfaces',
+      command:     '# Rallumer la carte. Cette commande n\'est pas destructive : elle active,\n# elle ne supprime rien et ne reconfigure rien.\nEnable-NetAdapter -Name \'<carte>\'',
+      exceptional: '',
+      warning:     'Si le script a été interrompu entre la désactivation et la réactivation, la carte reste désactivée et la machine est sans réseau sans fil. La commande ci-dessus la rallume.',
+    },
     checks: [
       'Le nom de la carte doit être exact avant la désactivation.',
       "La désinstallation du pilote est une solution de second niveau : commence toujours par redémarrer la carte.",
@@ -1137,6 +1337,18 @@ export const tools = [
         fix:     'Vérifier la cohérence des durées et de la longueur minimale.',
       },
     ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADDefaultDomainPasswordPolicy affiche les nouvelles valeurs.',
+      'Sur un poste du domaine, gpresult /r confirme l\'application après actualisation.',
+    ],
+    rollback: {
+      summary:     'Réappliquer les valeurs précédentes. Le script affiche la configuration en vigueur AVANT de la modifier : la noter permet de revenir exactement à l\'état initial.',
+      diagnostic:  '# Relever les valeurs actuelles AVANT toute modification, et les conserver.\nGet-ADDefaultDomainPasswordPolicy | Format-List `\n  MinPasswordLength,PasswordHistoryCount,MaxPasswordAge,MinPasswordAge,`\n  LockoutThreshold,LockoutDuration,LockoutObservationWindow,ComplexityEnabled',
+      command:     '# Réappliquer les anciennes valeurs relevées ci-dessus.\n# Aucune suppression : il s\'agit d\'une reconfiguration.\nSet-ADDefaultDomainPasswordPolicy -Identity \'<domaine>\' `\n  -MinPasswordLength    <ancienne valeur> `\n  -LockoutThreshold     <ancienne valeur> `\n  -LockoutDuration      (New-TimeSpan -Minutes <ancienne valeur>)',
+      exceptional: '',
+      warning:     'Les mots de passe déjà changés sous la nouvelle règle ne sont pas réinitialisés par l\'annulation. Seule la règle applicable aux prochains changements revient en arrière.',
+    },
     checks: [
       "Cette politique touche les utilisateurs du domaine : teste d\u2019abord les seuils en laboratoire.",
       "Une stratégie de mot de passe fine est préférable lorsqu\u2019un groupe spécifique requiert une règle différente.",
@@ -1393,6 +1605,18 @@ function createDiskScanTool() {
         fix:     'Vérifier la lettre de lecteur avec Get-PSDrive.',
       },
     ],
+    reversible: false,
+    verifyAfter: [
+      'Le rapport CSV est créé à l\'emplacement indiqué en fin de script.',
+      'Le tableau affiché liste les plus gros éléments par taille décroissante.',
+    ],
+    rollback: {
+      summary:     'Aucune annulation nécessaire : cet outil est en LECTURE SEULE. Il analyse, affiche et écrit un rapport, mais ne supprime ni ne déplace aucun fichier.',
+      diagnostic:  '# Rien à diagnostiquer : l\'outil n\'a modifié aucune donnée.\n# Emplacement du rapport produit, si tu veux le relire ou le retirer :\nGet-Item \'<chemin du rapport>.csv\' | Select-Object FullName,Length,LastWriteTime',
+      command:     '# Rien à annuler côté système.\n# Pour retirer le rapport produit, avec confirmation :\nRemove-Item \'<chemin du rapport>.csv\' -Confirm',
+      exceptional: '',
+      warning:     '',
+    },
     checks: [
       'Compatible avec Windows PowerShell 5.1 ou PowerShell 7 sur Windows; le scan peut prendre du temps sur un gros disque.',
       'Le mode recommandé produit seulement un rapport CSV/HTML et ne supprime rien.',

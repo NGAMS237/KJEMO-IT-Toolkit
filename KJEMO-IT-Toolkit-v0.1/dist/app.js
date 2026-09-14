@@ -262,6 +262,44 @@ function errorEntryMarkup(e) {
  * La procédure d'exécution est commune à tous les outils (EXECUTION_NOTES) ;
  * les prérequis et les erreurs propres viennent de l'outil lui-même.
  */
+/**
+ * Vérifications après exécution et procédure d'annulation, en trois blocs
+ * distincts : constater, procédure normale, cas exceptionnel.
+ * Sujet de sécurité : un technicien qui modifie une configuration doit savoir
+ * comment constater que ça a marché, et comment revenir en arrière sans casser
+ * davantage.
+ */
+function rollbackMarkup(tool) {
+  const r  = tool.rollback;
+  const li = (x) => `<li>${textToCode(x)}</li>`;
+
+  const etiquette = tool.reversible
+    ? `<span class="rev-badge rev-yes">Réversible</span>`
+    : `<span class="rev-badge rev-na">Lecture seule</span>`;
+
+  const bloc = (titre, classe, contenu) => contenu
+    ? `<h4 class="rb-step ${classe}">${textToCode(titre)}</h4>`
+      + `<pre class="cmd">${textToCode(contenu)}</pre>`
+    : '';
+
+  return `<details class="details verify-after" id="verifyAfter">`
+    + `<summary>Vérifier que ça a fonctionné</summary>`
+    + `<ul>${tool.verifyAfter.map(li).join('')}</ul>`
+    + `</details>`
+    + `<details class="details rollback" id="rollbackBlock">`
+    + `<summary>Revenir en arrière ${etiquette}</summary>`
+    + `<p>${textToCode(r.summary)}</p>`
+    + bloc('1. Constater avant d\u2019agir', 'rb-diag', r.diagnostic)
+    + bloc('2. Procédure normale', 'rb-normal', r.command)
+    + (r.exceptional
+        ? `<div class="rb-exceptional" id="rollbackExceptional">`
+          + bloc('3. Cas exceptionnel', 'rb-exc', r.exceptional)
+          + `</div>`
+        : '')
+    + (r.warning ? `<p class="rollback-warning">${textToCode(r.warning)}</p>` : '')
+    + `</details>`;
+}
+
 function prereqMarkup(tool) {
   const n  = EXECUTION_NOTES;
   const li = (x) => `<li>${textToCode(x)}</li>`;
@@ -352,7 +390,7 @@ function renderTool() {
   }
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
   const script = normalizeScript(tool.generate(defaultValues));
-  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div>${prereqMarkup(tool)}</section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
+  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div>${prereqMarkup(tool)}${rollbackMarkup(tool)}</section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
 
   // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
   // Copier et Télécharger sont désactivés jusqu'à la prochaine génération valide.

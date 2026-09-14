@@ -39,7 +39,7 @@ const ROOT      = resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 // Importer les générateurs depuis le module source (pas depuis dist/app.js)
 // ---------------------------------------------------------------------------
-const { tools, normalizeScript, EXECUTION_NOTES, searchTools, searchCommonErrors } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { tools, normalizeScript, EXECUTION_NOTES, searchTools, searchCommonErrors, auditerAnnulation } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
 
 // ---------------------------------------------------------------------------
 // Serveur HTTP statique minimal pour dist/
@@ -442,6 +442,54 @@ for (const tool of tools) {
 
   // Les deux sections repliables doivent être fermées par défaut, pour ne pas
   // noyer l'aperçu du script.
+
+  // -------------------------------------------------------------------------
+  // 4 ter. LOT 1 — vérifications après exécution et annulation en 3 blocs
+  // -------------------------------------------------------------------------
+  const verifTexte = await page.$eval('#verifyAfter', (el) => el.textContent).catch(() => null);
+  assert(verifTexte !== null, `${tool.id} : bloc « Vérifier que ça a fonctionné » présent`);
+  if (verifTexte !== null) {
+    assert(tool.verifyAfter.every((v) => verifTexte.includes(v)),
+      `${tool.id} : les ${tool.verifyAfter.length} vérifications sont affichées`);
+  }
+
+  const rbTexte = await page.$eval('#rollbackBlock', (el) => el.textContent).catch(() => null);
+  assert(rbTexte !== null, `${tool.id} : bloc « Revenir en arrière » présent`);
+  if (rbTexte !== null) {
+    assert(rbTexte.includes(tool.rollback.summary), `${tool.id} : procédure d'annulation affichée`);
+    assert(rbTexte.includes('1. Constater'), `${tool.id} : bloc « Constater avant d'agir » affiché`);
+    assert(rbTexte.includes('2. Procédure normale'), `${tool.id} : bloc « Procédure normale » affiché`);
+    assert(rbTexte.includes(tool.reversible ? 'Réversible' : 'Lecture seule'),
+      `${tool.id} : étiquette de réversibilité affichée`);
+
+    // SÉCURITÉ — ce qui est RENDU À L'ÉCRAN ne doit jamais désactiver la confirmation
+    assert(!/-Confirm\s*:\s*\$false/.test(rbTexte),
+      `${tool.id} : aucun -Confirm:$false visible dans l'annulation affichée`);
+    assert(auditerAnnulation(tool).length === 0,
+      `${tool.id} : l'audit de sécurité passe sur la fiche rendue`);
+
+    // Le cas exceptionnel, quand il existe, est visuellement séparé
+    const aExceptionnel = Boolean(tool.rollback.exceptional);
+    const blocExc = await page.$('#rollbackExceptional');
+    assert(Boolean(blocExc) === aExceptionnel,
+      `${tool.id} : bloc « cas exceptionnel » ${aExceptionnel ? 'présent' : 'absent'} comme attendu`);
+    if (aExceptionnel) {
+      const texteExc = await page.$eval('#rollbackExceptional', (el) => el.textContent);
+      assert(/AVERTISSEMENT CRITIQUE/.test(texteExc),
+        `${tool.id} : le cas exceptionnel affiche son avertissement critique`);
+    }
+
+    if (tool.rollback.warning) {
+      assert(rbTexte.includes(tool.rollback.warning), `${tool.id} : avertissement affiché`);
+    }
+  }
+
+  const replies = await page.evaluate(() => ({
+    v: document.querySelector('#verifyAfter')?.open === false,
+    r: document.querySelector('#rollbackBlock')?.open === false,
+  }));
+  assert(replies.v && replies.r, `${tool.id} : vérifications et annulation repliées par défaut`);
+
   const repliees = await page.evaluate(() => ({
     exec: document.querySelector('#execNotes')?.open === false,
     err:  document.querySelector('#commonErrors')?.open === false,
