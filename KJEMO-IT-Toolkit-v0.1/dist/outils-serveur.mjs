@@ -2353,6 +2353,413 @@ export const outilDnsEnregistrement = {
 };
 
 // ---------------------------------------------------------------------------
+// D. SERVEUR DE FICHIERS
+// ---------------------------------------------------------------------------
+
+/**
+ * 10. file-permissions-audit — lire les permissions NTFS et SMB, et rien d'autre.
+ *
+ * Les droits effectifs d'un partage sont l'intersection des permissions SMB et
+ * NTFS. Les regarder séparément explique mal ce que voit l'utilisateur ; le
+ * rapport les met donc côte à côte.
+ */
+export const outilAuditPermissions = {
+  id: 'file-permissions-audit',
+  icon: '\u25e7',
+  category: 'Windows Server',
+  subcategory: 'Serveur de fichiers',
+  title: 'Auditer les permissions NTFS et SMB',
+  risk: 'diagnostic',
+  summary: 'Relève propriétaire, ACL NTFS, héritage, permissions SMB, et signale Everyone FullControl, refus explicites et ACL orphelines.',
+  fields: [
+    { id: 'auditPath', label: 'Chemin local à auditer', default: 'C:\\Partages\\Donnees' },
+    { id: 'auditShare', label: 'Nom du partage (facultatif)', default: 'Donnees', help: 'Laisser vide pour n\u2019auditer que le système de fichiers.' },
+    { id: 'auditDepth', label: 'Profondeur d\u2019analyse', default: '1', help: '0 = le dossier seul. 1 = ses enfants directs. Maximum 10.' },
+    {
+      id: 'auditInherited', label: 'Inclure les permissions héritées', type: 'select', default: 'Non',
+      options: [['Non', 'Non — seulement les permissions explicites'], ['Oui', 'Oui — héritées et explicites']],
+      help: 'Les permissions explicites sont celles qui ont été posées sur l\u2019objet lui-même.',
+    },
+    champFormat('auditFormat'),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'auditPath', validerCheminWindowsLocal(v.auditPath));
+    const partage = String(v.auditShare ?? '').trim();
+    if (partage) verifier(errors, 'auditShare', validateShareName(partage));
+    verifier(errors, 'auditDepth', validerProfondeur(v.auditDepth));
+    verifier(errors, 'auditInherited', validerChoix(v.auditInherited, ['Oui', 'Non'], 'L\u2019option d\u2019héritage'));
+    verifier(errors, 'auditFormat', validerFormatRapport(v.auditFormat));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const partage = String(v.auditShare ?? '').trim();
+    const corps = [
+      `$Chemin = ${psB64(validerCheminWindowsLocal(v.auditPath).value)}`,
+      partage ? `$Partage = ${psB64(partage)}` : "$Partage = ''",
+      `$Profondeur = [int](${psB64(v.auditDepth)})`,
+      `$AvecHeritees = ${psB64(v.auditInherited)}`,
+      `$KjemoFormat = ${psB64(v.auditFormat)}`,
+      "",
+      '# --- 1. Le chemin existe-t-il ? -------------------------------------------',
+      'if (-not (Test-Path -LiteralPath $Chemin)) {',
+      "  [void](Add-KjemoResultat -Categorie 'Chemin' -Controle 'Existence' -Etat 'PROBLEME' -Valeur $Chemin -Commentaire 'Dossier introuvable : verifie le chemin.')",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Chemin' -Controle 'Existence' -Etat 'OK' -Valeur $Chemin)",
+      "",
+      '  # --- 2. Proprietaire et ACL NTFS du dossier racine ---------------------',
+      '  $acl = $null',
+      '  try { $acl = Get-Acl -LiteralPath $Chemin } catch {',
+      '    [void](Add-KjemoResultat -Categorie \'NTFS\' -Controle \'Lecture de l\'\'ACL\' -Etat \'PROBLEME\' -Valeur $_.Exception.Message)',
+      '  }',
+      '  if ($acl) {',
+      "    [void](Add-KjemoResultat -Categorie 'NTFS' -Controle 'Proprietaire' -Etat 'INFO' -Valeur $acl.Owner)",
+      '    $heritageActif = -not $acl.AreAccessRulesProtected',
+      "    [void](Add-KjemoResultat -Categorie 'NTFS' -Controle 'Heritage' -Etat 'INFO' -Valeur (\"actif : $heritageActif\") -Commentaire \"Heritage coupe signifie que les droits du parent ne s''appliquent plus ici.\")",
+      "",
+      '    $regles = @($acl.Access)',
+      "    if ($AvecHeritees -eq 'Non') { $regles = @($regles | Where-Object { -not $_.IsInherited }) }",
+      '    foreach ($regle in $regles) {',
+      "      $etatRegle = 'INFO'",
+      "      $commentaireRegle = ''",
+      "      if ($regle.IdentityReference -match 'Everyone|Tout le monde' -and $regle.FileSystemRights -match 'FullControl') {",
+      "        $etatRegle = 'PROBLEME'",
+      "        $commentaireRegle = 'Everyone en controle total : tout utilisateur authentifie ou non peut modifier et supprimer.'",
+      '      }',
+      "      elseif ($regle.AccessControlType -eq 'Deny') {",
+      "        $etatRegle = 'ATTENTION'",
+      "        $commentaireRegle = 'Refus explicite : il l''emporte sur toute autorisation, y compris celle d''un groupe d''administration.'",
+      '      }',
+      '      # Une identite non resolue (SID brut) signale un compte supprime.',
+      "      elseif ($regle.IdentityReference.Value -match '^S-1-[0-9-]+$') {",
+      "        $etatRegle = 'ATTENTION'",
+      "        $commentaireRegle = 'ACL orpheline : le compte ou groupe n''existe plus dans l''annuaire.'",
+      '      }',
+      '      [void](Add-KjemoResultat -Categorie \'NTFS\' -Controle $regle.IdentityReference.Value -Etat $etatRegle -Valeur ("$($regle.AccessControlType) $($regle.FileSystemRights) ; herite : $($regle.IsInherited)") -Commentaire $commentaireRegle)',
+      '    }',
+      '  }',
+      "",
+      "  # --- 3. Sous-dossiers, jusqu'a la profondeur demandee -----------------",
+      '  if ($Profondeur -gt 0) {',
+      '    $enfants = @()',
+      '    try { $enfants = @(Get-ChildItem -LiteralPath $Chemin -Directory -Recurse -Depth ($Profondeur - 1) -ErrorAction SilentlyContinue) } catch { }',
+      '    foreach ($enfant in $enfants) {',
+      '      $aclEnfant = $null',
+      '      try { $aclEnfant = Get-Acl -LiteralPath $enfant.FullName } catch { continue }',
+      '      $explicites = @($aclEnfant.Access | Where-Object { -not $_.IsInherited })',
+      '      if (@($explicites).Count -gt 0) {',
+      "        [void](Add-KjemoResultat -Categorie 'NTFS — sous-dossiers' -Controle $enfant.FullName -Etat 'INFO' -Valeur ((@($explicites) | ForEach-Object { \"$($_.IdentityReference.Value) : $($_.AccessControlType) $($_.FileSystemRights)\" }) -join ' ; ') -Commentaire \"Permissions explicites : elles s''ajoutent ou se substituent a l''heritage.\")",
+      '      }',
+      '      if ($aclEnfant.AreAccessRulesProtected) {',
+      "        [void](Add-KjemoResultat -Categorie 'NTFS — sous-dossiers' -Controle $enfant.FullName -Etat 'ATTENTION' -Valeur 'heritage coupe' -Commentaire 'Ce dossier ne suit plus les droits de son parent.')",
+      '      }',
+      '    }',
+      '  }',
+      '}',
+      "",
+      '# --- 4. Permissions SMB et comparaison avec NTFS ---------------------------',
+      "if ($Partage -ne '') {",
+      '  $share = $null',
+      '  try { $share = Get-SmbShare -Name $Partage -ErrorAction SilentlyContinue } catch { }',
+      '  if ($null -eq $share) {',
+      '    [void](Add-KjemoResultat -Categorie \'SMB\' -Controle \'Partage\' -Etat \'ATTENTION\' -Valeur "$Partage introuvable" -Commentaire "Le dossier peut exister sans etre partage.")',
+      '  } else {',
+      '    [void](Add-KjemoResultat -Categorie \'SMB\' -Controle \'Partage\' -Etat \'OK\' -Valeur ("$($share.Name) -> $($share.Path) ; description : $($share.Description)"))',
+      '    if ($share.Path -ne $Chemin) {',
+      '      [void](Add-KjemoResultat -Categorie \'SMB\' -Controle \'Coherence chemin\' -Etat \'ATTENTION\' -Valeur ("partage : $($share.Path) ; audite : $Chemin") -Commentaire "Le partage ne pointe pas vers le dossier audite : les droits compares ne portent pas sur le meme contenu.")',
+      '    }',
+      '    $acces = @()',
+      '    try { $acces = @(Get-SmbShareAccess -Name $Partage) } catch { }',
+      '    foreach ($a in $acces) {',
+      "      $etatAcces = 'INFO'",
+      "      $commentaireAcces = ''",
+      "      if ($a.AccountName -match 'Everyone|Tout le monde' -and $a.AccessRight -eq 'Full') {",
+      "        $etatAcces = 'ATTENTION'",
+      "        $commentaireAcces = 'Everyone en controle total cote SMB. Usage courant lorsque NTFS restreint reellement, mais a verifier.'",
+      '      }',
+      '      [void](Add-KjemoResultat -Categorie \'SMB\' -Controle $a.AccountName -Etat $etatAcces -Valeur ("$($a.AccessControlType) $($a.AccessRight)") -Commentaire $commentaireAcces)',
+      '    }',
+      "",
+      "    # Les droits effectifs sont l'intersection des deux couches.",
+      "    [void](Add-KjemoResultat -Categorie 'Comparaison' -Controle 'NTFS et SMB' -Etat 'INFO' -Valeur 'voir les deux sections ci-dessus' -Commentaire 'Les droits effectifs d''un acces reseau sont l''intersection : le plus restrictif des deux l''emporte.')",
+      '  }',
+      '}',
+      "",
+      '# Rappel : cet outil ne modifie AUCUNE permission.',
+      "[void](Add-KjemoResultat -Categorie 'Portee' -Controle 'Modifications' -Etat 'OK' -Valeur 'aucune' -Commentaire 'Audit en lecture seule : aucun droit n''a ete change.')",
+    ];
+
+    return assembler({
+      titre: 'Auditer les permissions NTFS et SMB - lecture seule',
+      outil: 'file-permissions-audit',
+      diagnostic: true,
+      admin: true,
+      parametres: [
+        ['Chemin', psB64(v.auditPath)],
+        ['Partage', partage ? psB64(partage) : "'(aucun)'"],
+        ['Profondeur', psB64(v.auditDepth)],
+        ['AvecHeritees', psB64(v.auditInherited)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-permissions',
+    });
+  },
+  gui: [
+    'Explorateur : clic droit sur le dossier > Propriétés > onglet Sécurité pour les permissions NTFS.',
+    'Bouton Avancé : propriétaire, héritage, et permissions effectives d\u2019un utilisateur donné.',
+    'Onglet Partage > Partage avancé > Autorisations pour les permissions SMB.',
+    'Gestionnaire de serveur > Services de fichiers et de stockage > Partages, pour la vue d\u2019ensemble.',
+  ],
+  keywords: [
+    'permissions', 'ntfs', 'smb', 'acl', 'droits d acces', 'everyone', 'refus explicite',
+    'heritage', 'get-acl', 'acces refuse au partage', 'audit des droits', 'sid orphelin',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur : lire une ACL complète demande des droits sur le dossier.',
+    'Le dossier audité doit être local à la machine qui exécute le script.',
+    'Script en lecture seule : aucune permission n\u2019est modifiée.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'Get-Acl : Accès au chemin refusé',
+      code: 'UnauthorizedAccessException',
+      cause: 'Le compte courant n\u2019a pas le droit de lire les permissions du dossier.',
+      fix: 'Exécuter la console en tant qu\u2019administrateur, ou prendre connaissance du propriétaire avec Get-Acl sur le parent.',
+    },
+    {
+      message: 'L\u2019utilisateur voit le partage mais ne peut pas ouvrir les fichiers',
+      cause: 'Les droits SMB autorisent, mais NTFS refuse : c\u2019est l\u2019intersection qui s\u2019applique.',
+      fix: 'Comparer les deux sections du rapport et corriger la couche la plus restrictive.',
+    },
+    {
+      message: 'Une entrée d\u2019ACL affiche un SID au lieu d\u2019un nom',
+      cause: 'Le compte ou groupe a été supprimé de l\u2019annuaire : l\u2019ACL est orpheline.',
+      fix: 'Retirer l\u2019entrée après avoir vérifié qu\u2019aucun accès légitime n\u2019en dépend.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le rapport liste propriétaire, héritage et chaque entrée d\u2019ACL avec son état.',
+    'Les entrées Everyone FullControl, les refus explicites et les SID non résolus sont signalés.',
+    'Quand un partage est indiqué, les droits SMB apparaissent à côté des droits NTFS.',
+  ],
+  rollback: {
+    summary: 'Cet audit ne modifie aucune permission : il n\u2019y a rien à annuler. C\u2019est précisément son intérêt — comprendre avant de toucher.',
+    diagnostic: '# Relire les permissions : ces commandes n\'ecrivent rien.\nGet-Acl -LiteralPath \'<chemin>\' | Format-List Owner,AreAccessRulesProtected\nGet-Acl -LiteralPath \'<chemin>\' | Select-Object -ExpandProperty Access | Format-Table IdentityReference,AccessControlType,FileSystemRights,IsInherited',
+    command: '# Aucune annulation necessaire : audit en lecture seule.\nGet-SmbShareAccess -Name \'<partage>\' | Format-Table AccountName,AccessControlType,AccessRight',
+    exceptional: '',
+    warning: 'Le rapport détaille qui a accès à quoi : c\u2019est un document sensible au sens organisationnel. Il ne contient en revanche ni mot de passe, ni contenu de fichier.',
+  },
+  checks: [
+    'Auditer avant de modifier : une permission retirée sans inventaire préalable est difficile à rétablir à l\u2019identique.',
+    'Une profondeur élevée sur une arborescence volumineuse allonge sensiblement l\u2019exécution.',
+    'Everyone FullControl côté SMB n\u2019est pas forcément une faute si NTFS restreint réellement — mais cela doit être un choix, pas un oubli.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl',
+  sources: [
+    { label: 'Get-Acl', url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl' },
+    { label: 'Get-SmbShareAccess', url: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbshareaccess' },
+    { label: 'Get-SmbShare', url: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbshare' },
+  ],
+};
+
+/**
+ * 11. smb-sessions-diagnostic — voir qui est connecté et quels fichiers sont ouverts.
+ *
+ * Fermer une session ou un fichier ouvert n'est PAS automatisé : couper un
+ * fichier en cours d'écriture fait perdre le travail de quelqu'un.
+ */
+export const outilSmbSessions = {
+  id: 'smb-sessions-diagnostic',
+  icon: '\u25eb',
+  category: 'Windows Server',
+  subcategory: 'Serveur de fichiers',
+  title: 'Diagnostiquer les sessions et fichiers SMB ouverts',
+  risk: 'diagnostic',
+  summary: 'Liste partages, sessions, fichiers ouverts, durées, erreurs SMB récentes, état du service et disponibilité du port 445.',
+  fields: [
+    { id: 'smbShareFilter', label: 'Filtrer par partage (facultatif)', default: '', help: 'Laisser vide pour tous les partages.' },
+    { id: 'smbUserFilter', label: 'Filtrer par utilisateur (facultatif)', default: '', help: 'Recherche partielle sur le nom de compte.' },
+    { id: 'smbHours', label: 'Fenêtre des erreurs SMB (heures)', default: '24' },
+    champFormat('smbFormat'),
+  ],
+  validate(v) {
+    const errors = {};
+    const partage = String(v.smbShareFilter ?? '').trim();
+    if (partage) verifier(errors, 'smbShareFilter', validateShareName(partage));
+    const utilisateur = String(v.smbUserFilter ?? '').trim();
+    if (utilisateur && utilisateur.length > 104) errors.smbUserFilter = 'Le nom de compte ne doit pas dépasser 104 caractères.';
+    if (/[\x00-\x1f\x7f]/.test(utilisateur)) errors.smbUserFilter = 'Le filtre contient un caractère de contrôle non autorisé.';
+    verifier(errors, 'smbHours', validerEntier(v.smbHours, 1, 720, 'La fenêtre des erreurs'));
+    verifier(errors, 'smbFormat', validerFormatRapport(v.smbFormat));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const partage = String(v.smbShareFilter ?? '').trim();
+    const utilisateur = String(v.smbUserFilter ?? '').trim();
+
+    const corps = [
+      partage ? `$FiltrePartage = ${psB64(partage)}` : "$FiltrePartage = ''",
+      utilisateur ? `$FiltreUtilisateur = ${psB64(utilisateur)}` : "$FiltreUtilisateur = ''",
+      `$Heures = [int](${psB64(v.smbHours)})`,
+      `$KjemoFormat = ${psB64(v.smbFormat)}`,
+      "",
+      '# --- 1. Service et port ----------------------------------------------------',
+      '$service = Get-Service -Name LanmanServer -ErrorAction SilentlyContinue',
+      'if ($service) {',
+      "  $etatSvc = 'PROBLEME'",
+      "  $commentaireSvc = 'Service Serveur arrete : aucun partage n''est accessible.'",
+      "  if ($service.Status -eq 'Running') { $etatSvc = 'OK'; $commentaireSvc = '' }",
+      '  [void](Add-KjemoResultat -Categorie \'Service\' -Controle \'LanmanServer\' -Etat $etatSvc -Valeur ("$($service.Status) / demarrage $($service.StartType)") -Commentaire $commentaireSvc)',
+      '}',
+      '$port = $null',
+      'try { $port = Test-NetConnection -ComputerName $env:COMPUTERNAME -Port 445 -WarningAction SilentlyContinue } catch { }',
+      'if ($port) {',
+      "  $etatPort = 'PROBLEME'",
+      "  if ($port.TcpTestSucceeded) { $etatPort = 'OK' }",
+      '  [void](Add-KjemoResultat -Categorie \'Reseau\' -Controle \'Port 445\' -Etat $etatPort -Valeur $port.TcpTestSucceeded -Commentaire "Sans 445 ouvert, aucun client ne joint les partages.")',
+      '}',
+      "",
+      '# --- 2. Partages publies ---------------------------------------------------',
+      '$partages = @()',
+      'try { $partages = @(Get-SmbShare) } catch { }',
+      "if ($FiltrePartage -ne '') { $partages = @($partages | Where-Object { $_.Name -like \"*$FiltrePartage*\" }) }",
+      'foreach ($p in $partages) {',
+      '  [void](Add-KjemoResultat -Categorie \'Partages\' -Controle $p.Name -Etat \'INFO\' -Valeur ("$($p.Path) ; type $($p.ShareType) ; description : $($p.Description)"))',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Partages\' -Controle \'Total\' -Etat \'INFO\' -Valeur ("$(@($partages).Count) partage(s)"))',
+      "",
+      '# --- 3. Sessions ouvertes ---------------------------------------------------',
+      '$sessions = @()',
+      'try { $sessions = @(Get-SmbSession) } catch { }',
+      "if ($FiltreUtilisateur -ne '') { $sessions = @($sessions | Where-Object { $_.ClientUserName -like \"*$FiltreUtilisateur*\" }) }",
+      'foreach ($s in $sessions) {',
+      '  [void](Add-KjemoResultat -Categorie \'Sessions\' -Controle $s.ClientUserName -Etat \'INFO\' -Valeur ("machine : $($s.ClientComputerName) ; fichiers ouverts : $($s.NumOpens) ; session : $($s.SessionId)"))',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Sessions\' -Controle \'Total\' -Etat \'INFO\' -Valeur ("$(@($sessions).Count) session(s)"))',
+      "",
+      '# --- 4. Fichiers ouverts ----------------------------------------------------',
+      '$ouverts = @()',
+      'try { $ouverts = @(Get-SmbOpenFile) } catch { }',
+      "if ($FiltrePartage -ne '') { $ouverts = @($ouverts | Where-Object { $_.ShareRelativePath -like \"*$FiltrePartage*\" -or $_.Path -like \"*$FiltrePartage*\" }) }",
+      "if ($FiltreUtilisateur -ne '') { $ouverts = @($ouverts | Where-Object { $_.ClientUserName -like \"*$FiltreUtilisateur*\" }) }",
+      'foreach ($o in $ouverts) {',
+      '  [void](Add-KjemoResultat -Categorie \'Fichiers ouverts\' -Controle $o.Path -Etat \'INFO\' -Valeur ("utilisateur : $($o.ClientUserName) ; machine : $($o.ClientComputerName) ; verrous : $($o.Locks) ; id : $($o.FileId)"))',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Fichiers ouverts\' -Controle \'Total\' -Etat \'INFO\' -Valeur ("$(@($ouverts).Count) fichier(s) ouvert(s)"))',
+      "",
+      '# --- 5. Erreurs SMB recentes ------------------------------------------------',
+      '$depuis = (Get-Date).AddHours(-1 * $Heures)',
+      '$evts = @()',
+      'try {',
+      "  $evts = @(Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-SMBServer/Operational'; Level = @(1,2,3); StartTime = $depuis } -ErrorAction Stop)",
+      '} catch { $evts = @() }',
+      'if (@($evts).Count -eq 0) {',
+      '  [void](Add-KjemoResultat -Categorie \'Evenements\' -Controle "Journal SMBServer ($Heures h)" -Etat \'OK\' -Valeur \'aucun avertissement ni erreur\')',
+      '} else {',
+      '  $groupes = $evts | Group-Object Id | Sort-Object Count -Descending | Select-Object -First 5',
+      '  [void](Add-KjemoResultat -Categorie \'Evenements\' -Controle "Journal SMBServer ($Heures h)" -Etat \'ATTENTION\' -Valeur ((@($groupes) | ForEach-Object { "ID $($_.Name) : $($_.Count)" }) -join \' ; \') -Commentaire ("$(@($evts).Count) evenement(s) au total."))',
+      '}',
+      "",
+      "# --- 6. Detail tabulaire pour la console et l'export CSV -------------------",
+      "Write-Host ''",
+      "Write-Host '--- Sessions ---'",
+      '$sessions | Select-Object ClientUserName,ClientComputerName,NumOpens,SessionId | Format-Table -AutoSize',
+      "Write-Host '--- Fichiers ouverts ---'",
+      '$ouverts | Select-Object ClientUserName,ClientComputerName,Path,Locks,FileId | Format-Table -AutoSize',
+      "",
+      '# --- 7. Fermeture : cas exceptionnel, jamais automatise ---------------------',
+      "Write-Host ''",
+      "Write-Host '--- Fermer une session ou un fichier ---'",
+      "Write-Host 'Cet outil ne ferme rien. Fermer un fichier ouvert fait perdre les'",
+      "Write-Host 'modifications non enregistrees de la personne qui l''utilise.'",
+      "Write-Host 'A n''envisager qu''apres avoir identifie et prevenu l''utilisateur :'",
+      "Write-Host '  Close-SmbOpenFile -FileId <id> -Confirm'",
+      "Write-Host '  Close-SmbSession -SessionId <id> -Confirm'",
+      "Write-Host 'Reference : https://learn.microsoft.com/powershell/module/smbshare/close-smbopenfile'",
+    ];
+
+    return assembler({
+      titre: 'Diagnostiquer les sessions et fichiers SMB - lecture seule',
+      outil: 'smb-sessions-diagnostic',
+      diagnostic: true,
+      admin: true,
+      parametres: [
+        ['FiltrePartage', partage ? psB64(partage) : "'(aucun)'"],
+        ['FiltreUtilisateur', utilisateur ? psB64(utilisateur) : "'(aucun)'"],
+        ['FenetreHeures', psB64(v.smbHours)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-smb-sessions',
+    });
+  },
+  gui: [
+    'Gestion de l\u2019ordinateur (compmgmt.msc) > Dossiers partagés > Partages, Sessions, Fichiers ouverts.',
+    'Gestionnaire de serveur > Services de fichiers et de stockage > Partages pour la vue d\u2019ensemble.',
+    'Observateur d\u2019événements > Journaux des applications et des services > Microsoft > Windows > SMBServer.',
+    'Une session se ferme depuis « Sessions » par clic droit — après avoir prévenu l\u2019utilisateur.',
+  ],
+  keywords: [
+    'smb', 'session', 'fichier ouvert', 'verrou', 'fichier verrouille', 'qui utilise ce fichier',
+    'get-smbopenfile', 'get-smbsession', 'port 445', 'lanmanserver', 'partage inaccessible',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur : les sessions SMB ne sont pas lisibles par un compte standard.',
+    'Script à exécuter sur le serveur de fichiers lui-même.',
+    'Script en lecture seule : aucune session ni aucun fichier n\u2019est fermé.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'Get-SmbOpenFile : Accès refusé',
+      cause: 'Console non élevée.',
+      fix: 'Relancer PowerShell avec « Exécuter en tant qu\u2019administrateur ».',
+    },
+    {
+      message: 'Le fichier est verrouillé par un autre utilisateur',
+      cause: 'Une session SMB tient un verrou sur le fichier.',
+      fix: 'Identifier l\u2019utilisateur avec ce rapport, le contacter, et ne fermer le fichier qu\u2019en dernier recours.',
+      command: 'Get-SmbOpenFile | Where-Object { $_.Path -like \'*nom-du-fichier*\' }',
+    },
+    {
+      message: 'Aucun client ne joint le partage',
+      cause: 'Service LanmanServer arrêté, port 445 bloqué par le pare-feu, ou partage non publié.',
+      fix: 'Les trois points sont contrôlés par ce rapport.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le rapport indique le nombre de partages, de sessions et de fichiers ouverts.',
+    'Le filtre par utilisateur ou par partage retrouve la session recherchée.',
+    'Les erreurs SMB récentes sont regroupées par identifiant d\u2019événement.',
+  ],
+  rollback: {
+    summary: 'Ce script observe : il ne ferme ni session ni fichier. Il n\u2019y a rien à annuler.',
+    diagnostic: '# Relire l\'etat : aucune de ces commandes ne ferme quoi que ce soit.\nGet-SmbSession | Format-Table ClientUserName,ClientComputerName,NumOpens\nGet-SmbOpenFile | Format-Table ClientUserName,Path,Locks',
+    command: '# Aucune annulation necessaire : diagnostic en lecture seule.\nGet-SmbShare | Format-Table Name,Path,Description',
+    exceptional: '# AVERTISSEMENT CRITIQUE — fermeture d\'une session ou d\'un fichier ouvert.\n#\n# Fermer un fichier ouvert fait perdre les modifications non enregistrees de\n# la personne qui l\'utilise. Fermer une session deconnecte toutes ses ouvertures\n# d\'un coup. Cette operation n\'est volontairement pas automatisee.\n#\n# Avant :\n#   1. Identifier l\'utilisateur et la machine avec ce rapport.\n#   2. Le contacter et lui demander de fermer le document.\n#   3. N\'agir qu\'en dernier recours, et sur un fichier precis plutot que sur\n#      toute la session.\n#\n# Reference officielle :\n# https://learn.microsoft.com/powershell/module/smbshare/close-smbopenfile\n#\n# Commandes, a executer manuellement :\n#   Close-SmbOpenFile -FileId <id> -Confirm\n#   Close-SmbSession -SessionId <id> -Confirm',
+    warning: 'Le rapport nomme des utilisateurs et des machines. Il décrit qui travaille sur quoi : ne le diffuse pas hors de l\u2019équipe technique.',
+  },
+  checks: [
+    'Exécuter sur le serveur qui héberge les partages, pas depuis un poste client.',
+    'Un fichier verrouillé depuis longtemps signale souvent une session restée ouverte sur un poste éteint.',
+    'La création de partages reste du ressort de l\u2019outil « Créer un dossier partagé » : celui-ci ne fait que diagnostiquer.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbopenfile',
+  sources: [
+    { label: 'Get-SmbOpenFile', url: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbopenfile' },
+    { label: 'Get-SmbSession', url: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbsession' },
+    { label: 'Get-SmbShare', url: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbshare' },
+    { label: 'Test-NetConnection', url: 'https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection' },
+  ],
+};
+
+// ---------------------------------------------------------------------------
 // Catalogue exporté — complété au fil des sous-rubriques du LOT 2
 // ---------------------------------------------------------------------------
 export const toolsServeur = [
@@ -2365,4 +2772,6 @@ export const toolsServeur = [
   outilDnsDiagnostic,
   outilDnsZone,
   outilDnsEnregistrement,
+  outilAuditPermissions,
+  outilSmbSessions,
 ];
