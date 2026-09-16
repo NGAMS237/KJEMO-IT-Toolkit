@@ -22,6 +22,7 @@
 // ---------------------------------------------------------------------------
 import { psB64, assertValid } from './noyau.mjs';
 import { validateIPv4, validateShareName } from './validateurs.mjs';
+import { toolsServeur } from './outils-serveur.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName };
 
@@ -1595,4 +1596,13 @@ function createDiskScanTool() {
 }
 
 tools.push(createDiskScanTool());
+
+// ---------------------------------------------------------------------------
+// LOT 2 — catalogue Windows Server
+// Les outils vivent dans dist/outils-serveur.mjs ; ils rejoignent ici le
+// catalogue unique, seul point d'entrée pour l'interface et pour les tests.
+// L'ordre est stable : les huit outils historiques d'abord, les nouveaux
+// ensuite, pour que les routes directes et les tests restent lisibles.
+// ---------------------------------------------------------------------------
+for (const outil of toolsServeur) tools.push(outil);
 

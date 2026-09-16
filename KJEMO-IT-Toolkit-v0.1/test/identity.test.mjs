@@ -45,7 +45,7 @@ import {
   domainToDn,
 } from '../dist/generators.mjs';
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import {
   CATEGORIES,
   CATEGORIE_TOUT,
@@ -268,7 +268,17 @@ assert(
 section('catalogue tools');
 
 assert(Array.isArray(tools), 'tools est un tableau');
-assert(tools.length === 8, `8 outils attendus, ${tools.length} trouvés`);
+// Le catalogue s'étend au fil des lots. Les huit outils historiques restent
+// en tête, dans leur ordre d'origine : c'est ce qui garantit que les routes
+// directes partagées avant le LOT 2 continuent de fonctionner.
+const IDS_HISTORIQUES = ['static-ip', 'ad-ou', 'ad-user', 'shared-folder',
+                         'second-dc', 'wifi-repair', 'gpo-password', 'disk-scan'];
+assert(tools.length >= IDS_HISTORIQUES.length,
+  `au moins les ${IDS_HISTORIQUES.length} outils historiques, ${tools.length} trouvés`);
+assert(tools.slice(0, IDS_HISTORIQUES.length).map((t) => t.id).join(',') === IDS_HISTORIQUES.join(','),
+  'les huit outils historiques restent en tête du catalogue, dans leur ordre');
+assert(new Set(tools.map((t) => t.id)).size === tools.length,
+  'aucun identifiant d\u2019outil en double dans le catalogue');
 
 const ids = tools.map((t) => t.id);
 const EXPECTED_IDS = ['static-ip', 'ad-ou', 'ad-user', 'shared-folder', 'second-dc', 'wifi-repair', 'gpo-password', 'disk-scan'];
@@ -1235,8 +1245,8 @@ const CLASSEMENT = {
   'disk-scan':     ['Analyse et nettoyage des disques', 'Occupation de l\u2019espace'],
 };
 
-assert(Object.keys(CLASSEMENT).length === tools.length,
-  `le classement canonique couvre les ${tools.length} outils`);
+assert(Object.keys(CLASSEMENT).length === 8,
+  'le classement canonique couvre les huit outils historiques');
 
 for (const [id, [cat, sous]] of Object.entries(CLASSEMENT)) {
   const outil = tools.find((t) => t.id === id);
@@ -1259,8 +1269,9 @@ const nomsVisibles = vis2.map((c) => c.name);
 
 assert(nomsVisibles.includes('Windows Server'),
   'Windows Server est visible : shared-folder l\u2019habite');
-assert(vis2.find((c) => c.name === 'Windows Server').count === 1,
-  'Windows Server contient exactement un outil');
+const windowsServer = vis2.find((c) => c.name === 'Windows Server');
+assert(windowsServer.count >= 1 && tools.some((t) => t.id === 'shared-folder' && t.category === 'Windows Server'),
+  `Windows Server contient ${windowsServer.count} outil(s), dont shared-folder`);
 assert(nomsVisibles.includes('Windows poste de travail')
     && nomsVisibles.includes('Analyse et nettoyage des disques'),
   'Windows poste de travail et Analyse des disques sont visibles');
@@ -1269,7 +1280,7 @@ assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
 assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
   'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
 assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
-  `six catégories visibles couvrant les ${tools.length} outils`);
+  `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
 const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
@@ -1280,12 +1291,21 @@ assert(sousRubriques(tools, 'Imprimantes').length === 0,
 assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
   'les décomptes des sous-rubriques correspondent au décompte de la catégorie');
 
-// Les métadonnées seules ont bougé : aucune signature de generate() touchée.
+// Une fonction generate() par outil, et une sous-rubrique par outil, quel que
+// soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === tools.length,
-  `les ${tools.length} fonctions generate() sont toujours là, une par outil`);
-assert((sourceGen.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
-  'chaque outil déclare sa sous-rubrique dans le module canonique');
+const sourceServeur = existsSync(resolve(ROOT, 'dist/outils-serveur.mjs'))
+  ? readFileSync(resolve(ROOT, 'dist/outils-serveur.mjs'), 'utf8')
+  : '';
+const sourcesCatalogue = sourceGen + '\n' + sourceServeur;
+assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
+  'les huit generate() historiques sont toujours dans generators.mjs');
+assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === tools.length,
+  `une fonction generate() par outil du catalogue (${tools.length})`);
+assert((sourcesCatalogue.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
+  `chaque outil déclare sa sous-rubrique (${tools.length})`);
+assert(tools.every((t) => typeof t.generate === 'function' && typeof t.validate === 'function'),
+  'chaque outil expose bien generate() et validate()');
 
 // ---------------------------------------------------------------------------
 // LOT 2 (1/n) — Validateurs Windows Server
@@ -1486,6 +1506,150 @@ assert(blocParametres([['Cle', "'valeur'"]]).includes('$KjemoParametres'),
   'le bloc de paramètres alimente le rapport');
 assert(blocModeDiagnostic().includes('MODE DIAGNOSTIC'),
   'la garde de mode annonce clairement qu\u2019elle n\u2019a rien modifié');
+
+// ---------------------------------------------------------------------------
+// LOT 2 — contrat commun à chaque outil Windows Server
+//
+// Ce bloc s'applique automatiquement à tout outil du LOT 2 : il grandit avec le
+// catalogue. Un outil ajouté sans prérequis, sans procédure d'annulation ou
+// sans source officielle échoue ici, pas en revue.
+// ---------------------------------------------------------------------------
+section('LOT 2 — contrat des outils Windows Server');
+
+const SOUS_RUBRIQUES_LOT2 = [
+  'Diagnostic serveur', 'DHCP', 'DNS', 'Serveur de fichiers', 'Routage et accès Internet',
+];
+const outilsLot2 = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+
+assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) du LOT 2`);
+assert(outilsLot2.every((t) => t.category === 'Windows Server'),
+  'tous les outils du LOT 2 appartiennent à la catégorie Windows Server');
+assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
+  'chaque outil du LOT 2 porte une des cinq sous-rubriques prévues');
+
+const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
+  'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
+  'commonErrors', 'reversible', 'verifyAfter', 'rollback', 'checks', 'source', 'sources'];
+
+for (const outil of outilsLot2) {
+  for (const champ of CHAMPS_FICHE) {
+    assert(outil[champ] !== undefined && outil[champ] !== null,
+      `${outil.id} : le champ « ${champ} » de la fiche est renseigné`);
+  }
+  assert(['diagnostic', 'safe', 'caution', 'destructive'].includes(outil.risk),
+    `${outil.id} : niveau de risque déclaré (${outil.risk})`);
+  assert(outil.fields.length > 0, `${outil.id} : le formulaire a au moins un champ`);
+  assert(outil.gui.length >= 3, `${outil.id} : la méthode graphique a au moins trois étapes`);
+  assert(outil.prereqs.length >= 3, `${outil.id} : les prérequis sont détaillés`);
+  assert(outil.verifyAfter.length >= 2, `${outil.id} : au moins deux vérifications après exécution`);
+  assert(outil.commonErrors.length >= 2, `${outil.id} : au moins deux erreurs fréquentes expliquées`);
+  assert(outil.os.some((o) => /Windows Server 2019/.test(o)) && outil.os.some((o) => /5\.1/.test(o)),
+    `${outil.id} : compatibilité déclarée précisément (2019 et PowerShell 5.1)`);
+  assert(outil.rollback && outil.rollback.summary && outil.rollback.diagnostic && outil.rollback.command,
+    `${outil.id} : procédure d’annulation en blocs distincts`);
+
+  // Sources : uniquement des pages Microsoft précises, en HTTPS.
+  assert(/^https:\/\/learn\.microsoft\.com\//.test(outil.source),
+    `${outil.id} : source principale sur learn.microsoft.com`);
+  assert(Array.isArray(outil.sources) && outil.sources.length >= 1,
+    `${outil.id} : liste de sources officielles fournie`);
+  for (const src of outil.sources) {
+    assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(src.url),
+      `${outil.id} : source « ${src.label} » pointe vers une page Microsoft précise`);
+    assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(src.url),
+      `${outil.id} : source « ${src.label} » n’est pas la page d’accueil`);
+  }
+
+  // Les outils modifiants commencent en Diagnostic ; les diagnostics exportent.
+  const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode');
+  if (outil.risk === 'diagnostic') {
+    assert(outil.fields.some((f) => /Format/i.test(f.label)),
+      `${outil.id} : un outil de diagnostic propose un format de rapport`);
+  } else {
+    assert(champMode, `${outil.id} : un outil modifiant porte un sélecteur de mode`);
+    assert(champMode.default === 'Diagnostic',
+      `${outil.id} : le mode par défaut est Diagnostic`);
+  }
+
+  // Aucun champ ne demande de secret.
+  for (const f of outil.fields) {
+    // On juge ce que le champ DEMANDE — son identifiant et son étiquette — et
+    // non son texte d'aide, qui peut légitimement dire « aucun mot de passe ».
+    assert(!/mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i.test(`${f.id} ${f.label}`),
+      `${outil.id} : le champ « ${f.id} » ne demande aucun secret`);
+    assert(f.type !== 'password', `${outil.id} : aucun champ de type password`);
+  }
+}
+
+section('LOT 2 — scripts générés : sécurité et forme');
+
+for (const outil of outilsLot2) {
+  const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  let script = '';
+  let erreur = null;
+  try { script = outil.generate(valeurs); } catch (e) { erreur = e; }
+  assert(!erreur, `${outil.id} : le script se génère avec les valeurs par défaut${erreur ? ' — ' + erreur.message : ''}`);
+  if (erreur) continue;
+
+  assert(script.startsWith('#Requires -Version 5.1'),
+    `${outil.id} : le script déclare son plancher PowerShell 5.1`);
+  assert(script.includes(outil.id), `${outil.id} : le script s’identifie`);
+
+  // Interdits absolus du LOT 2.
+  assert(!/-Confirm\s*:\s*\$false/i.test(script), `${outil.id} : aucun -Confirm:$false`);
+  assert(!/(^|\s)-Force\b/i.test(script), `${outil.id} : aucun -Force`);
+  assert(!/Invoke-Expression|\biex\b/i.test(script), `${outil.id} : aucun Invoke-Expression`);
+  assert(!/Set-ExecutionPolicy/i.test(script), `${outil.id} : aucun contournement d’ExecutionPolicy`);
+  assert(!/Invoke-WebRequest|Invoke-RestMethod|curl\s+http|wget\s+http|DownloadString/i.test(script),
+    `${outil.id} : aucun téléchargement de code externe`);
+  assert(!/Get-Credential|ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
+    `${outil.id} : aucune manipulation d’identifiants`);
+  assert(!/\bTODO\b|\bFIXME\b|\bXXX\b/.test(script), `${outil.id} : aucun marqueur TODO`);
+  assert(!/http:\/\//.test(script), `${outil.id} : aucune URL non chiffrée`);
+
+  // Un outil modifiant doit garder ses actions derrière la garde de mode.
+  if (outil.risk !== 'diagnostic') {
+    assert(/\$Mode\s*=|\$Mode -eq/.test(script),
+      `${outil.id} : le script porte la garde de mode`);
+    assert(/-WhatIf\b/.test(script) || /MODE DIAGNOSTIC/.test(script),
+      `${outil.id} : le mode Diagnostic simule ou annonce explicitement qu’il n’écrit rien`);
+  }
+
+  // Les valeurs saisies passent par Base64 : aucune apostrophe typographique brute.
+  const lignesDeCode = script.split('\n').filter((l) => !l.trim().startsWith('#'));
+  for (const ligne of lignesDeCode) {
+    assert(!/[‘’“”]/.test(ligne),
+      `${outil.id} : aucune apostrophe typographique hors commentaire (« ${ligne.slice(0, 40)} »)`);
+  }
+
+  // Un diagnostic pur ne doit contenir aucun verbe modifiant hors simulation.
+  if (outil.risk === 'diagnostic') {
+    const modifiants = lignesDeCode.join('\n')
+      .match(/\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g) ?? [];
+    const autorises = ['Add-KjemoResultat', 'New-Object', 'New-TimeSpan', 'Set-Content',
+                       'New-Item', 'Add-Member', 'Start-Sleep'];
+    const interdits = [...new Set(modifiants.filter((c) => !autorises.includes(c)))];
+    assert(interdits.length === 0,
+      `${outil.id} : aucun cmdlet modifiant dans un outil de diagnostic (${interdits.join(', ') || 'aucun'})`);
+  }
+}
+
+section('LOT 2 — validation : les données invalides sont refusées');
+
+for (const outil of outilsLot2) {
+  // Champ vide sur un champ obligatoire : le script ne doit pas être produit.
+  const obligatoires = outil.fields.filter((f) => !/facultatif/i.test(f.label));
+  for (const champ of obligatoires.slice(0, 3)) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    valeurs[champ.id] = '';
+    const errors = outil.validate(valeurs);
+    assert(Object.keys(errors).length > 0,
+      `${outil.id} : « ${champ.id} » vide est refusé par validate()`);
+    let leve = false;
+    try { outil.generate(valeurs); } catch { leve = true; }
+    assert(leve, `${outil.id} : generate() refuse de produire un script avec « ${champ.id} » vide`);
+  }
+}
 
 // Résumé
 console.log('');

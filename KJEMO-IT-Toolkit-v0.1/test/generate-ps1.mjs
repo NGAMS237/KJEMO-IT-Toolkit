@@ -166,14 +166,21 @@ for (const [fichier, empreinte] of Object.entries(attendus)) {
   if (obtenue !== empreinte) ecarts.push(`${fichier} : ${obtenue.slice(0, 12)} != ${empreinte.slice(0, 12)}`);
 }
 
-const surplus = readdirSync(OUT_DIR)
-  .filter((f) => f.endsWith('.ps1') && !(f in attendus));
-for (const f of surplus) ecarts.push(`${f} : script inattendu`);
+// Les outils apparus APRÈS le SHA de base produisent légitimement de nouveaux
+// scripts : ils sont comptés à part. Ce qui est interdit, c'est qu'un script
+// d'un outil historique disparaisse, change, ou se dédouble.
+const outilsReference = new Set(Object.keys(attendus).map((f) => f.split('__')[0]));
+const tousLesScripts = readdirSync(OUT_DIR).filter((f) => f.endsWith('.ps1'));
+const surplusHistorique = tousLesScripts
+  .filter((f) => !(f in attendus) && outilsReference.has(f.split('__')[0]));
+for (const f of surplusHistorique) ecarts.push(`${f} : script historique inattendu`);
+const nouveaux = tousLesScripts.filter((f) => !outilsReference.has(f.split('__')[0]));
 
 console.log('');
 if (ecarts.length === 0) {
   console.log(`Identité vs SHA de base ${baseline.baseSha.slice(0, 7)} : `
-    + `${Object.keys(attendus).length}/${baseline.count} scripts identiques octet par octet.`);
+    + `${Object.keys(attendus).length}/${baseline.count} scripts historiques identiques octet par octet.`);
+  console.log(`Nouveaux scripts, hors référence historique : ${nouveaux.length}.`);
 } else {
   console.error(`Identité vs SHA de base : ${ecarts.length} écart(s).`);
   ecarts.forEach((e) => console.error(`  ${e}`));
