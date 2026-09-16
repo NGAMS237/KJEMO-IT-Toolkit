@@ -116,8 +116,11 @@ function renderNavigation() {
       ? tools.length
       : (categoriesAffichees.find((c) => c.name === category)?.count ?? 0);
     const actif   = category === selectedCategory;
+    // Les noms canoniques sont longs et le panneau est étroit : le libellé est
+    // tronqué visuellement, mais reste lisible au survol et complet pour les
+    // lecteurs d'écran.
     return `<button type="button" data-category="${category}" class="${actif ? 'active' : ''}"`
-      + ` aria-current="${actif ? 'true' : 'false'}">`
+      + ` title="${textToCode(category)}" aria-current="${actif ? 'true' : 'false'}">`
       + `<span class="nav-icon" aria-hidden="true">${textToCode(icone)}</span>`
       + `<span class="nav-label">${textToCode(category)}</span>`
       + `<span class="nav-count">${count}</span></button>`;
@@ -136,19 +139,22 @@ function renderCategoryGrid() {
   const grille = document.querySelector('#categoryGrid');
   if (!grille) return;
 
-  const carte = (nom, icone, description, count, actif) =>
+  const carte = (nom, icone, description, count, actif, sous) =>
     `<button type="button" role="listitem" class="category-card${actif ? ' is-selected' : ''}"`
     + ` data-category="${nom}" aria-pressed="${actif ? 'true' : 'false'}">`
     + `<span class="category-icon" aria-hidden="true">${textToCode(icone)}</span>`
     + `<span class="category-name">${textToCode(nom === CAT_TOUT ? 'Tous les outils' : nom)}</span>`
     + `<span class="category-count">${count} outil${count > 1 ? 's' : ''}</span>`
     + (description ? `<span class="category-desc">${textToCode(description)}</span>` : '')
+    + (sous && sous.length
+        ? `<span class="category-sub">${textToCode(sous.map((x) => x.name).join(' · '))}</span>`
+        : '')
     + `</button>`;
 
   grille.innerHTML =
-    carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', tools.length, selectedCategory === CAT_TOUT)
+    carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', tools.length, selectedCategory === CAT_TOUT, null)
     + categoriesAffichees
-        .map((c) => carte(c.name, c.icon, c.description, c.count, selectedCategory === c.name))
+        .map((c) => carte(c.name, c.icon, c.description, c.count, selectedCategory === c.name, c.sous))
         .join('');
 
   grille.querySelectorAll('.category-card').forEach((btn) => {
@@ -351,7 +357,9 @@ function renderHome() {
   results.forEach(({ tool, reason }) => {
     const card = template.content.cloneNode(true);
     card.querySelector('.tool-icon').textContent = tool.icon;
-    card.querySelector('.tag').textContent = tool.category.toUpperCase();
+    card.querySelector('.tag').textContent = tool.subcategory
+      ? `${tool.category.toUpperCase()} · ${tool.subcategory}`
+      : tool.category.toUpperCase();
     card.querySelector('h3').textContent = tool.title;
     card.querySelector('p').textContent = tool.summary;
 
@@ -572,23 +580,36 @@ function displayErrors(errors, tool) {
  */
 function modeBlockMarkup(tool) {
   if (estDebutant()) {
+    // Trois étapes, pas six : sur un téléphone, une liste de six lignes repousse
+    // le formulaire hors de l'écran. Le détail reste accessible d'un clic.
     const etapes = [
       'Remplis le formulaire avec tes informations.',
-      'Clique sur « Générer le script ».',
-      'Relis l’aperçu : c’est exactement ce qui sera exécuté.',
-      'Copie le script, ou télécharge le fichier .ps1.',
-      'Exécute-le en suivant les prérequis indiqués plus bas.',
-      'Vérifie le résultat, et sache comment revenir en arrière.',
+      'Génère le script, puis relis l\u2019aperçu.',
+      'Copie ou télécharge le fichier, puis exécute-le.',
+    ];
+    const modeEmploi = [
+      'Ouvre PowerShell en suivant les prérequis de la section 2. Certains outils exigent une console administrateur.',
+      'Colle le script, ou lance le fichier .ps1 téléchargé. Le fichier porte déjà le BOM UTF-8 attendu par PowerShell 5.1.',
+      'Lis les messages affichés par le script : ils disent ce qui a été modifié.',
+      'Fais les contrôles de la section 5 pour confirmer que le problème est réglé.',
+      'Si le résultat ne convient pas, la section 6 explique comment revenir en arrière.',
+      'Si tu préfères éviter les scripts, la section 7 donne la méthode à la souris.',
     ];
     return `<section class="mode-block mode-debutant" id="modeBlock" aria-labelledby="modeBlockTitle">`
       + `<h2 id="modeBlockTitle" class="mode-block-title">En clair</h2>`
-      + `<p class="plain-risk risk-${tool.risk}">${textToCode(RISQUE_SIMPLE[tool.risk] ?? '')}</p>`
+      + `<p class="plain-summary" id="plainSummary">${textToCode(tool.summary)}</p>`
+      + `<p class="plain-risk risk-${tool.risk}" id="plainRisk">${textToCode(RISQUE_SIMPLE[tool.risk] ?? '')}</p>`
       + `<ol class="beginner-steps" id="beginnerSteps">`
       + etapes.map((e) => `<li>${textToCode(e)}</li>`).join('')
       + `</ol>`
+      + `<button type="button" class="primary-button start-button" id="startButton">Commencer</button>`
+      + `<details class="details mode-emploi" id="modeEmploi">`
+      + `<summary>Voir le mode d\u2019emploi complet</summary>`
+      + `<ol class="exec-steps">${modeEmploi.map((e) => `<li>${textToCode(e)}</li>`).join('')}</ol>`
       + `<p class="mode-note">Les avertissements de sécurité, les prérequis et la `
-      + `procédure d’annulation restent affichés plus bas : ils ne sont jamais `
+      + `procédure d\u2019annulation restent affichés plus bas : ils ne sont jamais `
       + `masqués, quel que soit le mode.</p>`
+      + `</details>`
       + `</section>`;
   }
 
@@ -597,6 +618,7 @@ function modeBlockMarkup(tool) {
     + `<dl class="tech-meta" id="techMeta">`
     + `<div><dt>Identifiant</dt><dd><code>${textToCode(tool.id)}</code></dd></div>`
     + `<div><dt>Catégorie</dt><dd>${textToCode(tool.category)}</dd></div>`
+    + `<div><dt>Sous-rubrique</dt><dd>${textToCode(tool.subcategory ?? '\u2014')}</dd></div>`
     + `<div><dt>Élévation</dt><dd>${tool.requiresAdmin ? 'Administrateur requis' : 'Session standard'}</dd></div>`
     + `<div><dt>Systèmes</dt><dd>${textToCode(tool.os.join(' · '))}</dd></div>`
     + `<div><dt>Réversible</dt><dd>${tool.reversible ? 'Oui' : 'Lecture seule'}</dd></div>`
@@ -606,11 +628,52 @@ function modeBlockMarkup(tool) {
     + `</section>`;
 }
 
+/**
+ * Navigation compacte de la fiche : cinq ancres internes vers les sections qui
+ * servent réellement. Ce sont de vrais liens — donc atteignables au clavier et
+ * annoncés comme tels — mais leur activation est interceptée : écrire dans
+ * location.hash casserait le routage par #/outil/<id>. Le défilement est donc
+ * fait à la main, et le focus est déplacé sur le titre visé pour que la
+ * navigation clavier suive le regard.
+ */
+const FICHE_ANCRES = [
+  { cible: 'sectionFormulaire',  label: 'Formulaire' },
+  { cible: 'sectionScript',      label: 'Script' },
+  { cible: 'sectionVerification', label: 'Vérifier' },
+  { cible: 'sectionAnnulation',  label: 'Annuler' },
+  { cible: 'sectionGraphique',   label: 'Interface graphique' },
+];
+
+function ficheNavMarkup() {
+  return `<nav class="fiche-nav" id="ficheNav" aria-label="Aller à une section de la fiche">`
+    + FICHE_ANCRES.map((a) =>
+        `<a class="fiche-nav-link" href="#${a.cible}" data-cible="${a.cible}">${textToCode(a.label)}</a>`).join('')
+    + `</nav>`;
+}
+
+/** Amène une section à l'écran et y place le focus, sans toucher à l'URL. */
+function allerASection(id, { focusChamp = false } = {}) {
+  const section = document.getElementById(id);
+  if (!section) return;
+  section.scrollIntoView({ behavior: 'auto', block: 'start' });
+
+  const champ = focusChamp
+    ? section.querySelector('input, select, textarea, button')
+    : null;
+  const cible = champ ?? section.querySelector('.fiche-section-title') ?? section;
+  if (!cible.hasAttribute('tabindex') && cible.tagName !== 'INPUT'
+      && cible.tagName !== 'SELECT' && cible.tagName !== 'BUTTON') {
+    cible.setAttribute('tabindex', '-1');
+  }
+  cible.focus({ preventScroll: true });
+}
+
+
 function renderTool() {
   const tool = currentTool;
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
-  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
+  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode(tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase())}</div><h1>${tool.icon} ${tool.title}</h1><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheNavMarkup()}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   const content = view.querySelector('#tabContent');
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
@@ -673,6 +736,22 @@ function renderTool() {
       + sourcesMarkup(tool)
     + `</section>`
     + `</div>`;
+
+  // Navigation compacte : vrais liens, défilement maîtrisé, URL intacte.
+  view.querySelectorAll('.fiche-nav-link').forEach((lien) => {
+    lien.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      allerASection(lien.dataset.cible);
+    });
+  });
+
+  // « Commencer » mène au formulaire et y place le curseur : sur téléphone,
+  // c'est la différence entre comprendre quoi faire et devoir chercher où.
+  const boutonCommencer = view.querySelector('#startButton');
+  if (boutonCommencer) {
+    boutonCommencer.addEventListener('click', () =>
+      allerASection('sectionFormulaire', { focusChamp: true }));
+  }
 
   // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
   // Copier et Télécharger sont désactivés jusqu'à la prochaine génération valide.

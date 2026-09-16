@@ -884,8 +884,7 @@ console.log('\n[accueil 1B] — structure d’accueil et navigation par catégor
     `la grille affiche « Tout » + les ${utilisees.length} catégories pourvues (${cartes.length})`);
   assert(utilisees.every((c) => cartes.some((k) => k.nom === c)),
     'chaque catégorie réellement utilisée a sa carte');
-  for (const vide of ['Windows Server', 'Linux', 'Imprimantes',
-                      'Windows poste de travail', 'Analyse et nettoyage des disques']) {
+  for (const vide of ['Imprimantes', 'Linux']) {
     assert(!cartes.some((k) => k.nom === vide),
       `aucune catégorie vide affichée : « ${vide} » est absente`);
   }
@@ -1005,8 +1004,9 @@ console.log('\n[modes 1B] — Débutant / Technicien, persistance et sécurité'
   // --- Mode Débutant -------------------------------------------------------
   assert(await page.locator('#modeBlock.mode-debutant').isVisible(),
     'mode Débutant : le bloc « En clair » est affiché');
-  assert(await page.locator('#beginnerSteps li').count() >= 5,
-    'mode Débutant : la marche à suivre est donnée étape par étape');
+  const nbEtapes = await page.locator('#beginnerSteps li').count();
+  assert(nbEtapes > 0 && nbEtapes <= 3,
+    `mode Débutant : trois étapes au plus dans « En clair » (${nbEtapes})`);
   assert((await page.locator('.plain-risk').innerText()).trim().length > 0,
     'mode Débutant : le niveau de risque est formulé en langage courant');
 
@@ -1486,6 +1486,206 @@ console.log('\n[menu 1B] — panneau latéral sur téléphone');
   const attendu = tools.filter((t) => t.category === cible).length;
   assert(await page.locator('#toolGrid .open-tool').count() === attendu,
     `le choix d’une catégorie referme le panneau et filtre la grille (${attendu})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B v2 : catégories canoniques à l'écran ---------------------------
+console.log('\n[catégories v2] — catalogue canonique affiché');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
+
+  const cartes = await page.$$eval('#categoryGrid .category-card',
+    (els) => els.map((e) => ({ nom: e.dataset.category, texte: e.textContent })));
+  const noms = cartes.map((c) => c.nom);
+
+  for (const attendue of ['Windows poste de travail', 'Analyse et nettoyage des disques',
+                          'Windows Server', 'Active Directory', 'GPO', 'Réseau']) {
+    assert(noms.includes(attendue), `catégorie canonique affichée : « ${attendue} »`);
+  }
+  for (const interdite of ['Dépannage Windows', 'Fichiers & imprimantes', 'Stockage']) {
+    assert(!noms.includes(interdite),
+      `catégorie abandonnée absente de l’écran : « ${interdite} »`);
+  }
+  for (const vide of ['Imprimantes', 'Linux']) {
+    assert(!noms.includes(vide), `catégorie vide masquée : « ${vide} »`);
+  }
+  assert(noms.length === 7,
+    `« Tout » + six catégories pourvues (${noms.length})`);
+
+  // Windows Server existe à l'écran parce que shared-folder l'habite.
+  await page.click('#categoryGrid .category-card[data-category="Windows Server"]');
+  await page.waitForFunction(
+    () => document.querySelectorAll('#toolGrid .open-tool').length === 1, { timeout: 8000 });
+  const titre = await page.$eval('#toolGrid h3', (el) => el.textContent);
+  const sharedFolder = tools.find((t) => t.id === 'shared-folder');
+  assert(titre === sharedFolder.title,
+    `Windows Server contient bien « ${sharedFolder.title} »`);
+
+  // Les sous-rubriques sont annoncées sur la carte de catégorie et sur l'outil.
+  await page.click('#categoryGrid .category-card[data-category="Tout"]');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  const carteAD = cartes.find((c) => c.nom === 'Active Directory');
+  for (const sous of ['Unités organisationnelles', 'Utilisateurs', 'Contrôleurs de domaine']) {
+    assert(carteAD.texte.includes(sous),
+      `la carte Active Directory annonce « ${sous} »`);
+  }
+  const etiquettes = await page.$$eval('#toolGrid .tag', (els) => els.map((e) => e.textContent));
+  for (const t of tools) {
+    assert(etiquettes.some((e) => e.includes(t.subcategory)),
+      `la carte de ${t.id} affiche sa sous-rubrique « ${t.subcategory} »`);
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 1B v2 : fiche compacte, bouton Commencer et navigation d'ancres ---
+console.log('\n[fiche v2] — densité mobile, Commencer et navigation compacte');
+for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
+                   { nom: 'téléphone 390x844', width: 390, height: 844 }]) {
+  const ctx  = await browser.newContext({ viewport: { width: vue.width, height: vue.height } });
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.id === 'static-ip');
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#sectionFormulaire', { timeout: 8000 });
+
+  // 1. « En clair » : explication courte, avertissement, trois étapes au plus.
+  const nbEtapes = await page.locator('#beginnerSteps li').count();
+  assert(nbEtapes > 0 && nbEtapes <= 3,
+    `${vue.nom} — « En clair » ne montre que ${nbEtapes} étape(s), trois au plus`);
+  assert(await page.locator('#plainSummary').isVisible(),
+    `${vue.nom} — l’explication courte est affichée`);
+  assert((await page.locator('#plainRisk').innerText()).trim().length > 0,
+    `${vue.nom} — l’avertissement de risque est affiché sans repli`);
+
+  // 2. Le mode d'emploi complet existe, replié.
+  assert(await page.$eval('#modeEmploi', (el) => el.tagName === 'DETAILS' && !el.open),
+    `${vue.nom} — le mode d’emploi complet est replié par défaut`);
+  const resume = await page.$eval('#modeEmploi > summary', (el) => el.textContent.trim());
+  assert(resume === 'Voir le mode d’emploi complet',
+    `${vue.nom} — intitulé exact du repli : « ${resume} »`);
+  await page.focus('#modeEmploi > summary');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#modeEmploi')?.open === true,
+    { timeout: 8000 });
+  assert(await page.$eval('#modeEmploi ol li', (el) => el.textContent.length > 0),
+    `${vue.nom} — le mode d’emploi complet s’ouvre au clavier et contient les détails`);
+
+  // 3. « Commencer » mène au formulaire et y place le curseur.
+  assert(await page.locator('#startButton').isVisible(),
+    `${vue.nom} — le bouton « Commencer » est visible`);
+  await page.click('#startButton');
+  await page.waitForTimeout(250);
+  const apresCommencer = await page.evaluate(() => {
+    const actif = document.activeElement;
+    const form = document.querySelector('#sectionFormulaire');
+    return {
+      dansFormulaire: !!actif && form.contains(actif),
+      champ: actif ? actif.tagName : null,
+      formVisible: form.getBoundingClientRect().top < window.innerHeight
+                && form.getBoundingClientRect().bottom > 0,
+    };
+  });
+  assert(apresCommencer.dansFormulaire,
+    `${vue.nom} — « Commencer » place le focus dans le formulaire (${apresCommencer.champ})`);
+  assert(apresCommencer.formVisible,
+    `${vue.nom} — « Commencer » amène le formulaire à l’écran`);
+
+  // 4. Navigation compacte : cinq ancres internes, vrais liens.
+  const liens = await page.$$eval('#ficheNav .fiche-nav-link',
+    (els) => els.map((e) => ({ texte: e.textContent.trim(), href: e.getAttribute('href'),
+                               balise: e.tagName })));
+  assert(liens.map((l) => l.texte).join(',') === 'Formulaire,Script,Vérifier,Annuler,Interface graphique',
+    `${vue.nom} — les cinq entrées attendues, dans l’ordre`);
+  assert(liens.every((l) => l.balise === 'A' && l.href.startsWith('#section')),
+    `${vue.nom} — ce sont des ancres internes, donc atteignables au clavier`);
+
+  const cibles = { Formulaire: 'sectionFormulaire', Script: 'sectionScript',
+                   'Vérifier': 'sectionVerification', Annuler: 'sectionAnnulation',
+                   'Interface graphique': 'sectionGraphique' };
+  for (const [libelle, id] of Object.entries(cibles)) {
+    await page.click(`#ficheNav .fiche-nav-link[data-cible="${id}"]`);
+    await page.waitForTimeout(220);
+    const etat = await page.evaluate((cible) => {
+      const sec = document.getElementById(cible);
+      const titre = sec.querySelector('.fiche-section-title');
+      const r = titre.getBoundingClientRect();
+      const actif = document.activeElement;
+      return {
+        titreVisible: r.top >= 0 && r.bottom <= window.innerHeight,
+        titreNonMasque: document.elementFromPoint(
+          Math.min(r.left + 5, window.innerWidth - 1), r.top + r.height / 2) === titre
+          || titre.contains(document.elementFromPoint(
+            Math.min(r.left + 5, window.innerWidth - 1), r.top + r.height / 2)),
+        focusDansSection: !!actif && sec.contains(actif),
+        route: location.hash,
+      };
+    }, id);
+    assert(etat.titreVisible,
+      `${vue.nom} — « ${libelle} » amène le titre de la section à l’écran`);
+    assert(etat.titreNonMasque,
+      `${vue.nom} — « ${libelle} » : le titre ciblé n’est masqué par rien`);
+    assert(etat.focusDansSection,
+      `${vue.nom} — « ${libelle} » déplace aussi le focus clavier`);
+    assert(etat.route === `#/outil/${outil.id}`,
+      `${vue.nom} — « ${libelle} » ne casse pas la route directe (${etat.route})`);
+  }
+
+  // 5. La navigation s'active aussi entièrement au clavier.
+  await page.focus('#ficheNav .fiche-nav-link[data-cible="sectionScript"]');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(220);
+  assert(await page.evaluate(() =>
+    document.querySelector('#sectionScript').contains(document.activeElement)),
+    `${vue.nom} — la navigation compacte s’active à la touche Entrée`);
+
+  // 6. Aucun débordement horizontal, et les avertissements restent visibles.
+  const debord = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(debord <= 1, `${vue.nom} — aucun débordement horizontal (${debord}px)`);
+  assert(await page.locator('#ficheRisque').isVisible()
+      && await page.locator('#prereqBlock').isVisible(),
+    `${vue.nom} — risque et prérequis restent affichés`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B v2 : les avertissements restent identiques dans les deux modes --
+console.log('\n[sécurité v2] — avertissements en mode compact');
+{
+  const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.risk === 'destructive') ?? tools[0];
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#modeBlock', { timeout: 8000 });
+
+  const lireAvertissements = () => page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+
+  const deb = await lireAvertissements();
+  assert(deb.length > 0, `mode Débutant compact : ${deb.length} avertissement(s) présent(s)`);
+  for (const sel of ['#prereqBlock', '#execNotes', '#commonErrors', '#verifyAfter',
+                     '#rollbackBlock', '#toolForm', '#scriptOutput', '#copyButton',
+                     '#downloadButton']) {
+    assert(await page.locator(sel).count() === 1,
+      `mode Débutant compact : ${sel} toujours présent`);
+  }
+
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForSelector('#techMeta', { timeout: 8000 });
+  const tech = await lireAvertissements();
+  assert(tech.join(' | ') === deb.join(' | '),
+    'les avertissements sont strictement identiques dans les deux modes, à 390 px');
+  assert(await page.locator('#ficheNav').isVisible(),
+    'la navigation compacte est disponible dans les deux modes');
+  const sousRub = await page.$eval('#techMeta', (el) => el.textContent);
+  assert(sousRub.includes(outil.subcategory),
+    `la fiche technique annonce la sous-rubrique « ${outil.subcategory} »`);
 
   await ctx.close();
 }

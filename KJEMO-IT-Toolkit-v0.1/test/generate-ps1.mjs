@@ -10,7 +10,8 @@
  *          test/generated/report.json
  */
 
-import { writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, rmSync, readdirSync, existsSync } from 'node:fs';
+import { createHash }                                  from 'node:crypto';
 import { dirname, resolve }                               from 'node:path';
 import { fileURLToPath, pathToFileURL }                   from 'node:url';
 
@@ -139,10 +140,42 @@ for (const tool of tools) {
 
 writeFileSync(resolve(OUT_DIR, 'report.json'), JSON.stringify(report, null, 2), 'utf-8');
 
+
+
 console.log('');
 console.log(`${report.generated.length} fichiers générés, ${report.errors.length} erreur(s) JS.`);
 if (report.errors.length > 0) {
   console.error('Erreurs :');
   report.errors.forEach((e) => console.error(`  [${e.tool}/${e.dataset}] ${e.error}`));
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// Garde-fou d'identité : les 64 scripts doivent rester octet pour octet ceux du
+// SHA de base. Les empreintes sont figées dans test/scripts-baseline.json ; un
+// écart signifie qu'un generate() a changé, ce qui n'est jamais anodin.
+// ---------------------------------------------------------------------------
+const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test', 'scripts-baseline.json'), 'utf-8'));
+const attendus = baseline.sha256;
+const ecarts = [];
+
+for (const [fichier, empreinte] of Object.entries(attendus)) {
+  const chemin = resolve(OUT_DIR, fichier);
+  if (!existsSync(chemin)) { ecarts.push(`${fichier} : absent`); continue; }
+  const obtenue = createHash('sha256').update(readFileSync(chemin)).digest('hex');
+  if (obtenue !== empreinte) ecarts.push(`${fichier} : ${obtenue.slice(0, 12)} != ${empreinte.slice(0, 12)}`);
+}
+
+const surplus = readdirSync(OUT_DIR)
+  .filter((f) => f.endsWith('.ps1') && !(f in attendus));
+for (const f of surplus) ecarts.push(`${f} : script inattendu`);
+
+console.log('');
+if (ecarts.length === 0) {
+  console.log(`Identité vs SHA de base ${baseline.baseSha.slice(0, 7)} : `
+    + `${Object.keys(attendus).length}/${baseline.count} scripts identiques octet par octet.`);
+} else {
+  console.error(`Identité vs SHA de base : ${ecarts.length} écart(s).`);
+  ecarts.forEach((e) => console.error(`  ${e}`));
   process.exit(1);
 }

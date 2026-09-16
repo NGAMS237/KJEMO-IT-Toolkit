@@ -1,34 +1,41 @@
 /**
  * categories.mjs — LOT 1B · KJEMO IT Toolkit
  * -----------------------------------------------
- * Catalogue des catégories : nom, icône sobre, courte description.
+ * Catalogue CANONIQUE des catégories : nom, icône sobre, courte description.
  *
  * Ce module ne contient AUCUN contenu technique d'outil. Il décrit uniquement
  * la façon dont les outils sont regroupés et présentés.
  *
- * Deux natures de catégories cohabitent :
- *   - celles qui contiennent déjà des outils, affichées ;
- *   - celles prévues par la feuille de route, déclarées ici pour que le code
- *     soit prêt à les accueillir, mais MASQUÉES tant qu'elles sont vides.
- *     Une catégorie vide à l'écran est une promesse non tenue.
+ * Les huit catégories ci-dessous sont celles de la feuille de route, dans son
+ * ordre. Elles sont toutes déclarées ; seules celles qui contiennent au moins
+ * un outil sont AFFICHÉES. Une catégorie vide à l'écran est une promesse non
+ * tenue ; une catégorie absente du code serait une architecture à refaire au
+ * prochain outil.
  *
  * `name` est la clé de rapprochement : il doit correspondre exactement au
- * champ `category` des outils dans generators.mjs.
+ * champ `category` des outils dans generators.mjs. La sous-rubrique
+ * (`subcategory`) vient elle aussi de l'outil : c'est un rangement à
+ * l'intérieur d'une catégorie, pas un second niveau de navigation.
  */
 
 export const CATEGORIES = [
-  // --- Catégories actuellement pourvues -----------------------------------
   {
-    id: 'reseau',
-    name: 'Réseau',
-    icon: '◈',
-    description: 'Adressage, passerelle, DNS et connectivité.',
+    id: 'windows-poste',
+    name: 'Windows poste de travail',
+    icon: '▣',
+    description: 'Pannes et réglages d’un poste Windows : réseau, Wi-Fi, système.',
   },
   {
-    id: 'depannage-windows',
-    name: 'Dépannage Windows',
-    icon: '◉',
-    description: 'Pannes courantes d’un poste Windows.',
+    id: 'analyse-disques',
+    name: 'Analyse et nettoyage des disques',
+    icon: '▧',
+    description: 'Occupation de l’espace, gros fichiers et artefacts récupérables.',
+  },
+  {
+    id: 'windows-server',
+    name: 'Windows Server',
+    icon: '▨',
+    description: 'Rôles serveur : partages, serveur de fichiers, services.',
   },
   {
     id: 'active-directory',
@@ -43,37 +50,10 @@ export const CATEGORIES = [
     description: 'Stratégies de groupe appliquées au domaine.',
   },
   {
-    id: 'fichiers-imprimantes',
-    name: 'Fichiers & imprimantes',
-    icon: '▥',
-    description: 'Partages réseau, droits d’accès et impression.',
-  },
-  {
-    id: 'stockage',
-    name: 'Stockage',
-    icon: '▦',
-    description: 'Occupation disque et analyse d’espace.',
-  },
-
-  // --- Catégories prévues, masquées tant qu'aucun outil ne les remplit -----
-  // Déclarées pour que la navigation les accueille sans modification de code.
-  {
-    id: 'windows-poste',
-    name: 'Windows poste de travail',
-    icon: '▣',
-    description: 'Mises à jour, pare-feu, périphériques et intégrité système.',
-  },
-  {
-    id: 'analyse-disques',
-    name: 'Analyse et nettoyage des disques',
-    icon: '▧',
-    description: 'Gros fichiers, doublons et caches à récupérer.',
-  },
-  {
-    id: 'windows-server',
-    name: 'Windows Server',
-    icon: '▨',
-    description: 'Rôles serveur, DNS, DHCP et partages.',
+    id: 'reseau',
+    name: 'Réseau',
+    icon: '◈',
+    description: 'Adressage, passerelle, DNS et connectivité.',
   },
   {
     id: 'imprimantes',
@@ -101,8 +81,22 @@ export function compterOutils(tools, nom) {
 }
 
 /**
+ * Sous-rubriques réellement présentes dans une catégorie, sans doublon, avec
+ * leur décompte, dans l'ordre du catalogue d'outils.
+ */
+export function sousRubriques(tools, nom) {
+  const vues = new Map();
+  for (const t of tools) {
+    if (t.category !== nom || !t.subcategory) continue;
+    vues.set(t.subcategory, (vues.get(t.subcategory) ?? 0) + 1);
+  }
+  return [...vues].map(([name, count]) => ({ name, count }));
+}
+
+/**
  * Catégories à AFFICHER : uniquement celles qui contiennent au moins un outil,
- * dans l'ordre du catalogue, chacune enrichie de son décompte.
+ * dans l'ordre du catalogue, chacune enrichie de son décompte et de ses
+ * sous-rubriques.
  *
  * Une catégorie présente dans les outils mais absente du catalogue est tout de
  * même retournée, avec une icône neutre : mieux vaut l'afficher sans description
@@ -111,7 +105,7 @@ export function compterOutils(tools, nom) {
 export function categoriesVisibles(tools) {
   const connues = new Set(CATEGORIES.map((c) => c.name));
   const listees = CATEGORIES
-    .map((c) => ({ ...c, count: compterOutils(tools, c.name) }))
+    .map((c) => ({ ...c, count: compterOutils(tools, c.name), sous: sousRubriques(tools, c.name) }))
     .filter((c) => c.count > 0);
 
   const orphelines = [...new Set(tools.map((t) => t.category))]
@@ -122,6 +116,7 @@ export function categoriesVisibles(tools) {
       icon: '○',
       description: '',
       count: compterOutils(tools, nom),
+      sous: sousRubriques(tools, nom),
       horsCatalogue: true,
     }));
 

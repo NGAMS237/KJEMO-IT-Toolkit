@@ -53,6 +53,7 @@ import {
   categoriesVisibles,
   categoriesEnAttente,
   categorieParNom,
+  sousRubriques,
 } from '../dist/categories.mjs';
 
 import {
@@ -1009,8 +1010,7 @@ assert(new Set(CATEGORIES.map((c) => c.name)).size === CATEGORIES.length,
   'les noms de catégorie sont uniques');
 assert(enAttente.length > 0 && enAttente.every((c) => c.count === 0),
   `catégories prévues mais masquées tant qu\u2019elles sont vides : ${enAttente.length}`);
-for (const prevue of ['Windows poste de travail', 'Analyse et nettoyage des disques',
-                      'Windows Server', 'Imprimantes', 'Linux']) {
+for (const prevue of ['Imprimantes', 'Linux']) {
   assert(CATEGORIES.some((c) => c.name === prevue),
     `la feuille de route est préparée : « ${prevue} » est déclarée`);
   assert(!visibles.some((c) => c.name === prevue),
@@ -1152,6 +1152,96 @@ for (const interdit of ['Remove-', 'Get-AD', 'Set-Net', 'powershell.exe']) {
 }
 assert(!/\b(Copy|Download|Search|Settings)\b/.test(sourceLibelles),
   'aucun libellé anglais n\u2019est embarqué à moitié');
+
+// ---------------------------------------------------------------------------
+// LOT 1B (5/n) — Catégories canoniques et sous-rubriques
+// ---------------------------------------------------------------------------
+section('LOT 1B v2 — catégories canoniques');
+
+const CANON = [
+  'Windows poste de travail',
+  'Analyse et nettoyage des disques',
+  'Windows Server',
+  'Active Directory',
+  'GPO',
+  'Réseau',
+  'Imprimantes',
+  'Linux',
+];
+
+assert(CATEGORIES.map((c) => c.name).join(' | ') === CANON.join(' | '),
+  'le catalogue contient exactement les huit catégories canoniques, dans l\u2019ordre');
+
+const INTERDITES = ['Dépannage Windows', 'Fichiers & imprimantes', 'Stockage'];
+for (const morte of INTERDITES) {
+  assert(!CATEGORIES.some((c) => c.name === morte),
+    `catégorie abandonnée absente du catalogue : « ${morte} »`);
+  assert(!tools.some((t) => t.category === morte),
+    `aucun outil ne porte encore la catégorie « ${morte} »`);
+}
+
+const CLASSEMENT = {
+  'static-ip':     ['Réseau', 'Adressage IP'],
+  'ad-ou':         ['Active Directory', 'Unités organisationnelles'],
+  'ad-user':       ['Active Directory', 'Utilisateurs'],
+  'shared-folder': ['Windows Server', 'Serveur de fichiers'],
+  'second-dc':     ['Active Directory', 'Contrôleurs de domaine'],
+  'wifi-repair':   ['Windows poste de travail', 'Réseau et Wi-Fi'],
+  'gpo-password':  ['GPO', 'Sécurité des comptes'],
+  'disk-scan':     ['Analyse et nettoyage des disques', 'Occupation de l\u2019espace'],
+};
+
+assert(Object.keys(CLASSEMENT).length === tools.length,
+  `le classement canonique couvre les ${tools.length} outils`);
+
+for (const [id, [cat, sous]] of Object.entries(CLASSEMENT)) {
+  const outil = tools.find((t) => t.id === id);
+  assert(outil, `outil présent : ${id}`);
+  assert(outil.category === cat,
+    `${id} → catégorie « ${cat} » (lu : « ${outil.category} »)`);
+  assert(outil.subcategory === sous,
+    `${id} → sous-rubrique « ${sous} » (lu : « ${outil.subcategory}»)`);
+  assert(CANON.includes(outil.category),
+    `${id} : sa catégorie fait partie des canoniques`);
+}
+
+assert(tools.every((t) => typeof t.subcategory === 'string' && t.subcategory.length > 0),
+  'chaque outil porte une sous-rubrique non vide');
+
+// Visibilité : Windows Server existe parce que shared-folder l'habite.
+const vis2 = categoriesVisibles(tools);
+const attente2 = categoriesEnAttente(tools);
+const nomsVisibles = vis2.map((c) => c.name);
+
+assert(nomsVisibles.includes('Windows Server'),
+  'Windows Server est visible : shared-folder l\u2019habite');
+assert(vis2.find((c) => c.name === 'Windows Server').count === 1,
+  'Windows Server contient exactement un outil');
+assert(nomsVisibles.includes('Windows poste de travail')
+    && nomsVisibles.includes('Analyse et nettoyage des disques'),
+  'Windows poste de travail et Analyse des disques sont visibles');
+assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
+  `seules Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
+assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
+  'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
+assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+  `six catégories visibles couvrant les ${tools.length} outils`);
+
+// Sous-rubriques agrégées
+const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
+assert(sousAD.join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
+  `Active Directory expose ses trois sous-rubriques (${sousAD.join(', ')})`);
+assert(sousRubriques(tools, 'Imprimantes').length === 0,
+  'une catégorie vide n\u2019expose aucune sous-rubrique');
+assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
+  'les décomptes des sous-rubriques correspondent au décompte de la catégorie');
+
+// Les métadonnées seules ont bougé : aucune signature de generate() touchée.
+const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
+assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === tools.length,
+  `les ${tools.length} fonctions generate() sont toujours là, une par outil`);
+assert((sourceGen.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
+  'chaque outil déclare sa sous-rubrique dans le module canonique');
 
 // Résumé
 console.log('');
