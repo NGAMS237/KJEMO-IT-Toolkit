@@ -55,6 +55,14 @@ import {
   categorieParNom,
 } from '../dist/categories.mjs';
 
+import {
+  MODES,
+  MODE_DEFAUT,
+  CLE_MODE,
+  estMode,
+  creerPreference,
+} from '../dist/preferences.mjs';
+
 // ---------------------------------------------------------------------------
 // Comptage
 // ---------------------------------------------------------------------------
@@ -1004,6 +1012,57 @@ for (const interdit of ['generate', 'Remove-', 'Set-Net', 'powershell', 'Get-AD'
   assert(!sourceCategories.includes(interdit),
     `categories.mjs ne contient aucun contenu technique (« ${interdit} »)`);
 }
+
+// ---------------------------------------------------------------------------
+// LOT 1B (2/n) — Modes Débutant et Technicien
+// ---------------------------------------------------------------------------
+section('LOT 1B — modes de lecture');
+
+assert(MODES.length === 2 && MODES.map((m) => m.id).join(',') === 'debutant,technicien',
+  'deux modes de lecture : Débutant et Technicien');
+assert(MODE_DEFAUT === 'debutant',
+  'le mode par défaut est Débutant : c\u2019est le public le plus exposé');
+assert(MODES.every((m) => m.label && m.description),
+  'chaque mode porte un libellé et une description');
+assert(estMode('debutant') && estMode('technicien') && !estMode('expert') && !estMode(null),
+  'estMode() n\u2019accepte que les modes connus');
+assert(CLE_MODE.startsWith('kjemo.'),
+  'la clé de stockage du mode est préfixée par l\u2019application');
+
+// Sans localStorage (cas de Node), la préférence doit fonctionner en mémoire.
+const pref = creerPreference({ cle: CLE_MODE, valeurs: MODES.map((m) => m.id), defaut: MODE_DEFAUT });
+assert(pref.lire() === MODE_DEFAUT,
+  'stockage indisponible : la préférence retombe sur le défaut sans lever');
+assert(pref.estPersistante() === false,
+  'stockage indisponible : la préférence se déclare non persistante');
+assert(pref.definir('technicien') === 'technicien' && pref.lire() === 'technicien',
+  'stockage indisponible : le changement de mode reste possible en mémoire');
+assert(pref.definir('expert') === 'technicien' && pref.lire() === 'technicien',
+  'une valeur inconnue est ignorée, pas appliquée silencieusement');
+assert(pref.definir(null) === 'technicien',
+  'une valeur nulle ne casse pas la préférence');
+
+let refus = null;
+try { creerPreference({ cle: 'x', valeurs: ['a', 'b'], defaut: 'c' }); }
+catch (e) { refus = e; }
+assert(refus instanceof Error,
+  'un défaut hors de la liste admise est refusé à la construction');
+
+// Le mode ne doit toucher ni les générateurs ni le contenu technique.
+const sourcePrefs = readFileSync(resolve(ROOT, 'dist/preferences.mjs'), 'utf8');
+for (const interdit of ['generate', 'Remove-', 'powershell', 'normalizeScript']) {
+  assert(!sourcePrefs.includes(interdit),
+    `preferences.mjs ne contient aucun contenu technique (« ${interdit} »)`);
+}
+
+// Le même générateur sert les deux modes : app.js ne doit appeler generate()
+// que par un chemin unique, jamais conditionné au mode.
+const sourceApp = readFileSync(resolve(ROOT, 'dist/app.js'), 'utf8');
+const appelsGenerate = (sourceApp.match(/tool\.generate\(/g) ?? []).length;
+assert(appelsGenerate === 2,
+  `app.js n\u2019appelle generate() que pour l\u2019aperçu initial et la soumission (${appelsGenerate})`);
+assert(!/estDebutant\(\)[^;]*generate\(/.test(sourceApp),
+  'aucun appel à generate() n\u2019est conditionné au mode de lecture');
 
 // Résumé
 console.log('');

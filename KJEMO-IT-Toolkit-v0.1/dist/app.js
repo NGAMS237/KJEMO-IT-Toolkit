@@ -3,6 +3,7 @@
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
 import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
+import { MODES, MODE_DEFAUT, CLE_MODE, creerPreference } from './preferences.mjs';
 
 const CAT_TOUT = CATEGORIE_TOUT;
 // Catalogue filtré : une catégorie déclarée mais SANS outil n'est pas affichée.
@@ -11,6 +12,51 @@ const categories = [CAT_TOUT, ...categoriesAffichees.map((c) => c.name)];
 let selectedCategory = CAT_TOUT;
 let currentTool = null;
 let currentTab = 'assistant';
+
+// ---------------------------------------------------------------------------
+// Mode de lecture — Débutant / Technicien
+// Les deux modes utilisent EXACTEMENT le même générateur de script : le mode
+// change ce qui est expliqué, jamais ce qui est produit. Aucun avertissement,
+// aucune confirmation, aucune information de sécurité n'est masquée en mode
+// Débutant — ce sont précisément les personnes qui en ont le plus besoin.
+// ---------------------------------------------------------------------------
+const prefMode = creerPreference({
+  cle: CLE_MODE,
+  valeurs: MODES.map((m) => m.id),
+  defaut: MODE_DEFAUT,
+});
+
+function modeCourant() { return prefMode.lire(); }
+function estDebutant() { return modeCourant() === 'debutant'; }
+
+/** Niveau de risque traduit en langage courant, pour le mode Débutant. */
+const RISQUE_SIMPLE = {
+  diagnostic: 'Ce script ne modifie rien. Il observe et affiche, c\u2019est tout.',
+  safe: 'Ce script modifie un réglage, et la modification peut être défaite.',
+  caution: 'Ce script modifie la configuration de la machine. Lis l\u2019aperçu avant de l\u2019exécuter.',
+  destructive: 'Ce script peut supprimer ou couper quelque chose. Ne l\u2019exécute qu\u2019en connaissance de cause, et jamais en production sans essai préalable.',
+};
+
+function renderModeSelector() {
+  const zone = document.querySelector('#topbarActions');
+  if (!zone) return;
+  const actuel = modeCourant();
+  zone.innerHTML =
+    `<div class="mode-switch" id="modeSelector" role="group" aria-label="Mode de lecture">`
+    + MODES.map((m) =>
+        `<button type="button" class="mode-option${m.id === actuel ? ' is-selected' : ''}"`
+        + ` data-mode="${m.id}" aria-pressed="${m.id === actuel ? 'true' : 'false'}"`
+        + ` title="${textToCode(m.description)}">${textToCode(m.label)}</button>`).join('')
+    + `</div>`;
+
+  zone.querySelectorAll('.mode-option').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.mode === modeCourant()) return;
+      prefMode.definir(btn.dataset.mode);
+      render();
+    });
+  });
+}
 
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
@@ -422,11 +468,59 @@ function displayErrors(errors, tool) {
   return keys.length === 0;
 }
 
+/**
+ * Bandeau propre au mode de lecture, affiché entre l'en-tête et les onglets.
+ *
+ * Mode Débutant : le problème et le risque en langage courant, puis la marche
+ * à suivre dans l'ordre. Rien n'y remplace les avertissements de sécurité —
+ * ceux-ci restent affichés dans la fiche, dans les deux modes.
+ *
+ * Mode Technicien : la carte d'identité de l'outil (identifiant, élévation,
+ * systèmes couverts, source officielle), qui évite de dérouler la fiche pour
+ * savoir à quoi on a affaire.
+ */
+function modeBlockMarkup(tool) {
+  if (estDebutant()) {
+    const etapes = [
+      'Remplis le formulaire avec tes informations.',
+      'Clique sur « Générer le script ».',
+      'Relis l’aperçu : c’est exactement ce qui sera exécuté.',
+      'Copie le script, ou télécharge le fichier .ps1.',
+      'Exécute-le en suivant les prérequis indiqués plus bas.',
+      'Vérifie le résultat, et sache comment revenir en arrière.',
+    ];
+    return `<section class="mode-block mode-debutant" id="modeBlock" aria-labelledby="modeBlockTitle">`
+      + `<h2 id="modeBlockTitle" class="mode-block-title">En clair</h2>`
+      + `<p class="plain-problem">${textToCode(tool.summary)}</p>`
+      + `<p class="plain-risk risk-${tool.risk}">${textToCode(RISQUE_SIMPLE[tool.risk] ?? '')}</p>`
+      + `<ol class="beginner-steps" id="beginnerSteps">`
+      + etapes.map((e) => `<li>${textToCode(e)}</li>`).join('')
+      + `</ol>`
+      + `<p class="mode-note">Les avertissements de sécurité, les prérequis et la `
+      + `procédure d’annulation restent affichés plus bas : ils ne sont jamais `
+      + `masqués, quel que soit le mode.</p>`
+      + `</section>`;
+  }
+
+  return `<section class="mode-block mode-technicien" id="modeBlock" aria-labelledby="modeBlockTitle">`
+    + `<h2 id="modeBlockTitle" class="mode-block-title">Fiche technique</h2>`
+    + `<dl class="tech-meta" id="techMeta">`
+    + `<div><dt>Identifiant</dt><dd><code>${textToCode(tool.id)}</code></dd></div>`
+    + `<div><dt>Catégorie</dt><dd>${textToCode(tool.category)}</dd></div>`
+    + `<div><dt>Élévation</dt><dd>${tool.requiresAdmin ? 'Administrateur requis' : 'Session standard'}</dd></div>`
+    + `<div><dt>Systèmes</dt><dd>${textToCode(tool.os.join(' · '))}</dd></div>`
+    + `<div><dt>Réversible</dt><dd>${tool.reversible ? 'Oui' : 'Lecture seule'}</dd></div>`
+    + `</dl>`
+    + `<p class="mode-note">Source officielle : `
+    + `<a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation de référence</a>.</p>`
+    + `</section>`;
+}
+
 function renderTool() {
   const tool = currentTool;
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
-  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div><div class="tabs"><button class="tab ${currentTab === 'assistant' ? 'active' : ''}" data-tab="assistant">Assistant</button><button class="tab ${currentTab === 'script' ? 'active' : ''}" data-tab="script">Script</button><button class="tab ${currentTab === 'gui' ? 'active' : ''}" data-tab="gui">Interface graphique</button></div><div id="tabContent"></div>`;
+  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div><div class="tabs"><button class="tab ${currentTab === 'assistant' ? 'active' : ''}" data-tab="assistant">Assistant</button><button class="tab ${currentTab === 'script' ? 'active' : ''}" data-tab="script">Script</button><button class="tab ${currentTab === 'gui' ? 'active' : ''}" data-tab="gui">Interface graphique</button></div>${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   view.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => { currentTab = tab.dataset.tab; renderTool(); }));
   const content = view.querySelector('#tabContent');
@@ -508,6 +602,8 @@ function renderTool() {
 
 function render() {
   renderNavigation();
+  renderModeSelector();
+  document.body.dataset.mode = modeCourant();
   document.querySelector('#home').hidden = Boolean(currentTool);
   document.querySelector('#toolView').hidden = !currentTool;
   if (currentTool) renderTool(); else renderHome();

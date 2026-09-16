@@ -983,6 +983,134 @@ console.log('\n[accueil 1B] — structure d’accueil et navigation par catégor
   await ctx.close();
 }
 
+// --- LOT 1B : modes Débutant et Technicien ---------------------------------
+console.log('\n[modes 1B] — Débutant / Technicien, persistance et sécurité');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.risk === 'caution') ?? tools[0];
+
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+
+  const options = await page.$$eval('#modeSelector .mode-option',
+    (els) => els.map((e) => ({ mode: e.dataset.mode, presse: e.getAttribute('aria-pressed') })));
+  assert(options.length === 2 && options.map((o) => o.mode).join(',') === 'debutant,technicien',
+    'le sélecteur propose Débutant et Technicien');
+  assert(options.filter((o) => o.presse === 'true').length === 1,
+    'un seul mode est marqué aria-pressed="true"');
+  assert(options.find((o) => o.mode === 'debutant').presse === 'true',
+    'au premier chargement, le mode Débutant est actif');
+
+  // --- Mode Débutant -------------------------------------------------------
+  assert(await page.locator('#modeBlock.mode-debutant').isVisible(),
+    'mode Débutant : le bloc « En clair » est affiché');
+  assert(await page.locator('#beginnerSteps li').count() >= 5,
+    'mode Débutant : la marche à suivre est donnée étape par étape');
+  assert((await page.locator('.plain-risk').innerText()).trim().length > 0,
+    'mode Débutant : le niveau de risque est formulé en langage courant');
+
+  // SÉCURITÉ : rien d'essentiel ne doit disparaître en mode Débutant.
+  const essentiels = ['#prereqBlock', '#execNotes', '#commonErrors',
+                      '#verifyAfter', '#rollbackBlock', '#toolForm',
+                      '#scriptOutput', '#copyButton', '#downloadButton'];
+  for (const sel of essentiels) {
+    assert(await page.locator(sel).count() === 1,
+      `mode Débutant : ${sel} reste présent dans la fiche`);
+  }
+  assert(await page.locator('.risk').isVisible(),
+    'mode Débutant : le badge de niveau de risque reste visible');
+  assert(await page.locator('.admin-flag').isVisible(),
+    'mode Débutant : l’exigence d’élévation reste visible');
+  const avertDeb = await page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  assert(avertDeb.length > 0,
+    `mode Débutant : les avertissements de sécurité sont présents (${avertDeb.length})`);
+
+  const scriptDebutant = await page.$eval('#scriptOutput', (el) => el.textContent);
+
+  // --- Bascule vers Technicien --------------------------------------------
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForSelector('#modeBlock.mode-technicien', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'la bascule met à jour aria-pressed');
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'false',
+    'l’ancien mode repasse à aria-pressed="false"');
+  assert(await page.locator('#techMeta').isVisible(),
+    'mode Technicien : la fiche technique est affichée');
+  assert(await page.locator('#beginnerSteps').count() === 0,
+    'mode Technicien : la marche à suivre pas-à-pas laisse place au détail technique');
+
+  const avertTech = await page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  assert(avertTech.join(' | ') === avertDeb.join(' | '),
+    'les avertissements de sécurité sont strictement les mêmes dans les deux modes');
+
+  // MÊME GÉNÉRATEUR : le script produit ne dépend pas du mode.
+  const scriptTechnicien = await page.$eval('#scriptOutput', (el) => el.textContent);
+  assert(scriptTechnicien === scriptDebutant,
+    'le script généré est identique dans les deux modes (même générateur)');
+  assert(scriptTechnicien === normalizeScript(outil.generate(
+    Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')])))),
+    'le script affiché correspond exactement à generate() côté Node');
+
+  // --- Persistance ---------------------------------------------------------
+  await page.reload();
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'le mode choisi survit au rechargement de la page');
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'le mode choisi vaut aussi pour l’accueil');
+
+  // Une valeur corrompue dans le stockage ne doit pas casser l'interface.
+  await page.evaluate(() => localStorage.setItem('kjemo.mode.v1', 'expert'));
+  await page.reload();
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'true',
+    'une valeur de mode inconnue retombe proprement sur le défaut');
+
+  await ctx.close();
+}
+
+// --- LOT 1B : le mode fonctionne même sans stockage ------------------------
+console.log('\n[modes 1B] — repli quand localStorage est bloqué');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    const jette = () => { throw new Error('stockage bloqué'); };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { return { getItem: jette, setItem: jette, removeItem: jette }; },
+    });
+  });
+  const erreurs = [];
+  page.on('pageerror', (e) => erreurs.push(e.message));
+
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'true',
+    'stockage bloqué : le mode par défaut s’applique quand même');
+
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForFunction(
+    () => document.querySelector('#modeSelector .mode-option[data-mode="technicien"]')
+            ?.getAttribute('aria-pressed') === 'true', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'stockage bloqué : le changement de mode reste possible pour la session');
+
+  await page.locator('#toolGrid .open-tool').first().click();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  assert(await page.locator('#modeBlock').count() === 1,
+    'stockage bloqué : la fiche s’affiche normalement dans le mode choisi');
+  assert(erreurs.length === 0,
+    `stockage bloqué : aucune erreur JavaScript non rattrapée (${erreurs.length})`);
+
+  await ctx.close();
+}
+
 // --- Stockage indisponible : l'application doit continuer de fonctionner ---
 console.log('\n[stockage] — dégradation propre quand localStorage est bloqué');
 {

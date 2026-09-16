@@ -134,3 +134,38 @@ nav button[aria-current="true"]{color:var(--text);background:var(--surface-2)}
   .hero{margin-bottom:26px}
   .search-hero{max-width:none}
 }
+
+/* ==========================================================================
+   LOT 1B (2/n) — Modes Débutant et Technicien
+   ========================================================================== */
+.mode-switch{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--border);background:var(--surface);border-radius:9px}
+.mode-option{font:inherit;font-size:13px;color:var(--muted);background:transparent;border:0;border-radius:7px;padding:7px 13px;min-height:34px;cursor:pointer}
+.mode-option:hover{color:var(--text)}
+.mode-option.is-selected{color:var(--text);background:var(--surface-2)}
+.mode-option[aria-pressed="true"]{font-weight:650}
+
+.mode-block{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:18px 20px;margin:0 0 24px}
+.mode-block-title{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.mode-note{font-size:13px;line-height:1.6;color:var(--muted);margin:14px 0 0}
+
+.mode-debutant{border-left:3px solid var(--cyan)}
+.plain-problem{font-size:16px;line-height:1.55;margin:0 0 10px}
+.plain-risk{font-size:14px;line-height:1.6;margin:0;padding:10px 13px;border-radius:8px;border-left:3px solid var(--border);background:var(--surface-2);color:var(--text)}
+.plain-risk.risk-diagnostic{border-left-color:var(--cyan)}
+.plain-risk.risk-safe{border-left-color:#4fbf95}
+.plain-risk.risk-caution{border-left-color:var(--warn)}
+.plain-risk.risk-destructive{border-left-color:var(--danger)}
+.beginner-steps{counter-reset:etape;list-style:decimal;padding-left:22px;margin:16px 0 0}
+.beginner-steps li{font-size:14px;line-height:1.65;color:var(--muted);margin-bottom:7px}
+
+.mode-technicien{border-left:3px solid var(--accent)}
+.tech-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 18px;margin:0}
+.tech-meta div{min-width:0}
+.tech-meta dt{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.tech-meta dd{margin:0;font-size:13px;line-height:1.5;color:var(--text);overflow-wrap:anywhere}
+.tech-meta code{color:var(--cyan);font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+
+@media(max-width:820px){
+  .mode-switch{margin-left:auto}
+  .mode-option{padding:7px 11px}
+}
