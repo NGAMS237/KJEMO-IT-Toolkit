@@ -2,21 +2,66 @@
 // GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
+import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
 
-const categories = ['Tout', ...new Set(tools.map((tool) => tool.category))];
-let selectedCategory = 'Tout';
+const CAT_TOUT = CATEGORIE_TOUT;
+// Catalogue filtré : une catégorie déclarée mais SANS outil n'est pas affichée.
+const categoriesAffichees = categoriesVisibles(tools);
+const categories = [CAT_TOUT, ...categoriesAffichees.map((c) => c.name)];
+let selectedCategory = CAT_TOUT;
 let currentTool = null;
 let currentTab = 'assistant';
 
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
   nav.innerHTML = categories.map((category) => {
-    const count = category === 'Tout' ? tools.length : tools.filter((tool) => tool.category === category).length;
-    return `<button data-category="${category}" class="${category === selectedCategory ? 'active' : ''}">${category}<span class="nav-count">${count}</span></button>`;
+    const meta    = category === CAT_TOUT ? null : categorieParNom(category);
+    const icone   = category === CAT_TOUT ? '\u2261' : (meta?.icon ?? '\u25CB');
+    const count   = category === CAT_TOUT
+      ? tools.length
+      : (categoriesAffichees.find((c) => c.name === category)?.count ?? 0);
+    const actif   = category === selectedCategory;
+    return `<button type="button" data-category="${category}" class="${actif ? 'active' : ''}"`
+      + ` aria-current="${actif ? 'true' : 'false'}">`
+      + `<span class="nav-icon" aria-hidden="true">${textToCode(icone)}</span>`
+      + `<span class="nav-label">${textToCode(category)}</span>`
+      + `<span class="nav-count">${count}</span></button>`;
   }).join('');
   nav.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
     selectedCategory = button.dataset.category; revenirAccueil(); document.querySelector('.sidebar').classList.remove('open');
   }));
+}
+
+/**
+ * Grille de catégories de l'accueil : nom, icône sobre, décompte, courte
+ * description et état sélectionné visible. Elle double la barre latérale, qui
+ * est masquée sur téléphone.
+ */
+function renderCategoryGrid() {
+  const grille = document.querySelector('#categoryGrid');
+  if (!grille) return;
+
+  const carte = (nom, icone, description, count, actif) =>
+    `<button type="button" role="listitem" class="category-card${actif ? ' is-selected' : ''}"`
+    + ` data-category="${nom}" aria-pressed="${actif ? 'true' : 'false'}">`
+    + `<span class="category-icon" aria-hidden="true">${textToCode(icone)}</span>`
+    + `<span class="category-name">${textToCode(nom === CAT_TOUT ? 'Tous les outils' : nom)}</span>`
+    + `<span class="category-count">${count} outil${count > 1 ? 's' : ''}</span>`
+    + (description ? `<span class="category-desc">${textToCode(description)}</span>` : '')
+    + `</button>`;
+
+  grille.innerHTML =
+    carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', tools.length, selectedCategory === CAT_TOUT)
+    + categoriesAffichees
+        .map((c) => carte(c.name, c.icon, c.description, c.count, selectedCategory === c.name))
+        .join('');
+
+  grille.querySelectorAll('.category-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedCategory = btn.dataset.category;
+      revenirAccueil();
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -178,6 +223,7 @@ function commonErrorBanner(query) {
 }
 
 function renderHome() {
+  renderCategoryGrid();
   const grid    = document.querySelector('#toolGrid');
   const query   = currentQuery();
   const results = searchResults();
@@ -467,7 +513,37 @@ function render() {
   if (currentTool) renderTool(); else renderHome();
 }
 
-document.querySelector('#search').addEventListener('input', () => { if (!currentTool) renderHome(); });
+const champRecherche = document.querySelector('#search');
+const boutonEffacer  = document.querySelector('#searchClear');
+
+function majEffacer() {
+  if (boutonEffacer) boutonEffacer.hidden = champRecherche.value.length === 0;
+}
+
+champRecherche.addEventListener('input', () => {
+  majEffacer();
+  if (!currentTool) renderHome();
+});
+
+if (boutonEffacer) {
+  boutonEffacer.addEventListener('click', () => {
+    champRecherche.value = '';
+    majEffacer();
+    champRecherche.focus();
+    if (!currentTool) renderHome();
+  });
+}
+
+// Échap vide la recherche sans quitter le champ
+champRecherche.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && champRecherche.value) {
+    ev.preventDefault();
+    champRecherche.value = '';
+    majEffacer();
+    if (!currentTool) renderHome();
+  }
+});
+majEffacer();
 document.querySelector('#menuButton').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('open'));
 
 // Bouton Retour / Suivant du navigateur, et lien partagé collé dans la barre d'adresse

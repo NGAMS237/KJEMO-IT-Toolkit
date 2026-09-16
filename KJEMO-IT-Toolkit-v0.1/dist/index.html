@@ -19,18 +19,35 @@
       <main id="main">
         <header class="topbar">
           <button id="menuButton" class="icon-button" aria-label="Ouvrir le menu">☰</button>
-          <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Rechercher un problème, une commande…" /></label>
-          <span class="version">Windows, AD & stockage · v0.2</span>
+          <span class="topbar-title">KJEMO IT Toolkit</span>
+          <div class="topbar-actions" id="topbarActions"></div>
         </header>
         <section id="home" class="home-view">
-          <div class="eyebrow">ASSISTANTS DE DÉPANNAGE</div>
-          <h1>Résoudre, comprendre,<br><em>puis exécuter.</em></h1>
-          <p class="intro">Choisis une situation. L’assistant prépare un script PowerShell avec tes informations et montre aussi les étapes à faire dans l’interface Windows.</p>
-          <div class="notice"><b>Avant de lancer :</b> lis l’aperçu, teste en laboratoire et utilise <code>-WhatIf</code> quand il est proposé.</div>
-          <div class="section-heading"><h2>Outils prêts à utiliser</h2><span id="toolCount"></span></div>
+          <!-- Hero compact : la recherche est l'action principale, pas un accessoire -->
+          <div class="hero">
+            <h1>Résoudre un problème Windows, pas à pas.</h1>
+            <p class="intro">Décris ton problème ou colle le message d’erreur que tu vois. L’assistant prépare un script PowerShell avec tes informations, explique les risques et montre comment revenir en arrière.</p>
+            <label class="search search-hero" for="search">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <span class="sr-only">Rechercher un outil ou un message d’erreur</span>
+              <input id="search" type="search" autocomplete="off"
+                     placeholder="Ex. : wifi, ip fixe, disque plein, « n’est pas signé numériquement »" />
+              <button type="button" id="searchClear" class="search-clear" hidden aria-label="Effacer la recherche">✕</button>
+            </label>
+            <p class="notice notice-compact"><b>Avant de lancer :</b> lis l’aperçu, teste en laboratoire, et utilise <code>-WhatIf</code> quand il est proposé.</p>
+          </div>
+
           <div id="commonErrorZone"></div>
           <div id="shortcutsZone"></div>
-          <div id="toolGrid" class="tool-grid"></div>
+
+          <!-- Navigation par catégories : visible et tactile, doublée de la barre latérale -->
+          <section class="categories" id="categoriesSection" aria-labelledby="categoriesTitle">
+            <h2 id="categoriesTitle" class="section-title">Catégories</h2>
+            <div class="category-grid" id="categoryGrid" role="list"></div>
+          </section>
+
+          <div class="section-heading"><h2 class="section-title" id="toolsTitle">Outils</h2><span id="toolCount"></span></div>
+          <div id="toolGrid" class="tool-grid" role="list" aria-labelledby="toolsTitle"></div>
         </section>
         <section id="toolView" class="tool-view" hidden></section>
       </main>

@@ -45,6 +45,16 @@ import {
   domainToDn,
 } from '../dist/generators.mjs';
 
+import { readFileSync } from 'node:fs';
+import {
+  CATEGORIES,
+  CATEGORIE_TOUT,
+  compterOutils,
+  categoriesVisibles,
+  categoriesEnAttente,
+  categorieParNom,
+} from '../dist/categories.mjs';
+
 // ---------------------------------------------------------------------------
 // Comptage
 // ---------------------------------------------------------------------------
@@ -949,6 +959,51 @@ assert(/Disable-ADAccount[^\n]*-Confirm\b/.test(codeExecute(au2.rollback.command
   'ad-user : Disable-ADAccount porte une confirmation explicite');
 assert(/Remove-ADUser/.test(au2.rollback.exceptional) && !/Remove-ADUser/.test(codeExecute(au2.rollback.command)),
   'ad-user : la suppression définitive est reléguée au cas exceptionnel');
+
+// ---------------------------------------------------------------------------
+// LOT 1B (1/n) — Catalogue de catégories et navigation
+// ---------------------------------------------------------------------------
+section('LOT 1B — navigation par catégories');
+
+const visibles = categoriesVisibles(tools);
+const enAttente = categoriesEnAttente(tools);
+
+assert(visibles.every((c) => c.count > 0),
+  'aucune catégorie vide n\u2019est proposée à la navigation');
+assert(visibles.reduce((n, c) => n + c.count, 0) === tools.length,
+  `les catégories visibles couvrent les ${tools.length} outils`);
+assert(new Set(tools.map((t) => t.category)).size === visibles.length,
+  'une catégorie visible par catégorie réellement utilisée');
+assert(visibles.every((c) => !c.horsCatalogue),
+  'chaque catégorie utilisée est décrite dans le catalogue');
+assert(visibles.every((c) => typeof c.icon === 'string' && c.icon.length > 0),
+  'chaque catégorie visible porte une icône');
+assert(visibles.every((c) => typeof c.description === 'string' && c.description.length > 0),
+  'chaque catégorie visible porte une courte description');
+assert(new Set(CATEGORIES.map((c) => c.id)).size === CATEGORIES.length,
+  'les identifiants de catégorie sont uniques');
+assert(new Set(CATEGORIES.map((c) => c.name)).size === CATEGORIES.length,
+  'les noms de catégorie sont uniques');
+assert(enAttente.length > 0 && enAttente.every((c) => c.count === 0),
+  `catégories prévues mais masquées tant qu\u2019elles sont vides : ${enAttente.length}`);
+for (const prevue of ['Windows poste de travail', 'Analyse et nettoyage des disques',
+                      'Windows Server', 'Imprimantes', 'Linux']) {
+  assert(CATEGORIES.some((c) => c.name === prevue),
+    `la feuille de route est préparée : « ${prevue} » est déclarée`);
+  assert(!visibles.some((c) => c.name === prevue),
+    `« ${prevue} » n\u2019est pas affichée puisqu\u2019elle est vide`);
+}
+assert(categorieParNom('Réseau') !== null && categorieParNom('Inexistante') === null,
+  'categorieParNom() retrouve une catégorie connue et rejette l\u2019inconnue');
+assert(compterOutils(tools, CATEGORIE_TOUT) === tools.length,
+  '« Tout » compte l\u2019ensemble des outils');
+
+// Aucune donnée technique d'outil ne doit migrer dans le catalogue de présentation.
+const sourceCategories = readFileSync(resolve(ROOT, 'dist/categories.mjs'), 'utf8');
+for (const interdit of ['generate', 'Remove-', 'Set-Net', 'powershell', 'Get-AD']) {
+  assert(!sourceCategories.includes(interdit),
+    `categories.mjs ne contient aucun contenu technique (« ${interdit} »)`);
+}
 
 // Résumé
 console.log('');

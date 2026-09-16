@@ -863,6 +863,126 @@ console.log('\n[routes] — liens directs, favoris et historique local');
   await ctx.close();
 }
 
+// --- LOT 1B : accueil, catégories et recherche mise en avant ---------------
+console.log('\n[accueil 1B] — structure d’accueil et navigation par catégories');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
+
+  const utilisees = [...new Set(tools.map((t) => t.category))];
+
+  const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => ({
+    nom: e.dataset.category,
+    presse: e.getAttribute('aria-pressed'),
+    texte: e.textContent,
+    selectionnee: e.classList.contains('is-selected'),
+  })));
+
+  assert(cartes.length === utilisees.length + 1,
+    `la grille affiche « Tout » + les ${utilisees.length} catégories pourvues (${cartes.length})`);
+  assert(utilisees.every((c) => cartes.some((k) => k.nom === c)),
+    'chaque catégorie réellement utilisée a sa carte');
+  for (const vide of ['Windows Server', 'Linux', 'Imprimantes',
+                      'Windows poste de travail', 'Analyse et nettoyage des disques']) {
+    assert(!cartes.some((k) => k.nom === vide),
+      `aucune catégorie vide affichée : « ${vide} » est absente`);
+  }
+  assert(cartes.every((k) => k.presse === 'true' || k.presse === 'false'),
+    'chaque carte de catégorie porte aria-pressed');
+  assert(cartes.filter((k) => k.presse === 'true').length === 1,
+    'une seule catégorie est marquée comme sélectionnée');
+  assert(cartes.find((k) => k.presse === 'true').selectionnee,
+    'l’état sélectionné est aussi visible (classe is-selected)');
+  assert(cartes.every((k) => /\d+\s+outil/.test(k.texte)),
+    'chaque carte annonce son nombre d’outils');
+
+  // Le décompte annoncé doit correspondre au catalogue réel.
+  for (const nom of utilisees) {
+    const attendu = tools.filter((t) => t.category === nom).length;
+    const carte   = cartes.find((k) => k.nom === nom);
+    assert(new RegExp(`${attendu} outil`).test(carte.texte),
+      `« ${nom} » annonce ${attendu} outil(s)`);
+  }
+
+  // Sélection d'une catégorie : la grille d'outils doit être filtrée.
+  const cible   = utilisees[0];
+  const attendu = tools.filter((t) => t.category === cible).length;
+  await page.click(`#categoryGrid .category-card[data-category="${cible}"]`);
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    attendu, { timeout: 8000 });
+  const affiches = await page.locator('#toolGrid .open-tool').count();
+  assert(affiches === attendu,
+    `« ${cible} » sélectionnée : ${affiches} outil(s) affiché(s) sur ${tools.length}`);
+  const presseApres = await page.getAttribute(
+    `#categoryGrid .category-card[data-category="${cible}"]`, 'aria-pressed');
+  assert(presseApres === 'true', 'la catégorie cliquée passe à aria-pressed="true"');
+
+  // La barre latérale reflète la même sélection (aria-current).
+  const navCourant = await page.$eval('#navigation button[aria-current="true"]',
+    (el) => el.dataset.category).catch(() => null);
+  assert(navCourant === cible,
+    'la navigation latérale marque la même catégorie avec aria-current');
+
+  // Retour à « Tout »
+  await page.click('#categoryGrid .category-card[data-category="Tout"]');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  assert(await page.locator('#toolGrid .open-tool').count() === tools.length,
+    '« Tous les outils » rétablit le catalogue complet');
+
+  // La recherche est l'action principale : champ dans le hero, étiquette accessible.
+  const champDansHero = await page.$eval('#search', (el) => !!el.closest('.hero'));
+  assert(champDansHero, 'le champ de recherche est présenté dans le hero');
+  const etiquette = await page.$eval('#search', (el) => {
+    const lab = el.closest('label') || document.querySelector('label[for="search"]');
+    return lab ? lab.textContent.trim() : '';
+  });
+  assert(etiquette.length > 0, 'le champ de recherche porte une étiquette associée');
+
+  // Bouton d'effacement : masqué à vide, actif dès la saisie.
+  assert(await page.locator('#searchClear').isHidden(),
+    'le bouton d’effacement est masqué quand la recherche est vide');
+  await page.fill('#search', 'wifi');
+  await page.waitForSelector('#searchClear:not([hidden])', { timeout: 8000 });
+  assert(await page.locator('#searchClear').isVisible(),
+    'le bouton d’effacement apparaît dès qu’une recherche est saisie');
+  await page.click('#searchClear');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  assert(await page.inputValue('#search') === '',
+    'le bouton d’effacement vide réellement le champ');
+
+  // Échap efface aussi la recherche — aucun contrôle réservé à la souris.
+  await page.fill('#search', 'disque');
+  await page.waitForSelector('#searchClear:not([hidden])', { timeout: 8000 });
+  await page.press('#search', 'Escape');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  assert(await page.inputValue('#search') === '',
+    'la touche Échap efface la recherche');
+
+  // Les cartes de catégorie sont de vrais boutons, atteignables au clavier.
+  const focusable = await page.$eval('#categoryGrid .category-card',
+    (el) => el.tagName === 'BUTTON' && el.tabIndex >= 0);
+  assert(focusable, 'les catégories sont des boutons atteignables au clavier');
+
+  // Aucune erreur JavaScript pendant toute la séquence.
+  const erreurs1B = [];
+  page.on('pageerror', (e) => erreurs1B.push(e.message));
+  await page.click('#categoryGrid .category-card[data-category="Tout"]');
+  await page.waitForTimeout(150);
+  assert(erreurs1B.length === 0,
+    `accueil 1B : aucune erreur JavaScript non rattrapée (${erreurs1B.length})`);
+
+  await ctx.close();
+}
+
 // --- Stockage indisponible : l'application doit continuer de fonctionner ---
 console.log('\n[stockage] — dégradation propre quand localStorage est bloqué');
 {
