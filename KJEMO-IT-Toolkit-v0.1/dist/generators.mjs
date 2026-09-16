@@ -259,6 +259,330 @@ export function textToCode(text) {
 // Outils — 8 assistants
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Moteur de recherche
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalise une chaîne pour la recherche : minuscules, accents retirés,
+ * ponctuation réduite à des espaces. Permet à « reseau » de trouver « Réseau »
+ * et à « wi fi » de trouver « Wi-Fi ».
+ */
+export function normalizeSearch(v) {
+  return String(v ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/**
+ * Champs indexés d'un outil, groupés par motif de correspondance.
+ * L'ordre définit la priorité affichée à l'utilisateur.
+ */
+export function searchFields(tool) {
+  return [
+    { reason: 'titre',      weight: 100, text: tool.title },
+    { reason: 'mot-clé',    weight:  80, text: (tool.keywords ?? []).join(' ') },
+    { reason: 'description',weight:  60, text: tool.summary },
+    { reason: 'catégorie',  weight:  50, text: tool.category },
+    { reason: 'message d\u2019erreur', weight: 70,
+      text: (tool.commonErrors ?? []).map((e) => e.message).join(' ') },
+    { reason: 'cause ou correction', weight: 40,
+      text: (tool.commonErrors ?? []).map((e) => `${e.cause} ${e.fix}`).join(' ') },
+    { reason: 'prérequis',  weight:  30,
+      text: [...(tool.prereqs ?? []), ...(tool.os ?? [])].join(' ') },
+  ];
+}
+
+/**
+ * Recherche un outil. Tous les mots de la requête doivent être trouvés
+ * (ET logique), chacun pouvant l'être dans un champ différent.
+ *
+ * Retourne [{ tool, reason, score }] trié par pertinence décroissante.
+ * Une requête vide retourne tous les outils de la catégorie.
+ */
+export function searchTools(query, category = 'Tout', list = tools) {
+  const parCategorie = list.filter((t) => category === 'Tout' || t.category === category);
+  const mots = normalizeSearch(query).split(' ').filter(Boolean);
+  if (mots.length === 0) return parCategorie.map((tool) => ({ tool, reason: null, score: 0 }));
+
+  const resultats = [];
+  for (const tool of parCategorie) {
+    const champs = searchFields(tool).map((c) => ({ ...c, norm: normalizeSearch(c.text) }));
+    let score = 0;
+    let meilleur = null;
+    let tousTrouves = true;
+
+    for (const mot of mots) {
+      const trouve = champs.filter((c) => c.norm.includes(mot));
+      if (trouve.length === 0) { tousTrouves = false; break; }
+      const top = trouve.reduce((a, b) => (b.weight > a.weight ? b : a));
+      score += top.weight;
+      if (!meilleur || top.weight > meilleur.weight) meilleur = top;
+    }
+
+    if (tousTrouves) resultats.push({ tool, reason: meilleur?.reason ?? null, score });
+  }
+
+  return resultats.sort((a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title, 'fr'));
+}
+
+// ---------------------------------------------------------------------------
+// EXECUTION_NOTES — bloc commun à toutes les fiches
+// ---------------------------------------------------------------------------
+/**
+ * Un script téléchargé depuis ce site est un fichier .ps1 NON SIGNÉ provenant
+ * d'Internet. Windows le bloque par défaut. Ce bloc explique pourquoi et
+ * comment le débloquer proprement, sans jamais abaisser la sécurité de la
+ * machine entière.
+ *
+ * Sources officielles Microsoft :
+ *   about_Execution_Policies
+ *   https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies
+ *   Unblock-File
+ *   https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/unblock-file
+ */
+export const EXECUTION_NOTES = {
+  title: 'Avant d\u2019exécuter le script',
+  intro:
+    'Le fichier téléchargé est un script texte non signé. Windows marque tout fichier '
+    + 'venant d\u2019Internet, et la stratégie d\u2019exécution par défaut refuse alors de le lancer. '
+    + 'Ce n\u2019est pas une erreur du script : c\u2019est une protection normale de Windows.',
+
+  steps: [
+    {
+      label: 'Relire le script',
+      detail:
+        'L\u2019aperçu affiché ici est exactement le contenu du fichier téléchargé. '
+        + 'Ouvre-le dans le Bloc-notes si tu veux le relire avant de le lancer. '
+        + 'N\u2019exécute jamais un script que tu n\u2019as pas lu.',
+    },
+    {
+      label: 'Débloquer le fichier téléchargé',
+      detail:
+        'Retire la marque « provient d\u2019Internet » sur ce seul fichier. '
+        + 'La stratégie d\u2019exécution de la machine n\u2019est pas modifiée.',
+      command: 'Unblock-File -Path "$env:USERPROFILE\\Downloads\\<nom-du-script>.ps1"',
+    },
+    {
+      label: 'Ouvrir PowerShell avec les droits nécessaires',
+      detail:
+        'Les outils marqués ATTENTION ou DESTRUCTIF modifient la configuration du système '
+        + 'et exigent une console ouverte en tant qu\u2019administrateur. '
+        + 'Les outils DIAGNOSTIC se contentent le plus souvent d\u2019une session normale.',
+    },
+    {
+      label: 'Vérifier la stratégie en vigueur si le blocage persiste',
+      detail:
+        'Cette commande affiche la stratégie de chaque portée. La portée la plus prioritaire '
+        + 'l\u2019emporte : MachinePolicy et UserPolicy (stratégie de groupe), puis Process, '
+        + 'CurrentUser, et enfin LocalMachine.',
+      command: 'Get-ExecutionPolicy -List',
+    },
+  ],
+
+  // Tableau de référence — about_Execution_Policies
+  policies: [
+    { name: 'Restricted',   local: 'Aucun script autorisé',        internet: 'Aucun script autorisé' },
+    { name: 'AllSigned',    local: 'Signé par un éditeur approuvé', internet: 'Signé par un éditeur approuvé' },
+    { name: 'RemoteSigned', local: 'Autorisé',                      internet: 'Signé, ou débloqué avec Unblock-File' },
+    { name: 'Unrestricted', local: 'Autorisé',                      internet: 'Autorisé, avec avertissement' },
+    { name: 'Bypass',       local: 'Autorisé',                      internet: 'Autorisé, sans avertissement' },
+  ],
+
+  errors: [
+    {
+      message: 'n\u2019est pas signé numériquement. Vous ne pouvez pas exécuter ce script sur le système actuel.',
+      code: 'UnauthorizedAccess',
+      cause:
+        'Stratégie RemoteSigned (le cas le plus courant) et fichier marqué comme provenant '
+        + 'd\u2019Internet. Le script n\u2019étant pas signé, il est refusé.',
+      fix: 'Débloquer ce fichier précis avec Unblock-File, puis relancer.',
+      command: 'Unblock-File -Path "$env:USERPROFILE\\Downloads\\<nom-du-script>.ps1"',
+    },
+    {
+      message: 'L\u2019exécution de scripts est désactivée sur ce système.',
+      code: 'UnauthorizedAccess',
+      cause: 'Stratégie Restricted : aucun script n\u2019est autorisé, même local.',
+      fix:
+        'Lancer le script dans une session isolée, sans toucher à la configuration de la machine. '
+        + 'La portée Process disparaît à la fermeture de la fenêtre. '
+        + 'Si une stratégie de groupe impose Restricted, il faut passer par l\u2019administrateur du domaine.',
+      command: 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<chemin-du-script>.ps1"',
+    },
+    {
+      message: 'Accès refusé / Requested registry access is not allowed.',
+      code: 'PermissionDenied',
+      cause: 'La console PowerShell n\u2019a pas été ouverte en tant qu\u2019administrateur.',
+      fix: 'Fermer la fenêtre, puis rouvrir PowerShell avec un clic droit → Exécuter en tant qu\u2019administrateur.',
+    },
+    {
+      message: 'Le terme « Get-ADUser » n\u2019est pas reconnu comme nom d\u2019applet de commande.',
+      code: 'CommandNotFoundException',
+      cause:
+        'Le module ActiveDirectory est absent. Il est présent sur un contrôleur de domaine, '
+        + 'mais doit être installé séparément sur un poste de travail (RSAT).',
+      fix: 'Installer les outils RSAT Active Directory, puis rouvrir PowerShell.',
+      command: 'Add-WindowsCapability -Online -Name "Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0"',
+    },
+  ],
+
+  warning:
+    'Ne modifie pas la stratégie d\u2019exécution de toute la machine pour faire passer un script. '
+    + 'Débloquer le fichier concerné, ou utiliser une session isolée, suffit et reste réversible.',
+
+  sources: [
+    {
+      label: 'about_Execution_Policies (Microsoft Learn)',
+      url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies',
+    },
+    {
+      label: 'Unblock-File (Microsoft Learn)',
+      url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/unblock-file',
+    },
+  ],
+};
+
+
+/**
+ * Recherche dans les erreurs COMMUNES à tous les scripts (EXECUTION_NOTES).
+ * Un technicien qui tape « signé numériquement » cherche une explication, pas
+ * une liste des huit outils : on lui répond par l'explication elle-même.
+ */
+export function searchCommonErrors(query) {
+  const mots = normalizeSearch(query).split(' ').filter(Boolean);
+  if (mots.length === 0) return [];
+  return EXECUTION_NOTES.errors.filter((e) => {
+    const champ = normalizeSearch(`${e.message} ${e.code ?? ''} ${e.cause} ${e.fix}`);
+    return mots.every((mot) => champ.includes(mot));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Audit de sécurité des procédures d'annulation
+// ---------------------------------------------------------------------------
+/**
+ * Cmdlets considérés comme destructifs par leur verbe. Toute occurrence dans
+ * une procédure d'annulation doit porter une confirmation réelle, ou figurer
+ * dans la liste d'exceptions ci-dessous.
+ */
+export const VERBES_DESTRUCTIFS = [
+  'Remove', 'Uninstall', 'Clear', 'Reset', 'Disable', 'Dismount', 'Format',
+];
+
+/**
+ * Exceptions explicites — cmdlets qui correspondent au filtre mais ne
+ * détruisent rien. La liste est volontairement courte et justifiée.
+ */
+export const CMDLETS_NON_DESTRUCTIFS = {
+  // Le verbe « Format- » vise Format-Volume, qui efface un disque. Les quatre
+  // cmdlets ci-dessous ne formatent que l'AFFICHAGE dans la console : elles ne
+  // touchent ni disque, ni annuaire, ni configuration.
+  'Format-Table':  'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+  'Format-List':   'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+  'Format-Wide':   'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+  'Format-Custom': 'Mise en forme de l\u2019affichage console. Ne modifie rien.',
+};
+
+/**
+ * Extrait les cmdlets Verbe-Nom d'un bloc de commandes, en ignorant les lignes
+ * de commentaire : un cmdlet cité dans une explication n'est pas exécuté.
+ */
+export function cmdletsExecutes(bloc) {
+  return String(bloc ?? '')
+    .split(/\r?\n/)
+    .filter((ligne) => !/^\s*#/.test(ligne))
+    .join('\n')
+    .match(/\b[A-Z][a-zA-Z]*-[A-Z][A-Za-z0-9]*\b/g) ?? [];
+}
+
+/**
+ * Audite la procédure d'annulation d'un outil et retourne la liste des
+ * problèmes trouvés. Un tableau vide signifie « conforme ».
+ *
+ * Règles appliquées :
+ *   1. -Confirm:$false est interdit sur un cmdlet destructif.
+ *   2. -Force est interdit dans la procédure NORMALE sur un cmdlet destructif.
+ *   3. Tout cmdlet destructif de la procédure normale doit porter -Confirm.
+ *   4. Le bloc diagnostic ne doit contenir aucun cmdlet destructif sans -WhatIf.
+ *   5. Un bloc exceptionnel qui emploie -Force ou -ForceRemoval doit porter un
+ *      avertissement critique.
+ */
+export function auditerAnnulation(tool) {
+  const pbs = [];
+  const r = tool.rollback ?? {};
+
+  const exempte     = (c) => Object.prototype.hasOwnProperty.call(CMDLETS_NON_DESTRUCTIFS, c);
+  const estDestructif = (c) =>
+    VERBES_DESTRUCTIFS.some((v) => c.startsWith(v + '-')) && !exempte(c);
+
+  const lignesUtiles = (bloc) => String(bloc ?? '')
+    .split(/\r?\n/).filter((l) => l.trim() && !/^\s*#/.test(l.trim()));
+
+  const BLOCS = [
+    ['diagnostic',  r.diagnostic],
+    ['command',     r.command],
+    ['exceptional', r.exceptional],
+  ];
+
+  // --- RÈGLE 1 : -Confirm:$false est interdit PARTOUT dans une annulation.
+  //     Ce paramètre n'a qu'un seul effet possible : supprimer la demande de
+  //     confirmation. Aucun usage légitime dans une procédure documentée.
+  for (const [nom, bloc] of BLOCS) {
+    for (const ligne of lignesUtiles(bloc)) {
+      if (/-Confirm\s*:\s*\$false/i.test(ligne)) {
+        pbs.push(`${tool.id} : -Confirm:$false interdit (bloc ${nom})`);
+      }
+    }
+  }
+
+  // --- RÈGLE 2 : procédure NORMALE — confirmation exigée, -Force interdit.
+  for (const ligne of lignesUtiles(r.command)) {
+    const cmdlets = cmdletsExecutes(ligne);
+    const dangereux = cmdlets.filter(estDestructif);
+
+    if (/(^|\s)-Force(Removal)?\b/i.test(ligne) && !cmdlets.every(exempte)) {
+      const quoi = dangereux[0] ?? cmdlets[0] ?? 'la commande';
+      pbs.push(`${tool.id} : ${quoi} emploie -Force dans la procédure normale`);
+    }
+
+    for (const c of dangereux) {
+      if (!/(^|\s)-Confirm\b(?!\s*:\s*\$false)/i.test(ligne) && !/-WhatIf\b/i.test(ligne)) {
+        pbs.push(`${tool.id} : ${c} ne demande aucune confirmation dans la procédure normale`);
+      }
+    }
+  }
+
+  // --- RÈGLE 3 : bloc DIAGNOSTIC — constater, jamais modifier.
+  for (const ligne of lignesUtiles(r.diagnostic)) {
+    for (const c of cmdletsExecutes(ligne).filter(estDestructif)) {
+      if (!/-WhatIf\b/i.test(ligne)) {
+        pbs.push(`${tool.id} : ${c} dans le bloc diagnostic sans -WhatIf`);
+      }
+    }
+  }
+
+  // --- RÈGLE 4 : bloc EXCEPTIONNEL — -Force toléré, mais encadré.
+  const exc = String(r.exceptional ?? '');
+  if (exc.trim()) {
+    const sensible = /(^|\s)-Force(Removal)?\b/i.test(exc)
+      || /ntdsutil/i.test(exc)
+      || cmdletsExecutes(exc).some(estDestructif);
+    if (sensible) {
+      if (!/AVERTISSEMENT CRITIQUE/i.test(exc)) {
+        pbs.push(`${tool.id} : bloc exceptionnel sensible sans AVERTISSEMENT CRITIQUE`);
+      }
+      if (!/learn\.microsoft\.com/i.test(exc)) {
+        pbs.push(`${tool.id} : bloc exceptionnel sans renvoi à une procédure Microsoft officielle`);
+      }
+    }
+  }
+
+  return pbs;
+}
+
 export const tools = [
   // ── 1. IP statique ──────────────────────────────────────────────────────
   {
@@ -319,6 +643,55 @@ export const tools = [
       'Choisir Manuel, activer IPv4 et saisir IP, préfixe, passerelle et DNS.',
       'Enregistrer puis ouvrir une console et vérifier avec ipconfig /all.',
     ],
+    keywords: [
+      'ip fixe',
+      'adresse ip',
+      'ipv4',
+      'passerelle',
+      'gateway',
+      'masque',
+      'prefixe',
+      'dns',
+      'carte reseau',
+      'tcp/ip',
+      'dhcp',
+      'configuration reseau',
+    ],
+    requiresAdmin: true,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server 2012 et versions ultérieures',
+    ],
+    prereqs: [
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Modules NetTCPIP et DnsClient : intégrés à Windows depuis Windows 8 et Server 2012, aucune installation nécessaire.',
+      'Connaître le nom exact de la carte réseau : la commande Get-NetAdapter le liste.',
+    ],
+    commonErrors: [
+      {
+        message: 'Instance MSFT_NetIPAddress already exists.',
+        cause:   'Une adresse IP identique est déjà configurée sur la carte.',
+        fix:     'Supprimer l’ancienne adresse avec Remove-NetIPAddress avant de relancer, ou choisir une autre adresse.',
+      },
+      {
+        message: 'Aucune correspondance trouvée pour les critères de recherche : Name = ...',
+        cause:   'Le nom de la carte réseau saisi ne correspond à aucune carte existante.',
+        fix:     'Lister les cartes avec Get-NetAdapter et reprendre le nom exact, accents et espaces compris.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-NetIPConfiguration -InterfaceAlias \'<carte>\' affiche la nouvelle adresse, la passerelle et les DNS.',
+      'Test-NetConnection <passerelle> répond avec PingSucceeded = True.',
+      'Resolve-DnsName microsoft.com aboutit, ce qui valide les serveurs DNS.',
+    ],
+    rollback: {
+      summary:     'Repasser la carte en DHCP annule la configuration manuelle. Constater d\'abord l\'état actuel, simuler ensuite, et seulement alors appliquer avec confirmation.',
+      diagnostic:  '# 1. CONSTATER la configuration en place, et la noter avant de la défaire\nGet-NetIPConfiguration -InterfaceAlias \'<carte>\' | Format-List\nGet-NetIPAddress       -InterfaceAlias \'<carte>\' -AddressFamily IPv4\nGet-NetRoute           -InterfaceAlias \'<carte>\' -DestinationPrefix 0.0.0.0/0\nGet-DnsClientServerAddress -InterfaceAlias \'<carte>\' -AddressFamily IPv4\n\n# 2. SIMULER l\'annulation : -WhatIf montre ce qui serait fait, sans rien changer\nRemove-NetIPAddress -InterfaceAlias \'<carte>\' -WhatIf\nRemove-NetRoute     -InterfaceAlias \'<carte>\' -DestinationPrefix 0.0.0.0/0 -WhatIf',
+      command:     '# Chaque suppression demande confirmation. Répondre O pour valider, N pour refuser.\nRemove-NetIPAddress -InterfaceAlias \'<carte>\' -Confirm\nRemove-NetRoute     -InterfaceAlias \'<carte>\' -DestinationPrefix 0.0.0.0/0 -Confirm\n\n# Remise en DHCP — ces deux commandes ne suppriment rien, elles reconfigurent.\nSet-NetIPInterface         -InterfaceAlias \'<carte>\' -Dhcp Enabled\nSet-DnsClientServerAddress -InterfaceAlias \'<carte>\' -ResetServerAddresses',
+      exceptional: '',
+      warning:     'Si ta session est ouverte À DISTANCE par cette carte, l\'annulation la coupe et tu perds la main sur la machine. Prévoir un accès console, iLO/iDRAC ou physique avant de commencer.',
+    },
     checks: [
       'La carte visée doit être la bonne : une erreur peut couper l\u2019accès réseau.',
       'Si cette adresse existe déjà, supprimer ou modifier l\u2019ancienne configuration avant de lancer New-NetIPAddress.',
@@ -385,6 +758,50 @@ export const tools = [
       'Choisir Nouveau > Unité d\u2019organisation.',
       'Saisir le nom et conserver la protection contre la suppression accidentelle.',
     ],
+    keywords: [
+      'unite d organisation',
+      'ou',
+      'organizational unit',
+      'annuaire',
+      'active directory',
+      'conteneur',
+      'arborescence',
+      'ldap',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
+      'Poste d’administration avec RSAT',
+    ],
+    prereqs: [
+      'Module ActiveDirectory : présent sur un contrôleur de domaine, à installer via RSAT sur un poste de travail.',
+      'Compte disposant du droit de créer une unité d’organisation dans le conteneur visé.',
+      'L’OU parente doit exister avant de créer une sous-OU.',
+    ],
+    commonErrors: [
+      {
+        message: 'Directory object not found.',
+        cause:   'Le conteneur parent indiqué n’existe pas dans l’annuaire.',
+        fix:     'Vérifier le chemin de l’OU parente, ou la créer d’abord.',
+      },
+      {
+        message: 'An attempt was made to add an object to the directory with a name that is already in use.',
+        cause:   'Une OU portant ce nom existe déjà au même niveau.',
+        fix:     'Choisir un autre nom, ou utiliser l’OU existante.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADOrganizationalUnit -Identity \'<DN de l OU>\' retourne l\'objet créé.',
+      'L\'OU apparaît dans Utilisateurs et ordinateurs Active Directory après actualisation.',
+    ],
+    rollback: {
+      summary:     'Supprimer l\'OU. Elle est protégée contre la suppression accidentelle par défaut : il faut retirer cette protection d\'abord. Vérifier qu\'elle est vide avant tout.',
+      diagnostic:  '# 1. L\'OU contient-elle encore des objets ? S\'ils existent, ils seraient perdus.\nGet-ADObject -SearchBase \'<DN de l OU>\' -SearchScope Subtree -Filter * | Format-Table Name,ObjectClass\n\n# 2. État de la protection contre la suppression accidentelle\nGet-ADOrganizationalUnit -Identity \'<DN de l OU>\' -Properties ProtectedFromAccidentalDeletion |\n  Select-Object Name,ProtectedFromAccidentalDeletion\n\n# 3. SIMULER la suppression\nRemove-ADOrganizationalUnit -Identity \'<DN de l OU>\' -WhatIf',
+      command:     '# Retirer la protection, puis supprimer avec confirmation explicite.\nSet-ADOrganizationalUnit    -Identity \'<DN de l OU>\' -ProtectedFromAccidentalDeletion $false\nRemove-ADOrganizationalUnit -Identity \'<DN de l OU>\' -Confirm',
+      exceptional: '',
+      warning:     'Ne jamais supprimer une OU sans avoir vérifié qu\'elle est vide : les comptes, groupes et ordinateurs qu\'elle contient seraient supprimés avec elle.',
+    },
     checks: [
       'Le module ActiveDirectory est disponible sur un contrôleur de domaine ou avec RSAT.',
       'Créer l\u2019OU parente avant une sous-OU.',
@@ -466,6 +883,52 @@ export const tools = [
       'Saisir prénom, nom et identifiant.',
       '\u00ab L\u2019utilisateur doit changer le mot de passe \u00bb : cocher cette option.',
     ],
+    keywords: [
+      'utilisateur',
+      'compte',
+      'nouvel employe',
+      'embauche',
+      'samaccountname',
+      'upn',
+      'mot de passe',
+      'creation de compte',
+      'ad',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
+      'Poste d’administration avec RSAT',
+    ],
+    prereqs: [
+      'Module ActiveDirectory : présent sur un contrôleur de domaine, à installer via RSAT sur un poste de travail.',
+      'Compte disposant du droit de créer des utilisateurs dans l’OU visée.',
+      'L’OU de destination doit exister.',
+      'La stratégie de mot de passe du domaine s’applique : un mot de passe trop faible sera refusé.',
+    ],
+    commonErrors: [
+      {
+        message: 'The password does not meet the length, complexity, or history requirement of the domain.',
+        cause:   'Le mot de passe saisi ne respecte pas la stratégie du domaine.',
+        fix:     'Utiliser un mot de passe conforme. L’assistant Stratégie de mot de passe permet de consulter les règles en vigueur.',
+      },
+      {
+        message: 'The specified account already exists.',
+        cause:   'Un compte portant le même identifiant de connexion existe déjà.',
+        fix:     'Choisir un autre identifiant, ou modifier le compte existant.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADUser -Identity \'<identifiant>\' -Properties * retourne le compte avec ses attributs.',
+      'Le compte apparaît dans l\'OU visée et son état Activé correspond à ce qui était voulu.',
+    ],
+    rollback: {
+      summary:     'Désactiver le compte est réversible et préserve l\'historique : c\'est la voie à privilégier. La suppression est définitive et détruit le SID.',
+      diagnostic:  '# Constater l\'état du compte et ce qui en dépend avant d\'agir\nGet-ADUser -Identity \'<identifiant>\' -Properties Enabled,MemberOf,LastLogonDate |\n  Select-Object Name,Enabled,LastLogonDate\nGet-ADUser -Identity \'<identifiant>\' -Properties MemberOf |\n  Select-Object -ExpandProperty MemberOf\n\n# SIMULER la suppression, si c\'est bien elle qui est envisagée\nRemove-ADUser -Identity \'<identifiant>\' -WhatIf',
+      command:     '# VOIE NORMALE — réversible, à privilégier.\n# Le compte est désactivé mais conservé : droits, SID et historique intacts.\nDisable-ADAccount -Identity \'<identifiant>\' -Confirm\n\n# Pour réactiver plus tard :\n# Enable-ADAccount -Identity \'<identifiant>\'',
+      exceptional: '# AVERTISSEMENT CRITIQUE — suppression DÉFINITIVE.\n# Le SID du compte est détruit avec lui. Un compte recréé plus tard avec le\n# même nom n\'aura PAS accès aux ressources de l\'ancien : partages, boîtes aux\n# lettres et permissions NTFS sont rattachés au SID, pas au nom.\n# N\'employer cette voie que si le compte a été créé par erreur et n\'a jamais servi.\n# Procédure officielle : https://learn.microsoft.com/powershell/module/activedirectory/remove-aduser\n#\n# Préférer Disable-ADAccount ci-dessus dans tous les autres cas.\nRemove-ADUser -Identity \'<identifiant>\' -Confirm',
+      warning:     'Supprimer un compte détruit son SID. Un compte recréé plus tard avec le même nom n\'aura PAS accès aux ressources de l\'ancien : partages, boîtes aux lettres et permissions NTFS sont rattachés au SID, pas au nom.',
+    },
     checks: [
       'Le script ne stocke pas le mot de passe dans le fichier.',
       "Vérifier que l\u2019OU existe avant création.",
@@ -528,6 +991,53 @@ export const tools = [
       '\u00ab Partager ce dossier \u00bb : cocher, définir le nom et régler les autorisations.',
       "Dans l\u2019onglet Sécurité, ajouter le groupe AD et ses permissions NTFS.",
     ],
+    keywords: [
+      'partage',
+      'dossier partage',
+      'smb',
+      'cifs',
+      'ntfs',
+      'droits',
+      'permissions',
+      'acces reseau',
+      'lecteur reseau',
+    ],
+    requiresAdmin: true,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server 2012 et versions ultérieures',
+    ],
+    prereqs: [
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Module SmbShare : intégré à Windows depuis Windows 8 et Server 2012.',
+      'Le lecteur de destination doit exister et être local : les chemins UNC sont refusés par l’assistant.',
+      'Le groupe auquel les droits sont accordés doit exister avant l’exécution.',
+    ],
+    commonErrors: [
+      {
+        message: 'Le partage est déjà configuré sur cet ordinateur.',
+        cause:   'Un partage portant ce nom existe déjà.',
+        fix:     'Supprimer l’ancien partage avec Remove-SmbShare, ou choisir un autre nom de partage.',
+      },
+      {
+        message: 'Aucune correspondance trouvée pour le nom de compte fourni.',
+        cause:   'Le groupe indiqué n’existe pas, ou n’est pas visible depuis cette machine.',
+        fix:     'Créer le groupe d’abord, ou vérifier son orthographe et son domaine.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-SmbShare -Name \'<partage>\' retourne le partage.',
+      'Get-SmbShareAccess -Name \'<partage>\' liste les droits accordés.',
+      'Depuis un autre poste, \\\\<serveur>\\<partage> s\'ouvre avec les droits attendus.',
+    ],
+    rollback: {
+      summary:     'Supprimer le partage retire l\'accès réseau. Le dossier et son contenu restent intacts sur le disque. Vérifier d\'abord que personne n\'a de fichier ouvert.',
+      diagnostic:  '# 1. QUELQU\'UN TRAVAILLE-T-IL DESSUS ? À vérifier impérativement avant de retirer le partage.\nGet-SmbOpenFile  | Where-Object { $_.Path -like \'*<partage>*\' } | Format-Table ClientUserName,Path\nGet-SmbSession   | Format-Table ClientComputerName,ClientUserName,NumOpens\n\n# 2. Revoir le partage et ses droits avant de les perdre de vue\nGet-SmbShare       -Name \'<partage>\' | Format-List\nGet-SmbShareAccess -Name \'<partage>\'\nGet-Acl \'<chemin du dossier>\' | Format-List\n\n# 3. SIMULER la suppression du partage\nRemove-SmbShare -Name \'<partage>\' -WhatIf',
+      command:     '# Suppression du partage avec confirmation explicite.\n# Les fichiers du dossier ne sont PAS supprimés : seul l\'accès réseau disparaît.\nRemove-SmbShare -Name \'<partage>\' -Confirm',
+      exceptional: '',
+      warning:     'Retirer un partage pendant qu\'un fichier y est ouvert peut faire perdre des modifications non enregistrées chez l\'utilisateur. Toujours passer par Get-SmbOpenFile d\'abord. Les droits NTFS ajoutés sur le dossier, eux, restent en place : les revoir séparément avec Get-Acl.',
+    },
     checks: [
       "Les permissions du partage et NTFS s\u2019additionnent : l\u2019accès réel est le plus restrictif.",
       'Utilise idéalement des groupes, pas des utilisateurs individuels.',
@@ -586,6 +1096,54 @@ export const tools = [
       'Cliquer sur la notification puis \u00ab Promouvoir ce serveur en contrôleur de domaine \u00bb.',
       "\u00ab Ajouter un contrôleur de domaine à un domaine existant \u00bb : saisir le domaine et les identifiants.",
     ],
+    keywords: [
+      'controleur de domaine',
+      'dc',
+      'second dc',
+      'replication',
+      'promotion',
+      'dcpromo',
+      'addsdeployment',
+      'redondance',
+      'tolerance de panne',
+    ],
+    requiresAdmin: true,
+    os: [
+      'Windows Server 2012 et versions ultérieures uniquement',
+    ],
+    prereqs: [
+      'Windows Server obligatoire : Install-WindowsFeature n’existe pas sur Windows 10 ou 11.',
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Compte membre des groupes Administrateurs de l’entreprise et Administrateurs du domaine.',
+      'Le serveur doit déjà être joint au domaine et résoudre le contrôleur source par DNS.',
+      'Le serveur redémarre à la fin de la promotion : prévoir une fenêtre de maintenance.',
+    ],
+    commonErrors: [
+      {
+        message: 'Verification of prerequisites for Domain Controller promotion failed.',
+        cause:   'Un prérequis n’est pas rempli : DNS, appartenance au domaine, ou niveau fonctionnel.',
+        fix:     'Lire le détail affiché par le contrôle de prérequis ; il nomme la condition manquante.',
+      },
+      {
+        message: 'The term « Install-WindowsFeature » is not recognized.',
+        cause:   'La commande est exécutée sur Windows 10 ou 11 au lieu de Windows Server.',
+        fix:     'Exécuter cet assistant depuis un Windows Server.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADDomainController -Filter * liste le nouveau contrôleur.',
+      'repadmin /replsummary ne signale aucune erreur de réplication.',
+      'dcdiag /v sur le nouveau serveur passe tous les tests.',
+      'Les partages SYSVOL et NETLOGON sont publiés sur le nouveau contrôleur.',
+    ],
+    rollback: {
+      summary:     'Rétrograder un contrôleur de domaine est une opération lourde qui touche les rôles FSMO, le DNS, le catalogue global, la réplication et SYSVOL. Elle se prépare, puis s\'exécute de façon interactive.',
+      diagnostic:  '# ÉTAPE 1 — DIAGNOSTIC PRÉALABLE. Ne rien rétrograder avant que tout ceci soit clair.\n\n# Ce contrôleur détient-il des rôles FSMO ? Ils doivent être transférés AVANT.\nnetdom query fsmo\nGet-ADDomainController -Identity \'<serveur>\' | Select-Object Name,OperationMasterRoles\n\n# Est-il catalogue global, et reste-t-il un autre GC sur le site ?\nGet-ADDomainController -Filter * | Format-Table Name,Site,IsGlobalCatalog\n\n# Sert-il le DNS pour le domaine ? Un autre serveur doit prendre le relais.\nGet-DnsServerZone -ErrorAction SilentlyContinue | Format-Table ZoneName,ZoneType,IsDsIntegrated\n\n# La réplication est-elle saine ? Rétrograder un domaine déjà malade aggrave tout.\nrepadmin /replsummary\nrepadmin /showrepl\ndcdiag /v\n\n# SYSVOL et NETLOGON sont-ils publiés ailleurs ?\nGet-SmbShare -Name SYSVOL,NETLOGON -ErrorAction SilentlyContinue',
+      command:     '# ÉTAPE 2 — RÉTROGRADATION NORMALE, INTERACTIVE.\n# Prérequis : rôles FSMO transférés, un autre catalogue global disponible,\n# DNS assuré par un autre serveur, réplication saine.\n\n# a) Transférer chaque rôle FSMO détenu vers un contrôleur sain\nMove-ADDirectoryServerOperationMasterRole -Identity \'<autre DC sain>\' `\n  -OperationMasterRole PDCEmulator,RIDMaster,InfrastructureMaster,SchemaMaster,DomainNamingMaster\n\n# b) Rétrograder. La commande demande les identifiants et le mot de passe\n#    administrateur local du futur serveur membre, puis confirme chaque étape.\n#    NE PAS ajouter -Force : les contrôles de prérequis et la confirmation\n#    sont précisément ce qui protège le domaine.\nUninstall-ADDSDomainController -Credential (Get-Credential) -Confirm\n\n# Le serveur redémarre à la fin et devient un serveur membre du domaine.',
+      exceptional: '# ÉTAPE 3 — CAS EXCEPTIONNEL : contrôleur définitivement irrécupérable.\n#\n# AVERTISSEMENT CRITIQUE — à ne PAS utiliser comme procédure normale.\n# Cette voie force la rétrogradation sans contrôle de prérequis et laisse des\n# métadonnées dans l\'annuaire si elle est mal menée. Une erreur ici peut casser\n# la réplication de TOUT le domaine, pas seulement de ce serveur.\n#\n# Conditions : le serveur est hors service ou inaccessible, aucune rétrogradation\n# normale n\'est possible, et une sauvegarde de l\'état système d\'un contrôleur\n# SAIN existe.\n#\n# Suivre la procédure officielle Microsoft avant d\'exécuter quoi que ce soit :\n# https://learn.microsoft.com/windows-server/identity/ad-ds/deploy/ad-ds-metadata-cleanup\n#\n# Si le serveur répond encore :\n# Uninstall-ADDSDomainController -ForceRemoval -DemoteOperationMasterRole\n#\n# Si le serveur ne répond plus, nettoyer les métadonnées DEPUIS UN DC SAIN.\n# ntdsutil est interactif et se suit pas à pas : il n\'existe pas de version\n# en une ligne sans risque.\n#   ntdsutil\n#     metadata cleanup\n#     connections\n#     ...\n# Après nettoyage : vérifier DNS, sites et services, et relancer\n# repadmin /replsummary sur l\'ensemble des contrôleurs.',
+      warning:     'Ne jamais réinstaller simplement un contrôleur de domaine pour s\'en débarrasser : cela laisse son objet et ses métadonnées dans l\'annuaire, et casse la réplication. Avant toute rétrogradation, s\'assurer que les rôles FSMO sont transférés, qu\'un autre catalogue global existe, que le DNS est assuré ailleurs, que SYSVOL et NETLOGON sont publiés sur un autre contrôleur, et que la réplication est saine.',
+    },
     checks: [
       'Ne pas utiliser un DNS public sur le serveur à promouvoir.',
       'Vérifier le canal sécurisé et les ports avant la promotion.',
@@ -639,6 +1197,53 @@ export const tools = [
       "Si cela ne résout rien : clic droit > Désinstaller l\u2019appareil, puis Action > Rechercher les modifications sur le matériel.",
       "Télécharger le pilote depuis le fabricant seulement si Windows ne réinstalle pas la carte.",
     ],
+    keywords: [
+      'wifi',
+      'wi-fi',
+      'sans fil',
+      'wlan',
+      'wlansvc',
+      'connexion',
+      'reseau sans fil',
+      'plus d internet',
+      'deconnexion',
+    ],
+    requiresAdmin: true,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server avec carte sans fil',
+    ],
+    prereqs: [
+      'Console PowerShell ouverte en tant qu’administrateur.',
+      'Module NetAdapter : intégré à Windows.',
+      'La carte est désactivée puis réactivée : la connexion sera coupée quelques secondes.',
+      'À ne pas exécuter à distance via cette même carte, sous peine de perdre la session.',
+    ],
+    commonErrors: [
+      {
+        message: 'Aucune correspondance trouvée pour les critères de recherche : Name = ...',
+        cause:   'Le nom de la carte sans fil ne correspond à aucune carte présente.',
+        fix:     'Lister les cartes avec Get-NetAdapter et reprendre le nom exact.',
+      },
+      {
+        message: 'Le service ne peut pas être démarré.',
+        cause:   'Le service WLAN AutoConfig est désactivé, ou une stratégie l’interdit.',
+        fix:     'Vérifier le type de démarrage du service WlanSvc dans services.msc.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-NetAdapter -Name \'<carte>\' affiche Status = Up.',
+      'netsh wlan show interfaces indique l\'état de la connexion et le SSID.',
+      'Test-NetConnection 8.8.8.8 confirme que le trafic sort.',
+    ],
+    rollback: {
+      summary:     'Aucune configuration n\'est modifiée durablement : la carte est désactivée puis réactivée. Si le script a été interrompu au milieu, il suffit de la rallumer.',
+      diagnostic:  '# État réel de la carte avant toute action\nGet-NetAdapter -Name \'<carte>\' | Format-Table Name,Status,LinkSpeed\nnetsh wlan show interfaces',
+      command:     '# Rallumer la carte. Cette commande n\'est pas destructive : elle active,\n# elle ne supprime rien et ne reconfigure rien.\nEnable-NetAdapter -Name \'<carte>\'',
+      exceptional: '',
+      warning:     'Si le script a été interrompu entre la désactivation et la réactivation, la carte reste désactivée et la machine est sans réseau sans fil. La commande ci-dessus la rallume.',
+    },
     checks: [
       'Le nom de la carte doit être exact avant la désactivation.',
       "La désinstallation du pilote est une solution de second niveau : commence toujours par redémarrer la carte.",
@@ -699,6 +1304,51 @@ export const tools = [
       'Aller à Configuration ordinateur > Paramètres Windows > Paramètres de sécurité > Stratégies de compte.',
       'Configurer les stratégies de mot de passe et de verrouillage de compte.',
     ],
+    keywords: [
+      'mot de passe',
+      'strategie de mot de passe',
+      'politique',
+      'complexite',
+      'verrouillage',
+      'expiration',
+      'gpo',
+      'domaine',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Contrôleur de domaine Windows Server 2012 et versions ultérieures',
+      'Poste d’administration avec RSAT',
+    ],
+    prereqs: [
+      'Module ActiveDirectory : présent sur un contrôleur de domaine, à installer via RSAT sur un poste de travail.',
+      'Compte membre des Administrateurs du domaine.',
+      'La modification s’applique à TOUT le domaine et affecte chaque utilisateur au prochain changement de mot de passe.',
+      'Noter la configuration actuelle avant de la modifier : le script l’affiche en premier.',
+    ],
+    commonErrors: [
+      {
+        message: 'Insufficient access rights to perform the operation.',
+        cause:   'Le compte utilisé n’est pas administrateur du domaine.',
+        fix:     'Relancer avec un compte membre des Administrateurs du domaine.',
+      },
+      {
+        message: 'The server is unwilling to process the request.',
+        cause:   'Une valeur demandée est hors des limites acceptées par Active Directory.',
+        fix:     'Vérifier la cohérence des durées et de la longueur minimale.',
+      },
+    ],
+    reversible: true,
+    verifyAfter: [
+      'Get-ADDefaultDomainPasswordPolicy affiche les nouvelles valeurs.',
+      'Sur un poste du domaine, gpresult /r confirme l\'application après actualisation.',
+    ],
+    rollback: {
+      summary:     'Réappliquer les valeurs précédentes. Le script affiche la configuration en vigueur AVANT de la modifier : la noter permet de revenir exactement à l\'état initial.',
+      diagnostic:  '# Relever les valeurs actuelles AVANT toute modification, et les conserver.\nGet-ADDefaultDomainPasswordPolicy | Format-List `\n  MinPasswordLength,PasswordHistoryCount,MaxPasswordAge,MinPasswordAge,`\n  LockoutThreshold,LockoutDuration,LockoutObservationWindow,ComplexityEnabled',
+      command:     '# Réappliquer les anciennes valeurs relevées ci-dessus.\n# Aucune suppression : il s\'agit d\'une reconfiguration.\nSet-ADDefaultDomainPasswordPolicy -Identity \'<domaine>\' `\n  -MinPasswordLength    <ancienne valeur> `\n  -LockoutThreshold     <ancienne valeur> `\n  -LockoutDuration      (New-TimeSpan -Minutes <ancienne valeur>)',
+      exceptional: '',
+      warning:     'Les mots de passe déjà changés sous la nouvelle règle ne sont pas réinitialisés par l\'annulation. Seule la règle applicable aux prochains changements revient en arrière.',
+    },
     checks: [
       "Cette politique touche les utilisateurs du domaine : teste d\u2019abord les seuils en laboratoire.",
       "Une stratégie de mot de passe fine est préférable lorsqu\u2019un groupe spécifique requiert une règle différente.",
@@ -921,6 +1571,52 @@ function createDiskScanTool() {
       'Dans un projet SaaS, examiner en priorité node_modules, .next, dist, build, out, coverage et les caches.',
       'Ne sélectionner pour la corbeille que des éléments non protégés; ne jamais toucher à .git, .env, bases ou sauvegardes.',
     ],
+    keywords: [
+      'disque',
+      'espace disque',
+      'disque plein',
+      'gros fichiers',
+      'nettoyage',
+      'stockage',
+      'saturation',
+      'c: plein',
+      'manque de place',
+    ],
+    requiresAdmin: false,
+    os: [
+      'Windows 10 et 11',
+      'Windows Server 2012 et versions ultérieures',
+    ],
+    prereqs: [
+      'Aucun module particulier : utilise Get-ChildItem, présent partout.',
+      'Une session normale suffit. Les droits administrateur ne servent qu’à parcourir les dossiers protégés.',
+      'Outil DIAGNOSTIC : il lit et rapporte, il ne supprime rien.',
+      'L’analyse d’un disque entier peut prendre plusieurs minutes.',
+    ],
+    commonErrors: [
+      {
+        message: 'L’accès au chemin d’accès est refusé.',
+        cause:   'Certains dossiers système sont protégés et ne peuvent pas être parcourus.',
+        fix:     'Message sans gravité : le script continue et ignore ces dossiers. Ouvrir PowerShell en administrateur pour les inclure.',
+      },
+      {
+        message: 'Le chemin d’accès spécifié est introuvable.',
+        cause:   'Le lecteur ou le dossier saisi n’existe pas.',
+        fix:     'Vérifier la lettre de lecteur avec Get-PSDrive.',
+      },
+    ],
+    reversible: false,
+    verifyAfter: [
+      'Le rapport CSV est créé à l\'emplacement indiqué en fin de script.',
+      'Le tableau affiché liste les plus gros éléments par taille décroissante.',
+    ],
+    rollback: {
+      summary:     'Aucune annulation nécessaire : cet outil est en LECTURE SEULE. Il analyse, affiche et écrit un rapport, mais ne supprime ni ne déplace aucun fichier.',
+      diagnostic:  '# Rien à diagnostiquer : l\'outil n\'a modifié aucune donnée.\n# Emplacement du rapport produit, si tu veux le relire ou le retirer :\nGet-Item \'<chemin du rapport>.csv\' | Select-Object FullName,Length,LastWriteTime',
+      command:     '# Rien à annuler côté système.\n# Pour retirer le rapport produit, avec confirmation :\nRemove-Item \'<chemin du rapport>.csv\' -Confirm',
+      exceptional: '',
+      warning:     '',
+    },
     checks: [
       'Compatible avec Windows PowerShell 5.1 ou PowerShell 7 sur Windows; le scan peut prendre du temps sur un gros disque.',
       'Le mode recommandé produit seulement un rapport CSV/HTML et ne supprime rien.',

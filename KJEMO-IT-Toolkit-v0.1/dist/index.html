@@ -28,6 +28,8 @@
           <p class="intro">Choisis une situation. L’assistant prépare un script PowerShell avec tes informations et montre aussi les étapes à faire dans l’interface Windows.</p>
           <div class="notice"><b>Avant de lancer :</b> lis l’aperçu, teste en laboratoire et utilise <code>-WhatIf</code> quand il est proposé.</div>
           <div class="section-heading"><h2>Outils prêts à utiliser</h2><span id="toolCount"></span></div>
+          <div id="commonErrorZone"></div>
+          <div id="shortcutsZone"></div>
           <div id="toolGrid" class="tool-grid"></div>
         </section>
         <section id="toolView" class="tool-view" hidden></section>
@@ -38,6 +40,7 @@
         <div class="tool-icon"></div>
         <span class="tag"></span>
         <h3></h3><p></p>
+        <button class="fav-toggle" type="button" aria-pressed="false" title="Ajouter aux favoris">☆</button>
         <button class="open-tool">Ouvrir l’assistant <span>→</span></button>
       </article>
     </template>

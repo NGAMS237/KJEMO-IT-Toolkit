@@ -27,6 +27,14 @@ import {
   escapePowerShellSingleQuoted,
   escapePowerShellDoubleQuoted,
   escapeLdapRdn,
+  EXECUTION_NOTES,
+  normalizeSearch,
+  searchTools,
+  searchCommonErrors,
+  auditerAnnulation,
+  cmdletsExecutes,
+  CMDLETS_NON_DESTRUCTIFS,
+  VERBES_DESTRUCTIFS,
   validateDomain,
   validateIPv4,
   validateSamAccountName,
@@ -557,6 +565,390 @@ if (adUserTool2) {
     assert(false, `ad-user : generate() valeurs par défaut → exception inattendue : ${err.message}`);
   }
 }
+
+
+// ===========================================================================
+// SECTION LOT 1 — Prérequis d'exécution
+// ===========================================================================
+section('LOT 1 — prérequis par outil');
+
+const RISQUES_ADMIN = ['caution', 'destructive'];
+
+for (const t of tools) {
+  assert(Array.isArray(t.os) && t.os.length > 0,
+    `${t.id} : systèmes compatibles renseignés (${t.os?.length ?? 0})`);
+  assert(Array.isArray(t.prereqs) && t.prereqs.length >= 2,
+    `${t.id} : au moins 2 prérequis (${t.prereqs?.length ?? 0})`);
+  assert(typeof t.requiresAdmin === 'boolean',
+    `${t.id} : requiresAdmin est un booléen`);
+  assert(Array.isArray(t.commonErrors) && t.commonErrors.length >= 2,
+    `${t.id} : au moins 2 erreurs fréquentes (${t.commonErrors?.length ?? 0})`);
+
+  for (const e of t.commonErrors ?? []) {
+    assert(
+      typeof e.message === 'string' && e.message.length > 0
+      && typeof e.cause === 'string' && e.cause.length > 0
+      && typeof e.fix === 'string' && e.fix.length > 0,
+      `${t.id} : erreur « ${String(e.message).slice(0, 40)}… » a message, cause et correction`,
+    );
+  }
+
+  // Aucun texte ne doit rester vide ou à remplir
+  const textes = [...t.os, ...t.prereqs, ...t.commonErrors.flatMap((e) => [e.message, e.cause, e.fix])];
+  assert(
+    textes.every((x) => typeof x === 'string' && x.trim().length > 10 && !/TODO|TBD|à compléter/i.test(x)),
+    `${t.id} : aucun texte vide ni marqueur TODO`,
+  );
+
+  // La source officielle reste un lien Microsoft Learn
+  assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
+    `${t.id} : source officielle Microsoft Learn`);
+}
+
+// Cohérence risque / élévation : un outil ATTENTION ou DESTRUCTIF exige l'admin
+for (const t of tools) {
+  if (RISQUES_ADMIN.includes(t.risk) && t.category !== 'Active Directory' && t.category !== 'GPO') {
+    assert(t.requiresAdmin === true,
+      `${t.id} : risque « ${t.risk} » hors AD/GPO ⇒ requiresAdmin = true`);
+  }
+}
+
+section('LOT 1 — bloc commun EXECUTION_NOTES');
+
+assert(typeof EXECUTION_NOTES === 'object' && EXECUTION_NOTES !== null,
+  'EXECUTION_NOTES est exporté');
+assert(EXECUTION_NOTES.steps.length >= 4,
+  `EXECUTION_NOTES : au moins 4 étapes (${EXECUTION_NOTES.steps.length})`);
+assert(EXECUTION_NOTES.policies.length === 5,
+  `EXECUTION_NOTES : les 5 stratégies d'exécution (${EXECUTION_NOTES.policies.length})`);
+
+const nomsPolitiques = EXECUTION_NOTES.policies.map((x) => x.name);
+for (const nom of ['Restricted', 'AllSigned', 'RemoteSigned', 'Unrestricted', 'Bypass']) {
+  assert(nomsPolitiques.includes(nom), `EXECUTION_NOTES : stratégie ${nom} documentée`);
+}
+
+assert(EXECUTION_NOTES.errors.length >= 4,
+  `EXECUTION_NOTES : au moins 4 erreurs communes (${EXECUTION_NOTES.errors.length})`);
+
+// L'erreur réellement rencontrée par Blaise doit être couverte
+const errSignature = EXECUTION_NOTES.errors.find((e) => /signé numériquement/.test(e.message));
+assert(!!errSignature, 'EXECUTION_NOTES : l\'erreur « n\'est pas signé numériquement » est documentée');
+assert(errSignature && /Unblock-File/.test(errSignature.command ?? ''),
+  'EXECUTION_NOTES : sa correction propose Unblock-File');
+
+// Unblock-File doit apparaître dans les étapes
+assert(EXECUTION_NOTES.steps.some((st) => /Unblock-File/.test(st.command ?? '')),
+  'EXECUTION_NOTES : une étape donne la commande Unblock-File');
+assert(EXECUTION_NOTES.steps.some((st) => /Get-ExecutionPolicy -List/.test(st.command ?? '')),
+  'EXECUTION_NOTES : une étape donne Get-ExecutionPolicy -List');
+
+// SÉCURITÉ : ne jamais conseiller de changer la stratégie de toute la machine.
+// Set-ExecutionPolicy est interdit partout dans le bloc.
+const toutLeTexte = JSON.stringify(EXECUTION_NOTES);
+assert(!/Set-ExecutionPolicy/.test(toutLeTexte),
+  'EXECUTION_NOTES : ne conseille JAMAIS Set-ExecutionPolicy (sécurité machine préservée)');
+assert(/-ExecutionPolicy Bypass -File/.test(toutLeTexte),
+  'EXECUTION_NOTES : propose une session isolée (portée Process) comme repli');
+assert(EXECUTION_NOTES.sources.every((so) => /^https:\/\/learn\.microsoft\.com\//.test(so.url)),
+  'EXECUTION_NOTES : toutes les sources sont sur Microsoft Learn');
+
+
+// ===========================================================================
+// SECTION LOT 1 — Moteur de recherche
+// ===========================================================================
+section('LOT 1 — normalizeSearch');
+
+assert(normalizeSearch('Réseau') === 'reseau', 'accents retirés : Réseau -> reseau');
+assert(normalizeSearch('Wi-Fi') === 'wi fi', 'ponctuation -> espace : Wi-Fi -> wi fi');
+assert(normalizeSearch('  IP   FIXE  ') === 'ip fixe', 'espaces multiples réduits');
+assert(normalizeSearch('É\u00c8\u00ca') === 'eee', 'majuscules accentuées normalisées');
+assert(normalizeSearch(null) === '', 'null -> chaîne vide');
+
+section('LOT 1 — searchTools');
+
+// Requête vide : tous les outils
+assert(searchTools('').length === tools.length,
+  `requête vide -> les ${tools.length} outils`);
+
+// Filtre par catégorie
+const cats = [...new Set(tools.map((t) => t.category))];
+for (const c of cats) {
+  const attendu = tools.filter((t) => t.category === c).length;
+  assert(searchTools('', c).length === attendu,
+    `catégorie « ${c} » -> ${attendu} outil(s)`);
+}
+
+// Insensibilité aux accents et à la casse
+assert(searchTools('reseau').length > 0, '« reseau » sans accent trouve des résultats');
+assert(searchTools('RÉSEAU').length === searchTools('reseau').length,
+  '« RÉSEAU » et « reseau » donnent le même nombre de résultats');
+
+// Recherche par mot-clé métier
+const parMotCle = [
+  ['wifi',        'wifi-repair'],
+  ['ip fixe',     'static-ip'],
+  ['disque plein','disk-scan'],
+  ['dcpromo',     'second-dc'],
+  ['ntfs',        'shared-folder'],
+];
+for (const [q, id] of parMotCle) {
+  const r = searchTools(q);
+  assert(r.some((x) => x.tool.id === id), `« ${q} » trouve ${id}`);
+}
+
+// Recherche par message d'erreur propre à un outil
+const parErreur = searchTools('Install-WindowsFeature');
+assert(parErreur.some((x) => x.tool.id === 'second-dc'),
+  '« Install-WindowsFeature » trouve second-dc par son message d\u2019erreur');
+
+// Recherche par prérequis
+assert(searchTools('RSAT').length >= 3, '« RSAT » trouve les outils Active Directory');
+
+// Tous les mots doivent correspondre (ET logique)
+assert(searchTools('wifi disque').length === 0,
+  'deux mots sans outil commun -> aucun résultat (ET logique)');
+
+// Requête sans correspondance
+assert(searchTools('zzzznexistepas').length === 0, 'requête absurde -> aucun résultat');
+
+// Motif de correspondance renseigné dès qu'il y a une requête
+const avecMotif = searchTools('wifi');
+assert(avecMotif.every((x) => typeof x.reason === 'string' && x.reason.length > 0),
+  'chaque résultat porte un motif de correspondance');
+assert(searchTools('')[0].reason === null,
+  'requête vide -> aucun motif de correspondance');
+
+// Tri par pertinence : un mot du titre passe avant un mot d'un prérequis
+const triMdp = searchTools('mot de passe');
+assert(triMdp.length >= 2 && triMdp[0].tool.id === 'gpo-password',
+  'tri par pertinence : « mot de passe » place gpo-password en tête');
+
+section('LOT 1 — searchCommonErrors');
+
+assert(searchCommonErrors('').length === 0, 'requête vide -> aucune erreur commune');
+assert(searchCommonErrors('zzzznexistepas').length === 0, 'requête absurde -> aucune erreur commune');
+
+// L'erreur réellement rencontrée doit être retrouvée
+const errSignee = searchCommonErrors('signé numériquement');
+assert(errSignee.length === 1, '« signé numériquement » trouve exactement 1 erreur commune');
+assert(errSignee[0] && /Unblock-File/.test(errSignee[0].command ?? ''),
+  'et sa correction est Unblock-File');
+
+// Même sans accents
+assert(searchCommonErrors('signe numeriquement').length === 1,
+  '« signe numeriquement » sans accent trouve la même erreur');
+
+assert(searchCommonErrors('Get-ADUser').length >= 1,
+  '« Get-ADUser » trouve l\u2019erreur de module ActiveDirectory manquant');
+
+
+// ===========================================================================
+// SECTION LOT 1 — Annulation : contenu et AUDIT DE SÉCURITÉ
+// ===========================================================================
+section('LOT 1 — contenu des procédures d\u2019annulation');
+
+for (const t of tools) {
+  assert(typeof t.reversible === 'boolean', `${t.id} : reversible est un booléen`);
+  assert(Array.isArray(t.verifyAfter) && t.verifyAfter.length >= 2,
+    `${t.id} : au moins 2 vérifications après exécution`);
+  assert(t.rollback && t.rollback.summary.length > 30, `${t.id} : annulation décrite`);
+  assert(t.rollback.diagnostic.length > 0, `${t.id} : bloc « constater avant d'agir » fourni`);
+  assert(t.rollback.command.length > 0, `${t.id} : procédure normale fournie`);
+  const tous = [t.rollback.summary, t.rollback.diagnostic, t.rollback.command,
+                t.rollback.exceptional, t.rollback.warning].join(' ');
+  assert(!/TODO|TBD|à compléter/i.test(tous), `${t.id} : aucun marqueur TODO`);
+}
+
+const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id);
+assert(lectureSeule.length === 1 && lectureSeule[0] === 'disk-scan',
+  `un seul outil en lecture seule, et c'est disk-scan (${lectureSeule.join(', ') || 'aucun'})`);
+
+// ---------------------------------------------------------------------------
+// AUDIT DE SÉCURITÉ — scanner appliqué à TOUTES les commandes, pas à des cas
+// choisis à la main. La version précédente de ce test ne vérifiait que deux
+// cmdlets et n'a pas détecté -Confirm:$false ni -Force : elle est remplacée.
+// ---------------------------------------------------------------------------
+section('LOT 1 — audit de sécurité des annulations');
+
+for (const t of tools) {
+  const pbs = auditerAnnulation(t);
+  assert(pbs.length === 0,
+    `${t.id} : procédure d'annulation conforme`,
+    pbs.join(' | '));
+}
+
+// --- Le scanner doit RÉELLEMENT détecter les commandes signalées à l'audit ---
+// Sans ces contre-épreuves, un scanner qui ne trouve jamais rien passerait.
+const fauxOutil = (cmd, champ = 'command') => ({
+  id: 'sonde',
+  rollback: { summary: '', diagnostic: '', command: '', exceptional: '', warning: '', [champ]: cmd },
+});
+
+const DOIVENT_ECHOUER = [
+  ["Remove-NetIPAddress -InterfaceAlias 'X' -Confirm:$false", '-Confirm:$false sur Remove-NetIPAddress'],
+  ["Remove-NetRoute -InterfaceAlias 'X' -Confirm:$false",     '-Confirm:$false sur Remove-NetRoute'],
+  ["Remove-SmbShare -Name 'X' -Force",                        '-Force sur Remove-SmbShare'],
+  ['Uninstall-ADDSDomainController -DemoteOperationMasterRole -Force', '-Force sur la rétrogradation'],
+  ["Remove-ADUser -Identity 'X'",                             'Remove-ADUser sans confirmation'],
+  ["Remove-Item 'X.csv'",                                     'Remove-Item sans confirmation'],
+  ["Clear-Disk -Number 1",                                    'Clear-Disk sans confirmation'],
+  ["Reset-ComputerMachinePassword",                           'Reset-* sans confirmation'],
+  ["Disable-ADAccount -Identity 'X'",                         'Disable-* sans confirmation'],
+  ["Disable-NetAdapter -Name 'X'",                            'Disable-NetAdapter sans confirmation'],
+  ["Dismount-VHD -Path 'X.vhdx'",                             'Dismount-* sans confirmation'],
+  ["Format-Volume -DriveLetter D",                            'Format-Volume sans confirmation'],
+  ["Remove-Item 'X' -Recurse -Force",                         '-Force sur Remove-Item'],
+  ["Uninstall-WindowsFeature -Name 'X' -Confirm:$false",      '-Confirm:$false sur Uninstall-*'],
+];
+for (const [cmd, quoi] of DOIVENT_ECHOUER) {
+  assert(auditerAnnulation(fauxOutil(cmd)).length > 0,
+    `l'audit détecte : ${quoi}`);
+}
+
+// Le bloc diagnostic ne doit rien détruire, même avec confirmation
+assert(auditerAnnulation(fauxOutil("Remove-SmbShare -Name 'X' -Confirm", 'diagnostic')).length > 0,
+  "l'audit refuse un cmdlet destructif dans le bloc diagnostic sans -WhatIf");
+assert(auditerAnnulation(fauxOutil("Remove-SmbShare -Name 'X' -WhatIf", 'diagnostic')).length === 0,
+  "l'audit accepte une simulation -WhatIf dans le bloc diagnostic");
+
+// --- Les formes CORRIGÉES doivent passer ---
+const DOIVENT_PASSER = [
+  ["Remove-NetIPAddress -InterfaceAlias 'X' -Confirm", 'confirmation explicite'],
+  ["Remove-SmbShare -Name 'X' -Confirm",               'Remove-SmbShare avec -Confirm'],
+  ["Disable-ADAccount -Identity 'X' -Confirm",         'Disable-ADAccount avec -Confirm'],
+  ["Enable-NetAdapter -Name 'X'",                      'Enable-*, verbe non surveillé'],
+  ["Get-SmbShare -Name 'X' | Format-Table",            'Format-Table, mise en forme d\u2019affichage'],
+  ["Get-NetIPConfiguration | Format-List",             'Format-List, mise en forme d\u2019affichage'],
+];
+for (const [cmd, quoi] of DOIVENT_PASSER) {
+  assert(auditerAnnulation(fauxOutil(cmd)).length === 0,
+    `l'audit accepte : ${quoi}`);
+}
+
+// --- Un mot « confirmation » dans le texte ne doit PAS suffire ---
+const trompeur = {
+  id: 'trompeur',
+  rollback: {
+    summary: 'Cette procédure demande une confirmation avant de supprimer quoi que ce soit.',
+    diagnostic: '', exceptional: '', warning: 'Confirmation requise.',
+    command: "Remove-SmbShare -Name 'X' -Force",
+  },
+};
+assert(auditerAnnulation(trompeur).length > 0,
+  "le mot « confirmation » dans le texte ne compense pas -Force dans la commande");
+
+// --- Les commentaires ne sont pas des commandes exécutées ---
+assert(cmdletsExecutes("# Remove-ADUser -Identity 'X'").length === 0,
+  'un cmdlet cité en commentaire n\u2019est pas compté comme exécuté');
+assert(cmdletsExecutes("Remove-ADUser -Identity 'X'").includes('Remove-ADUser'),
+  'un cmdlet réellement exécuté est bien détecté');
+
+// --- La liste d'exceptions doit rester courte, explicite et justifiée ---
+const exceptions = Object.keys(CMDLETS_NON_DESTRUCTIFS);
+assert(exceptions.length <= 10,
+  `liste d'exceptions courte (${exceptions.length} entrées)`);
+assert(Object.values(CMDLETS_NON_DESTRUCTIFS).every((j) => typeof j === 'string' && j.length > 10),
+  'chaque exception porte une justification écrite');
+for (const interdit of ['Remove-ADUser', 'Remove-SmbShare', 'Uninstall-ADDSDomainController', 'Remove-Item']) {
+  assert(!exceptions.includes(interdit),
+    `${interdit} n'est PAS dans la liste d'exceptions`);
+}
+for (const verbe of ['Remove', 'Uninstall', 'Clear', 'Reset', 'Disable', 'Dismount', 'Format']) {
+  assert(VERBES_DESTRUCTIFS.includes(verbe), `le verbe ${verbe}- est surveillé`);
+}
+
+// -Confirm:$false doit être refusé dans les TROIS blocs, sans exception
+for (const champ of ['diagnostic', 'command', 'exceptional']) {
+  assert(
+    auditerAnnulation(fauxOutil("Remove-Item 'X' -Confirm:$false", champ)).length > 0,
+    `-Confirm:$false refusé dans le bloc ${champ}`,
+  );
+}
+
+// Même sur un cmdlet exempté, -Confirm:$false reste refusé : il n'a qu'un seul
+// effet possible, supprimer la demande de confirmation.
+assert(
+  auditerAnnulation(fauxOutil('Get-Item X | Format-Table -Confirm:$false')).length > 0,
+  '-Confirm:$false refusé même accolé à un cmdlet exempté',
+);
+
+// Un bloc exceptionnel contenant un cmdlet destructif doit être encadré
+assert(
+  auditerAnnulation({ id: 'sonde', rollback: { summary: '', diagnostic: '', command: '',
+    exceptional: "Remove-ADUser -Identity 'X' -Confirm", warning: '' } }).length > 0,
+  'un bloc exceptionnel destructif sans avertissement critique est refusé',
+);
+assert(
+  auditerAnnulation({ id: 'sonde', rollback: { summary: '', diagnostic: '', command: '',
+    exceptional: "# AVERTISSEMENT CRITIQUE\n# https://learn.microsoft.com/x\nRemove-ADUser -Identity 'X' -Confirm",
+    warning: '' } }).length === 0,
+  'un bloc exceptionnel avec avertissement critique et renvoi Microsoft est accepté',
+);
+
+// La liste d'exceptions ne doit contenir QUE des cmdlets réellement attrapés
+// par un verbe surveillé : une entrée morte masquerait un oubli.
+for (const c of Object.keys(CMDLETS_NON_DESTRUCTIFS)) {
+  assert(
+    VERBES_DESTRUCTIFS.some((v) => c.startsWith(v + '-')),
+    `l'exception ${c} correspond bien à un verbe surveillé (pas une entrée morte)`,
+  );
+}
+
+// --- Exigences propres aux cas signalés par l'audit ---
+section('LOT 1 — exigences par outil issues de l\u2019audit');
+
+
+/** Lignes réellement exécutées d'un bloc : les commentaires # sont ignorés,
+ *  exactement comme le fait auditerAnnulation(). Les deux doivent employer la
+ *  même notion de « commande », sinon les tests et l'audit divergent. */
+function codeExecute(bloc) {
+  return String(bloc ?? '')
+    .split(/\r?\n/)
+    .filter((l) => !/^\s*#/.test(l))
+    .join('\n');
+}
+
+const ip = tools.find((t) => t.id === 'static-ip');
+assert(/-WhatIf/.test(ip.rollback.diagnostic),
+  'static-ip : mode diagnostic avec -WhatIf avant l\u2019annulation');
+assert(/Get-NetIPConfiguration/.test(ip.rollback.diagnostic),
+  'static-ip : la configuration actuelle est affichée d\u2019abord');
+assert(/distance/i.test(ip.rollback.warning),
+  'static-ip : le risque de couper une session distante est signalé');
+
+const sf = tools.find((t) => t.id === 'shared-folder');
+assert(!/-Force/.test(codeExecute(sf.rollback.command)), 'shared-folder : plus de -Force sur Remove-SmbShare');
+assert(/Get-SmbOpenFile/.test(sf.rollback.diagnostic),
+  'shared-folder : Get-SmbOpenFile vérifié avant suppression');
+assert(/ne sont PAS supprimés|restent/i.test(sf.rollback.command + sf.rollback.warning),
+  'shared-folder : rappel que les fichiers locaux ne sont pas supprimés');
+
+const dc = tools.find((t) => t.id === 'second-dc');
+assert(!/-Force(Removal)?\b/.test(codeExecute(dc.rollback.command)),
+  'second-dc : la procédure NORMALE n\u2019emploie pas -Force (hors commentaires)');
+assert(/NE PAS ajouter -Force/.test(dc.rollback.command),
+  'second-dc : la procédure normale dit explicitement de ne pas ajouter -Force');
+assert(/AVERTISSEMENT CRITIQUE/.test(dc.rollback.exceptional),
+  'second-dc : le cas exceptionnel porte un avertissement critique');
+assert(/learn\.microsoft\.com/.test(dc.rollback.exceptional),
+  'second-dc : le cas exceptionnel renvoie à la procédure officielle Microsoft');
+assert(/ntdsutil/i.test(dc.rollback.exceptional) && /pas à pas|interactif/i.test(dc.rollback.exceptional),
+  'second-dc : ntdsutil est présenté comme interactif, pas en une ligne');
+for (const [motif, quoi] of [[/FSMO/i,'rôles FSMO'], [/DNS/i,'DNS'],
+                             [/catalogue global|IsGlobalCatalog/i,'catalogue global'],
+                             [/replicat|repadmin/i,'réplication'], [/SYSVOL/i,'SYSVOL'],
+                             [/Get-Credential|identifiant/i,'identifiants']]) {
+  const texte = dc.rollback.diagnostic + dc.rollback.command + dc.rollback.exceptional + dc.rollback.warning;
+  assert(motif.test(texte), `second-dc : ${quoi} mentionné dans la procédure`);
+}
+
+const au2 = tools.find((t) => t.id === 'ad-user');
+assert(/Disable-ADAccount/.test(au2.rollback.command),
+  'ad-user : la voie normale est la désactivation réversible');
+assert(/Disable-ADAccount[^\n]*-Confirm\b/.test(codeExecute(au2.rollback.command)),
+  'ad-user : Disable-ADAccount porte une confirmation explicite');
+assert(/Remove-ADUser/.test(au2.rollback.exceptional) && !/Remove-ADUser/.test(codeExecute(au2.rollback.command)),
+  'ad-user : la suppression définitive est reléguée au cas exceptionnel');
 
 // Résumé
 console.log('');

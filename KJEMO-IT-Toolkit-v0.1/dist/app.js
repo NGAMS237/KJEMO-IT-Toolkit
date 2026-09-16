@@ -1,6 +1,7 @@
 // Point 2 (Codex) : import depuis './generators.mjs' — même répertoire dist/
 // GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
-import { tools, normalizeScript, textToCode } from './generators.mjs';
+import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
+         searchTools, searchCommonErrors } from './generators.mjs';
 
 const categories = ['Tout', ...new Set(tools.map((tool) => tool.category))];
 let selectedCategory = 'Tout';
@@ -14,31 +15,328 @@ function renderNavigation() {
     return `<button data-category="${category}" class="${category === selectedCategory ? 'active' : ''}">${category}<span class="nav-count">${count}</span></button>`;
   }).join('');
   nav.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
-    selectedCategory = button.dataset.category; currentTool = null; render(); document.querySelector('.sidebar').classList.remove('open');
+    selectedCategory = button.dataset.category; revenirAccueil(); document.querySelector('.sidebar').classList.remove('open');
   }));
 }
 
+// ---------------------------------------------------------------------------
+// Stockage local — favoris et historique
+// Le stockage peut être indisponible (navigation privée, site bloqué) : toute
+// lecture et toute écriture sont protégées, et l'application fonctionne sans.
+// ---------------------------------------------------------------------------
+const CLE_FAVORIS     = 'kjemo.favoris.v1';
+const CLE_HISTORIQUE  = 'kjemo.historique.v1';
+const HISTORIQUE_MAX  = 6;
+
+function lireStockage(cle, defaut) {
+  try {
+    const brut = localStorage.getItem(cle);
+    if (!brut) return defaut;
+    const val = JSON.parse(brut);
+    return Array.isArray(val) ? val : defaut;
+  } catch {
+    return defaut;
+  }
+}
+
+function ecrireStockage(cle, valeur) {
+  try {
+    localStorage.setItem(cle, JSON.stringify(valeur));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** N'accepte que des identifiants d'outils réellement existants. */
+function idsValides(liste) {
+  const connus = new Set(tools.map((t) => t.id));
+  return liste.filter((id) => connus.has(id));
+}
+
+function lireFavoris()      { return idsValides(lireStockage(CLE_FAVORIS, [])); }
+function estFavori(id)      { return lireFavoris().includes(id); }
+function basculerFavori(id) {
+  const actuels = lireFavoris();
+  const suivants = actuels.includes(id) ? actuels.filter((x) => x !== id) : [...actuels, id];
+  ecrireStockage(CLE_FAVORIS, suivants);
+  return suivants.includes(id);
+}
+
+function lireHistorique() { return idsValides(lireStockage(CLE_HISTORIQUE, [])); }
+function noterConsultation(id) {
+  const sansDoublon = lireHistorique().filter((x) => x !== id);
+  ecrireStockage(CLE_HISTORIQUE, [id, ...sansDoublon].slice(0, HISTORIQUE_MAX));
+}
+
+// ---------------------------------------------------------------------------
+// Routes directes — #/outil/<id>
+// Permet de partager le lien d'une fiche, de recharger sans la perdre et
+// d'utiliser le bouton Retour du navigateur.
+// ---------------------------------------------------------------------------
+function outilDepuisHash() {
+  const m = /^#\/outil\/([A-Za-z0-9_-]+)$/.exec(location.hash || '');
+  if (!m) return null;
+  return tools.find((t) => t.id === m[1]) ?? null;
+}
+
+function ecrireHash(tool) {
+  const cible = tool ? `#/outil/${tool.id}` : '#/';
+  if (location.hash !== cible) {
+    history.pushState(null, '', cible);
+  }
+}
+
+/** Ouvre une fiche : met à jour l'état, l'URL et l'historique local. */
+function ouvrirOutil(tool, { pousserHash = true } = {}) {
+  currentTool = tool;
+  currentTab  = 'assistant';
+  noterConsultation(tool.id);
+  if (pousserHash) ecrireHash(tool);
+  render();
+}
+
+function revenirAccueil({ pousserHash = true } = {}) {
+  currentTool = null;
+  if (pousserHash) ecrireHash(null);
+  render();
+}
+
+/** Applique l'URL courante à l'état de l'application. */
+function appliquerHash() {
+  const tool = outilDepuisHash();
+  if (tool) {
+    if (currentTool?.id !== tool.id) ouvrirOutil(tool, { pousserHash: false });
+  } else if (currentTool) {
+    revenirAccueil({ pousserHash: false });
+  }
+}
+
+/**
+ * Raccourcis affichés en haut de l'accueil : favoris puis derniers consultés.
+ * Masqués pendant une recherche, qui a ses propres résultats.
+ */
+function raccourcisMarkup() {
+  if (currentQuery()) return '';
+  const parId = (id) => tools.find((t) => t.id === id);
+  const favoris = lireFavoris().map(parId).filter(Boolean);
+  const recents = lireHistorique().map(parId).filter(Boolean)
+    .filter((t) => !favoris.some((f) => f.id === t.id));
+
+  const puce = (t, cls) =>
+    `<button class="shortcut ${cls}" data-tool="${t.id}" type="button">`
+    + `<span class="shortcut-icon">${textToCode(t.icon)}</span>${textToCode(t.title)}</button>`;
+
+  let html = '';
+  if (favoris.length) {
+    html += `<section class="shortcuts" id="favorisSection"><h2>Favoris</h2>`
+      + `<div class="shortcut-row">${favoris.map((t) => puce(t, 'is-fav')).join('')}</div></section>`;
+  }
+  if (recents.length) {
+    html += `<section class="shortcuts" id="historiqueSection"><h2>Consultés récemment</h2>`
+      + `<div class="shortcut-row">${recents.map((t) => puce(t, 'is-recent')).join('')}</div></section>`;
+  }
+  return html;
+}
+
+function currentQuery() {
+  return document.querySelector('#search').value.trim();
+}
+
+/**
+ * Résultats de recherche enrichis : chaque entrée porte le motif de
+ * correspondance, affiché sur la carte pour que l'utilisateur comprenne
+ * POURQUOI cet outil lui est proposé.
+ */
+function searchResults() {
+  return searchTools(currentQuery(), selectedCategory);
+}
+
 function filteredTools() {
-  const query = document.querySelector('#search').value.trim().toLocaleLowerCase('fr');
-  return tools.filter((tool) => (selectedCategory === 'Tout' || tool.category === selectedCategory) && `${tool.title} ${tool.summary} ${tool.category}`.toLocaleLowerCase('fr').includes(query));
+  return searchResults().map((r) => r.tool);
+}
+
+/**
+ * Bandeau affiché quand la requête correspond à une erreur commune à tous les
+ * scripts. Répondre par l'explication vaut mieux que lister les huit outils.
+ */
+function commonErrorBanner(query) {
+  const hits = searchCommonErrors(query);
+  if (hits.length === 0) return '';
+  const blocs = hits.map((e) => `<div class="error-entry">`
+    + `<p class="err-msg">${textToCode(e.message)}`
+    + (e.code ? ` <span class="err-code">${textToCode(e.code)}</span>` : '')
+    + `</p>`
+    + `<p class="err-cause"><strong>Cause :</strong> ${textToCode(e.cause)}</p>`
+    + `<p class="err-fix"><strong>Correction :</strong> ${textToCode(e.fix)}</p>`
+    + (e.command ? `<pre class="cmd">${textToCode(e.command)}</pre>` : '')
+    + `</div>`).join('');
+  return `<div class="common-error-banner" id="commonErrorBanner">`
+    + `<p class="banner-title">Cette erreur concerne <strong>tous les scripts</strong>, pas un outil en particulier.</p>`
+    + blocs
+    + `</div>`;
 }
 
 function renderHome() {
-  const grid = document.querySelector('#toolGrid');
-  const list = filteredTools();
-  document.querySelector('#toolCount').textContent = `${list.length} outil${list.length > 1 ? 's' : ''}`;
+  const grid    = document.querySelector('#toolGrid');
+  const query   = currentQuery();
+  const results = searchResults();
+
+  // Bandeau d'erreur commune, inséré avant la grille
+  const zone = document.querySelector('#commonErrorZone');
+  if (zone) zone.innerHTML = commonErrorBanner(query);
+
+  const zoneRaccourcis = document.querySelector('#shortcutsZone');
+  if (zoneRaccourcis) {
+    zoneRaccourcis.innerHTML = raccourcisMarkup();
+    zoneRaccourcis.querySelectorAll('.shortcut').forEach((btn) => {
+      const t = tools.find((x) => x.id === btn.dataset.tool);
+      if (t) btn.addEventListener('click', () => ouvrirOutil(t));
+    });
+  }
+
+  document.querySelector('#toolCount').textContent =
+    `${results.length} outil${results.length > 1 ? 's' : ''}`;
+
   grid.innerHTML = '';
-  if (!list.length) { grid.innerHTML = '<div class="empty">Aucun outil ne correspond à cette recherche.</div>'; return; }
+  if (!results.length) {
+    grid.innerHTML = query
+      ? `<div class="empty">Aucun outil ne correspond à « ${textToCode(query)} ».<br />`
+        + `Essaie un mot plus court, ou colle le message d\u2019erreur que tu vois.</div>`
+      : '<div class="empty">Aucun outil dans cette catégorie.</div>';
+    return;
+  }
+
   const template = document.querySelector('#toolTemplate');
-  list.forEach((tool) => {
+  results.forEach(({ tool, reason }) => {
     const card = template.content.cloneNode(true);
     card.querySelector('.tool-icon').textContent = tool.icon;
     card.querySelector('.tag').textContent = tool.category.toUpperCase();
     card.querySelector('h3').textContent = tool.title;
     card.querySelector('p').textContent = tool.summary;
-    card.querySelector('.open-tool').addEventListener('click', () => { currentTool = tool; currentTab = 'assistant'; render(); });
+
+    // Motif de correspondance — seulement en situation de recherche
+    if (reason) {
+      const why = document.createElement('p');
+      why.className = 'match-reason';
+      why.textContent = `Correspond au ${reason}`;
+      card.querySelector('h3').after(why);
+    }
+
+    card.querySelector('.open-tool').addEventListener('click', () => ouvrirOutil(tool));
+
+    const fav = card.querySelector('.fav-toggle');
+    const peindreFav = (actif) => {
+      fav.textContent = actif ? '★' : '☆';
+      fav.setAttribute('aria-pressed', String(actif));
+      fav.title = actif ? 'Retirer des favoris' : 'Ajouter aux favoris';
+      fav.classList.toggle('is-fav', actif);
+    };
+    peindreFav(estFavori(tool.id));
+    fav.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      peindreFav(basculerFavori(tool.id));
+      renderHome();
+    });
+
     grid.append(card);
   });
+}
+
+/**
+ * Bloc d'une erreur fréquente : message, cause, correction, commande éventuelle.
+ */
+function errorEntryMarkup(e) {
+  return `<div class="error-entry">`
+    + `<p class="err-msg">${textToCode(e.message)}`
+    + (e.code ? ` <span class="err-code">${textToCode(e.code)}</span>` : '')
+    + `</p>`
+    + `<p class="err-cause"><strong>Cause :</strong> ${textToCode(e.cause)}</p>`
+    + `<p class="err-fix"><strong>Correction :</strong> ${textToCode(e.fix)}</p>`
+    + (e.command ? `<pre class="cmd">${textToCode(e.command)}</pre>` : '')
+    + `</div>`;
+}
+
+/**
+ * Systèmes compatibles, prérequis, procédure d'exécution et erreurs fréquentes.
+ * La procédure d'exécution est commune à tous les outils (EXECUTION_NOTES) ;
+ * les prérequis et les erreurs propres viennent de l'outil lui-même.
+ */
+/**
+ * Vérifications après exécution et procédure d'annulation, en trois blocs
+ * distincts : constater, procédure normale, cas exceptionnel.
+ * Sujet de sécurité : un technicien qui modifie une configuration doit savoir
+ * comment constater que ça a marché, et comment revenir en arrière sans casser
+ * davantage.
+ */
+function rollbackMarkup(tool) {
+  const r  = tool.rollback;
+  const li = (x) => `<li>${textToCode(x)}</li>`;
+
+  const etiquette = tool.reversible
+    ? `<span class="rev-badge rev-yes">Réversible</span>`
+    : `<span class="rev-badge rev-na">Lecture seule</span>`;
+
+  const bloc = (titre, classe, contenu) => contenu
+    ? `<h4 class="rb-step ${classe}">${textToCode(titre)}</h4>`
+      + `<pre class="cmd">${textToCode(contenu)}</pre>`
+    : '';
+
+  return `<details class="details verify-after" id="verifyAfter">`
+    + `<summary>Vérifier que ça a fonctionné</summary>`
+    + `<ul>${tool.verifyAfter.map(li).join('')}</ul>`
+    + `</details>`
+    + `<details class="details rollback" id="rollbackBlock">`
+    + `<summary>Revenir en arrière ${etiquette}</summary>`
+    + `<p>${textToCode(r.summary)}</p>`
+    + bloc('1. Constater avant d\u2019agir', 'rb-diag', r.diagnostic)
+    + bloc('2. Procédure normale', 'rb-normal', r.command)
+    + (r.exceptional
+        ? `<div class="rb-exceptional" id="rollbackExceptional">`
+          + bloc('3. Cas exceptionnel', 'rb-exc', r.exceptional)
+          + `</div>`
+        : '')
+    + (r.warning ? `<p class="rollback-warning">${textToCode(r.warning)}</p>` : '')
+    + `</details>`;
+}
+
+function prereqMarkup(tool) {
+  const n  = EXECUTION_NOTES;
+  const li = (x) => `<li>${textToCode(x)}</li>`;
+
+  const admin = tool.requiresAdmin
+    ? `<p class="admin-flag admin-required">Console PowerShell <strong>en tant qu\u2019administrateur</strong> obligatoire.</p>`
+    : `<p class="admin-flag admin-optional">Aucune élévation <strong>administrateur locale</strong> n\u2019est nécessaire. Les droits listés ci-dessous restent obligatoires.</p>`;
+
+  const steps = n.steps.map((st) =>
+    `<li><strong>${textToCode(st.label)}</strong><br />${textToCode(st.detail)}`
+    + (st.command ? `<pre class="cmd">${textToCode(st.command)}</pre>` : '')
+    + `</li>`).join('');
+
+  const policies = n.policies.map((po) =>
+    `<tr><td><code>${textToCode(po.name)}</code></td><td>${textToCode(po.local)}</td><td>${textToCode(po.internet)}</td></tr>`).join('');
+
+  const sources = n.sources.map((so) =>
+    `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`).join(' · ');
+
+  return `<div class="details prereqs" id="prereqBlock">`
+    + `<h3>Systèmes compatibles</h3><ul>${tool.os.map(li).join('')}</ul>`
+    + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
+    + `</div>`
+    + `<details class="details exec-notes" id="execNotes">`
+    + `<summary>${textToCode(n.title)}</summary>`
+    + `<p>${textToCode(n.intro)}</p>`
+    + `<ol class="exec-steps">${steps}</ol>`
+    + `<h4>Stratégies d\u2019exécution PowerShell</h4>`
+    + `<table class="policy-table"><thead><tr><th>Stratégie</th><th>Script local</th><th>Script téléchargé</th></tr></thead><tbody>${policies}</tbody></table>`
+    + `<p class="exec-warning">${textToCode(n.warning)}</p>`
+    + `<p class="exec-sources">${sources}</p>`
+    + `</details>`
+    + `<details class="details common-errors" id="commonErrors">`
+    + `<summary>Erreurs fréquentes</summary>`
+    + `<h4>Propres à cet outil</h4>${tool.commonErrors.map(errorEntryMarkup).join('')}`
+    + `<h4>Communes à tous les scripts</h4>${n.errors.map(errorEntryMarkup).join('')}`
+    + `</details>`;
 }
 
 function formMarkup(tool) {
@@ -83,7 +381,7 @@ function renderTool() {
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
   view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div><div class="tabs"><button class="tab ${currentTab === 'assistant' ? 'active' : ''}" data-tab="assistant">Assistant</button><button class="tab ${currentTab === 'script' ? 'active' : ''}" data-tab="script">Script</button><button class="tab ${currentTab === 'gui' ? 'active' : ''}" data-tab="gui">Interface graphique</button></div><div id="tabContent"></div>`;
-  view.querySelector('#backButton').addEventListener('click', () => { currentTool = null; render(); });
+  view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   view.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => { currentTab = tab.dataset.tab; renderTool(); }));
   const content = view.querySelector('#tabContent');
   if (currentTab === 'gui') {
@@ -92,7 +390,7 @@ function renderTool() {
   }
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
   const script = normalizeScript(tool.generate(defaultValues));
-  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div></section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
+  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div>${prereqMarkup(tool)}${rollbackMarkup(tool)}</section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
 
   // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
   // Copier et Télécharger sont désactivés jusqu'à la prochaine génération valide.
@@ -171,4 +469,16 @@ function render() {
 
 document.querySelector('#search').addEventListener('input', () => { if (!currentTool) renderHome(); });
 document.querySelector('#menuButton').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('open'));
+
+// Bouton Retour / Suivant du navigateur, et lien partagé collé dans la barre d'adresse
+window.addEventListener('popstate', appliquerHash);
+window.addEventListener('hashchange', appliquerHash);
+
+// Ouvrir directement la fiche demandée par l'URL au chargement
+const outilInitial = outilDepuisHash();
+if (outilInitial) {
+  currentTool = outilInitial;
+  currentTab  = 'assistant';
+  noterConsultation(outilInitial.id);
+}
 render();
