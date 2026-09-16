@@ -1654,6 +1654,705 @@ export const outilDhcpSauvegarde = {
 };
 
 // ---------------------------------------------------------------------------
+// C. DNS
+// ---------------------------------------------------------------------------
+
+/**
+ * 7. dns-diagnostic — état d'un serveur DNS Windows, sans rien modifier.
+ *
+ * Un « problème DNS » recouvre des causes très différentes : service arrêté,
+ * zone absente, redirecteur injoignable, résolution inverse manquante, port 53
+ * filtré. Le rapport les sépare, pour que la correction porte sur la bonne.
+ */
+export const outilDnsDiagnostic = {
+  id: 'dns-diagnostic',
+  icon: '\u25cc',
+  category: 'Windows Server',
+  subcategory: 'DNS',
+  title: 'Diagnostiquer un serveur DNS Windows',
+  risk: 'diagnostic',
+  summary: 'Vérifie le service, les zones, les redirecteurs, la récursivité, le cache, la résolution directe et inverse, le port 53 et les événements.',
+  fields: [
+    { id: 'dnsServer', label: 'Serveur DNS à interroger', default: '192.168.30.254', help: 'Nom ou adresse IPv4 du serveur.' },
+    { id: 'dnsQuery', label: 'Nom à résoudre', default: 'srv-dc1.hopitalbn.lan', help: 'Nom dont la résolution directe est testée.' },
+    { id: 'dnsReverse', label: 'Adresse IP pour la résolution inverse', default: '192.168.30.254' },
+    {
+      id: 'dnsRole', label: 'Type de serveur', type: 'select', default: 'DNS Active Directory',
+      options: [['DNS Active Directory', 'DNS intégré à Active Directory'], ['DNS standard', 'DNS standard, hors domaine']],
+      help: 'dcdiag /test:dns n\u2019est lancé que sur un contrôleur de domaine.',
+    },
+    champFormat(),
+  ],
+  validate(v) {
+    const errors = {};
+    const srv = String(v.dnsServer ?? '').trim();
+    if (!validateIPv4(srv).ok && !validerFqdn(srv).ok && !validerNomHote(srv).ok) {
+      errors.dnsServer = 'Indique une adresse IPv4, un nom d\u2019hôte ou un nom complet.';
+    }
+    verifier(errors, 'dnsQuery', validerFqdn(v.dnsQuery));
+    verifier(errors, 'dnsReverse', validateIPv4(v.dnsReverse));
+    verifier(errors, 'dnsRole', validerChoix(v.dnsRole, ['DNS Active Directory', 'DNS standard'], 'Le type de serveur'));
+    verifier(errors, 'reportFormat', validerFormatRapport(v.reportFormat));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const corps = [
+      `$Serveur = ${psB64(v.dnsServer)}`,
+      `$NomAResoudre = ${psB64(v.dnsQuery)}`,
+      `$AdresseInverse = ${psB64(v.dnsReverse)}`,
+      `$TypeServeur = ${psB64(v.dnsRole)}`,
+      `$KjemoFormat = ${psB64(v.reportFormat)}`,
+      "",
+      '# --- 1. Service DNS -------------------------------------------------------',
+      '$service = Get-Service -Name DNS -ErrorAction SilentlyContinue',
+      'if ($null -eq $service) {',
+      "  [void](Add-KjemoResultat -Categorie 'Service' -Controle 'DNS' -Etat 'INFO' -Valeur 'service local absent' -Commentaire 'Normal si tu interroges un serveur distant depuis un poste d''administration.')",
+      '} else {',
+      "  $etatSvc = 'PROBLEME'",
+      "  $commentaireSvc = 'Service DNS arrete : aucune resolution n''est servie par ce serveur.'",
+      "  if ($service.Status -eq 'Running') { $etatSvc = 'OK'; $commentaireSvc = '' }",
+      '  [void](Add-KjemoResultat -Categorie \'Service\' -Controle \'DNS\' -Etat $etatSvc -Valeur ("$($service.Status) / demarrage $($service.StartType)") -Commentaire $commentaireSvc)',
+      '}',
+      "",
+      '# --- 2. Zones hebergees ---------------------------------------------------',
+      '$zones = @()',
+      'try { $zones = @(Get-DnsServerZone -ComputerName $Serveur -ErrorAction Stop) } catch {',
+      '  [void](Add-KjemoResultat -Categorie \'Zones\' -Controle \'Lecture des zones\' -Etat \'ATTENTION\' -Valeur $_.Exception.Message -Commentaire "Module DnsServer absent, ou serveur injoignable.")',
+      '}',
+      'if (@($zones).Count -gt 0) {',
+      '  $directes = @($zones | Where-Object { -not $_.IsReverseLookupZone })',
+      '  $inverses = @($zones | Where-Object { $_.IsReverseLookupZone })',
+      '  [void](Add-KjemoResultat -Categorie \'Zones\' -Controle \'Zones directes\' -Etat \'INFO\' -Valeur (($directes | ForEach-Object { $_.ZoneName }) -join \', \'))',
+      '  if (@($inverses).Count -eq 0) {',
+      "    [void](Add-KjemoResultat -Categorie 'Zones' -Controle 'Zones inverses' -Etat 'ATTENTION' -Valeur 'aucune' -Commentaire 'Sans zone inverse, la resolution PTR echoue : plusieurs outils et journaux affichent alors des adresses au lieu des noms.')",
+      '  } else {',
+      '    [void](Add-KjemoResultat -Categorie \'Zones\' -Controle \'Zones inverses\' -Etat \'OK\' -Valeur (($inverses | ForEach-Object { $_.ZoneName }) -join \', \'))',
+      '  }',
+      '  foreach ($z in $directes) {',
+      '    [void](Add-KjemoResultat -Categorie \'Zones\' -Controle ("Zone $($z.ZoneName)") -Etat \'INFO\' -Valeur ("type $($z.ZoneType) ; integree AD : $($z.IsDsIntegrated) ; mises a jour dynamiques : $($z.DynamicUpdate)"))',
+      '  }',
+      '}',
+      "",
+      '# --- 3. Redirecteurs et recursivite --------------------------------------',
+      '$redirecteurs = $null',
+      'try { $redirecteurs = Get-DnsServerForwarder -ComputerName $Serveur -ErrorAction Stop } catch { }',
+      'if ($redirecteurs) {',
+      "  $liste = ($redirecteurs.IPAddress | ForEach-Object { $_.IPAddressToString }) -join ', '",
+      "  $etatFwd = 'OK'",
+      "  $commentaireFwd = ''",
+      "  if ([string]::IsNullOrWhiteSpace($liste)) {",
+      "    $etatFwd = 'ATTENTION'",
+      "    $commentaireFwd = 'Aucun redirecteur : la resolution des noms Internet passe alors par les serveurs racine, ou echoue si le reseau les bloque.'",
+      '  }',
+      '  [void](Add-KjemoResultat -Categorie \'Redirecteurs\' -Controle \'Liste\' -Etat $etatFwd -Valeur $liste -Commentaire $commentaireFwd)',
+      '  foreach ($ip in @($redirecteurs.IPAddress)) {',
+      '    $test = $null',
+      '    try { $test = Test-NetConnection -ComputerName $ip.IPAddressToString -Port 53 -WarningAction SilentlyContinue } catch { }',
+      '    if ($test) {',
+      "      $etatTest = 'PROBLEME'",
+      "      if ($test.TcpTestSucceeded) { $etatTest = 'OK' }",
+      '      [void](Add-KjemoResultat -Categorie \'Redirecteurs\' -Controle ("Port 53/TCP vers $($ip.IPAddressToString)") -Etat $etatTest -Valeur $test.TcpTestSucceeded -Commentaire "Un redirecteur injoignable fait echouer toute resolution externe.")',
+      '    }',
+      '  }',
+      '}',
+      '$recursivite = $null',
+      'try { $recursivite = Get-DnsServerRecursion -ComputerName $Serveur -ErrorAction Stop } catch { }',
+      'if ($recursivite) {',
+      '  [void](Add-KjemoResultat -Categorie \'Recursivite\' -Controle \'Etat\' -Etat \'INFO\' -Valeur ("Activee : $($recursivite.Enable)") -Commentaire "Desactivee, le serveur ne resout que ses propres zones.")',
+      '}',
+      "",
+      '# --- 4. Cache -------------------------------------------------------------',
+      '$cache = $null',
+      'try { $cache = Get-DnsServerCache -ComputerName $Serveur -ErrorAction Stop } catch { }',
+      'if ($cache) {',
+      '  [void](Add-KjemoResultat -Categorie \'Cache\' -Controle \'Parametres\' -Etat \'INFO\' -Valeur ("TTL max : $($cache.MaxTtl) ; TTL negatif : $($cache.MaxNegativeTtl)"))',
+      '}',
+      "",
+      '# --- 5. Resolution directe ------------------------------------------------',
+      '$directe = $null',
+      'try { $directe = Resolve-DnsName -Name $NomAResoudre -Server $Serveur -Type A -DnsOnly -ErrorAction Stop } catch { }',
+      'if ($directe) {',
+      "  $adresses = (@($directe | Where-Object { $_.IPAddress }) | ForEach-Object { $_.IPAddress }) -join ', '",
+      '  [void](Add-KjemoResultat -Categorie \'Resolution\' -Controle ("Directe : $NomAResoudre") -Etat \'OK\' -Valeur $adresses)',
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Resolution' -Controle (\"Directe : $NomAResoudre\") -Etat 'PROBLEME' -Valeur 'echec' -Commentaire \"Le nom n''est pas resolu par ce serveur : zone absente, enregistrement manquant, ou serveur injoignable.\")",
+      '}',
+      "",
+      '# --- 6. Resolution inverse -------------------------------------------------',
+      '$inverse = $null',
+      'try { $inverse = Resolve-DnsName -Name $AdresseInverse -Server $Serveur -Type PTR -DnsOnly -ErrorAction Stop } catch { }',
+      'if ($inverse) {',
+      '  [void](Add-KjemoResultat -Categorie \'Resolution\' -Controle ("Inverse : $AdresseInverse") -Etat \'OK\' -Valeur ((@($inverse) | ForEach-Object { $_.NameHost }) -join \', \'))',
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Resolution' -Controle (\"Inverse : $AdresseInverse\") -Etat 'ATTENTION' -Valeur 'echec' -Commentaire \"Pas d''enregistrement PTR : cree la zone inverse correspondante si tu en as besoin.\")",
+      '}',
+      "",
+      '# --- 7. Port 53 sur le serveur interroge ----------------------------------',
+      "foreach ($proto in @('TCP')) {",
+      '  $t = $null',
+      '  try { $t = Test-NetConnection -ComputerName $Serveur -Port 53 -WarningAction SilentlyContinue } catch { }',
+      '  if ($t) {',
+      "    $etatPort = 'PROBLEME'",
+      "    if ($t.TcpTestSucceeded) { $etatPort = 'OK' }",
+      '    [void](Add-KjemoResultat -Categorie \'Reseau\' -Controle "Port 53/$proto" -Etat $etatPort -Valeur $t.TcpTestSucceeded -Commentaire "UDP/53 ne se teste pas de maniere fiable avec Test-NetConnection : la reponse a une requete reelle en tient lieu.")',
+      '  }',
+      '}',
+      "",
+      '# --- 8. SOA et NS de la zone du nom teste ---------------------------------',
+      '$zoneDuNom = ($NomAResoudre -split \'\\.\', 2)[1]',
+      "if ($zoneDuNom) {",
+      '  $soa = $null',
+      '  try { $soa = Resolve-DnsName -Name $zoneDuNom -Server $Serveur -Type SOA -DnsOnly -ErrorAction Stop } catch { }',
+      '  if ($soa) {',
+      '    [void](Add-KjemoResultat -Categorie \'Zone\' -Controle ("SOA de $zoneDuNom") -Etat \'OK\' -Valeur ((@($soa) | ForEach-Object { $_.PrimaryServer }) -join \', \'))',
+      '  } else {',
+      '    [void](Add-KjemoResultat -Categorie \'Zone\' -Controle ("SOA de $zoneDuNom") -Etat \'ATTENTION\' -Valeur \'introuvable\')',
+      '  }',
+      '  $ns = $null',
+      '  try { $ns = Resolve-DnsName -Name $zoneDuNom -Server $Serveur -Type NS -DnsOnly -ErrorAction Stop } catch { }',
+      '  if ($ns) {',
+      '    [void](Add-KjemoResultat -Categorie \'Zone\' -Controle ("NS de $zoneDuNom") -Etat \'INFO\' -Valeur ((@($ns | Where-Object { $_.NameHost }) | ForEach-Object { $_.NameHost }) -join \', \'))',
+      '  }',
+      '}',
+      "",
+      '# --- 9. Evenements DNS recents ---------------------------------------------',
+      '$evts = @()',
+      "try { $evts = @(Get-WinEvent -FilterHashtable @{ LogName = 'DNS Server'; Level = @(1,2,3); StartTime = (Get-Date).AddDays(-2) } -ErrorAction Stop) } catch { $evts = @() }",
+      'if (@($evts).Count -eq 0) {',
+      "  [void](Add-KjemoResultat -Categorie 'Evenements' -Controle 'Journal DNS Server (48 h)' -Etat 'OK' -Valeur 'aucun avertissement ni erreur')",
+      '} else {',
+      '  [void](Add-KjemoResultat -Categorie \'Evenements\' -Controle \'Journal DNS Server (48 h)\' -Etat \'ATTENTION\' -Valeur ("$(@($evts).Count) evenement(s)") -Commentaire ((@($evts) | Select-Object -First 3 | ForEach-Object { "ID $($_.Id)" }) -join \', \'))',
+      '}',
+      "",
+      '# --- 10. dcdiag, uniquement sur un controleur de domaine -------------------',
+      '$estDc = $false',
+      'try { $estDc = ((Get-CimInstance Win32_ComputerSystem).DomainRole -ge 4) } catch { }',
+      "if ($TypeServeur -eq 'DNS Active Directory' -and $estDc) {",
+      '  try {',
+      '    $sortie = & dcdiag /test:dns /v 2>&1 | Out-String',
+      '    $echecs = ([regex]::Matches($sortie, \'(?i)failed test\')).Count',
+      "    $etatDcdiag = 'OK'",
+      "    if ($echecs -gt 0) { $etatDcdiag = 'PROBLEME' }",
+      '    [void](Add-KjemoResultat -Categorie \'Active Directory\' -Controle \'dcdiag /test:dns\' -Etat $etatDcdiag -Valeur ("$echecs test(s) en echec") -Commentaire "Sortie complete disponible en relancant dcdiag /test:dns /v a la main.")',
+      '  } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Active Directory' -Controle 'dcdiag /test:dns' -Etat 'IGNORE' -Valeur 'dcdiag indisponible')",
+      '  }',
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Active Directory' -Controle 'dcdiag /test:dns' -Etat 'IGNORE' -Valeur 'non applicable' -Commentaire 'Ce test ne concerne que les controleurs de domaine.')",
+      '}',
+    ];
+
+    return assembler({
+      titre: 'Diagnostiquer un serveur DNS Windows - lecture seule',
+      outil: 'dns-diagnostic',
+      diagnostic: true,
+      admin: true,
+      parametres: [
+        ['Serveur', psB64(v.dnsServer)],
+        ['NomTeste', psB64(v.dnsQuery)],
+        ['AdresseInverse', psB64(v.dnsReverse)],
+        ['TypeServeur', psB64(v.dnsRole)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-dns-diagnostic',
+    });
+  },
+  gui: [
+    'Console DNS (dnsmgmt.msc) : zones de recherche directes et inversées.',
+    'Propriétés du serveur > onglet Redirecteurs, et onglet Avancé pour la récursivité.',
+    'Clic droit sur le serveur > Lancer nslookup pour un test manuel.',
+    'Observateur d\u2019événements > Journaux des applications et des services > DNS Server.',
+    'Sur un contrôleur de domaine : invite de commandes, dcdiag /test:dns.',
+  ],
+  keywords: [
+    'dns', 'resolution', 'nslookup', 'resolve-dnsname', 'zone dns', 'ptr', 'soa',
+    'redirecteur', 'forwarder', 'recursivite', 'dcdiag', 'le nom ne se resout pas',
+    'port 53', 'cache dns',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur pour lire la configuration du serveur DNS.',
+    'Module DnsServer présent : rôle DNS installé, ou outils d\u2019administration RSAT-DNS-Server.',
+    'Script en lecture seule : exécutable en production.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'Resolve-DnsName : DNS name does not exist',
+      code: 'DNS_ERROR_RCODE_NAME_ERROR',
+      cause: 'Le nom n\u2019existe pas dans les zones de ce serveur, ou le serveur ne fait pas autorité et n\u2019a pas pu résoudre.',
+      fix: 'Vérifier la zone concernée et l\u2019enregistrement attendu, puis retester.',
+      command: 'Get-DnsServerResourceRecord -ZoneName <zone> -Name <nom>',
+    },
+    {
+      message: 'Get-DnsServerZone : Le terme n\u2019est pas reconnu',
+      code: 'CommandNotFoundException',
+      cause: 'Le module DnsServer n\u2019est pas présent sur la machine qui exécute le script.',
+      fix: 'Installer les outils d\u2019administration DNS, ou exécuter depuis le serveur DNS.',
+      command: 'Get-WindowsFeature RSAT-DNS-Server',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le rapport indique l\u2019état du service, les zones et le résultat des deux résolutions.',
+    'Un échec de résolution directe et un succès de résolution inverse orientent vers un enregistrement manquant, pas vers une panne du service.',
+    'Les redirecteurs injoignables apparaissent explicitement.',
+  ],
+  rollback: {
+    summary: 'Ce script interroge le serveur DNS et n\u2019écrit aucune configuration. Rien à annuler.',
+    diagnostic: '# Relire l\'etat du serveur : ces commandes ne modifient rien.\nGet-DnsServerZone | Format-Table ZoneName,ZoneType,IsDsIntegrated,IsReverseLookupZone\nGet-DnsServerForwarder | Format-List',
+    command: '# Aucune annulation necessaire : le script est en lecture seule.\nGet-Service DNS | Format-Table Name,Status,StartType',
+    exceptional: '',
+    warning: 'Le rapport décrit l\u2019infrastructure DNS interne : traite-le comme un document interne.',
+  },
+  checks: [
+    'Interroger le serveur depuis un poste qui l\u2019utilise réellement : un test depuis le serveur lui-même masque les problèmes de filtrage.',
+    'Un échec de résolution inverse n\u2019est pas toujours une panne : il faut une zone inverse pour que PTR existe.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverzone',
+  sources: [
+    { label: 'Get-DnsServerZone', url: 'https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverzone' },
+    { label: 'Resolve-DnsName', url: 'https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname' },
+    { label: 'Test-NetConnection', url: 'https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection' },
+    { label: 'dcdiag', url: 'https://learn.microsoft.com/windows-server/administration/windows-commands/dcdiag' },
+    { label: 'DNS — documentation Windows Server', url: 'https://learn.microsoft.com/windows-server/networking/dns/dns-top' },
+  ],
+};
+
+/**
+ * 8. dns-zone — créer une zone directe ou inversée.
+ * Une zone existante n'est JAMAIS remplacée : le script s'arrête et le dit.
+ */
+export const outilDnsZone = {
+  id: 'dns-zone',
+  icon: '\u25d3',
+  category: 'Windows Server',
+  subcategory: 'DNS',
+  title: 'Créer une zone DNS directe ou inversée',
+  risk: 'caution',
+  summary: 'Valide le nom ou le réseau, détecte une zone existante, crée la zone de façon idempotente puis affiche SOA et NS.',
+  fields: [
+    {
+      id: 'zoneType', label: 'Type de zone', type: 'select', default: 'Directe',
+      options: [['Directe', 'Directe — noms vers adresses'], ['Inversée', 'Inversée — adresses vers noms']],
+    },
+    { id: 'zoneName', label: 'Nom de zone (directe) ou réseau CIDR (inversée)', default: 'hopitalbn.lan', help: 'Zone directe : hopitalbn.lan. Zone inversée : 192.168.30.0/24.' },
+    {
+      id: 'zoneStorage', label: 'Stockage', type: 'select', default: 'Active Directory',
+      options: [['Active Directory', 'Intégrée à Active Directory'], ['Fichier', 'Zone standard, fichier .dns']],
+    },
+    {
+      id: 'zoneReplication', label: 'Étendue de réplication', type: 'select', default: 'Domain',
+      options: [['Domain', 'Tous les serveurs DNS du domaine'], ['Forest', 'Tous les serveurs DNS de la forêt'], ['Legacy', 'Compatibilité ascendante']],
+      help: 'Ignoré pour une zone stockée en fichier.',
+    },
+    {
+      id: 'zoneUpdates', label: 'Mises à jour dynamiques', type: 'select', default: 'Secure',
+      options: [['Secure', 'Sécurisées uniquement (recommandé avec AD)'], ['NonSecure', 'Sécurisées et non sécurisées'], ['None', 'Aucune']],
+    },
+    { id: 'zoneServer', label: 'Serveur DNS cible', default: 'srv-dc1.hopitalbn.lan' },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    const type = verifier(errors, 'zoneType', validerChoix(v.zoneType, ['Directe', 'Inversée'], 'Le type de zone'));
+    const nom = String(v.zoneName ?? '').trim();
+    if (type.ok && type.value === 'Inversée') {
+      const cidr = validerReseauCidr(nom);
+      if (!cidr.ok) errors.zoneName = `Zone inversée : indique le réseau en notation CIDR (ex. : 192.168.30.0/24). ${cidr.error}`;
+      else if (cidr.value.prefixe % 8 !== 0) {
+        errors.zoneName = 'Une zone inversée classique se déclare sur un préfixe multiple de 8 (/8, /16, /24).';
+      }
+    } else {
+      verifier(errors, 'zoneName', validerNomZoneDns(nom));
+    }
+    const stockage = verifier(errors, 'zoneStorage', validerChoix(v.zoneStorage, ['Active Directory', 'Fichier'], 'Le stockage'));
+    verifier(errors, 'zoneReplication', validerChoix(v.zoneReplication, ['Domain', 'Forest', 'Legacy'], 'L\u2019étendue de réplication'));
+    const maj = verifier(errors, 'zoneUpdates', validerChoix(v.zoneUpdates, ['Secure', 'NonSecure', 'None'], 'Les mises à jour dynamiques'));
+    if (stockage.ok && maj.ok && stockage.value === 'Fichier' && maj.value === 'Secure') {
+      errors.zoneUpdates = 'Les mises à jour sécurisées exigent une zone intégrée à Active Directory. Choisis « Sécurisées et non sécurisées » ou « Aucune » pour une zone fichier.';
+    }
+    const srv = String(v.zoneServer ?? '').trim();
+    if (!validateIPv4(srv).ok && !validerFqdn(srv).ok && !validerNomHote(srv).ok) {
+      errors.zoneServer = 'Indique une adresse IPv4, un nom d\u2019hôte ou un nom complet.';
+    }
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const inversee = v.zoneType === 'Inversée';
+    const cidr = inversee ? validerReseauCidr(v.zoneName).value : null;
+    const nomZone = inversee
+      ? `${cidr.reseau.split('.').slice(0, cidr.prefixe / 8).reverse().join('.')}.in-addr.arpa`
+      : validerNomZoneDns(v.zoneName).value;
+    const integree = v.zoneStorage === 'Active Directory';
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Serveur = ${psB64(v.zoneServer)}`,
+      `$NomZone = ${psB64(nomZone)}`,
+      inversee ? `$NetworkId = ${psB64(`${cidr.reseau}/${cidr.prefixe}`)}` : '$NetworkId = $null',
+      `$MisesAJour = ${psB64(v.zoneUpdates)}`,
+      `$Replication = ${psB64(v.zoneReplication)}`,
+      `$Integree = ${integree ? '$true' : '$false'}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      '# --- 1. Service et module -------------------------------------------------',
+      '$service = Get-Service -Name DNS -ErrorAction SilentlyContinue',
+      'if ($service) {',
+      '  [void](Add-KjemoResultat -Categorie \'Service\' -Controle \'DNS\' -Etat \'INFO\' -Valeur $service.Status)',
+      '}',
+      "",
+      '# --- 2. La zone existe-t-elle deja ? --------------------------------------',
+      '$existante = $null',
+      'try { $existante = Get-DnsServerZone -ComputerName $Serveur -Name $NomZone -ErrorAction SilentlyContinue } catch { }',
+      'if ($existante) {',
+      '  [void](Add-KjemoResultat -Categorie \'Zone\' -Controle \'Existence\' -Etat \'ATTENTION\' -Valeur ("$($existante.ZoneName) — type $($existante.ZoneType) ; integree AD : $($existante.IsDsIntegrated) ; MAJ : $($existante.DynamicUpdate)") -Commentaire "La zone existe deja. Elle ne sera JAMAIS remplacee par ce script : remplacer une zone efface ses enregistrements.")',
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Zone' -Controle 'Existence' -Etat 'INFO' -Valeur 'zone absente' -Commentaire 'Elle sera creee en mode Appliquer.')",
+      '}',
+      "",
+      '# --- 3. Coherence demandee -------------------------------------------------',
+      '[void](Add-KjemoResultat -Categorie \'Parametres\' -Controle \'Zone demandee\' -Etat \'INFO\' -Valeur ("$NomZone ; integree AD : $Integree ; mises a jour : $MisesAJour"))',
+      'if (-not $Integree -and $MisesAJour -eq \'Secure\') {',
+      "  [void](Add-KjemoResultat -Categorie 'Parametres' -Controle 'Coherence' -Etat 'PROBLEME' -Valeur 'incompatible' -Commentaire 'Les mises a jour securisees exigent une zone integree a Active Directory.')",
+      '}',
+      "",
+      '# --- 4. Creation, uniquement en mode Appliquer ----------------------------',
+      "if ($Mode -eq 'Appliquer') {",
+      '  if ($existante) {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'OK' -Valeur 'ignoree, zone deja presente' -Commentaire 'Operation idempotente : rien n''a ete ecrase.')",
+      '  } else {',
+      (inversee
+        ? '    if ($Integree) {\n'
+          + '      Add-DnsServerPrimaryZone -ComputerName $Serveur -NetworkId $NetworkId -ReplicationScope $Replication -DynamicUpdate $MisesAJour\n'
+          + '    } else {\n'
+          + "      Add-DnsServerPrimaryZone -ComputerName $Serveur -NetworkId $NetworkId -ZoneFile ($NomZone + '.dns') -DynamicUpdate $MisesAJour\n"
+          + '    }'
+        : '    if ($Integree) {\n'
+          + '      Add-DnsServerPrimaryZone -ComputerName $Serveur -Name $NomZone -ReplicationScope $Replication -DynamicUpdate $MisesAJour\n'
+          + '    } else {\n'
+          + "      Add-DnsServerPrimaryZone -ComputerName $Serveur -Name $NomZone -ZoneFile ($NomZone + '.dns') -DynamicUpdate $MisesAJour\n"
+          + '    }'),
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'INFO' -Valeur 'demandee')",
+      '  }',
+      "",
+      '  # Relecture : SOA et NS disent si la zone est reellement en place.',
+      "  Write-Host ''",
+      "  Write-Host '--- Zone apres creation ---'",
+      '  try { Get-DnsServerZone -ComputerName $Serveur -Name $NomZone | Format-List ZoneName,ZoneType,IsDsIntegrated,DynamicUpdate,ReplicationScope } catch { Write-Host $_.Exception.Message }',
+      "  try { Get-DnsServerResourceRecord -ComputerName $Serveur -ZoneName $NomZone -RRType SOA | Format-List HostName,RecordType,RecordData } catch { }",
+      "  try { Get-DnsServerResourceRecord -ComputerName $Serveur -ZoneName $NomZone -RRType NS | Format-Table HostName,RecordType,RecordData -AutoSize } catch { }",
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  if (-not $existante) {',
+      (inversee
+        ? '    Add-DnsServerPrimaryZone -ComputerName $Serveur -NetworkId $NetworkId -ReplicationScope $Replication -DynamicUpdate $MisesAJour -WhatIf'
+        : '    Add-DnsServerPrimaryZone -ComputerName $Serveur -Name $NomZone -ReplicationScope $Replication -DynamicUpdate $MisesAJour -WhatIf'),
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+    ];
+
+    return assembler({
+      titre: 'Creer une zone DNS',
+      outil: 'dns-zone',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['NomZone', psB64(nomZone)],
+        ['Type', psB64(v.zoneType)],
+        ['Stockage', psB64(v.zoneStorage)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-dns-zone',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Console DNS (dnsmgmt.msc) > clic droit sur « Zones de recherche directe » ou « inversée » > Nouvelle zone.',
+    'Choisir « Zone principale » et, sur un contrôleur de domaine, cocher le stockage dans Active Directory.',
+    'Zone inversée : saisir l\u2019ID réseau (ex. : 192.168.30) ; la console compose le nom in-addr.arpa.',
+    'Choisir les mises à jour dynamiques sécurisées si la zone est intégrée à AD.',
+    'Vérifier ensuite la présence des enregistrements SOA et NS dans la zone.',
+  ],
+  keywords: [
+    'zone dns', 'zone inversee', 'in-addr.arpa', 'add-dnsserverprimaryzone',
+    'creer une zone', 'mise a jour dynamique', 'replication dns', 'ptr',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur.',
+    'Rôle DNS installé, ou outils d\u2019administration DNS pour agir à distance.',
+    'Pour une zone intégrée : le serveur doit être contrôleur de domaine, et le compte doit pouvoir écrire dans Active Directory.',
+    'Plan de nommage arrêté : une zone renommée après coup oblige à refaire les enregistrements.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'Add-DnsServerPrimaryZone : The zone already exists',
+      code: 'DNS_ERROR_ZONE_ALREADY_EXISTS',
+      cause: 'Une zone du même nom est déjà hébergée.',
+      fix: 'Ce script ne remplace jamais une zone existante : il s\u2019arrête et l\u2019indique.',
+    },
+    {
+      message: 'The parameter ReplicationScope is not valid for a file-backed zone',
+      cause: 'L\u2019étendue de réplication ne s\u2019applique qu\u2019aux zones intégrées à Active Directory.',
+      fix: 'Choisir le stockage « Active Directory », ou laisser l\u2019étendue de côté pour une zone fichier.',
+    },
+    {
+      message: 'Les clients ne mettent pas leur enregistrement à jour',
+      cause: 'Mises à jour dynamiques désactivées, ou sécurisées sur une zone non intégrée.',
+      fix: 'Vérifier DynamicUpdate sur la zone, et le type de stockage.',
+      command: 'Get-DnsServerZone -Name <zone> | Format-List ZoneName,IsDsIntegrated,DynamicUpdate',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Get-DnsServerZone affiche la zone avec le bon type et le bon mode de mise à jour.',
+    'Les enregistrements SOA et NS existent dans la zone.',
+    'Pour une zone inversée : un Resolve-DnsName -Type PTR sur une adresse du réseau répond une fois les enregistrements créés.',
+  ],
+  rollback: {
+    summary: 'Une zone créée par erreur et encore vide se supprime sans conséquence. Une zone qui contient des enregistrements est une autre affaire : la supprimer efface tout ce qu\u2019elle contient.',
+    diagnostic: '# Constater le contenu avant de supprimer quoi que ce soit.\nGet-DnsServerZone -Name \'<zone>\' | Format-List ZoneName,ZoneType,IsDsIntegrated\nGet-DnsServerResourceRecord -ZoneName \'<zone>\' | Measure-Object | Select-Object Count\nGet-DnsServerResourceRecord -ZoneName \'<zone>\' | Format-Table HostName,RecordType',
+    command: '# Supprimer la zone. A ne faire que si elle vient d\'etre creee par erreur et\n# ne contient aucun enregistrement utile : la suppression emporte tout son\n# contenu. -Confirm est explicite.\nRemove-DnsServerZone -Name \'<zone>\' -Confirm',
+    exceptional: '# AVERTISSEMENT CRITIQUE — suppression d\'une zone en service.\n#\n# Supprimer une zone DNS qui sert un domaine Active Directory rend le domaine\n# inutilisable : ouverture de session, replication et services s\'appuient sur\n# ces enregistrements. Cette operation n\'est pas automatisee ici.\n#\n# Avant d\'y penser :\n#   1. Exporter la zone (Export-DnsServerZone) et conserver le fichier.\n#   2. Verifier qu\'aucun service ne depend des noms qu\'elle heberge.\n#   3. Prevoir la restauration : une zone integree se recree, ses\n#      enregistrements non.\n#\n# Reference officielle :\n# https://learn.microsoft.com/powershell/module/dnsserver/remove-dnsserverzone\n#\n# Commande, a executer manuellement :\n#   Remove-DnsServerZone -Name \'<zone>\' -Confirm',
+    warning: 'Sur un contrôleur de domaine, la zone du domaine Active Directory ne se supprime pas : elle se répare. Toute manipulation de cette zone doit être précédée d\u2019une sauvegarde de l\u2019état du système.',
+  },
+  checks: [
+    'Confirmer le nom exact de la zone avant création : un nom erroné oblige à tout refaire.',
+    'Pour une zone inversée, vérifier le préfixe : /24 crée 30.168.192.in-addr.arpa, pas autre chose.',
+    'Sur un domaine AD, préférer la zone intégrée et les mises à jour sécurisées.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverprimaryzone',
+  sources: [
+    { label: 'Add-DnsServerPrimaryZone', url: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverprimaryzone' },
+    { label: 'Get-DnsServerZone', url: 'https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverzone' },
+    { label: 'Get-DnsServerResourceRecord', url: 'https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverresourcerecord' },
+  ],
+};
+
+/**
+ * 9. dns-record — créer un enregistrement A, AAAA, CNAME ou PTR.
+ * MX, SRV et TXT sont hors périmètre de ce lot, et le validateur le dit.
+ */
+export const outilDnsEnregistrement = {
+  id: 'dns-record',
+  icon: '\u25cb',
+  category: 'Windows Server',
+  subcategory: 'DNS',
+  title: 'Créer un enregistrement DNS',
+  risk: 'caution',
+  summary: 'Valide selon le type choisi, vérifie la zone, détecte doublons et conflits, crée l\u2019enregistrement puis teste la résolution.',
+  fields: [
+    {
+      id: 'recType', label: 'Type d\u2019enregistrement', type: 'select', default: 'A',
+      options: [['A', 'A — nom vers adresse IPv4'], ['AAAA', 'AAAA — nom vers adresse IPv6'], ['CNAME', 'CNAME — alias vers un autre nom'], ['PTR', 'PTR — adresse vers nom']],
+      help: 'MX, SRV et TXT ne sont pas pris en charge dans ce lot.',
+    },
+    { id: 'recZone', label: 'Zone', default: 'hopitalbn.lan', help: 'Zone directe pour A, AAAA et CNAME. Zone inversée pour PTR.' },
+    { id: 'recName', label: 'Nom de l\u2019enregistrement', default: 'srv-fichiers', help: 'Relatif à la zone. « @ » désigne la zone elle-même. Pour un PTR : le dernier octet de l\u2019adresse.' },
+    { id: 'recIPv4', label: 'Adresse IPv4 (type A)', default: '192.168.30.20' },
+    { id: 'recIPv6', label: 'Adresse IPv6 (type AAAA)', default: '2001:db8:30::20' },
+    { id: 'recTarget', label: 'Cible (CNAME ou PTR)', default: 'srv-fichiers.hopitalbn.lan', help: 'Nom complet vers lequel pointe l\u2019alias ou l\u2019enregistrement inverse.' },
+    { id: 'recServer', label: 'Serveur DNS cible', default: 'srv-dc1.hopitalbn.lan' },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    const type = verifier(errors, 'recType', validerTypeEnregistrement(v.recType));
+    const zone = String(v.recZone ?? '').trim();
+    verifier(errors, 'recZone', validerNomZoneDns(zone));
+    verifier(errors, 'recName', validerNomEnregistrement(v.recName));
+
+    if (type.ok) {
+      if (type.value === 'A') verifier(errors, 'recIPv4', validateIPv4(v.recIPv4));
+      if (type.value === 'AAAA') verifier(errors, 'recIPv6', validerIPv6(v.recIPv6));
+      if (type.value === 'CNAME' || type.value === 'PTR') {
+        verifier(errors, 'recTarget', validerFqdn(v.recTarget));
+      }
+      if (type.value === 'PTR' && zone && !/in-addr\.arpa$|ip6\.arpa$/i.test(zone)) {
+        errors.recZone = 'Un enregistrement PTR se crée dans une zone inversée (…in-addr.arpa ou …ip6.arpa).';
+      }
+      if (type.value !== 'PTR' && /in-addr\.arpa$|ip6\.arpa$/i.test(zone)) {
+        errors.recZone = `Une zone inversée n\u2019accueille que des enregistrements PTR, pas des ${type.value}.`;
+      }
+    }
+
+    const srv = String(v.recServer ?? '').trim();
+    if (!validateIPv4(srv).ok && !validerFqdn(srv).ok && !validerNomHote(srv).ok) {
+      errors.recServer = 'Indique une adresse IPv4, un nom d\u2019hôte ou un nom complet.';
+    }
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const type = validerTypeEnregistrement(v.recType).value;
+
+    const creation = {
+      A: 'Add-DnsServerResourceRecordA -ComputerName $Serveur -ZoneName $Zone -Name $Nom -IPv4Address $Valeur',
+      AAAA: 'Add-DnsServerResourceRecordAAAA -ComputerName $Serveur -ZoneName $Zone -Name $Nom -IPv6Address $Valeur',
+      CNAME: 'Add-DnsServerResourceRecordCName -ComputerName $Serveur -ZoneName $Zone -Name $Nom -HostNameAlias $Valeur',
+      PTR: 'Add-DnsServerResourceRecordPtr -ComputerName $Serveur -ZoneName $Zone -Name $Nom -PtrDomainName $Valeur',
+    }[type];
+
+    const valeur = { A: v.recIPv4, AAAA: v.recIPv6, CNAME: v.recTarget, PTR: v.recTarget }[type];
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Serveur = ${psB64(v.recServer)}`,
+      `$Zone = ${psB64(validerNomZoneDns(v.recZone).value)}`,
+      `$Nom = ${psB64(v.recName)}`,
+      `$Type = ${psB64(type)}`,
+      `$Valeur = ${psB64(valeur)}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      '# --- 1. La zone existe-t-elle ? -------------------------------------------',
+      '$zoneObj = $null',
+      'try { $zoneObj = Get-DnsServerZone -ComputerName $Serveur -Name $Zone -ErrorAction SilentlyContinue } catch { }',
+      'if ($null -eq $zoneObj) {',
+      "  [void](Add-KjemoResultat -Categorie 'Zone' -Controle 'Existence' -Etat 'PROBLEME' -Valeur 'zone introuvable' -Commentaire 'Cree la zone avant d''y ajouter un enregistrement.')",
+      '} else {',
+      '  [void](Add-KjemoResultat -Categorie \'Zone\' -Controle \'Existence\' -Etat \'OK\' -Valeur ("$($zoneObj.ZoneName) — type $($zoneObj.ZoneType)"))',
+      '}',
+      "",
+      '# --- 2. Enregistrement identique ou conflictuel ? -------------------------',
+      '$existants = @()',
+      'try { $existants = @(Get-DnsServerResourceRecord -ComputerName $Serveur -ZoneName $Zone -Name $Nom -ErrorAction SilentlyContinue) } catch { }',
+      '$identique = $false',
+      '$conflit = $null',
+      'foreach ($e in $existants) {',
+      '  $donnee = ($e.RecordData | Out-String).Trim()',
+      '  if ($e.RecordType -eq $Type -and $donnee -like "*$Valeur*") { $identique = $true }',
+      '  elseif ($e.RecordType -eq $Type) { $conflit = "$($e.RecordType) existant avec une autre valeur : $donnee" }',
+      "  elseif ($e.RecordType -eq 'CNAME' -or $Type -eq 'CNAME') { $conflit = \"un CNAME ne peut pas coexister avec un autre enregistrement du meme nom (present : $($e.RecordType))\" }",
+      '}',
+      'if ($identique) {',
+      "  [void](Add-KjemoResultat -Categorie 'Enregistrement' -Controle 'Existence' -Etat 'OK' -Valeur 'deja present, identique' -Commentaire 'Rien a faire : l''operation est idempotente.')",
+      '} elseif ($conflit) {',
+      "  [void](Add-KjemoResultat -Categorie 'Enregistrement' -Controle 'Conflit' -Etat 'PROBLEME' -Valeur $conflit -Commentaire 'Resous le conflit : un enregistrement ne sera pas ecrase par ce script.')",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Enregistrement' -Controle 'Existence' -Etat 'INFO' -Valeur 'aucun enregistrement correspondant')",
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Enregistrement\' -Controle \'A creer\' -Etat \'INFO\' -Valeur ("$Type $Nom dans $Zone -> $Valeur"))',
+      "",
+      '# --- 3. Creation, uniquement en mode Appliquer ----------------------------',
+      "if ($Mode -eq 'Appliquer') {",
+      '  if ($identique) {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'OK' -Valeur 'ignoree, enregistrement identique deja present')",
+      '  } elseif ($conflit) {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'PROBLEME' -Valeur 'refusee' -Commentaire 'Conflit detecte : rien n''a ete cree.')",
+      '  } else {',
+      `    ${creation}`,
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'INFO' -Valeur 'demandee')",
+      '  }',
+      "",
+      "  # Relecture, puis resolution reelle : l'enregistrement existe-t-il vraiment ?",
+      "  Write-Host ''",
+      "  Write-Host '--- Enregistrements apres modification ---'",
+      '  try { Get-DnsServerResourceRecord -ComputerName $Serveur -ZoneName $Zone -Name $Nom | Format-Table HostName,RecordType,RecordData -AutoSize } catch { Write-Host $_.Exception.Message }',
+      "  if ($Type -ne 'PTR') {",
+      '    $fqdn = $Nom + \'.\' + $Zone',
+      "    if ($Nom -eq '@') { $fqdn = $Zone }",
+      '    try { Resolve-DnsName -Name $fqdn -Server $Serveur -DnsOnly -ErrorAction Stop | Format-Table Name,Type,IPAddress,NameHost -AutoSize } catch { Write-Host "Resolution : $($_.Exception.Message)" }',
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  if (-not $identique -and -not $conflit) {',
+      `    ${creation} -WhatIf`,
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+    ];
+
+    return assembler({
+      titre: 'Creer un enregistrement DNS',
+      outil: 'dns-record',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['Zone', psB64(v.recZone)],
+        ['Nom', psB64(v.recName)],
+        ['Type', psB64(type)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-dns-enregistrement',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Console DNS (dnsmgmt.msc) > la zone > clic droit > Nouvel hôte (A ou AAAA), Nouvel alias (CNAME) ou Nouveau pointeur (PTR).',
+    'Pour un hôte : cocher « Créer un enregistrement PTR associé » si la zone inversée existe.',
+    'Vérifier l\u2019enregistrement dans la liste de la zone après création.',
+    'Tester depuis un client avec nslookup <nom> <serveur>.',
+  ],
+  keywords: [
+    'enregistrement dns', 'record', 'type a', 'aaaa', 'cname', 'ptr', 'alias dns',
+    'add-dnsserverresourcerecord', 'creer un nom dns', 'resolution inverse',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur.',
+    'Zone déjà créée, et du bon type : directe pour A, AAAA et CNAME, inversée pour PTR.',
+    'Module DnsServer disponible localement si le serveur est administré à distance.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'The record already exists',
+      code: 'DNS_ERROR_RECORD_ALREADY_EXISTS',
+      cause: 'Un enregistrement du même nom et du même type existe déjà.',
+      fix: 'Ce script détecte le doublon avant d\u2019agir et ne remplace rien.',
+    },
+    {
+      message: 'CNAME and other data',
+      code: 'DNS_ERROR_CNAME_COLLISION',
+      cause: 'Un alias CNAME ne peut pas coexister avec un autre enregistrement portant le même nom.',
+      fix: 'Choisir un autre nom d\u2019alias, ou retirer l\u2019enregistrement concurrent après vérification.',
+    },
+    {
+      message: 'Le nom se résout mais pas en inverse',
+      cause: 'L\u2019enregistrement PTR n\u2019existe pas, souvent parce que la zone inversée a été créée après l\u2019hôte.',
+      fix: 'Créer la zone inversée, puis l\u2019enregistrement PTR correspondant.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Get-DnsServerResourceRecord affiche l\u2019enregistrement avec la bonne valeur.',
+    'Resolve-DnsName sur le nom complet retourne la valeur attendue.',
+    'Pour un PTR : Resolve-DnsName -Type PTR sur l\u2019adresse retourne le nom.',
+  ],
+  rollback: {
+    summary: 'Un enregistrement se retire sans toucher au reste de la zone. C\u2019est réversible tant que l\u2019on sait quelle valeur remettre — d\u2019où la relecture avant suppression.',
+    diagnostic: '# Noter la valeur exacte avant de supprimer : c\'est ce qui permettra de\n# la recreer a l\'identique si besoin.\nGet-DnsServerResourceRecord -ZoneName \'<zone>\' -Name \'<nom>\' | Format-List HostName,RecordType,RecordData,TimeToLive',
+    command: '# Supprimer l\'enregistrement. -Confirm est explicite : PowerShell demandera\n# confirmation avant de retirer quoi que ce soit.\n$enr = Get-DnsServerResourceRecord -ZoneName \'<zone>\' -Name \'<nom>\' -RRType \'<type>\'\nRemove-DnsServerResourceRecord -ZoneName \'<zone>\' -InputObject $enr -Confirm',
+    exceptional: '',
+    warning: 'Supprimer l\u2019enregistrement d\u2019un serveur en service le rend injoignable par son nom dès que le cache des clients expire. Vérifie ce qui dépend de ce nom avant d\u2019agir.',
+  },
+  checks: [
+    'Vérifier que la zone est du bon type avant de créer l\u2019enregistrement.',
+    'Pour un PTR, le nom est le dernier octet de l\u2019adresse dans une zone /24.',
+    'Le cache des clients retarde la prise en compte : ipconfig /flushdns pour tester immédiatement.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecorda',
+  sources: [
+    { label: 'Add-DnsServerResourceRecordA', url: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecorda' },
+    { label: 'Add-DnsServerResourceRecordAAAA', url: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordaaaa' },
+    { label: 'Add-DnsServerResourceRecordCName', url: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordcname' },
+    { label: 'Add-DnsServerResourceRecordPtr', url: 'https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordptr' },
+    { label: 'Remove-DnsServerResourceRecord', url: 'https://learn.microsoft.com/powershell/module/dnsserver/remove-dnsserverresourcerecord' },
+  ],
+};
+
+// ---------------------------------------------------------------------------
 // Catalogue exporté — complété au fil des sous-rubriques du LOT 2
 // ---------------------------------------------------------------------------
 export const toolsServeur = [
@@ -1663,4 +2362,7 @@ export const toolsServeur = [
   outilDhcpReservation,
   outilDhcpBaux,
   outilDhcpSauvegarde,
+  outilDnsDiagnostic,
+  outilDnsZone,
+  outilDnsEnregistrement,
 ];
