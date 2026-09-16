@@ -218,14 +218,14 @@ export function blocParametres(paires) {
  * n'a pas explicitement choisi « Appliquer ». Le bloc ci-dessous est inséré
  * juste avant la première action modifiante.
  */
-export function blocModeDiagnostic() {
+export function blocModeDiagnostic(valeurAppliquer = 'Appliquer') {
   return [
     '',
-    'if ($Mode -ne \'Appliquer\') {',
+    `if ($Mode -ne '${valeurAppliquer}') {`,
     '  Write-Host \'\'',
     '  Write-Host \'MODE DIAGNOSTIC — aucune modification n\'\'a été effectuée.\'',
     '  Write-Host \'Relis les constats ci-dessus. Pour appliquer, régénère le script\'',
-    '  Write-Host \'depuis KJEMO IT Toolkit en choisissant le mode Appliquer.\'',
+    `  Write-Host 'depuis KJEMO IT Toolkit en choisissant le mode ${valeurAppliquer}.'`,
     '}',
   ].join('\n');
 }

@@ -158,7 +158,6 @@ export function assembler({ titre, outil, diagnostic, admin, parametres, corps, 
   ].join('\n');
 }
 
-
 // ---------------------------------------------------------------------------
 // A. DIAGNOSTIC SERVEUR
 // ---------------------------------------------------------------------------
@@ -1008,6 +1007,652 @@ export const outilDhcpEtendue = {
   ],
 };
 
+/**
+ * 4. dhcp-reservation — réserver une adresse pour une machine précise.
+ *
+ * L'erreur classique n'est pas la commande mais le format de l'adresse MAC :
+ * tirets, deux-points, points Cisco, ou rien du tout. Le formulaire accepte les
+ * quatre et normalise vers la forme attendue par le cmdlet.
+ */
+export const outilDhcpReservation = {
+  id: 'dhcp-reservation',
+  icon: '\u25c9',
+  category: 'Windows Server',
+  subcategory: 'DHCP',
+  title: 'Créer une réservation DHCP',
+  risk: 'caution',
+  summary: 'Normalise l\u2019adresse MAC, vérifie l\u2019appartenance à l\u2019étendue et les conflits, puis crée la réservation si elle n\u2019existe pas.',
+  fields: [
+    { id: 'resScopeId', label: 'ScopeId de l\u2019étendue', default: '192.168.30.0', help: 'Adresse de réseau de l\u2019étendue, pas une adresse d\u2019hôte.' },
+    { id: 'resIp', label: 'Adresse IP réservée', default: '192.168.30.50' },
+    { id: 'resClient', label: 'Adresse MAC ou ClientId', default: '00-15-5D-01-2A-3B', help: 'Tirets, deux-points, points ou sans séparateur : les quatre formes sont acceptées.' },
+    { id: 'resName', label: 'Nom du client', default: 'poste-accueil-01' },
+    { id: 'resDesc', label: 'Description', default: 'Poste d\u2019accueil — réservation permanente' },
+    {
+      id: 'resType', label: 'Type de réservation', type: 'select', default: 'Both',
+      options: [['Both', 'Both — DHCP et BOOTP'], ['Dhcp', 'DHCP seulement'], ['Bootp', 'BOOTP seulement']],
+    },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    const scope = verifier(errors, 'resScopeId', validerScopeId(v.resScopeId));
+    const ip = verifier(errors, 'resIp', validateIPv4(v.resIp));
+    if (scope.ok && ip.ok && !ipDansReseau(ip.value, scope.value, 24)) {
+      errors.resIp = `${ip.value} ne semble pas appartenir à l\u2019étendue ${scope.value}/24. Vérifie le ScopeId et l\u2019adresse.`;
+    }
+    const client = String(v.resClient ?? '').trim();
+    const mac = validerMac(client);
+    if (!mac.ok) {
+      const cid = validerClientId(client);
+      if (!cid.ok) errors.resClient = mac.error;
+    }
+    const nom = String(v.resName ?? '').trim();
+    if (!nom) errors.resName = 'Le nom du client ne peut pas être vide.';
+    else if (nom.length > 255) errors.resName = 'Le nom du client ne doit pas dépasser 255 caractères.';
+    if (String(v.resDesc ?? '').length > 255) errors.resDesc = 'La description ne doit pas dépasser 255 caractères.';
+    verifier(errors, 'resType', validerChoix(v.resType, ['Both', 'Dhcp', 'Bootp'], 'Le type de réservation'));
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const mac = validerMac(v.resClient);
+    const client = mac.ok ? mac.value : validerClientId(v.resClient).value;
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$ScopeId = ${psB64(v.resScopeId)}`,
+      `$Adresse = ${psB64(v.resIp)}`,
+      `$ClientId = ${psB64(client)}`,
+      `$NomClient = ${psB64(v.resName)}`,
+      `$Description = ${psB64(v.resDesc)}`,
+      `$TypeReservation = ${psB64(v.resType)}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      "# L'identifiant client a ete normalise par le formulaire, quel que soit le",
+      "# separateur saisi. C'est la forme attendue par Add-DhcpServerv4Reservation.",
+      '[void](Add-KjemoResultat -Categorie \'Saisie\' -Controle \'Identifiant client normalise\' -Etat \'INFO\' -Valeur $ClientId)',
+      "",
+      "# --- 1. L'etendue existe-t-elle ? ---------------------------------------",
+      '$etendue = $null',
+      'try { $etendue = Get-DhcpServerv4Scope -ScopeId $ScopeId -ErrorAction SilentlyContinue } catch { }',
+      'if ($null -eq $etendue) {',
+      "  [void](Add-KjemoResultat -Categorie 'Etendue' -Controle 'Existence' -Etat 'PROBLEME' -Valeur 'introuvable' -Commentaire 'Sans etendue, aucune reservation n''est possible.')",
+      '} else {',
+      '  [void](Add-KjemoResultat -Categorie \'Etendue\' -Controle \'Existence\' -Etat \'OK\' -Valeur ("$($etendue.Name) : $($etendue.StartRange) - $($etendue.EndRange)"))',
+      '}',
+      "",
+      "# --- 2. L'adresse appartient-elle bien a l'etendue ? --------------------",
+      'if ($etendue) {',
+      '  function ConvertTo-KjemoEntierIp {',
+      '    param([Parameter(Mandatory=$true)][string]$Adresse)',
+      "    $o = $Adresse.Split('.')",
+      '    return ([uint32]$o[0] * 16777216) + ([uint32]$o[1] * 65536) + ([uint32]$o[2] * 256) + [uint32]$o[3]',
+      '  }',
+      '  $n = ConvertTo-KjemoEntierIp -Adresse $Adresse',
+      '  $nd = ConvertTo-KjemoEntierIp -Adresse $etendue.StartRange.IPAddressToString',
+      '  $nf = ConvertTo-KjemoEntierIp -Adresse $etendue.EndRange.IPAddressToString',
+      '  if ($n -lt $nd -or $n -gt $nf) {',
+      "    [void](Add-KjemoResultat -Categorie 'Adresse' -Controle 'Appartenance a la plage' -Etat 'PROBLEME' -Valeur $Adresse -Commentaire 'Adresse hors de la plage de l''etendue : la reservation sera refusee.')",
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Adresse' -Controle 'Appartenance a la plage' -Etat 'OK' -Valeur $Adresse)",
+      '  }',
+      '}',
+      "",
+      '# --- 3. Reservations existantes et conflits ------------------------------',
+      '$reservations = @()',
+      'try { $reservations = @(Get-DhcpServerv4Reservation -ScopeId $ScopeId -ErrorAction SilentlyContinue) } catch { }',
+      '$dejaReservee = $false',
+      '$conflit = $null',
+      'foreach ($r in $reservations) {',
+      '  $ipR = $r.IPAddress.IPAddressToString',
+      '  $idR = ($r.ClientId -replace \'[:.]\', \'-\').ToUpper()',
+      '  if ($ipR -eq $Adresse -and $idR -eq $ClientId.ToUpper()) { $dejaReservee = $true }',
+      '  elseif ($ipR -eq $Adresse) { $conflit = "adresse deja reservee pour $idR" }',
+      '  elseif ($idR -eq $ClientId.ToUpper()) { $conflit = "ce client a deja la reservation $ipR" }',
+      '}',
+      'if ($dejaReservee) {',
+      "  [void](Add-KjemoResultat -Categorie 'Reservation' -Controle 'Existence' -Etat 'OK' -Valeur 'deja presente, identique' -Commentaire 'Rien a faire : l''operation est idempotente.')",
+      '} elseif ($conflit) {',
+      "  [void](Add-KjemoResultat -Categorie 'Reservation' -Controle 'Conflit' -Etat 'PROBLEME' -Valeur $conflit -Commentaire 'Resous le conflit avant de creer la reservation.')",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Reservation' -Controle 'Existence' -Etat 'INFO' -Valeur 'aucune reservation correspondante')",
+      '}',
+      "",
+      '# --- 4. Un bail actif occupe-t-il deja cette adresse ? -------------------',
+      '$baux = @()',
+      'try { $baux = @(Get-DhcpServerv4Lease -ScopeId $ScopeId -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress.IPAddressToString -eq $Adresse }) } catch { }',
+      'foreach ($bail in $baux) {',
+      '  $idBail = ($bail.ClientId -replace \'[:.]\', \'-\').ToUpper()',
+      '  if ($idBail -ne $ClientId.ToUpper()) {',
+      "    [void](Add-KjemoResultat -Categorie 'Bail' -Controle 'Conflit de bail' -Etat 'ATTENTION' -Valeur (\"$Adresse est louee a $idBail\") -Commentaire \"Le client actuel gardera l''adresse jusqu''a expiration du bail : previens-le ou attends l''expiration.\")",
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Bail' -Controle 'Bail existant' -Etat 'OK' -Valeur 'deja loue au meme client')",
+      '  }',
+      '}',
+      "",
+      '# --- 5. Action, uniquement en mode Appliquer ------------------------------',
+      "if ($Mode -eq 'Appliquer') {",
+      '  if ($dejaReservee) {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'OK' -Valeur 'ignoree, reservation identique deja presente')",
+      '  } elseif ($conflit) {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'PROBLEME' -Valeur 'refusee' -Commentaire 'Un conflit a ete detecte : rien n''a ete cree.')",
+      '  } else {',
+      '    Add-DhcpServerv4Reservation -ScopeId $ScopeId -IPAddress $Adresse -ClientId $ClientId -Name $NomClient -Description $Description -Type $TypeReservation',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Creation' -Etat 'INFO' -Valeur 'demandee')",
+      '  }',
+      "  Write-Host ''",
+      "  Write-Host '--- Reservations de l''etendue apres modification ---'",
+      '  try { Get-DhcpServerv4Reservation -ScopeId $ScopeId | Format-Table IPAddress,ClientId,Name,Description -AutoSize } catch { Write-Host $_.Exception.Message }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  if (-not $dejaReservee -and -not $conflit) {',
+      '    Add-DhcpServerv4Reservation -ScopeId $ScopeId -IPAddress $Adresse -ClientId $ClientId -Name $NomClient -Description $Description -Type $TypeReservation -WhatIf',
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+    ];
+
+    return assembler({
+      titre: 'Creer une reservation DHCP',
+      outil: 'dhcp-reservation',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['ScopeId', psB64(v.resScopeId)],
+        ['AdresseReservee', psB64(v.resIp)],
+        ['IdentifiantClient', psB64(client)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-dhcp-reservation',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Console DHCP (dhcpmgmt.msc) > IPv4 > l\u2019étendue > Réservations > clic droit > Nouvelle réservation.',
+    'Saisir le nom, l\u2019adresse IP réservée et l\u2019adresse MAC sans séparateur.',
+    'Choisir le type pris en charge (DHCP, BOOTP ou les deux), puis Ajouter.',
+    'Sur le client : ipconfig /release puis ipconfig /renew pour obtenir l\u2019adresse réservée.',
+  ],
+  keywords: [
+    'reservation dhcp', 'adresse fixe dhcp', 'mac', 'clientid', 'bail fixe',
+    'add-dhcpserverv4reservation', 'imprimante adresse fixe',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur.',
+    'Étendue déjà créée et adresse comprise dans sa plage.',
+    'Adresse MAC réellement relevée sur le client (ipconfig /all, ou l\u2019étiquette du matériel).',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'The specified IP address or hardware address is being used by another client',
+      cause: 'Une réservation ou un bail actif occupe déjà cette adresse ou ce client.',
+      fix: 'Le diagnostic de ce script détecte ces deux cas avant d\u2019agir : lire la section Reservation et Bail.',
+    },
+    {
+      message: 'Le client ne reçoit pas l\u2019adresse réservée',
+      cause: 'Le bail en cours n\u2019a pas expiré, ou l\u2019adresse MAC saisie n\u2019est pas celle de la carte utilisée.',
+      fix: 'Sur le client : ipconfig /release puis ipconfig /renew. Vérifier la MAC avec ipconfig /all.',
+      command: 'ipconfig /all',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Get-DhcpServerv4Reservation -ScopeId <scope> affiche la réservation avec le bon ClientId.',
+    'Sur le client, ipconfig /renew donne l\u2019adresse réservée.',
+    'La console DHCP montre la réservation sous l\u2019étendue.',
+  ],
+  rollback: {
+    summary: 'Une réservation se retire sans toucher au reste de l\u2019étendue. Le client reprendra une adresse dynamique au prochain renouvellement.',
+    diagnostic: '# Constater la reservation avant de la retirer.\nGet-DhcpServerv4Reservation -ScopeId \'<scope>\' | Format-Table IPAddress,ClientId,Name\nGet-DhcpServerv4Lease -ScopeId \'<scope>\' | Where-Object { $_.AddressState -like \'*Reservation*\' } | Format-Table IPAddress,ClientId,AddressState',
+    command: '# Retirer la reservation. Le client repassera en adresse dynamique au\n# prochain renouvellement de bail. -Confirm est explicite.\nRemove-DhcpServerv4Reservation -ScopeId \'<scope>\' -ClientId \'<client-id>\' -Confirm',
+    exceptional: '',
+    warning: 'Retirer la réservation d\u2019un serveur, d\u2019une imprimante ou d\u2019un équipement référencé par son adresse IP le rend injoignable dès que son bail change.',
+  },
+  checks: [
+    'Relever l\u2019adresse MAC sur le client lui-même, pas sur une étiquette ancienne.',
+    'Vérifier que l\u2019adresse réservée est hors de la zone réellement distribuée si tu veux éviter tout conflit temporaire.',
+    'Le mode Diagnostic dit exactement ce qui sera créé, sans rien créer.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4reservation',
+  sources: [
+    { label: 'Add-DhcpServerv4Reservation', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4reservation' },
+    { label: 'Get-DhcpServerv4Reservation', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4reservation' },
+    { label: 'Remove-DhcpServerv4Reservation', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverv4reservation' },
+  ],
+};
+
+/**
+ * 5. dhcp-leases-diagnostic — lire les baux, mesurer l'occupation, trouver un client.
+ * Diagnostic pur : rien n'est modifié, y compris quand un bail est en conflit.
+ */
+export const outilDhcpBaux = {
+  id: 'dhcp-leases-diagnostic',
+  icon: '\u25a7',
+  category: 'Windows Server',
+  subcategory: 'DHCP',
+  title: 'Diagnostiquer les baux DHCP',
+  risk: 'diagnostic',
+  summary: 'Liste les baux actifs et expirés, recherche un client, mesure l\u2019occupation de l\u2019étendue et signale la saturation.',
+  fields: [
+    { id: 'leaseServer', label: 'Serveur DHCP (facultatif)', default: '', help: 'Vide = le serveur local.' },
+    { id: 'leaseScopeId', label: 'ScopeId (facultatif)', default: '192.168.30.0', help: 'Vide = toutes les étendues du serveur.' },
+    { id: 'leaseFilter', label: 'Filtre : adresse IP, nom ou MAC (facultatif)', default: '', help: 'Recherche partielle, insensible à la casse.' },
+    { id: 'leaseThreshold', label: 'Seuil d\u2019alerte d\u2019occupation (%)', default: '80' },
+    champFormat(),
+  ],
+  validate(v) {
+    const errors = {};
+    const srv = String(v.leaseServer ?? '').trim();
+    if (srv) {
+      const fq = validerFqdn(srv);
+      const ip = validateIPv4(srv);
+      const court = validerNomHote(srv);
+      if (!fq.ok && !ip.ok && !court.ok) errors.leaseServer = 'Indique un nom d\u2019hôte, un nom complet ou une adresse IPv4, ou laisse vide.';
+    }
+    const scope = String(v.leaseScopeId ?? '').trim();
+    if (scope) verifier(errors, 'leaseScopeId', validerScopeId(scope));
+    if (String(v.leaseFilter ?? '').length > 100) errors.leaseFilter = 'Le filtre ne doit pas dépasser 100 caractères.';
+    verifier(errors, 'leaseThreshold', validerEntier(v.leaseThreshold, 1, 100, 'Le seuil d\u2019occupation'));
+    verifier(errors, 'reportFormat', validerFormatRapport(v.reportFormat));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const srv = String(v.leaseServer ?? '').trim();
+    const scope = String(v.leaseScopeId ?? '').trim();
+    const filtre = String(v.leaseFilter ?? '').trim();
+
+    const corps = [
+      srv ? `$Serveur = ${psB64(srv)}` : '$Serveur = $env:COMPUTERNAME',
+      scope ? `$ScopeId = ${psB64(scope)}` : '$ScopeId = $null',
+      filtre ? `$Filtre = ${psB64(filtre)}` : "$Filtre = ''",
+      `$Seuil = [int](${psB64(v.leaseThreshold)})`,
+      `$KjemoFormat = ${psB64(v.reportFormat)}`,
+      "",
+      '# --- 1. Service et journaux ----------------------------------------------',
+      '$service = Get-Service -Name DHCPServer -ErrorAction SilentlyContinue',
+      'if ($service) {',
+      "  $etatSvc = 'PROBLEME'",
+      "  if ($service.Status -eq 'Running') { $etatSvc = 'OK' }",
+      "  [void](Add-KjemoResultat -Categorie 'Service' -Controle 'DHCPServer' -Etat $etatSvc -Valeur $service.Status)",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Service' -Controle 'DHCPServer' -Etat 'INFO' -Valeur 'service local absent' -Commentaire 'Normal si tu interroges un serveur distant.')",
+      '}',
+      '$audit = $null',
+      'try { $audit = Get-DhcpServerAuditLog -ComputerName $Serveur -ErrorAction SilentlyContinue } catch { }',
+      'if ($audit) {',
+      "  [void](Add-KjemoResultat -Categorie 'Journaux' -Controle 'Audit DHCP' -Etat 'INFO' -Valeur (\"Active : $($audit.Enable) — dossier : $($audit.Path)\") -Commentaire \"Les journaux d''audit tracent les attributions et les refus.\")",
+      '}',
+      "",
+      '# --- 2. Etendues a examiner ----------------------------------------------',
+      '$etendues = @()',
+      'try {',
+      '  if ($null -eq $ScopeId) { $etendues = @(Get-DhcpServerv4Scope -ComputerName $Serveur) }',
+      '  else { $etendues = @(Get-DhcpServerv4Scope -ComputerName $Serveur -ScopeId $ScopeId) }',
+      '} catch {',
+      '  [void](Add-KjemoResultat -Categorie \'Etendues\' -Controle \'Lecture\' -Etat \'PROBLEME\' -Valeur $_.Exception.Message -Commentaire "Verifie le nom du serveur et la presence des outils DHCP.")',
+      '}',
+      'if (@($etendues).Count -eq 0) {',
+      "  [void](Add-KjemoResultat -Categorie 'Etendues' -Controle 'Inventaire' -Etat 'ATTENTION' -Valeur 'aucune etendue' -Commentaire 'Sans etendue, le serveur ne distribue rien.')",
+      '}',
+      "",
+      '# --- 3. Baux, occupation et conflits --------------------------------------',
+      '$tousLesBaux = @()',
+      'foreach ($e in $etendues) {',
+      '  $id = $e.ScopeId.IPAddressToString',
+      '  $baux = @()',
+      '  try { $baux = @(Get-DhcpServerv4Lease -ComputerName $Serveur -ScopeId $id -AllLeases) } catch { }',
+      '  $tousLesBaux += $baux',
+      "",
+      '  $actifs = @($baux | Where-Object { $_.AddressState -like \'*Active*\' })',
+      '  $expires = @($baux | Where-Object { $_.AddressState -like \'*Expired*\' })',
+      '  $conflits = @($baux | Where-Object { $_.AddressState -like \'*Declined*\' -or $_.AddressState -like \'*Bad*\' })',
+      "",
+      '  $stats = $null',
+      '  try { $stats = Get-DhcpServerv4ScopeStatistics -ComputerName $Serveur -ScopeId $id } catch { }',
+      '  if ($stats) {',
+      '    $pourcent = [math]::Round($stats.PercentageInUse, 1)',
+      "    $etatOcc = 'OK'",
+      "    $commentaireOcc = ''",
+      '    if ($pourcent -ge $Seuil) {',
+      "      $etatOcc = 'ATTENTION'",
+      "      $commentaireOcc = \"Occupation au-dela du seuil de $Seuil % : l''etendue approche de la saturation.\"",
+      '    }',
+      '    if ($pourcent -ge 100) {',
+      "      $etatOcc = 'PROBLEME'",
+      "      $commentaireOcc = 'Etendue saturee : plus aucune adresse libre, les nouveaux clients resteront sans adresse.'",
+      '    }',
+      '    [void](Add-KjemoResultat -Categorie "Etendue $id" -Controle \'Occupation\' -Etat $etatOcc -Valeur ("$pourcent % — $($stats.InUse) utilisees, $($stats.Free) libres sur $($stats.AddressesInUse + $stats.AddressesFree)") -Commentaire $commentaireOcc)',
+      '  }',
+      '  [void](Add-KjemoResultat -Categorie "Etendue $id" -Controle \'Baux\' -Etat \'INFO\' -Valeur ("actifs : $(@($actifs).Count) ; expires : $(@($expires).Count) ; refuses : $(@($conflits).Count)"))',
+      '  if (@($conflits).Count -gt 0) {',
+      "    [void](Add-KjemoResultat -Categorie \"Etendue $id\" -Controle 'Baux en conflit' -Etat 'ATTENTION' -Valeur (($conflits | ForEach-Object { $_.IPAddress.IPAddressToString }) -join ', ') -Commentaire \"Adresses refusees par un client : souvent un conflit d''adresse avec une machine configuree en statique.\")",
+      '  }',
+      '}',
+      "",
+      "# --- 4. Recherche d'un client ---------------------------------------------",
+      "if ($Filtre -ne '') {",
+      '  $trouves = @($tousLesBaux | Where-Object {',
+      '    ($_.IPAddress.IPAddressToString -like "*$Filtre*") -or',
+      '    ($_.HostName -like "*$Filtre*") -or',
+      '    ($_.ClientId -like "*$Filtre*")',
+      '  })',
+      '  if (@($trouves).Count -eq 0) {',
+      '    [void](Add-KjemoResultat -Categorie \'Recherche\' -Controle "Filtre $Filtre" -Etat \'INFO\' -Valeur \'aucun bail correspondant\')',
+      '  } else {',
+      '    foreach ($t in $trouves) {',
+      '      [void](Add-KjemoResultat -Categorie \'Recherche\' -Controle $t.IPAddress.IPAddressToString -Etat \'INFO\' -Valeur ("$($t.HostName) / $($t.ClientId) / $($t.AddressState) / expire le $($t.LeaseExpiryTime)"))',
+      '    }',
+      '  }',
+      '}',
+      "",
+      '# --- 5. Adresses libres ----------------------------------------------------',
+      'foreach ($e in $etendues) {',
+      '  $id = $e.ScopeId.IPAddressToString',
+      '  $libre = $null',
+      '  try { $libre = Get-DhcpServerv4FreeIPAddress -ComputerName $Serveur -ScopeId $id -NumAddress 5 } catch { }',
+      '  if ($libre) {',
+      '    [void](Add-KjemoResultat -Categorie "Etendue $id" -Controle \'Adresses libres (5 premieres)\' -Etat \'INFO\' -Valeur (($libre | ForEach-Object { $_.IPAddressToString }) -join \', \'))',
+      '  } else {',
+      '    [void](Add-KjemoResultat -Categorie "Etendue $id" -Controle \'Adresses libres\' -Etat \'ATTENTION\' -Valeur \'aucune renvoyee\' -Commentaire "Etendue saturee, ou cmdlet indisponible sur cette version.")',
+      '  }',
+      '}',
+      "",
+      "# Detail complet des baux, pour la console et pour l'export CSV.",
+      "Write-Host ''",
+      "Write-Host '--- Baux ---'",
+      '$tousLesBaux | Select-Object @{N=\'Adresse\';E={$_.IPAddress.IPAddressToString}},HostName,ClientId,AddressState,LeaseExpiryTime | Format-Table -AutoSize',
+    ];
+
+    return assembler({
+      titre: 'Diagnostiquer les baux DHCP - lecture seule',
+      outil: 'dhcp-leases-diagnostic',
+      diagnostic: true,
+      admin: true,
+      parametres: [
+        ['Serveur', srv ? psB64(srv) : '$env:COMPUTERNAME'],
+        ['ScopeId', scope ? psB64(scope) : "'(toutes)'"],
+        ['Filtre', filtre ? psB64(filtre) : "'(aucun)'"],
+        ['SeuilOccupation', psB64(v.leaseThreshold)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-dhcp-baux',
+    });
+  },
+  gui: [
+    'Console DHCP (dhcpmgmt.msc) > IPv4 > l\u2019étendue > Baux d\u2019adresses.',
+    'Statistiques de l\u2019étendue : clic droit sur l\u2019étendue > Afficher les statistiques.',
+    'Les baux refusés apparaissent avec l\u2019état « BAD_ADDRESS ».',
+    'Journaux d\u2019audit : dossier %SystemRoot%\\System32\\dhcp, un fichier par jour.',
+  ],
+  keywords: [
+    'bail dhcp', 'baux', 'lease', 'etendue saturee', 'plus d adresses', 'bad_address',
+    'conflit d adresse', 'qui a cette ip', 'retrouver un poste', 'occupation etendue',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur, ou compte membre du groupe « Utilisateurs DHCP » pour la lecture.',
+    'Outils de gestion DHCP installés si le serveur est interrogé à distance.',
+    'Script en lecture seule : exécutable en production sans précaution particulière.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'Get-DhcpServerv4FreeIPAddress : aucune adresse disponible',
+      cause: 'L\u2019étendue est saturée, ou toutes les adresses restantes sont exclues ou réservées.',
+      fix: 'Élargir la plage, raccourcir la durée du bail, ou nettoyer les baux expirés.',
+    },
+    {
+      message: 'Un client est en BAD_ADDRESS',
+      cause: 'Le client a détecté que l\u2019adresse proposée était déjà utilisée — typiquement par une machine configurée en adresse statique dans la plage distribuée.',
+      fix: 'Exclure l\u2019adresse statique de la plage, ou passer la machine en réservation.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le rapport indique l\u2019occupation de chaque étendue et le seuil franchi le cas échéant.',
+    'La recherche par filtre retrouve le bail attendu.',
+    'Les baux refusés sont listés avec leur adresse.',
+  ],
+  rollback: {
+    summary: 'Ce script lit les baux et n\u2019en modifie aucun. Il n\u2019y a rien à annuler.',
+    diagnostic: '# Relire simplement les baux : aucune commande de ce script ne modifie l\'etat.\nGet-DhcpServerv4Lease -ScopeId \'<scope>\' -AllLeases | Format-Table IPAddress,HostName,AddressState',
+    command: '# Aucune annulation necessaire : le script est en lecture seule.\nGet-DhcpServerv4ScopeStatistics | Format-Table ScopeId,InUse,Free,PercentageInUse',
+    exceptional: '',
+    warning: 'Le rapport contient des noms de machines et des adresses MAC : c\u2019est un document interne.',
+  },
+  checks: [
+    'Pour interroger un serveur distant, vérifier que les outils DHCP sont installés localement.',
+    'Un seuil d\u2019alerte à 80 % laisse le temps d\u2019agir avant la saturation.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4lease',
+  sources: [
+    { label: 'Get-DhcpServerv4Lease', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4lease' },
+    { label: 'Get-DhcpServerv4ScopeStatistics', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4scopestatistics' },
+  ],
+};
+
+/**
+ * 6. dhcp-backup — sauvegarder la configuration DHCP.
+ *
+ * La restauration n'est PAS automatisée dans ce lot : elle écrase la
+ * configuration en place, et cela se décide, cela ne se clique pas.
+ */
+export const outilDhcpSauvegarde = {
+  id: 'dhcp-backup',
+  icon: '\u25a9',
+  category: 'Windows Server',
+  subcategory: 'DHCP',
+  title: 'Sauvegarder la configuration DHCP',
+  risk: 'safe',
+  summary: 'Vérifie l\u2019espace disponible, crée un dossier daté, exécute la sauvegarde, contrôle les fichiers produits et écrit un manifeste.',
+  fields: [
+    { id: 'bkServer', label: 'Serveur DHCP', default: 'srv-dhcp.hopitalbn.lan', help: 'Nom du serveur dont la configuration est sauvegardée.' },
+    { id: 'bkFolder', label: 'Dossier de sauvegarde (local)', default: 'C:\\Sauvegardes\\DHCP', help: 'Chemin local. Les chemins réseau (UNC) sont refusés dans cette version.' },
+    { id: 'bkName', label: 'Nom du sous-dossier', default: 'dhcp-config', help: 'Un horodatage est ajouté automatiquement.' },
+    {
+      id: 'bkLeases', label: 'Inclure la base des baux', type: 'select', default: 'Oui',
+      options: [['Oui', 'Oui — sauvegarde complète'], ['Non', 'Non — configuration seule']],
+      help: 'Backup-DhcpServer sauvegarde la base complète ; cette option documente l\u2019intention et le volume attendu.',
+    },
+    {
+      id: 'bkMode', label: 'Mode d\u2019exécution', type: 'select', default: 'Diagnostic',
+      options: [['Diagnostic', 'Diagnostic — vérifie sans sauvegarder'], ['Sauvegarder', 'Sauvegarder — exécute la sauvegarde']],
+    },
+  ],
+  validate(v) {
+    const errors = {};
+    const srv = String(v.bkServer ?? '').trim();
+    const fq = validerFqdn(srv);
+    const court = validerNomHote(srv);
+    const ip = validateIPv4(srv);
+    if (!fq.ok && !court.ok && !ip.ok) errors.bkServer = 'Indique un nom d\u2019hôte, un nom complet ou une adresse IPv4.';
+    verifier(errors, 'bkFolder', validerCheminWindowsLocal(v.bkFolder));
+    const nom = String(v.bkName ?? '').trim();
+    if (!nom) errors.bkName = 'Le nom du sous-dossier ne peut pas être vide.';
+    else if (!/^[A-Za-z0-9._-]+$/.test(nom)) errors.bkName = 'Le nom du sous-dossier n\u2019accepte que lettres, chiffres, point, tiret et souligné.';
+    verifier(errors, 'bkLeases', validerChoix(v.bkLeases, ['Oui', 'Non'], 'L\u2019option « inclure les baux »'));
+    verifier(errors, 'bkMode', validerChoix(v.bkMode, ['Diagnostic', 'Sauvegarder'], 'Le mode'));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const corps = [
+      `$Mode = ${psB64(v.bkMode)}`,
+      `$Serveur = ${psB64(v.bkServer)}`,
+      `$Dossier = ${psB64(validerCheminWindowsLocal(v.bkFolder).value)}`,
+      `$NomSauvegarde = ${psB64(v.bkName)}`,
+      `$AvecBaux = ${psB64(v.bkLeases)}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      '# --- 1. Le chemin est-il local ? ------------------------------------------',
+      "# Les chemins UNC sont refuses par le formulaire : Backup-DhcpServer s'execute",
+      "# sous le compte de service, qui n'a en general aucun droit sur un partage.",
+      "if ($Dossier -like '\\\\\\\\*') {",
+      "  [void](Add-KjemoResultat -Categorie 'Chemin' -Controle 'Type de chemin' -Etat 'PROBLEME' -Valeur $Dossier -Commentaire 'Chemin reseau refuse : utilise un chemin local.')",
+      '  return',
+      '}',
+      "[void](Add-KjemoResultat -Categorie 'Chemin' -Controle 'Type de chemin' -Etat 'OK' -Valeur $Dossier)",
+      "",
+      '# --- 2. Espace disponible --------------------------------------------------',
+      '$lecteur = $Dossier.Substring(0,1)',
+      '$volume = $null',
+      'try { $volume = Get-Volume -DriveLetter $lecteur -ErrorAction SilentlyContinue } catch { }',
+      'if ($volume) {',
+      '  $libreGo = [math]::Round($volume.SizeRemaining / 1GB, 2)',
+      "  $etatEspace = 'OK'",
+      "  $commentaireEspace = ''",
+      '  if ($libreGo -lt 1) {',
+      "    $etatEspace = 'PROBLEME'",
+      "    $commentaireEspace = 'Moins de 1 Go libre : la sauvegarde risque d''echouer a mi-chemin.'",
+      '  }',
+      '  [void](Add-KjemoResultat -Categorie \'Espace\' -Controle "Volume $lecteur" -Etat $etatEspace -Valeur ("$libreGo Go libres") -Commentaire $commentaireEspace)',
+      '} else {',
+      '  [void](Add-KjemoResultat -Categorie \'Espace\' -Controle "Volume $lecteur" -Etat \'ATTENTION\' -Valeur \'volume introuvable\' -Commentaire "Verifie la lettre de lecteur.")',
+      '}',
+      "",
+      '# --- 3. Service DHCP -------------------------------------------------------',
+      '$service = Get-Service -Name DHCPServer -ErrorAction SilentlyContinue',
+      'if ($service) {',
+      '  [void](Add-KjemoResultat -Categorie \'Service\' -Controle \'DHCPServer\' -Etat \'INFO\' -Valeur $service.Status -Commentaire "Backup-DhcpServer fonctionne service demarre.")',
+      '}',
+      '$etendues = @()',
+      'try { $etendues = @(Get-DhcpServerv4Scope -ComputerName $Serveur) } catch { }',
+      '[void](Add-KjemoResultat -Categorie \'Contenu\' -Controle \'Etendues a sauvegarder\' -Etat \'INFO\' -Valeur ("$(@($etendues).Count) etendue(s)"))',
+      '[void](Add-KjemoResultat -Categorie \'Contenu\' -Controle \'Base des baux incluse\' -Etat \'INFO\' -Valeur $AvecBaux -Commentaire "Backup-DhcpServer sauvegarde la base complete du serveur.")',
+      "",
+      '# --- 4. Sauvegarde ---------------------------------------------------------',
+      "$horodatage = Get-Date -Format 'yyyyMMdd-HHmmss'",
+      '$cible = Join-Path $Dossier ("$NomSauvegarde-$horodatage")',
+      '[void](Add-KjemoResultat -Categorie \'Cible\' -Controle \'Dossier de destination\' -Etat \'INFO\' -Valeur $cible)',
+      "",
+      "if ($Mode -eq 'Sauvegarder') {",
+      '  if (-not (Test-Path -LiteralPath $Dossier)) {',
+      '    New-Item -ItemType Directory -Path $Dossier | Out-Null',
+      '  }',
+      '  New-Item -ItemType Directory -Path $cible | Out-Null',
+      '  Backup-DhcpServer -ComputerName $Serveur -Path $cible',
+      "",
+      '  # Verifier que des fichiers ont reellement ete ecrits : une commande qui',
+      "  # se termine sans erreur n'est pas une preuve de sauvegarde.",
+      '  $fichiers = @()',
+      '  try { $fichiers = @(Get-ChildItem -LiteralPath $cible -Recurse -File) } catch { }',
+      '  if (@($fichiers).Count -eq 0) {',
+      "    [void](Add-KjemoResultat -Categorie 'Sauvegarde' -Controle 'Fichiers produits' -Etat 'PROBLEME' -Valeur 'aucun fichier' -Commentaire 'La commande n''a rien ecrit : verifie les droits du compte de service DHCP sur ce dossier.')",
+      '  } else {',
+      '    $taille = [math]::Round((($fichiers | Measure-Object -Property Length -Sum).Sum) / 1MB, 2)',
+      '    [void](Add-KjemoResultat -Categorie \'Sauvegarde\' -Controle \'Fichiers produits\' -Etat \'OK\' -Valeur ("$(@($fichiers).Count) fichier(s), $taille Mo"))',
+      "",
+      '    # Manifeste : ce qui a ete sauvegarde, quand, et par quel outil.',
+      '    $manifeste = [pscustomobject]@{',
+      '      Outil        = $KjemoOutil',
+      '      Version      = $KjemoVersion',
+      '      Serveur      = $Serveur',
+      '      Date         = (Get-Date).ToString(\'s\')',
+      '      Dossier      = $cible',
+      '      NombreFichiers = @($fichiers).Count',
+      '      TailleMo     = $taille',
+      '      Etendues     = @($etendues | ForEach-Object { $_.ScopeId.IPAddressToString })',
+      '    }',
+      "    $manifeste | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $cible 'kjemo-manifeste.json') -Encoding UTF8",
+      "    [void](Add-KjemoResultat -Categorie 'Sauvegarde' -Controle 'Manifeste' -Etat 'OK' -Valeur (Join-Path $cible 'kjemo-manifeste.json'))",
+      '  }',
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Sauvegarde' -Controle 'Execution' -Etat 'INFO' -Valeur 'non executee (mode Diagnostic)' -Commentaire 'Relance en mode Sauvegarder pour ecrire reellement.')",
+      '}',
+      "",
+      '# --- 5. Restauration : documentee, jamais automatisee ----------------------',
+      "Write-Host ''",
+      "Write-Host '--- Restauration ---'",
+      "Write-Host 'La restauration n''est pas automatisee par cet outil : elle remplace la'",
+      "Write-Host 'configuration en place, etendues et baux compris.'",
+      "Write-Host ''",
+      "Write-Host 'Procedure, a executer manuellement et en connaissance de cause :'",
+      "Write-Host '  1. Verifier le contenu du dossier de sauvegarde.'",
+      "Write-Host '  2. Arreter le service DHCPServer.'",
+      "Write-Host '  3. Restore-DhcpServer -ComputerName <serveur> -Path <dossier>'",
+      "Write-Host '  4. Redemarrer le service et verifier les etendues.'",
+      "Write-Host 'Reference : https://learn.microsoft.com/powershell/module/dhcpserver/restore-dhcpserver'",
+      blocModeDiagnostic('Sauvegarder'),
+    ];
+
+    return assembler({
+      titre: 'Sauvegarder la configuration DHCP',
+      outil: 'dhcp-backup',
+      diagnostic: v.bkMode !== 'Sauvegarder',
+      admin: true,
+      parametres: [
+        ['Serveur', psB64(v.bkServer)],
+        ['Dossier', psB64(v.bkFolder)],
+        ['Mode', psB64(v.bkMode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-dhcp-sauvegarde',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Console DHCP (dhcpmgmt.msc) > clic droit sur le serveur > Sauvegarder.',
+    'Choisir un dossier local ; la console propose %SystemRoot%\\System32\\dhcp\\backup par défaut.',
+    'Pour restaurer : clic droit sur le serveur > Restaurer, puis sélectionner le dossier.',
+    'Vérifier après restauration que les étendues et les réservations sont bien revenues.',
+  ],
+  keywords: [
+    'sauvegarde dhcp', 'backup dhcp', 'backup-dhcpserver', 'restauration dhcp',
+    'exporter configuration dhcp', 'migration dhcp',
+  ],
+  requiresAdmin: true,
+  os: OS_SERVEUR,
+  prereqs: PREREQS_SERVEUR.concat([
+    'Console PowerShell en tant qu\u2019administrateur.',
+    'Le compte de service DHCP doit pouvoir écrire dans le dossier de destination.',
+    'Chemin local uniquement dans cette version : les chemins UNC sont refusés.',
+    'Espace disque suffisant sur le volume de destination.',
+  ]),
+  commonErrors: ERREURS_MODULE.concat([
+    {
+      message: 'Backup-DhcpServer : Access is denied',
+      code: '0x5',
+      cause: 'Le compte de service DHCP n\u2019a pas les droits d\u2019écriture sur le dossier cible.',
+      fix: 'Choisir un dossier local accessible au service, ou ajuster les permissions NTFS du dossier.',
+    },
+    {
+      message: 'La commande se termine sans erreur mais le dossier est vide',
+      cause: 'Le dossier cible existait avec des droits restreints, ou la sauvegarde a été écrite ailleurs.',
+      fix: 'Ce script vérifie les fichiers produits et signale ce cas au lieu de le passer sous silence.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le dossier daté contient des fichiers et un manifeste kjemo-manifeste.json.',
+    'La taille totale correspond à l\u2019ordre de grandeur attendu pour la base DHCP.',
+    'Le rapport affiche le nombre de fichiers écrits.',
+  ],
+  rollback: {
+    summary: 'La sauvegarde n\u2019altère pas le serveur : elle écrit un dossier. L\u2019annulation consiste à supprimer ce dossier, ce qui n\u2019a aucun effet sur le service.',
+    diagnostic: '# Constater ce qui a ete ecrit.\nGet-ChildItem -LiteralPath \'<dossier-de-sauvegarde>\' -Recurse | Format-Table FullName,Length,LastWriteTime\nGet-Content -LiteralPath (Join-Path \'<dossier-de-sauvegarde>\' \'kjemo-manifeste.json\')',
+    command: '# Supprimer une sauvegarde devenue inutile. Rien de destructif pour le\n# service DHCP : ce dossier ne contient qu\'une copie. -Confirm est explicite.\nRemove-Item -LiteralPath \'<dossier-de-sauvegarde>\' -Recurse -Confirm',
+    exceptional: '# AVERTISSEMENT CRITIQUE — restauration d\'une sauvegarde DHCP.\n#\n# Restore-DhcpServer REMPLACE la configuration en place : etendues, options,\n# reservations et baux du serveur cible sont ecrases par ceux de la sauvegarde.\n# Cette operation n\'est volontairement PAS automatisee dans ce lot.\n#\n# Avant de restaurer :\n#   1. Sauvegarder la configuration ACTUELLE, meme si elle semble cassee.\n#   2. Verifier la date et le contenu de la sauvegarde a restaurer.\n#   3. Prevenir : le service est interrompu pendant l\'operation.\n#\n# Procedure officielle :\n# https://learn.microsoft.com/powershell/module/dhcpserver/restore-dhcpserver\n#\n# Commandes, a executer manuellement :\n#   Stop-Service DHCPServer\n#   Restore-DhcpServer -ComputerName \'<serveur>\' -Path \'<dossier>\' -Confirm\n#   Start-Service DHCPServer',
+    warning: 'Une sauvegarde qui n\u2019a jamais été restaurée en laboratoire n\u2019est pas une sauvegarde vérifiée : teste la restauration sur une machine d\u2019essai avant d\u2019en avoir besoin.',
+  },
+  checks: [
+    'Vérifier l\u2019espace disponible avant de lancer la sauvegarde.',
+    'Conserver les sauvegardes ailleurs que sur le serveur lui-même, une fois produites.',
+    'Le mode Diagnostic contrôle le chemin, l\u2019espace et le contenu sans rien écrire.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/dhcpserver/backup-dhcpserver',
+  sources: [
+    { label: 'Backup-DhcpServer', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/backup-dhcpserver' },
+    { label: 'Restore-DhcpServer', url: 'https://learn.microsoft.com/powershell/module/dhcpserver/restore-dhcpserver' },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Catalogue exporté — complété au fil des sous-rubriques du LOT 2
 // ---------------------------------------------------------------------------
@@ -1015,4 +1660,7 @@ export const toolsServeur = [
   outilSanteServeur,
   outilDhcpInstallation,
   outilDhcpEtendue,
+  outilDhcpReservation,
+  outilDhcpBaux,
+  outilDhcpSauvegarde,
 ];
