@@ -38,6 +38,25 @@ export const MODES = [
 
 export const MODE_DEFAUT = 'debutant';
 
+export const CLE_THEME = 'kjemo.theme.v1';
+
+/**
+ * Thèmes. « Système » n'est pas un troisième jeu de couleurs : c'est la
+ * délégation de la décision au navigateur, via prefers-color-scheme.
+ */
+export const THEMES = [
+  { id: 'clair',   label: 'Clair',   symbole: '\u2600' },
+  { id: 'sombre',  label: 'Sombre',  symbole: '\u263E' },
+  { id: 'systeme', label: 'Système', symbole: '\u25D1' },
+];
+
+export const THEME_DEFAUT = 'systeme';
+
+/** Vrai si l'identifiant correspond à un thème connu. */
+export function estTheme(valeur) {
+  return THEMES.some((t) => t.id === valeur);
+}
+
 /** Vrai si l'identifiant correspond à un mode connu. */
 export function estMode(valeur) {
   return MODES.some((m) => m.id === valeur);

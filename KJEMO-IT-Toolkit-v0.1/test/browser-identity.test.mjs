@@ -1229,6 +1229,267 @@ console.log('\n[fiche 1B] — ordre de lecture, repli progressif et accessibilit
   await ctx.close();
 }
 
+// --- LOT 1B : thèmes Clair / Sombre / Système ------------------------------
+console.log('\n[thème 1B] — Clair / Sombre / Système, persistance et repli');
+{
+  const ctx  = await browser.newContext({ colorScheme: 'dark' });
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#themeSelector .theme-option', { timeout: 8000 });
+
+  const opts = await page.$$eval('#themeSelector .theme-option',
+    (els) => els.map((e) => ({ id: e.dataset.theme, presse: e.getAttribute('aria-pressed'),
+                               nom: e.getAttribute('aria-label') })));
+  assert(opts.map((o) => o.id).join(',') === 'clair,sombre,systeme',
+    'le sélecteur propose Clair, Sombre et Système');
+  assert(opts.every((o) => o.nom && o.nom.trim().length > 0),
+    'chaque bouton de thème porte un nom accessible (aria-label)');
+  assert(opts.filter((o) => o.presse === 'true').length === 1,
+    'un seul thème est marqué aria-pressed="true"');
+  assert(opts.find((o) => o.id === 'systeme').presse === 'true',
+    'au premier chargement, le thème suit le système');
+
+  const fond = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const texte = () => page.evaluate(() => getComputedStyle(document.body).color);
+
+  const fondSysteme = await fond();
+
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  const fondClair = await fond();
+  const texteClair = await texte();
+  assert(await page.getAttribute('#themeSelector .theme-option[data-theme="clair"]', 'aria-pressed') === 'true',
+    'le thème choisi passe à aria-pressed="true"');
+
+  await page.click('#themeSelector .theme-option[data-theme="sombre"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'sombre',
+    { timeout: 8000 });
+  const fondSombre = await fond();
+  const texteSombre = await texte();
+
+  assert(fondClair !== fondSombre,
+    `Clair et Sombre produisent bien deux fonds distincts (${fondClair} / ${fondSombre})`);
+  assert(fondSombre === fondSysteme,
+    'sous un système en mode sombre, « Système » donne le même fond que « Sombre »');
+
+  // Lisibilité : le contraste texte/fond doit rester franc dans les deux thèmes.
+  const luminance = (rgb) => {
+    const [r, g, b] = rgb.match(/\d+/g).slice(0, 3).map(Number).map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contraste = (a, b) => {
+    const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+    return (x + 0.05) / (y + 0.05);
+  };
+  const cClair  = contraste(texteClair, fondClair);
+  const cSombre = contraste(texteSombre, fondSombre);
+  assert(cClair >= 4.5, `thème Clair : contraste texte/fond ${cClair.toFixed(1)}:1 (seuil 4.5)`);
+  assert(cSombre >= 4.5, `thème Sombre : contraste texte/fond ${cSombre.toFixed(1)}:1 (seuil 4.5)`);
+
+  // Persistance, y compris avant la première peinture.
+  await page.reload();
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'sombre',
+    'le thème choisi survit au rechargement');
+  assert(await page.getAttribute('#themeSelector .theme-option[data-theme="sombre"]', 'aria-pressed') === 'true',
+    'le sélecteur reflète le thème restauré');
+
+  // Valeur corrompue : retour propre au défaut.
+  await page.evaluate(() => localStorage.setItem('kjemo.theme.v1', 'neon'));
+  await page.reload();
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'systeme',
+    'un thème inconnu retombe proprement sur « Système »');
+
+  // Le thème ne touche pas le script produit.
+  await page.locator('#toolGrid .open-tool').first().click();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const scriptSombre = await page.$eval('#scriptOutput', (el) => el.textContent);
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  assert(await page.$eval('#scriptOutput', (el) => el.textContent) === scriptSombre,
+    'changer de thème ne modifie pas le script généré');
+
+  await ctx.close();
+}
+
+// Système en mode clair : « Système » doit réellement suivre.
+{
+  const ctx  = await browser.newContext({ colorScheme: 'light' });
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  const fondAuto = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  const fondClair = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  assert(fondAuto === fondClair,
+    'sous un système en mode clair, « Système » donne le thème clair');
+  await ctx.close();
+}
+
+// Thème et stockage bloqué.
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    const jette = () => { throw new Error('stockage bloqué'); };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { return { getItem: jette, setItem: jette, removeItem: jette }; },
+    });
+  });
+  const erreurs = [];
+  page.on('pageerror', (e) => erreurs.push(e.message));
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'systeme',
+    'stockage bloqué : le thème par défaut s’applique quand même');
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'clair',
+    'stockage bloqué : le changement de thème reste possible pour la session');
+  assert(erreurs.length === 0,
+    `stockage bloqué : aucune erreur JavaScript non rattrapée (${erreurs.length})`);
+  await ctx.close();
+}
+
+// --- LOT 1B : affichage responsive ----------------------------------------
+console.log('\n[responsive 1B] — 1440x900, 768x1024, 390x844');
+for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
+                   { nom: 'tablette 768x1024', width: 768, height: 1024 },
+                   { nom: 'téléphone 390x844', width: 390, height: 844 }]) {
+  const ctx  = await browser.newContext({ viewport: { width: vue.width, height: vue.height } });
+  const page = await ctx.newPage();
+  const outil = tools[0];
+
+  // Accueil
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  const debord = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(debord <= 1,
+    `${vue.nom} — accueil : aucun débordement horizontal (${debord}px)`);
+  assert(await page.locator('#search').isVisible(),
+    `${vue.nom} — la recherche reste visible`);
+
+  // Le menu doit rester atteignable : barre latérale sur grand écran,
+  // bouton de menu sur petit écran.
+  const nav = await page.locator('#navigation button').first().isVisible().catch(() => false);
+  const menu = await page.locator('#menuButton').isVisible().catch(() => false);
+  assert(nav || menu,
+    `${vue.nom} — la navigation est atteignable (latérale ${nav}, bouton ${menu})`);
+  if (!nav && menu) {
+    await page.click('#menuButton');
+    await page.waitForTimeout(120);
+    assert(await page.locator('#navigation button').first().isVisible(),
+      `${vue.nom} — le bouton de menu ouvre réellement la navigation`);
+    await page.click('#menuButton');
+  }
+
+  // Fiche
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const debordFiche = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(debordFiche <= 1,
+    `${vue.nom} — fiche : aucun débordement horizontal (${debordFiche}px)`);
+
+  // Le script long ne doit pas élargir la page : il défile dans son cadre.
+  const apercu = await page.$eval('#scriptOutput', (el) => ({
+    debordeSaBoite: el.scrollWidth > el.clientWidth + 1,
+    defile: getComputedStyle(el).overflow !== 'visible',
+    largeurOk: el.getBoundingClientRect().width <= document.documentElement.clientWidth + 1,
+  }));
+  assert(apercu.defile && apercu.largeurOk,
+    `${vue.nom} — l’aperçu du script reste dans l’écran et défile à l’intérieur`);
+
+  // Copier et Télécharger : visibles, cliquables, assez grands au doigt.
+  for (const sel of ['#copyButton', '#downloadButton', '#toolForm .primary-button']) {
+    const boite = await page.$eval(sel, (el) => {
+      const r = el.getBoundingClientRect();
+      return { w: r.width, h: r.height, dansEcran: r.left >= -1 && r.right <= document.documentElement.clientWidth + 1 };
+    });
+    assert(boite.dansEcran, `${vue.nom} — ${sel} est entièrement dans l’écran`);
+    assert(boite.h >= 36 && boite.w >= 60,
+      `${vue.nom} — ${sel} reste assez grand (${Math.round(boite.w)}x${Math.round(boite.h)})`);
+  }
+
+  // Les cartes de catégorie et le sélecteur de mode restent utilisables.
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
+  const petits = await page.$$eval('#categoryGrid .category-card, .mode-option, .theme-option',
+    (els) => els.filter((e) => e.getBoundingClientRect().height < 32).length);
+  assert(petits === 0,
+    `${vue.nom} — aucun bouton de navigation n’est trop petit (${petits})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B : menu sur petit écran, état annoncé et fermeture au clavier ---
+console.log('\n[menu 1B] — panneau latéral sur téléphone');
+{
+  const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#menuButton', { timeout: 8000 });
+
+  assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
+    'le bouton de menu annonce son état fermé (aria-expanded)');
+  await page.click('#menuButton');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'true',
+    { timeout: 8000 });
+  assert(await page.locator('#navigation button').first().isVisible(),
+    'le panneau s’ouvre et la navigation devient visible');
+
+  // Le bouton doit rester cliquable par-dessus le panneau, sinon il n'y a plus
+  // aucun moyen de le refermer au doigt.
+  await page.click('#menuButton', { timeout: 5000 });
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'false',
+    { timeout: 8000 });
+  assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
+    'le même bouton referme le panneau');
+
+  // Échap referme aussi : pas de piège au clavier.
+  await page.click('#menuButton');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'true',
+    { timeout: 8000 });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'false',
+    { timeout: 8000 });
+  assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
+    'la touche Échap referme le panneau latéral');
+  assert(await page.evaluate(() => document.activeElement?.id) === 'menuButton',
+    'le focus revient sur le bouton de menu après fermeture');
+
+  // Choisir une catégorie referme le panneau et filtre la grille.
+  await page.click('#menuButton');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'true',
+    { timeout: 8000 });
+  const cible = [...new Set(tools.map((t) => t.category))][0];
+  await page.click(`#navigation button[data-category="${cible}"]`);
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'false',
+    { timeout: 8000 });
+  const attendu = tools.filter((t) => t.category === cible).length;
+  assert(await page.locator('#toolGrid .open-tool').count() === attendu,
+    `le choix d’une catégorie referme le panneau et filtre la grille (${attendu})`);
+
+  await ctx.close();
+}
+
 // --- Stockage indisponible : l'application doit continuer de fonctionner ---
 console.log('\n[stockage] — dégradation propre quand localStorage est bloqué');
 {

@@ -7,6 +7,20 @@
     <title>KJEMO IT Toolkit</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      /* Thème appliqué AVANT la première peinture : sans cela, la page
+         apparaît en sombre puis bascule en clair, ce qui est désagréable.
+         Le stockage peut être inaccessible : tout est protégé, et le défaut
+         « systeme » s'applique alors. */
+      (function () {
+        var theme = 'systeme';
+        try {
+          var v = localStorage.getItem('kjemo.theme.v1');
+          if (v === 'clair' || v === 'sombre' || v === 'systeme') theme = v;
+        } catch (e) { /* stockage indisponible : on garde le défaut */ }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
     <a class="skip" href="#main">Aller au contenu</a>

@@ -3,7 +3,8 @@
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
 import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
-import { MODES, MODE_DEFAUT, CLE_MODE, creerPreference } from './preferences.mjs';
+import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
+         creerPreference } from './preferences.mjs';
 
 const CAT_TOUT = CATEGORIE_TOUT;
 // Catalogue filtré : une catégorie déclarée mais SANS outil n'est pas affichée.
@@ -36,6 +37,46 @@ const RISQUE_SIMPLE = {
   destructive: 'Ce script peut supprimer ou couper quelque chose. Ne l\u2019exécute qu\u2019en connaissance de cause, et jamais en production sans essai préalable.',
 };
 
+// ---------------------------------------------------------------------------
+// Thème — Clair / Sombre / Système
+// Le thème ne touche que des jetons de couleur CSS. Il est appliqué sur
+// <html> par un attribut data-theme, ce qui le rend effectif avant même que la
+// page soit peinte au rechargement. « Système » laisse décider le navigateur.
+// ---------------------------------------------------------------------------
+const prefTheme = creerPreference({
+  cle: CLE_THEME,
+  valeurs: THEMES.map((t) => t.id),
+  defaut: THEME_DEFAUT,
+});
+
+function appliquerTheme() {
+  document.documentElement.dataset.theme = prefTheme.lire();
+}
+
+function renderThemeSelector() {
+  const zone = document.querySelector('#topbarActions');
+  if (!zone) return;
+  const actuel = prefTheme.lire();
+  const html =
+    `<div class="theme-switch" id="themeSelector" role="group" aria-label="Thème">`
+    + THEMES.map((t) =>
+        `<button type="button" class="theme-option${t.id === actuel ? ' is-selected' : ''}"`
+        + ` data-theme="${t.id}" aria-pressed="${t.id === actuel ? 'true' : 'false'}"`
+        + ` aria-label="Thème ${textToCode(t.label)}" title="Thème ${textToCode(t.label)}">`
+        + `<span aria-hidden="true">${textToCode(t.symbole)}</span></button>`).join('')
+    + `</div>`;
+  zone.insertAdjacentHTML('beforeend', html);
+
+  zone.querySelectorAll('.theme-option').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.theme === prefTheme.lire()) return;
+      prefTheme.definir(btn.dataset.theme);
+      appliquerTheme();
+      render();
+    });
+  });
+}
+
 function renderModeSelector() {
   const zone = document.querySelector('#topbarActions');
   if (!zone) return;
@@ -57,6 +98,15 @@ function renderModeSelector() {
   });
 }
 
+/** Referme le menu latéral, s'il est ouvert (petit écran uniquement). */
+function fermerMenu() {
+  const p = document.querySelector('.sidebar');
+  const b = document.querySelector('#menuButton');
+  if (!p || !b) return;
+  p.classList.remove('open');
+  b.setAttribute('aria-expanded', 'false');
+}
+
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
   nav.innerHTML = categories.map((category) => {
@@ -73,7 +123,7 @@ function renderNavigation() {
       + `<span class="nav-count">${count}</span></button>`;
   }).join('');
   nav.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
-    selectedCategory = button.dataset.category; revenirAccueil(); document.querySelector('.sidebar').classList.remove('open');
+    selectedCategory = button.dataset.category; revenirAccueil(); fermerMenu();
   }));
 }
 
@@ -532,7 +582,6 @@ function modeBlockMarkup(tool) {
     ];
     return `<section class="mode-block mode-debutant" id="modeBlock" aria-labelledby="modeBlockTitle">`
       + `<h2 id="modeBlockTitle" class="mode-block-title">En clair</h2>`
-      + `<p class="plain-problem">${textToCode(tool.summary)}</p>`
       + `<p class="plain-risk risk-${tool.risk}">${textToCode(RISQUE_SIMPLE[tool.risk] ?? '')}</p>`
       + `<ol class="beginner-steps" id="beginnerSteps">`
       + etapes.map((e) => `<li>${textToCode(e)}</li>`).join('')
@@ -561,7 +610,7 @@ function renderTool() {
   const tool = currentTool;
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
-  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
+  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   const content = view.querySelector('#tabContent');
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
@@ -578,6 +627,8 @@ function renderTool() {
     + `<section class="fiche-section" data-section="1" id="sectionProbleme" aria-labelledby="titreProbleme">`
       + titreSection(1, 'Problème et objectif', 'titreProbleme')
       + `<p class="fiche-lead">${textToCode(tool.summary)}</p>`
+      + `<p class="fiche-lead fiche-lead-note">Cet assistant prépare le script et l\u2019explique. `
+      + `Il ne l\u2019exécute pas : c\u2019est toi qui le lances, sur ta machine.</p>`
     + `</section>`
     + `<section class="fiche-section" data-section="2" id="sectionRisque" aria-labelledby="titreRisque">`
       + titreSection(2, 'Risque, compatibilité et prérequis', 'titreRisque')
@@ -694,6 +745,7 @@ function renderTool() {
 function render() {
   renderNavigation();
   renderModeSelector();
+  renderThemeSelector();
   document.body.dataset.mode = modeCourant();
   document.querySelector('#home').hidden = Boolean(currentTool);
   document.querySelector('#toolView').hidden = !currentTool;
@@ -731,7 +783,25 @@ champRecherche.addEventListener('keydown', (ev) => {
   }
 });
 majEffacer();
-document.querySelector('#menuButton').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('open'));
+// Menu latéral sur petit écran : l'état d'ouverture est annoncé (aria-expanded),
+// le bouton reste au-dessus du panneau pour pouvoir le refermer, et la touche
+// Échap le ferme — aucun piège au clavier.
+const boutonMenu = document.querySelector('#menuButton');
+const panneau    = document.querySelector('.sidebar');
+
+function majMenu(ouvert) {
+  panneau.classList.toggle('open', ouvert);
+  boutonMenu.setAttribute('aria-expanded', String(ouvert));
+}
+
+majMenu(false);
+boutonMenu.addEventListener('click', () => majMenu(!panneau.classList.contains('open')));
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && panneau.classList.contains('open')) {
+    majMenu(false);
+    boutonMenu.focus();
+  }
+});
 
 // Bouton Retour / Suivant du navigateur, et lien partagé collé dans la barre d'adresse
 window.addEventListener('popstate', appliquerHash);
@@ -743,4 +813,5 @@ if (outilInitial) {
   currentTool = outilInitial;
   noterConsultation(outilInitial.id);
 }
+appliquerTheme();
 render();

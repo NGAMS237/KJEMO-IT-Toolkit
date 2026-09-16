@@ -63,6 +63,21 @@ import {
   creerPreference,
 } from '../dist/preferences.mjs';
 
+import {
+  THEMES,
+  THEME_DEFAUT,
+  CLE_THEME,
+  estTheme,
+} from '../dist/preferences.mjs';
+
+import {
+  LANGUES,
+  LANGUE_DEFAUT,
+  LIBELLES,
+  libelle,
+  langueDisponible,
+} from '../dist/libelles.mjs';
+
 // ---------------------------------------------------------------------------
 // Comptage
 // ---------------------------------------------------------------------------
@@ -1063,6 +1078,80 @@ assert(appelsGenerate === 2,
   `app.js n\u2019appelle generate() que pour l\u2019aperçu initial et la soumission (${appelsGenerate})`);
 assert(!/estDebutant\(\)[^;]*generate\(/.test(sourceApp),
   'aucun appel à generate() n\u2019est conditionné au mode de lecture');
+
+// ---------------------------------------------------------------------------
+// LOT 1B (4/n) — Thèmes et préparation à la traduction
+// ---------------------------------------------------------------------------
+section('LOT 1B — thèmes');
+
+assert(THEMES.map((t) => t.id).join(',') === 'clair,sombre,systeme',
+  'trois thèmes : Clair, Sombre, Système');
+assert(THEME_DEFAUT === 'systeme',
+  'par défaut, le thème suit la préférence du système');
+assert(estTheme('clair') && estTheme('sombre') && estTheme('systeme') && !estTheme('neon'),
+  'estTheme() n\u2019accepte que les thèmes connus');
+assert(CLE_THEME !== CLE_MODE,
+  'thème et mode ont des clés de stockage distinctes');
+
+const prefT = creerPreference({ cle: CLE_THEME, valeurs: THEMES.map((t) => t.id), defaut: THEME_DEFAUT });
+assert(prefT.lire() === 'systeme' && prefT.estPersistante() === false,
+  'stockage indisponible : le thème retombe sur « Système » sans lever');
+assert(prefT.definir('clair') === 'clair' && prefT.definir('neon') === 'clair',
+  'stockage indisponible : le thème change en mémoire, une valeur inconnue est ignorée');
+
+// La feuille de style doit décrire les deux thèmes par jetons, sans couleur en
+// dur dans le corps des règles : sinon le thème clair serait illisible par
+// endroits.
+const css = readFileSync(resolve(ROOT, 'dist/styles.css'), 'utf8');
+const finRoot = css.indexOf('}') + 1;
+const blocRoot = css.slice(0, finRoot);
+const debutClair = css.indexOf(':root[data-theme="clair"]');
+assert(debutClair > 0, 'le thème clair est défini par un bloc :root[data-theme="clair"]');
+assert(/@media\(prefers-color-scheme:light\)/.test(css),
+  '« Système » s\u2019appuie sur prefers-color-scheme');
+assert(/@media\(prefers-reduced-motion:reduce\)/.test(css),
+  'la préférence de mouvement réduit est respectée');
+
+const corpsRegles = css.slice(finRoot, debutClair);
+const couleursEnDur = corpsRegles.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+assert(couleursEnDur.length === 0,
+  `aucune couleur en dur hors des jetons de thème (${couleursEnDur.join(', ') || 'aucune'})`);
+
+const jetonsSombre = [...blocRoot.matchAll(/(--[a-z0-9-]+):/g)].map((m) => m[1]);
+const blocClair = css.slice(debutClair, css.indexOf('}', debutClair));
+const jetonsClair = [...blocClair.matchAll(/(--[a-z0-9-]+):/g)].map((m) => m[1]);
+assert(jetonsSombre.length > 0 && jetonsSombre.every((j) => jetonsClair.includes(j)),
+  `le thème clair redéfinit les ${jetonsSombre.length} jetons du thème sombre`);
+
+// Le thème s'applique avant la première peinture, sinon la page clignote.
+const html = readFileSync(resolve(ROOT, 'dist/index.html'), 'utf8');
+assert(html.indexOf('kjemo.theme.v1') < html.indexOf('app.js'),
+  'le thème est appliqué avant le chargement du module applicatif');
+assert(/try\s*{[^}]*localStorage/.test(html),
+  'la lecture du thème au démarrage est protégée contre un stockage bloqué');
+
+section('LOT 1B — préparation à la traduction');
+
+assert(LANGUE_DEFAUT === 'fr' && LANGUES.length === 1 && LANGUES[0].id === 'fr',
+  'une seule langue est déclarée : le français, complet');
+assert(!langueDisponible('en'),
+  'l\u2019anglais n\u2019est pas proposé tant qu\u2019il est incomplet');
+assert(Object.keys(LIBELLES).length === 1,
+  'aucun dictionnaire partiel n\u2019est embarqué');
+assert(libelle('action.copier') === 'Copier',
+  'libelle() résout un libellé connu');
+assert(libelle('cle.inexistante') === 'cle.inexistante',
+  'une clé absente se voit à l\u2019écran au lieu de produire un trou silencieux');
+assert(libelle('action.copier', 'de') === 'Copier',
+  'une langue inconnue retombe sur le français');
+
+const sourceLibelles = readFileSync(resolve(ROOT, 'dist/libelles.mjs'), 'utf8');
+for (const interdit of ['Remove-', 'Get-AD', 'Set-Net', 'powershell.exe']) {
+  assert(!sourceLibelles.includes(interdit),
+    `libelles.mjs ne contient aucun contenu technique (« ${interdit} »)`);
+}
+assert(!/\b(Copy|Download|Search|Settings)\b/.test(sourceLibelles),
+  'aucun libellé anglais n\u2019est embarqué à moitié');
 
 // Résumé
 console.log('');
