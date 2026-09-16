@@ -39,11 +39,11 @@ export function enteteScript({ titre, outil, diagnostic = true, admin = true }) 
       ? '# Ce script OBSERVE. Dans son mode par défaut il ne modifie rien.'
       : '# Ce script peut MODIFIER la configuration : lis-le en entier avant de le lancer.',
     admin
-      ? '# Console PowerShell en tant qu’administrateur requise.'
+      ? "# Console PowerShell en tant qu'administrateur requise."
       : '# Une console PowerShell standard suffit pour la partie diagnostic.',
     '#',
     '# Relis le script avant exécution. Rien ici ne télécharge de code, ne',
-    '# contacte un serveur tiers, ni ne manipule d’identifiants.',
+    "# contacte un serveur tiers, ni ne manipule d'identifiants.",
     '',
     '$ErrorActionPreference = \'Continue\'',
     `$KjemoOutil = '${outil}'`,
