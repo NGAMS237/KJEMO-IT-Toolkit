@@ -1018,8 +1018,9 @@ console.log('\n[modes 1B] — Débutant / Technicien, persistance et sécurité'
     assert(await page.locator(sel).count() === 1,
       `mode Débutant : ${sel} reste présent dans la fiche`);
   }
-  assert(await page.locator('.risk').isVisible(),
-    'mode Débutant : le badge de niveau de risque reste visible');
+  assert(await page.locator('.tool-header .risk').isVisible()
+      && await page.locator('#ficheRisque').isVisible(),
+    'mode Débutant : le niveau de risque reste visible, en-tête et fiche');
   assert(await page.locator('.admin-flag').isVisible(),
     'mode Débutant : l’exigence d’élévation reste visible');
   const avertDeb = await page.$$eval('.exec-warning, .rollback-warning',
@@ -1107,6 +1108,123 @@ console.log('\n[modes 1B] — repli quand localStorage est bloqué');
     'stockage bloqué : la fiche s’affiche normalement dans le mode choisi');
   assert(erreurs.length === 0,
     `stockage bloqué : aucune erreur JavaScript non rattrapée (${erreurs.length})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B : affichage progressif de la fiche et accessibilité ------------
+console.log('\n[fiche 1B] — ordre de lecture, repli progressif et accessibilité');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.risk === 'destructive') ?? tools[0];
+
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#sectionScript', { timeout: 8000 });
+
+  // 1. L'ordre des neuf sections est celui du document, pas celui du CSS.
+  const ordre = await page.$$eval('.fiche > .fiche-section, .fiche > .tool-content > .fiche-section',
+    (els) => els.map((e) => e.dataset.section));
+  assert(ordre.join(',') === '1,2,3,4,5,6,7,8,9',
+    `les neuf sections se suivent dans l’ordre imposé (${ordre.join(',')})`);
+
+  const attendus = {
+    1: 'sectionProbleme', 2: 'sectionRisque', 3: 'sectionFormulaire',
+    4: 'sectionScript', 5: 'sectionVerification', 6: 'sectionAnnulation',
+    7: 'sectionGraphique', 8: 'sectionErreurs', 9: 'sectionSources',
+  };
+  for (const [n, id] of Object.entries(attendus)) {
+    assert(await page.locator(`#${id}[data-section="${n}"]`).count() === 1,
+      `section ${n} présente : #${id}`);
+  }
+
+  // 2. Jamais repliés : formulaire, aperçu, Générer, Copier, Télécharger.
+  for (const sel of ['#toolForm', '#scriptOutput', '#copyButton', '#downloadButton',
+                     '#toolForm .primary-button']) {
+    assert(await page.locator(sel).isVisible(),
+      `${sel} est visible sans aucune manipulation`);
+    const replie = await page.$eval(sel, (el) => !!el.closest('details:not([open])'));
+    assert(!replie, `${sel} n’est enfermé dans aucune section repliée`);
+  }
+
+  // 3. Le détail secondaire est replié, mais présent et annoncé.
+  const replies = ['#execNotes', '#verifyAfter', '#rollbackBlock', '#guiMethod', '#commonErrors'];
+  for (const sel of replies) {
+    assert(await page.locator(sel).count() === 1, `${sel} est présent dans la fiche`);
+    assert(await page.$eval(sel, (el) => el.tagName === 'DETAILS' && !el.open),
+      `${sel} est replié par défaut`);
+    const resume = await page.$eval(`${sel} > summary`, (el) => el.textContent.trim());
+    assert(resume.length > 0, `${sel} porte un intitulé explicite : « ${resume} »`);
+  }
+  assert(replies.length === 5,
+    'aucune section longue n’est ouverte d’office');
+
+  // 4. Un repli s'ouvre au clavier seul — aucun contrôle réservé à la souris.
+  await page.focus('#guiMethod > summary');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#guiMethod')?.open === true,
+    { timeout: 8000 });
+  assert(await page.$eval('#guiMethod', (el) => el.open),
+    'une section repliée s’ouvre à la touche Entrée');
+  assert(await page.locator('#guiMethod .steps li').count() === outil.gui.length,
+    `la méthode graphique conserve ses ${outil.gui.length} étapes`);
+
+  // 5. Ce qui touche à la sécurité n'est jamais dans un repli fermé au départ.
+  assert(await page.locator('#ficheRisque').isVisible(),
+    'le niveau de risque est affiché sans repli');
+  assert(await page.locator('#prereqBlock').isVisible(),
+    'les prérequis sont affichés sans repli');
+  assert(await page.locator('.tool-header .risk').isVisible(),
+    'le badge de risque de l’en-tête reste visible');
+
+  // 6. Étiquettes de formulaire réellement associées à leur champ.
+  const champsSansEtiquette = await page.$$eval('#toolForm input, #toolForm select',
+    (els) => els.filter((el) => {
+      const parLabel = document.querySelector(`label[for="${el.id}"]`);
+      const englobant = el.closest('label');
+      return !parLabel && !englobant && !el.getAttribute('aria-label');
+    }).map((el) => el.id));
+  assert(champsSansEtiquette.length === 0,
+    `chaque champ du formulaire porte une étiquette associée (${champsSansEtiquette.join(', ') || 'aucun manquant'})`);
+
+  // 7. Chaque section porte un titre relié par aria-labelledby.
+  const sansTitre = await page.$$eval('.fiche-section', (els) => els.filter((e) => {
+    const id = e.getAttribute('aria-labelledby');
+    return !id || !document.getElementById(id);
+  }).length);
+  assert(sansTitre === 0, 'chaque section est reliée à son titre par aria-labelledby');
+
+  // 8. Ordre de tabulation : le formulaire vient avant les actions du script.
+  const rangs = await page.evaluate(() => {
+    const focusables = [...document.querySelectorAll(
+      '#toolView a[href], #toolView button, #toolView input, #toolView select, #toolView summary, #toolView [tabindex]')]
+      .filter((el) => el.offsetParent !== null || el === document.activeElement);
+    const rang = (sel) => focusables.indexOf(document.querySelector(sel));
+    return { form: rang('#toolForm input, #toolForm select'), copie: rang('#copyButton') };
+  });
+  assert(rangs.form >= 0 && rangs.copie > rangs.form,
+    `l’ordre de tabulation suit l’ordre de lecture (formulaire ${rangs.form} avant Copier ${rangs.copie})`);
+
+  // 9. L'aperçu du script est atteignable au clavier et défile à l'intérieur.
+  assert(await page.$eval('#scriptOutput', (el) => el.tabIndex >= 0),
+    'l’aperçu du script est atteignable au clavier');
+  assert(await page.$eval('#scriptOutput', (el) => getComputedStyle(el).overflow !== 'visible'),
+    'l’aperçu du script défile à l’intérieur de son cadre');
+
+  // 10. Le focus clavier reste visible.
+  await page.focus('#copyButton');
+  const contour = await page.$eval('#copyButton', (el) => {
+    const st = getComputedStyle(el);
+    return { style: st.outlineStyle, width: parseFloat(st.outlineWidth) || 0 };
+  });
+  assert(contour.style !== 'none' && contour.width > 0,
+    `le focus clavier est visible (contour ${contour.style} ${contour.width}px)`);
+
+  // 11. La fiche reste fonctionnelle : générer produit bien le script attendu.
+  const attendu = normalizeScript(outil.generate(
+    Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]))));
+  assert(await page.$eval('#scriptOutput', (el) => el.textContent) === attendu,
+    'l’aperçu affiché correspond exactement à generate()');
 
   await ctx.close();
 }

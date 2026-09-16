@@ -11,7 +11,6 @@ const categoriesAffichees = categoriesVisibles(tools);
 const categories = [CAT_TOUT, ...categoriesAffichees.map((c) => c.name)];
 let selectedCategory = CAT_TOUT;
 let currentTool = null;
-let currentTab = 'assistant';
 
 // ---------------------------------------------------------------------------
 // Mode de lecture — Débutant / Technicien
@@ -181,7 +180,6 @@ function ecrireHash(tool) {
 /** Ouvre une fiche : met à jour l'état, l'URL et l'historique local. */
 function ouvrirOutil(tool, { pousserHash = true } = {}) {
   currentTool = tool;
-  currentTab  = 'assistant';
   noterConsultation(tool.id);
   if (pousserHash) ecrireHash(tool);
   render();
@@ -361,6 +359,17 @@ function errorEntryMarkup(e) {
  * comment constater que ça a marché, et comment revenir en arrière sans casser
  * davantage.
  */
+/** Vérifications après exécution — section 5. Repliée par défaut, comme la
+ *  procédure d'annulation : la liste courte de contrôles reste, elle, visible
+ *  au-dessus, sans repli. */
+function verifyAfterMarkup(tool) {
+  const li = (x) => `<li>${textToCode(x)}</li>`;
+  return `<details class="details verify-after" id="verifyAfter">`
+    + `<summary>Contrôles à effectuer après exécution</summary>`
+    + `<ul>${tool.verifyAfter.map(li).join('')}</ul>`
+    + `</details>`;
+}
+
 function rollbackMarkup(tool) {
   const r  = tool.rollback;
   const li = (x) => `<li>${textToCode(x)}</li>`;
@@ -374,11 +383,7 @@ function rollbackMarkup(tool) {
       + `<pre class="cmd">${textToCode(contenu)}</pre>`
     : '';
 
-  return `<details class="details verify-after" id="verifyAfter">`
-    + `<summary>Vérifier que ça a fonctionné</summary>`
-    + `<ul>${tool.verifyAfter.map(li).join('')}</ul>`
-    + `</details>`
-    + `<details class="details rollback" id="rollbackBlock">`
+  return `<details class="details rollback" id="rollbackBlock">`
     + `<summary>Revenir en arrière ${etiquette}</summary>`
     + `<p>${textToCode(r.summary)}</p>`
     + bloc('1. Constater avant d\u2019agir', 'rb-diag', r.diagnostic)
@@ -392,13 +397,31 @@ function rollbackMarkup(tool) {
     + `</details>`;
 }
 
-function prereqMarkup(tool) {
-  const n  = EXECUTION_NOTES;
+/**
+ * Bloc « compatibilité et prérequis » — section 2 de la fiche.
+ * Ce qui conditionne l'exécution reste TOUJOURS visible : systèmes couverts,
+ * élévation nécessaire, droits exigés. Rien ici n'est repliable.
+ */
+function compatMarkup(tool) {
   const li = (x) => `<li>${textToCode(x)}</li>`;
-
   const admin = tool.requiresAdmin
-    ? `<p class="admin-flag admin-required">Console PowerShell <strong>en tant qu\u2019administrateur</strong> obligatoire.</p>`
-    : `<p class="admin-flag admin-optional">Aucune élévation <strong>administrateur locale</strong> n\u2019est nécessaire. Les droits listés ci-dessous restent obligatoires.</p>`;
+    ? `<p class="admin-flag admin-required">Console PowerShell <strong>en tant qu’administrateur</strong> obligatoire.</p>`
+    : `<p class="admin-flag admin-optional">Aucune élévation <strong>administrateur locale</strong> n’est nécessaire. Les droits listés ci-dessous restent obligatoires.</p>`;
+
+  return `<div class="details prereqs" id="prereqBlock">`
+    + `<h3>Systèmes compatibles</h3><ul>${tool.os.map(li).join('')}</ul>`
+    + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
+    + `</div>`;
+}
+
+/**
+ * Procédure d'exécution commune à tous les scripts — longue, donc repliée par
+ * défaut. Son avertissement de sécurité, lui, est rendu à l'intérieur : replier
+ * n'est pas masquer, le titre reste explicite et la section s'ouvre d'un clic
+ * ou d'une touche Entrée.
+ */
+function execNotesMarkup() {
+  const n = EXECUTION_NOTES;
 
   const steps = n.steps.map((st) =>
     `<li><strong>${textToCode(st.label)}</strong><br />${textToCode(st.detail)}`
@@ -411,24 +434,42 @@ function prereqMarkup(tool) {
   const sources = n.sources.map((so) =>
     `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`).join(' · ');
 
-  return `<div class="details prereqs" id="prereqBlock">`
-    + `<h3>Systèmes compatibles</h3><ul>${tool.os.map(li).join('')}</ul>`
-    + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
-    + `</div>`
-    + `<details class="details exec-notes" id="execNotes">`
+  return `<details class="details exec-notes" id="execNotes">`
     + `<summary>${textToCode(n.title)}</summary>`
     + `<p>${textToCode(n.intro)}</p>`
     + `<ol class="exec-steps">${steps}</ol>`
-    + `<h4>Stratégies d\u2019exécution PowerShell</h4>`
+    + `<h4>Stratégies d’exécution PowerShell</h4>`
     + `<table class="policy-table"><thead><tr><th>Stratégie</th><th>Script local</th><th>Script téléchargé</th></tr></thead><tbody>${policies}</tbody></table>`
     + `<p class="exec-warning">${textToCode(n.warning)}</p>`
     + `<p class="exec-sources">${sources}</p>`
-    + `</details>`
-    + `<details class="details common-errors" id="commonErrors">`
+    + `</details>`;
+}
+
+/** Erreurs fréquentes — section 8, repliée par défaut. */
+function commonErrorsMarkup(tool) {
+  const n = EXECUTION_NOTES;
+  return `<details class="details common-errors" id="commonErrors">`
     + `<summary>Erreurs fréquentes</summary>`
     + `<h4>Propres à cet outil</h4>${tool.commonErrors.map(errorEntryMarkup).join('')}`
     + `<h4>Communes à tous les scripts</h4>${n.errors.map(errorEntryMarkup).join('')}`
     + `</details>`;
+}
+
+/** Méthode graphique — section 7, repliée par défaut, jamais supprimée. */
+function guiMarkup(tool) {
+  return `<details class="details gui-method" id="guiMethod">`
+    + `<summary>Méthode graphique, sans script</summary>`
+    + `<ol class="steps">${tool.gui.map((step) => `<li>${textToCode(step)}</li>`).join('')}</ol>`
+    + `</details>`;
+}
+
+/** Sources officielles — section 9. */
+function sourcesMarkup(tool) {
+  const n = EXECUTION_NOTES;
+  const liens = [`<a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">Documentation de l’outil</a>`]
+    .concat(n.sources.map((so) =>
+      `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`));
+  return `<p class="sources-row" id="officialSources">${liens.join(' · ')}</p>`;
 }
 
 function formMarkup(tool) {
@@ -520,17 +561,67 @@ function renderTool() {
   const tool = currentTool;
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
-  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div><div class="tabs"><button class="tab ${currentTab === 'assistant' ? 'active' : ''}" data-tab="assistant">Assistant</button><button class="tab ${currentTab === 'script' ? 'active' : ''}" data-tab="script">Script</button><button class="tab ${currentTab === 'gui' ? 'active' : ''}" data-tab="gui">Interface graphique</button></div>${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
+  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${tool.category.toUpperCase()}</div><h1>${tool.icon} ${tool.title}</h1><p>${tool.summary}</p><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
-  view.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => { currentTab = tab.dataset.tab; renderTool(); }));
   const content = view.querySelector('#tabContent');
-  if (currentTab === 'gui') {
-    content.innerHTML = `<div class="panel"><h2>Étapes avec l'interface Windows</h2><ol class="steps">${tool.gui.map((step) => `<li>${step}</li>`).join('')}</ol><div class="details"><h3>Avant de commencer</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div></div>`;
-    return;
-  }
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
   const script = normalizeScript(tool.generate(defaultValues));
-  content.innerHTML = `<div class="tool-content"><section class="panel"><h2>${currentTab === 'assistant' ? 'Tes informations' : 'Paramètres du script'}</h2><form id="toolForm" novalidate>${formMarkup(tool)}<button class="primary-button" type="submit">${currentTab === 'assistant' ? 'Générer le script' : 'Actualiser l\'aperçu'}</button></form><div class="details"><h3>Vérifications</h3><ul>${tool.checks.map((check) => `<li>${check}</li>`).join('')}</ul><p>Référence : <a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">documentation officielle</a></p></div>${prereqMarkup(tool)}${rollbackMarkup(tool)}</section><section class="panel"><h2>Aperçu PowerShell</h2><div class="code-wrap"><pre id="scriptOutput" class="code">${textToCode(script)}</pre></div><div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button><button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div><span id="copyFeedback" class="copy-feedback" aria-live="polite"></span></section></div>`;
+  const titreSection = (n, texte, id) =>
+    `<h2 class="fiche-section-title" id="${id}">`
+    + `<span class="fiche-step" aria-hidden="true">${n}</span>${textToCode(texte)}</h2>`;
+
+  // Ordre de lecture imposé : problème, risque, formulaire, script, vérification,
+  // annulation, méthode graphique, erreurs fréquentes, sources.
+  // Le formulaire, l'aperçu et les boutons Générer / Copier / Télécharger ne sont
+  // JAMAIS repliés : ce sont les commandes de l'outil, pas du détail.
+  content.innerHTML = `<div class="fiche">`
+    + `<section class="fiche-section" data-section="1" id="sectionProbleme" aria-labelledby="titreProbleme">`
+      + titreSection(1, 'Problème et objectif', 'titreProbleme')
+      + `<p class="fiche-lead">${textToCode(tool.summary)}</p>`
+    + `</section>`
+    + `<section class="fiche-section" data-section="2" id="sectionRisque" aria-labelledby="titreRisque">`
+      + titreSection(2, 'Risque, compatibilité et prérequis', 'titreRisque')
+      + `<p class="fiche-risk fiche-risk-${tool.risk}" id="ficheRisque">`
+      + `<strong>Niveau de risque :</strong> ${textToCode(riskLabels[tool.risk])}</p>`
+      + compatMarkup(tool)
+      + execNotesMarkup()
+    + `</section>`
+    + `<div class="tool-content">`
+      + `<section class="panel fiche-section" data-section="3" id="sectionFormulaire" aria-labelledby="titreFormulaire">`
+        + titreSection(3, 'Tes informations', 'titreFormulaire')
+        + `<form id="toolForm" novalidate>${formMarkup(tool)}`
+        + `<button class="primary-button" type="submit">Générer le script</button></form>`
+      + `</section>`
+      + `<section class="panel fiche-section" data-section="4" id="sectionScript" aria-labelledby="titreScript">`
+        + titreSection(4, 'Script généré', 'titreScript')
+        + `<div class="code-wrap"><pre id="scriptOutput" class="code" tabindex="0" role="region" aria-label="Aperçu du script PowerShell">${textToCode(script)}</pre></div>`
+        + `<div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button>`
+        + `<button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div>`
+        + `<span id="copyFeedback" class="copy-feedback" aria-live="polite"></span>`
+      + `</section>`
+    + `</div>`
+    + `<section class="fiche-section" data-section="5" id="sectionVerification" aria-labelledby="titreVerification">`
+      + titreSection(5, 'Vérifier que ça a fonctionné', 'titreVerification')
+      + `<div class="details"><ul>${tool.checks.map((c) => `<li>${textToCode(c)}</li>`).join('')}</ul></div>`
+      + verifyAfterMarkup(tool)
+    + `</section>`
+    + `<section class="fiche-section" data-section="6" id="sectionAnnulation" aria-labelledby="titreAnnulation">`
+      + titreSection(6, 'Revenir en arrière', 'titreAnnulation')
+      + rollbackMarkup(tool)
+    + `</section>`
+    + `<section class="fiche-section" data-section="7" id="sectionGraphique" aria-labelledby="titreGraphique">`
+      + titreSection(7, 'Méthode graphique', 'titreGraphique')
+      + guiMarkup(tool)
+    + `</section>`
+    + `<section class="fiche-section" data-section="8" id="sectionErreurs" aria-labelledby="titreErreurs">`
+      + titreSection(8, 'Erreurs fréquentes', 'titreErreurs')
+      + commonErrorsMarkup(tool)
+    + `</section>`
+    + `<section class="fiche-section" data-section="9" id="sectionSources" aria-labelledby="titreSources">`
+      + titreSection(9, 'Sources officielles', 'titreSources')
+      + sourcesMarkup(tool)
+    + `</section>`
+    + `</div>`;
 
   // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
   // Copier et Télécharger sont désactivés jusqu'à la prochaine génération valide.
@@ -650,7 +741,6 @@ window.addEventListener('hashchange', appliquerHash);
 const outilInitial = outilDepuisHash();
 if (outilInitial) {
   currentTool = outilInitial;
-  currentTab  = 'assistant';
   noterConsultation(outilInitial.id);
 }
 render();
