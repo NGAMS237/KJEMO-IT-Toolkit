@@ -12,43 +12,24 @@
  */
 
 // ---------------------------------------------------------------------------
+// Noyau et validateurs — extraits en modules dédiés au LOT 2
+//
+// psB64() et assertValid() vivent dans noyau.mjs, validateIPv4() et
+// validateShareName() dans validateurs.mjs. Ils sont ré-exportés ici : ce
+// fichier reste le point d'entrée canonique, et aucun importateur existant
+// n'a à changer. Le déplacement évite un import circulaire avec le catalogue
+// Windows Server, qui a besoin des mêmes fonctions.
+// ---------------------------------------------------------------------------
+import { psB64, assertValid } from './noyau.mjs';
+import { validateIPv4, validateShareName } from './validateurs.mjs';
+
+export { psB64, assertValid, validateIPv4, validateShareName };
+
+// ---------------------------------------------------------------------------
 // Fonctions d'échappement
 // ---------------------------------------------------------------------------
 
-/**
- * Encode une valeur utilisateur en expression PowerShell Base64 UTF-8.
- * Cette représentation préserve exactement tous les points de code Unicode :
- *   U+2018 ('), U+2019 ('), accents, $, backtick, guillemets, retours à la ligne, etc.
- *
- * Exemple d'expression générée :
- *   [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('T2...'))
- *
- * Utilisé pour toutes les valeurs fournies par l'utilisateur dans les scripts PS.
- */
-export function psB64(v) {
-  const bytes = new TextEncoder().encode(String(v ?? ''));
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  const b64 = btoa(bin);
-  return `[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${b64}'))`;
-}
 
-/**
- * assertValid : appelle tool.validate(v) et lève une exception si la moindre
- * erreur est détectée. Utilisé par chacun des huit generate() pour garantir
- * qu'aucun script n'est produit avec des données invalides.
- *
- * @param {object} tool   - l'objet outil (doit avoir une méthode validate)
- * @param {object} v      - les valeurs à valider
- */
-export function assertValid(tool, v) {
-  const errors = tool.validate(v);
-  const keys = Object.keys(errors);
-  if (keys.length > 0) {
-    const msgs = keys.map((k) => `${k} : ${errors[k]}`).join(' | ');
-    throw new Error(`Entrée invalide — ${msgs}`);
-  }
-}
 
 /**
  * escapePowerShellSingleQuoted — conservé pour compatibilité et tests de bas niveau.
@@ -113,19 +94,6 @@ export function validateDomain(v) {
   return { ok: true, value: s, error: null };
 }
 
-export function validateIPv4(v) {
-  const s = String(v ?? '').trim();
-  if (!s) return { ok: false, value: s, error: "L'adresse IP ne peut pas être vide." };
-  const parts = s.split('.');
-  if (parts.length !== 4) return { ok: false, value: s, error: "L'adresse IPv4 doit contenir exactement quatre octets séparés par des points." };
-  for (const part of parts) {
-    if (!/^\d+$/.test(part)) return { ok: false, value: s, error: `« ${part} » n'est pas un entier valide.` };
-    const n = Number(part);
-    if (n < 0 || n > 255) return { ok: false, value: s, error: `L'octet ${part} est hors de la plage 0–255.` };
-    if (part !== String(n)) return { ok: false, value: s, error: `L'octet « ${part} » contient un zéro de tête non autorisé.` };
-  }
-  return { ok: true, value: s, error: null };
-}
 
 export function validateSamAccountName(v) {
   const s = String(v ?? '').trim();
@@ -145,15 +113,6 @@ export function validateGroupName(v) {
   return { ok: true, value: s, error: null };
 }
 
-export function validateShareName(v) {
-  const s = String(v ?? '').trim();
-  if (!s) return { ok: false, value: s, error: 'Le nom du partage ne peut pas être vide.' };
-  if (s.length > 80) return { ok: false, value: s, error: 'Le nom du partage ne doit pas dépasser 80 caractères.' };
-  if (/[\\/:*?"<>|]/.test(s)) {
-    return { ok: false, value: s, error: 'Le nom du partage contient un caractère interdit (\\  /  :  *  ?  "  <  >  |).' };
-  }
-  return { ok: true, value: s, error: null };
-}
 
 export function validateIntegerStrict(v, min, max, label) {
   const s = String(v ?? '').trim();
@@ -1636,3 +1595,4 @@ function createDiskScanTool() {
 }
 
 tools.push(createDiskScanTool());
+

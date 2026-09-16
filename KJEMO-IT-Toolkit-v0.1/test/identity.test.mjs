@@ -79,6 +79,50 @@ import {
   langueDisponible,
 } from '../dist/libelles.mjs';
 
+import {
+  validerIPv6,
+  validerFqdn,
+  validerNomHote,
+  validerPrefixe,
+  validerMasque,
+  validerReseauCidr,
+  validerPlageIp,
+  validerScopeId,
+  validerMac,
+  validerClientId,
+  validerCheminWindowsLocal,
+  validerNomZoneDns,
+  validerNomEnregistrement,
+  validerTypeEnregistrement,
+  validerProfondeur,
+  validerDureeBail,
+  validerFormatRapport,
+  validerModeExecution,
+  validerChoix,
+  validerListeIPv4,
+  validerEntier,
+  ipDansReseau,
+  adresseReseau,
+  adresseDiffusion,
+  prefixeVersMasque,
+  ipVersEntier,
+  entierVersIp,
+  TYPES_ENREGISTREMENT,
+  FORMATS_RAPPORT,
+  MODES_EXECUTION,
+} from '../dist/validateurs.mjs';
+
+import {
+  VERSION_OUTILS,
+  enteteScript,
+  fonctionsRapport,
+  blocExportRapport,
+  blocParametres,
+  blocModeDiagnostic,
+} from '../dist/rapport-ps.mjs';
+
+import { psB64 as psB64Noyau, assertValid as assertValidNoyau } from '../dist/noyau.mjs';
+
 // ---------------------------------------------------------------------------
 // Comptage
 // ---------------------------------------------------------------------------
@@ -1242,6 +1286,206 @@ assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === tools.length,
   `les ${tools.length} fonctions generate() sont toujours là, une par outil`);
 assert((sourceGen.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
   'chaque outil déclare sa sous-rubrique dans le module canonique');
+
+// ---------------------------------------------------------------------------
+// LOT 2 (1/n) — Validateurs Windows Server
+// ---------------------------------------------------------------------------
+section('LOT 2 — validateurs : adressage IPv4');
+
+assert(validerPrefixe('24').ok && validerPrefixe('24').value === 24, 'préfixe 24 accepté et converti en entier');
+assert(validerPrefixe('32').ok && validerPrefixe('0').ok, 'les bornes 0 et 32 sont acceptées');
+assert(!validerPrefixe('33').ok, 'préfixe 33 refusé');
+assert(!validerPrefixe('-1').ok, 'préfixe négatif refusé');
+assert(!validerPrefixe('24abc').ok, 'préfixe « 24abc » refusé : pas de parseInt permissif');
+assert(!validerPrefixe('024').ok, 'préfixe avec zéro de tête refusé');
+assert(!validerPrefixe('').ok, 'préfixe vide refusé');
+
+assert(validerMasque('255.255.255.0').ok && validerMasque('255.255.255.0').value.prefixe === 24,
+  'masque 255.255.255.0 reconnu comme /24');
+assert(validerMasque('255.255.240.0').value.prefixe === 20, 'masque 255.255.240.0 reconnu comme /20');
+assert(!validerMasque('255.0.255.0').ok, 'masque non contigu refusé');
+assert(!validerMasque('255.255.255.256').ok, 'masque avec octet invalide refusé');
+
+assert(prefixeVersMasque(24) === '255.255.255.0', 'préfixe 24 → masque 255.255.255.0');
+assert(prefixeVersMasque(30) === '255.255.255.252', 'préfixe 30 → masque 255.255.255.252');
+assert(prefixeVersMasque(0) === '0.0.0.0', 'préfixe 0 → masque 0.0.0.0');
+assert(ipVersEntier('0.0.0.1') === 1 && entierVersIp(1) === '0.0.0.1', 'conversion IP ↔ entier symétrique');
+assert(entierVersIp(ipVersEntier('192.168.30.254')) === '192.168.30.254', 'aller-retour sur une adresse réelle');
+assert(ipVersEntier('999.1.1.1') === null, 'une IP invalide ne se convertit pas');
+
+assert(adresseReseau('192.168.30.77', 24) === '192.168.30.0', 'adresse de réseau calculée pour /24');
+assert(adresseReseau('192.168.30.77', 25) === '192.168.30.0', 'adresse de réseau calculée pour /25');
+assert(adresseReseau('192.168.30.130', 25) === '192.168.30.128', 'seconde moitié d\u2019un /25');
+assert(adresseDiffusion('192.168.30.0', 24) === '192.168.30.255', 'adresse de diffusion d\u2019un /24');
+assert(ipDansReseau('192.168.30.50', '192.168.30.0', 24), 'appartenance au réseau vérifiée');
+assert(!ipDansReseau('192.168.31.50', '192.168.30.0', 24), 'adresse hors réseau détectée');
+assert(!ipDansReseau('192.168.30.200', '192.168.30.0', 25), 'adresse hors de la première moitié d\u2019un /25');
+
+section('LOT 2 — validateurs : réseau CIDR et plages');
+
+const cidrOk = validerReseauCidr('192.168.30.0/24');
+assert(cidrOk.ok && cidrOk.value.reseau === '192.168.30.0' && cidrOk.value.masque === '255.255.255.0',
+  'CIDR 192.168.30.0/24 analysé correctement');
+assert(!validerReseauCidr('192.168.30.7/24').ok,
+  'une adresse d\u2019hôte n\u2019est pas acceptée comme réseau');
+assert(validerReseauCidr('192.168.30.7/24').error.includes('192.168.30.0'),
+  'le message propose le réseau correct');
+assert(!validerReseauCidr('192.168.30.0').ok, 'réseau sans préfixe refusé');
+assert(!validerReseauCidr('192.168.30.0/24/8').ok, 'double préfixe refusé');
+assert(!validerReseauCidr('').ok, 'réseau vide refusé');
+
+const plageOk = validerPlageIp('192.168.30.1', '192.168.30.244', '192.168.30.0', 24);
+assert(plageOk.ok && plageOk.value.taille === 244, 'plage valide : 244 adresses');
+const plageInversee = validerPlageIp('192.168.30.244', '192.168.30.1', '192.168.30.0', 24);
+assert(!plageInversee.ok && /inversée/.test(plageInversee.error), 'plage inversée détectée');
+assert(!validerPlageIp('192.168.31.1', '192.168.30.244', '192.168.30.0', 24).ok,
+  'première adresse hors réseau refusée');
+assert(!validerPlageIp('192.168.30.1', '192.168.31.244', '192.168.30.0', 24).ok,
+  'dernière adresse hors réseau refusée');
+assert(!validerPlageIp('192.168.30.0', '192.168.30.244', '192.168.30.0', 24).ok,
+  'adresse de réseau refusée comme début de plage');
+assert(!validerPlageIp('192.168.30.1', '192.168.30.255', '192.168.30.0', 24).ok,
+  'adresse de diffusion refusée comme fin de plage');
+assert(validerPlageIp('10.0.0.5', '10.0.0.5').ok, 'plage d\u2019une seule adresse acceptée hors contexte réseau');
+
+assert(validerScopeId('192.168.30.0').ok, 'ScopeId valide accepté');
+assert(!validerScopeId('192.168.30').ok, 'ScopeId tronqué refusé');
+assert(!validerScopeId('scope1').ok, 'ScopeId non numérique refusé');
+
+section('LOT 2 — validateurs : IPv6, noms et DNS');
+
+assert(validerIPv6('2001:db8::1').ok, 'IPv6 abrégée acceptée');
+assert(validerIPv6('2001:0db8:0000:0000:0000:0000:0000:0001').ok, 'IPv6 complète acceptée');
+assert(validerIPv6('::1').ok, 'boucle locale IPv6 acceptée');
+assert(validerIPv6('::ffff:192.168.1.1').ok, 'forme mixte IPv4 acceptée');
+assert(!validerIPv6('2001:db8::1::2').ok, 'double abréviation refusée');
+assert(!validerIPv6('2001:db8:zzzz::1').ok, 'groupe non hexadécimal refusé');
+assert(!validerIPv6('2001:db8:1:2:3:4:5').ok, 'adresse incomplète sans abréviation refusée');
+assert(!validerIPv6('fe80::1%eth0').ok, 'identifiant de zone refusé');
+assert(!validerIPv6('').ok, 'IPv6 vide refusée');
+
+assert(validerFqdn('srv-dhcp.hopitalbn.lan').ok, 'FQDN valide accepté');
+assert(validerFqdn('srv.hopitalbn.lan.').value === 'srv.hopitalbn.lan', 'le point final est retiré');
+assert(!validerFqdn('srv').ok, 'nom court refusé comme FQDN');
+assert(!validerFqdn('srv..lan').ok, 'double point refusé');
+assert(!validerFqdn('-srv.lan').ok, 'étiquette commençant par un tiret refusée');
+assert(!validerFqdn('srv_.lan').ok, 'souligné refusé dans un FQDN');
+
+assert(validerNomHote('SRV-DHCP').ok, 'nom d\u2019hôte valide accepté');
+assert(!validerNomHote('srv.hopitalbn.lan').ok, 'un FQDN n\u2019est pas un nom d\u2019hôte court');
+assert(!validerNomHote('serveur-beaucoup-trop-long').ok, 'nom NetBIOS de plus de 15 caractères refusé');
+assert(!validerNomHote('srv-').ok, 'nom se terminant par un tiret refusé');
+
+assert(validerNomZoneDns('hopitalbn.lan').ok, 'zone directe acceptée');
+assert(validerNomZoneDns('30.168.192.in-addr.arpa').ok, 'zone inversée IPv4 acceptée');
+assert(validerNomZoneDns('0.8.b.d.1.0.0.2.ip6.arpa').ok, 'zone inversée IPv6 acceptée');
+assert(!validerNomZoneDns('in-addr.arpa').ok, 'zone inversée sans réseau refusée');
+assert(!validerNomZoneDns('zone lan').ok, 'espace refusé dans un nom de zone');
+
+assert(validerNomEnregistrement('srv-fichiers').ok, 'nom d\u2019enregistrement simple accepté');
+assert(validerNomEnregistrement('@').ok, '« @ » accepté pour la zone elle-même');
+assert(!validerNomEnregistrement('*.test').ok, 'enregistrement générique refusé dans ce lot');
+assert(!validerNomEnregistrement('').ok, 'nom d\u2019enregistrement vide refusé');
+
+assert(TYPES_ENREGISTREMENT.join(',') === 'A,AAAA,CNAME,PTR', 'quatre types pris en charge, et seulement eux');
+assert(validerTypeEnregistrement('a').value === 'A', 'le type est normalisé en majuscules');
+assert(!validerTypeEnregistrement('MX').ok, 'MX refusé : hors périmètre de ce lot');
+assert(!validerTypeEnregistrement('SRV').ok, 'SRV refusé : hors périmètre de ce lot');
+assert(!validerTypeEnregistrement('TXT').ok, 'TXT refusé : hors périmètre de ce lot');
+
+section('LOT 2 — validateurs : MAC, ClientId, chemins et formats');
+
+assert(validerMac('00-15-5D-01-2A-3B').value === '00-15-5D-01-2A-3B', 'MAC à tirets normalisée');
+assert(validerMac('00:15:5d:01:2a:3b').value === '00-15-5D-01-2A-3B', 'MAC à deux-points normalisée');
+assert(validerMac('00155d012a3b').value === '00-15-5D-01-2A-3B', 'MAC sans séparateur normalisée');
+assert(validerMac('0015.5d01.2a3b').value === '00-15-5D-01-2A-3B', 'MAC au format Cisco normalisée');
+assert(!validerMac('00-15-5D-01-2A').ok, 'MAC trop courte refusée');
+assert(!validerMac('00-15-5D-01-2A-3B-4C').ok, 'MAC trop longue refusée');
+assert(!validerMac('00-15-5D-01-2A-ZZ').ok, 'MAC non hexadécimale refusée');
+assert(!validerMac('').ok, 'MAC vide refusée');
+
+assert(validerClientId('00155d012a3b').ok, 'ClientId de 6 octets accepté');
+assert(validerClientId('0102').ok, 'ClientId de 2 octets accepté');
+assert(!validerClientId('010').ok, 'ClientId de longueur impaire refusé');
+assert(!validerClientId('01').ok, 'ClientId d\u2019un seul octet refusé');
+assert(!validerClientId('0'.repeat(34)).ok, 'ClientId de plus de 16 octets refusé');
+
+assert(validerCheminWindowsLocal('C:\\Sauvegardes\\DHCP').ok, 'chemin local accepté');
+assert(!validerCheminWindowsLocal('\\\\serveur\\partage').ok, 'chemin UNC refusé');
+assert(/UNC|réseau/.test(validerCheminWindowsLocal('\\\\serveur\\partage').error),
+  'le message explique que le chemin réseau est refusé');
+assert(!validerCheminWindowsLocal('Sauvegardes\\DHCP').ok, 'chemin relatif refusé');
+assert(!validerCheminWindowsLocal('C:\\Sauve<gardes').ok, 'caractère interdit refusé');
+assert(!validerCheminWindowsLocal('').ok, 'chemin vide refusé');
+
+assert(validerProfondeur('3').ok && validerProfondeur('3').value === 3, 'profondeur valide');
+assert(!validerProfondeur('11').ok, 'profondeur au-delà de 10 refusée');
+assert(!validerProfondeur('2.5').ok, 'profondeur décimale refusée');
+assert(!validerProfondeur('trois').ok, 'profondeur non numérique refusée');
+
+assert(validerDureeBail('8').ok, 'bail de 8 heures accepté');
+assert(!validerDureeBail('0').ok, 'bail nul refusé');
+assert(!validerDureeBail('9000').ok, 'bail supérieur à un an refusé');
+
+assert(FORMATS_RAPPORT.join(',') === 'Console,JSON,HTML,CSV', 'quatre formats de rapport');
+assert(validerFormatRapport('JSON').ok, 'format JSON accepté');
+assert(!validerFormatRapport('PDF').ok, 'format inconnu refusé');
+assert(!validerFormatRapport('json').ok, 'la casse compte : « json » n\u2019est pas « JSON »');
+
+assert(MODES_EXECUTION.join(',') === 'Diagnostic,Appliquer', 'deux modes d\u2019exécution');
+assert(validerModeExecution('Diagnostic').ok && validerModeExecution('Appliquer').ok, 'les deux modes sont acceptés');
+assert(!validerModeExecution('Force').ok, 'mode inconnu refusé');
+
+assert(validerChoix('Both', ['Both', 'Dhcp', 'Bootp']).ok, 'choix dans une liste fermée');
+assert(!validerChoix('Autre', ['Both', 'Dhcp', 'Bootp']).ok, 'valeur hors liste refusée');
+
+const listeDns = validerListeIPv4('192.168.30.254, 192.168.30.253');
+assert(listeDns.ok && listeDns.value.length === 2, 'liste de deux serveurs DNS acceptée');
+assert(!validerListeIPv4('192.168.30.254, 192.168.30.254').ok, 'doublon dans la liste refusé');
+assert(!validerListeIPv4('192.168.30.254, 300.1.1.1').ok, 'adresse invalide dans la liste refusée');
+assert(!validerListeIPv4('a, b, c, d').ok, 'liste trop longue et invalide refusée');
+assert(!validerListeIPv4('').ok, 'liste vide refusée');
+
+assert(validerEntier('42', 1, 100, 'Le test').ok, 'entier dans les bornes accepté');
+assert(!validerEntier('0', 1, 100, 'Le test').ok, 'entier sous la borne refusé');
+assert(!validerEntier('101', 1, 100, 'Le test').ok, 'entier au-dessus de la borne refusé');
+assert(!validerEntier('12abc', 1, 100, 'Le test').ok, 'parseInt permissif explicitement refusé');
+
+section('LOT 2 — noyau et fragments de rapport');
+
+const generatorsMod = await import('../dist/generators.mjs');
+assert(generatorsMod.psB64 === psB64Noyau,
+  'psB64 exporté par generators.mjs EST la fonction de noyau.mjs, pas une copie');
+assert(generatorsMod.assertValid === assertValidNoyau,
+  'assertValid exporté par generators.mjs EST la fonction de noyau.mjs');
+assert(psB64Noyau('D\u2019Adam').includes('FromBase64String'),
+  'psB64 encode les apostrophes typographiques en Base64');
+let leveAssert = false;
+try { assertValidNoyau({ validate: () => ({ champ: 'invalide' }) }, {}); } catch { leveAssert = true; }
+assert(leveAssert, 'assertValid lève bien sur une entrée invalide');
+
+const entete = enteteScript({ titre: 'Essai', outil: 'essai-outil' });
+assert(entete.startsWith('#Requires -Version 5.1'),
+  'l\u2019en-tête déclare explicitement le plancher PowerShell 5.1');
+assert(entete.includes('essai-outil') && entete.includes(VERSION_OUTILS),
+  'l\u2019en-tête identifie l\u2019outil et sa version');
+assert(entete.includes('$KjemoResultats'), 'l\u2019en-tête prépare la collecte des résultats');
+
+const fonctions = fonctionsRapport();
+assert(fonctions.includes('function Add-KjemoResultat'), 'la fonction de collecte est définie');
+assert(fonctions.includes("ValidateSet('OK','ATTENTION','PROBLEME','INFO','IGNORE')"),
+  'les états possibles sont contraints par ValidateSet');
+
+const exportBloc = blocExportRapport({ prefixeFichier: 'kjemo-essai' });
+for (const attendu of ['ConvertTo-Json', 'Export-Csv', 'ConvertTo-Html', 'Conclusion', 'Avertissements']) {
+  assert(exportBloc.includes(attendu), `le bloc de rapport contient ${attendu}`);
+}
+assert(!/password|motdepasse|Get-Credential|token/i.test(exportBloc),
+  'le bloc de rapport ne manipule aucun secret');
+assert(blocParametres([['Cle', "'valeur'"]]).includes('$KjemoParametres'),
+  'le bloc de paramètres alimente le rapport');
+assert(blocModeDiagnostic().includes('MODE DIAGNOSTIC'),
+  'la garde de mode annonce clairement qu\u2019elle n\u2019a rien modifié');
 
 // Résumé
 console.log('');
