@@ -2063,6 +2063,772 @@ export const outilRecuperationCompte = {
   ],
 };
 
+/**
+ * 8. ad-object-search-move — retrouver un objet, puis le déplacer.
+ *
+ * Déplacer un objet dans l'annuaire n'est pas anodin : l'OU de destination
+ * décide des stratégies de groupe qui s'appliqueront, et de qui a délégation
+ * dessus. Le script commence donc par montrer où l'objet est, où il irait, et
+ * ce que le déplacement change.
+ */
+export const outilRechercheDeplacement = {
+  id: 'ad-object-search-move',
+  icon: '⌕',
+  category: 'Active Directory',
+  subcategory: 'Maintenance des objets',
+  title: 'Rechercher et déplacer un objet Active Directory',
+  risk: 'caution',
+  summary: 'Retrouve un utilisateur, un groupe, un ordinateur ou une OU par son nom, son SamAccountName, son UPN ou son nom distinctif, montre sa place actuelle, et le déplace vers une autre OU après vérification.',
+  fields: [
+    champDomaine(),
+    {
+      id: 'objType', label: 'Type d’objet', type: 'select', default: 'Utilisateur',
+      options: [
+        ['Utilisateur', 'Utilisateur'],
+        ['Groupe', 'Groupe'],
+        ['Ordinateur', 'Ordinateur'],
+        ['UniteOrganisationnelle', 'Unité d’organisation'],
+        ['Tous', 'Tous les types'],
+      ],
+    },
+    {
+      id: 'objRecherche', label: 'Objet recherché', default: 'm.tremblay',
+      help: 'Nom affiché, SamAccountName, nom d’ouverture de session complet, ou nom distinctif complet.',
+    },
+    {
+      id: 'objOuCible', label: 'OU de destination', default: 'Médecin/Spécialiste',
+      help: 'Chemin parent/enfant, relatif au domaine. Le déplacement change les stratégies de groupe appliquées et les délégations en vigueur.',
+    },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    verifier(errors, 'objType', validerChoix(v.objType,
+      ['Utilisateur', 'Groupe', 'Ordinateur', 'UniteOrganisationnelle', 'Tous'], 'Le type d’objet'));
+    const recherche = String(v.objRecherche ?? '').trim();
+    if (recherche === '') errors.objRecherche = 'Indique l’objet à retrouver.';
+    else if (recherche.length > 256) errors.objRecherche = 'La recherche ne doit pas dépasser 256 caractères.';
+    else if (/[*?]/.test(recherche)) errors.objRecherche = 'Les caractères génériques * et ? ne sont pas acceptés : cet outil vise un objet précis.';
+    else if (/=/.test(recherche)) verifier(errors, 'objRecherche', validerDn(recherche));
+    verifier(errors, 'objOuCible', validerCheminOu(v.objOuCible));
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const recherche = String(v.objRecherche).trim();
+    const dnCible = cheminOuVersDn(validerCheminOu(v.objOuCible).value, domaine);
+    const classes = {
+      Utilisateur: 'user',
+      Groupe: 'group',
+      Ordinateur: 'computer',
+      UniteOrganisationnelle: 'organizationalUnit',
+      Tous: '*',
+    };
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Domaine = ${psB64(domaine)}`,
+      `$Recherche = ${psB64(recherche)}`,
+      `$DnCible = ${psB64(dnCible)}`,
+      `$ClasseVoulue = ${psB64(classes[v.objType])}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. Retrouver l\'objet ---------------------------------------------------',
+      "# Quatre facons de designer le meme objet : nom distinctif, SamAccountName,",
+      '# nom d\'ouverture de session complet, nom affiche. On les essaie dans cet',
+      '# ordre, du plus precis au plus large.',
+      '$trouves = @()',
+      'if ($moduleOk) {',
+      "  if ($Recherche -like '*=*') {",
+      '    try { $trouves = @(Get-ADObject -Identity $Recherche -Properties DistinguishedName,ObjectClass,Name,whenChanged -ErrorAction SilentlyContinue) } catch { }',
+      '  }',
+      '  if ($trouves.Count -eq 0) {',
+      '    $filtre = "SamAccountName -eq \'$Recherche\' -or UserPrincipalName -eq \'$Recherche\' -or Name -eq \'$Recherche\'"',
+      '    try { $trouves = @(Get-ADObject -Filter $filtre -Properties DistinguishedName,ObjectClass,Name,SamAccountName,whenChanged -ErrorAction SilentlyContinue) } catch { }',
+      '  }',
+      "  if ($trouves.Count -eq 0 -and $Recherche -notlike '*$') {",
+      '    $filtreOrdi = "Name -eq \'$Recherche`$\' -or SamAccountName -eq \'$Recherche`$\'"',
+      '    try { $trouves = @(Get-ADObject -Filter $filtreOrdi -Properties DistinguishedName,ObjectClass,Name,whenChanged -ErrorAction SilentlyContinue) } catch { }',
+      '  }',
+      '}',
+      "if ($ClasseVoulue -ne '*') {",
+      '  $trouves = @($trouves | Where-Object { $_.ObjectClass -eq $ClasseVoulue })',
+      '}',
+      "",
+      'if ($trouves.Count -eq 0) {',
+      "  [void](Add-KjemoResultat -Categorie 'Recherche' -Controle $Recherche -Etat 'PROBLEME' -Valeur 'aucun objet trouve' -Commentaire 'Verifie l''orthographe, le type demande, et les droits de lecture du compte utilise.')",
+      '} elseif ($trouves.Count -gt 1) {',
+      '  [void](Add-KjemoResultat -Categorie \'Recherche\' -Controle $Recherche -Etat \'ATTENTION\' -Valeur "$($trouves.Count) objets correspondent" -Commentaire \'Plusieurs objets portent ce nom. Reprends la recherche avec le nom distinctif complet : aucun deplacement ne sera tente.\')',
+      '  foreach ($o in $trouves) {',
+      "    [void](Add-KjemoResultat -Categorie 'Recherche' -Controle $o.ObjectClass -Etat 'INFO' -Valeur $o.DistinguishedName)",
+      '  }',
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Recherche' -Controle 'Objet trouve' -Etat 'OK' -Valeur $trouves[0].DistinguishedName -Commentaire $trouves[0].ObjectClass)",
+      '}',
+      "",
+      '# --- 2. L\'OU de destination existe-t-elle ? ---------------------------------',
+      '$ouOk = $false',
+      'if ($moduleOk) {',
+      '  try { if (Get-ADOrganizationalUnit -Identity $DnCible -ErrorAction SilentlyContinue) { $ouOk = $true } } catch { }',
+      '}',
+      'if ($ouOk) {',
+      "  [void](Add-KjemoResultat -Categorie 'Destination' -Controle 'OU cible' -Etat 'OK' -Valeur $DnCible)",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Destination' -Controle 'OU cible' -Etat 'PROBLEME' -Valeur $DnCible -Commentaire 'OU introuvable. Cree-la d''abord avec l''outil de hierarchie d''OU.')",
+      '}',
+      "",
+      '# --- 3. Le deplacement a-t-il un sens ? -------------------------------------',
+      '$objet = $null',
+      '$dnAvant = $null',
+      '$deplacementUtile = $false',
+      'if ($trouves.Count -eq 1) {',
+      '  $objet = $trouves[0]',
+      '  $dnAvant = $objet.DistinguishedName',
+      "  $parentActuel = ($dnAvant -split '(?<!\\\\),', 2)[1]",
+      '  if ($parentActuel -eq $DnCible) {',
+      "    [void](Add-KjemoResultat -Categorie 'Deplacement' -Controle 'Necessite' -Etat 'IGNORE' -Valeur 'l''objet est deja dans l''OU demandee' -Commentaire 'Rien a faire : aucun deplacement ne sera tente.')",
+      '  } elseif ($DnCible.EndsWith($dnAvant)) {',
+      "    [void](Add-KjemoResultat -Categorie 'Deplacement' -Controle 'Necessite' -Etat 'PROBLEME' -Valeur 'destination situee sous l''objet lui-meme' -Commentaire 'Deplacer une OU dans sa propre descendance est impossible.')",
+      '  } else {',
+      '    $deplacementUtile = $true',
+      '    [void](Add-KjemoResultat -Categorie \'Deplacement\' -Controle \'Trajet\' -Etat \'INFO\' -Valeur ("$parentActuel  ->  $DnCible"))',
+      "    [void](Add-KjemoResultat -Categorie 'Deplacement' -Controle 'Consequences' -Etat 'ATTENTION' -Valeur 'strategies de groupe et delegations' -Commentaire 'Apres deplacement, l''objet recoit les GPO liees a la nouvelle OU et perd celles de l''ancienne. Les delegations posees sur l''ancienne OU ne le suivent pas.')",
+      "    [void](Add-KjemoResultat -Categorie 'Annulation' -Controle 'Emplacement d''origine' -Etat 'INFO' -Valeur $parentActuel -Commentaire 'Note ce nom distinctif : c''est lui qui permet de revenir en arriere.')",
+      '  }',
+      '}',
+      "",
+      '# --- 4. Deplacement, uniquement en mode Appliquer ---------------------------',
+      "if ($Mode -eq 'Appliquer' -and $deplacementUtile -and $ouOk) {",
+      '  try {',
+      '    Move-ADObject -Identity $dnAvant -TargetPath $DnCible -ErrorAction Stop',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Deplacement' -Etat 'OK' -Valeur 'effectue')",
+      '  } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Deplacement' -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'Objet protege contre la suppression accidentelle, ou droits insuffisants sur l''une des deux OU.')",
+      '  }',
+      '  $apres = $null',
+      '  try { $apres = Get-ADObject -Filter "ObjectGUID -eq \'$($objet.ObjectGUID)\'" -Properties DistinguishedName -ErrorAction SilentlyContinue } catch { }',
+      '  if ($apres) {',
+      "    $etatV = 'PROBLEME'",
+      "    if ($apres.DistinguishedName -like \"*,$DnCible\") { $etatV = 'OK' }",
+      "    [void](Add-KjemoResultat -Categorie 'Verification' -Controle 'Emplacement apres deplacement' -Etat $etatV -Valeur $apres.DistinguishedName)",
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  if ($deplacementUtile -and $ouOk) {',
+      '    Move-ADObject -Identity $dnAvant -TargetPath $DnCible -WhatIf',
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+      blocAucuneSuppression('objet'),
+    ];
+
+    return assembler({
+      titre: 'Rechercher et deplacer un objet Active Directory',
+      outil: 'ad-object-search-move',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['Recherche', psB64(recherche)],
+        ['OuCible', psB64(dnCible)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-deplacement',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Utilisateurs et ordinateurs Active Directory (dsa.msc) > Action > Rechercher.',
+    'Affichage > Fonctionnalités avancées, pour voir l’onglet Objet et le nom distinctif.',
+    'Clic droit sur l’objet > Déplacer, puis choisir l’OU de destination.',
+    'Un objet protégé contre la suppression accidentelle refuse le déplacement : décocher la protection dans l’onglet Objet, déplacer, puis la remettre.',
+  ],
+  keywords: [
+    'deplacer', 'move-adobject', 'rechercher un utilisateur', 'nom distinctif', 'dn',
+    'changer d’ou', 'get-adobject', 'objet introuvable', 'gpo apres deplacement',
+  ],
+  requiresAdmin: true,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit d’écriture sur l’OU d’origine et sur l’OU de destination : un déplacement touche les deux.',
+    'Savoir quelles stratégies de groupe sont liées à l’OU de destination — c’est ce que le déplacement change vraiment.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Move-ADObject : Access is denied',
+      code: '0x5',
+      cause: 'Droits insuffisants sur l’une des deux OU, ou objet protégé contre la suppression accidentelle.',
+      fix: 'Vérifier la protection dans dsa.msc (Fonctionnalités avancées > onglet Objet), et la délégation sur les deux OU.',
+    },
+    {
+      message: 'Move-ADObject : The object already exists',
+      cause: 'Un objet du même nom se trouve déjà dans l’OU de destination.',
+      fix: 'Renommer l’un des deux avant de déplacer. Deux objets ne peuvent pas porter le même nom dans une même OU.',
+    },
+    {
+      message: 'L’utilisateur perd des paramètres après le déplacement',
+      cause: 'Les stratégies de groupe liées à l’ancienne OU ne s’appliquent plus.',
+      fix: 'Comparer les GPO liées aux deux OU avant de déplacer, et lancer gpupdate sur le poste concerné après.',
+      command: 'gpresult /r /scope:user',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le script relit l’objet par son GUID — qui ne change pas au déplacement — et affiche son nouveau nom distinctif.',
+    'L’emplacement d’origine est consigné dans le rapport, sous « Annulation ».',
+    'Sur un poste concerné, gpresult montre les nouvelles stratégies appliquées.',
+  ],
+  rollback: {
+    summary: 'Un déplacement se défait exactement comme il s’est fait : en renvoyant l’objet à son emplacement d’origine, que le rapport a consigné. Le GUID et le SID de l’objet ne changent pas : rien n’est perdu.',
+    diagnostic: '# Ou se trouve l\'objet aujourd\'hui ?\nGet-ADObject -Filter "Name -eq \'<nom>\'" -Properties DistinguishedName,whenChanged | Format-List Name,ObjectClass,DistinguishedName,whenChanged',
+    command: '# Renvoyer l\'objet a son emplacement d\'origine, releve dans le rapport.\nMove-ADObject -Identity \'<dn-actuel>\' -TargetPath \'<dn-ou-origine>\'\n\n# Puis rafraichir les strategies sur le poste concerne.\n#   gpupdate /force  n\'est pas necessaire : gpupdate suffit.',
+    warning: 'Le retour est immédiat dans l’annuaire, mais les stratégies de groupe ne se rappliquent qu’au prochain rafraîchissement, ou à la prochaine ouverture de session.',
+  },
+  checks: [
+    'Chercher d’abord, déplacer ensuite : le mode Diagnostic montre le trajet complet.',
+    'Vérifier quelles GPO sont liées à l’OU de destination.',
+    'Noter l’emplacement d’origine : c’est ce qui rend le geste réversible.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/move-adobject',
+  sources: [
+    { label: 'Move-ADObject', url: 'https://learn.microsoft.com/powershell/module/activedirectory/move-adobject' },
+    { label: 'Get-ADObject', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adobject' },
+    { label: 'Syntaxe des noms distinctifs', url: 'https://learn.microsoft.com/windows/win32/ad/object-names-and-identities' },
+  ],
+};
+
+/**
+ * 9. ad-delegation-audit — qui a le droit de faire quoi, et où.
+ *
+ * La délégation Active Directory se pose en trois clics et s'oublie en trois
+ * ans. Cet outil lit les ACL des OU et les rend lisibles : ce qui est hérité
+ * et ce qui ne l'est pas, ce qui est large au point d'être équivalent à
+ * l'administration du domaine, et ce qui pointe vers un compte qui n'existe
+ * plus. Il lit ; il ne réécrit aucune ACL.
+ */
+export const outilAuditDelegation = {
+  id: 'ad-delegation-audit',
+  icon: '⚿',
+  category: 'Active Directory',
+  subcategory: 'Maintenance des objets',
+  title: 'Audit des délégations sur les unités d’organisation',
+  risk: 'diagnostic',
+  summary: 'Lit les listes de contrôle d’accès des OU, distingue l’hérité de l’explicite, signale les droits très larges et les identités qui ne se résolvent plus. N’écrit aucune ACL.',
+  fields: [
+    champDomaine(),
+    {
+      id: 'delOu', label: 'OU examinée (facultatif)', default: '',
+      help: 'Chemin parent/enfant, relatif au domaine. Laisse vide pour examiner toutes les OU du domaine.',
+    },
+    {
+      id: 'delPortee', label: 'Étendue', type: 'select', default: 'Explicites',
+      options: [
+        ['Explicites', 'Délégations explicites seulement — ce qui a été posé à la main'],
+        ['Toutes', 'Toutes les entrées, héritées comprises — beaucoup plus long'],
+      ],
+      help: 'Une délégation posée volontairement est explicite. L’hérité vient de plus haut dans l’arborescence.',
+    },
+    champFormat('delFormat'),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    const ou = String(v.delOu ?? '').trim();
+    if (ou !== '') verifier(errors, 'delOu', validerCheminOu(ou));
+    verifier(errors, 'delPortee', validerChoix(v.delPortee, ['Explicites', 'Toutes'], 'L’étendue'));
+    verifier(errors, 'delFormat', validerFormatRapport(v.delFormat));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const ou = String(v.delOu ?? '').trim();
+    const racine = ou === '' ? domainToDn(domaine) : cheminOuVersDn(validerCheminOu(ou).value, domaine);
+
+    const corps = [
+      `$Domaine = ${psB64(domaine)}`,
+      `$Racine = ${psB64(racine)}`,
+      `$Portee = ${psB64(v.delPortee)}`,
+      `$KjemoFormat = ${psB64(v.delFormat)}`,
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. Table des droits etendus et des classes ----------------------------',
+      "# Les ACL d'Active Directory designent les objets et les droits par GUID.",
+      '# Sans traduction, le rapport serait illisible : on construit donc la table',
+      '# a partir du schema et du conteneur des droits etendus.',
+      '$tableGuid = @{}',
+      'if ($moduleOk) {',
+      '  try {',
+      '    $rootDse = Get-ADRootDSE -ErrorAction Stop',
+      "    foreach ($e in (Get-ADObject -SearchBase $rootDse.schemaNamingContext -LDAPFilter '(schemaIDGUID=*)' -Properties lDAPDisplayName,schemaIDGUID -ErrorAction SilentlyContinue)) {",
+      '      $tableGuid[[System.Guid]$e.schemaIDGUID] = $e.lDAPDisplayName',
+      '    }',
+      '    $ctrl = "CN=Extended-Rights," + $rootDse.configurationNamingContext',
+      "    foreach ($e in (Get-ADObject -SearchBase $ctrl -LDAPFilter '(objectClass=controlAccessRight)' -Properties displayName,rightsGuid -ErrorAction SilentlyContinue)) {",
+      '      $tableGuid[[System.Guid]$e.rightsGuid] = $e.displayName',
+      '    }',
+      '  } catch { }',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Lecture\' -Controle \'Table des droits\' -Etat \'INFO\' -Valeur ("$($tableGuid.Count) identifiants traduits"))',
+      "",
+      '# --- 2. Les OU a examiner ---------------------------------------------------',
+      '$unites = @()',
+      'if ($moduleOk) {',
+      '  try { $unites = @(Get-ADOrganizationalUnit -SearchBase $Racine -Filter * -Properties DistinguishedName -ErrorAction Stop) } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Lecture' -Controle 'OU' -Etat 'PROBLEME' -Valeur $_.Exception.Message)",
+      '  }',
+      '}',
+      "[void](Add-KjemoResultat -Categorie 'Perimetre' -Controle 'Unites examinees' -Etat 'INFO' -Valeur $unites.Count -Commentaire $Racine)",
+      "",
+      '# --- 3. Droits juges trop larges -------------------------------------------',
+      "# GenericAll donne tout. WriteDacl permet de se donner tout. WriteOwner",
+      "# permet de devenir proprietaire, donc de se donner WriteDacl. Les trois",
+      '# equivalent, sur une OU, a en etre administrateur.',
+      "$droitsLarges = @('GenericAll', 'WriteDacl', 'WriteOwner')",
+      "$identitesLarges = @('Tout le monde', 'Everyone', 'Utilisateurs authentifies', 'Authenticated Users', 'Utilisateurs du domaine', 'Domain Users', 'ANONYMOUS LOGON')",
+      '$nbExplicites = 0',
+      '$nbLarges = 0',
+      '$nbOrphelines = 0',
+      "",
+      'foreach ($u in $unites) {',
+      '  $acl = $null',
+      '  try { $acl = Get-Acl -Path ("AD:\\" + $u.DistinguishedName) -ErrorAction SilentlyContinue } catch { }',
+      '  if (-not $acl) {',
+      "    [void](Add-KjemoResultat -Categorie 'Delegations' -Controle $u.DistinguishedName -Etat 'ATTENTION' -Valeur 'ACL illisible' -Commentaire 'Droits insuffisants pour lire le descripteur de securite de cette OU.')",
+      '    continue',
+      '  }',
+      '  [void](Add-KjemoResultat -Categorie \'Proprietaire\' -Controle $u.DistinguishedName -Etat \'INFO\' -Valeur $acl.Owner)',
+      '  foreach ($ace in $acl.Access) {',
+      "    if ($Portee -eq 'Explicites' -and $ace.IsInherited) { continue }",
+      '    if (-not $ace.IsInherited) { $nbExplicites = $nbExplicites + 1 }',
+      "",
+      '    $identite = $ace.IdentityReference.Value',
+      '    $orpheline = $false',
+      "    if ($identite -match '^S-1-5-21-') { $orpheline = $true ; $nbOrphelines = $nbOrphelines + 1 }",
+      "",
+      "    $cible = 'tous les objets'",
+      '    if ($ace.ObjectType -ne [System.Guid]::Empty -and $tableGuid.ContainsKey($ace.ObjectType)) {',
+      '      $cible = $tableGuid[$ace.ObjectType]',
+      '    }',
+      "    $heritage = 'explicite'",
+      "    if ($ace.IsInherited) { $heritage = 'herite' }",
+      "",
+      '    $large = $false',
+      '    foreach ($d in $droitsLarges) {',
+      "      if ($ace.ActiveDirectoryRights.ToString() -like \"*$d*\" -and $ace.AccessControlType -eq 'Allow') { $large = $true }",
+      '    }',
+      '    $identiteLarge = $false',
+      '    foreach ($i in $identitesLarges) {',
+      '      if ($identite -like "*$i") { $identiteLarge = $true }',
+      '    }',
+      "",
+      "    $etatA = 'INFO'",
+      "    $note = ''",
+      '    if ($orpheline) {',
+      "      $etatA = 'ATTENTION'",
+      "      $note = 'Identite non resolue : le compte ou le groupe a ete supprime, l''entree reste. A nettoyer apres verification.'",
+      '    } elseif ($large -and $identiteLarge) {',
+      "      $etatA = 'PROBLEME'",
+      "      $note = 'Droit tres large accorde a un groupe tres large : equivaut a donner l''administration de cette OU a tout le monde.'",
+      '      $nbLarges = $nbLarges + 1',
+      '    } elseif ($large) {',
+      "      $etatA = 'ATTENTION'",
+      "      $note = 'Droit tres large : GenericAll, WriteDacl et WriteOwner permettent de se donner tous les autres droits.'",
+      '      $nbLarges = $nbLarges + 1',
+      '    }',
+      "",
+      '    [void](Add-KjemoResultat -Categorie \'Delegations\' -Controle ("$identite sur " + $u.DistinguishedName) -Etat $etatA -Valeur ("$($ace.AccessControlType) $($ace.ActiveDirectoryRights) sur $cible [$heritage]") -Commentaire $note)',
+      '  }',
+      '}',
+      "",
+      '# --- 4. Conclusion ----------------------------------------------------------',
+      '[void](Add-KjemoResultat -Categorie \'Conclusion\' -Controle \'Delegations explicites\' -Etat \'INFO\' -Valeur $nbExplicites)',
+      "$etat = 'OK'",
+      "if ($nbLarges -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Conclusion' -Controle 'Droits tres larges' -Etat $etat -Valeur $nbLarges)",
+      "$etat = 'OK'",
+      "if ($nbOrphelines -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Conclusion' -Controle 'Identites non resolues' -Etat $etat -Valeur $nbOrphelines -Commentaire 'Une entree qui affiche un SID brut designe un compte supprime.')",
+      "",
+      "Write-Host ''",
+      "Write-Host '--- Corriger une delegation ---'",
+      "Write-Host 'Ce script ne reecrit aucune ACL, et c''est volontaire : une ACL Active'",
+      "Write-Host 'Directory se compose de dizaines d''entrees, et la remplacer en bloc est'",
+      "Write-Host 'la facon la plus rapide de casser un domaine. Pour corriger :'",
+      "Write-Host '  1. dsa.msc, clic droit sur l''OU > Deleguer le controle : l''assistant'",
+      "Write-Host '     ajoute une delegation sans toucher aux autres entrees.'",
+      "Write-Host '  2. Fonctionnalites avancees > onglet Securite > Avance, pour retirer'",
+      "Write-Host '     une entree precise, une seule a la fois.'",
+      "Write-Host '  3. Verifier ensuite en relancant ce rapport.'",
+    ];
+
+    return assembler({
+      titre: 'Audit des delegations Active Directory',
+      outil: 'ad-delegation-audit',
+      diagnostic: true,
+      admin: false,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['Racine', psB64(racine)],
+        ['Portee', psB64(v.delPortee)],
+        ['Format', psB64(v.delFormat)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-delegations',
+    });
+  },
+  gui: [
+    'Utilisateurs et ordinateurs Active Directory (dsa.msc) > Affichage > Fonctionnalités avancées.',
+    'Clic droit sur une OU > Propriétés > onglet Sécurité > Avancé : la liste complète des entrées, avec la colonne « Hérité de ».',
+    'Clic droit sur une OU > Déléguer le contrôle : l’assistant ajoute une délégation courante sans toucher au reste de l’ACL.',
+    'Une entrée qui affiche un SID brut au lieu d’un nom désigne un compte supprimé.',
+  ],
+  keywords: [
+    'delegation', 'acl', 'permissions active directory', 'deleguer le controle',
+    'genericall', 'writedacl', 'writeowner', 'sid orphelin', 'heritage',
+    'qui peut reinitialiser les mots de passe', 'audit des droits',
+  ],
+  requiresAdmin: false,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de lire les descripteurs de sécurité des OU examinées. Un compte sans ce droit verra « ACL illisible ».',
+    'Sur un grand domaine, l’étendue « Toutes les entrées » produit un rapport très long : commencer par les délégations explicites.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Get-Acl : Cannot find path \'AD:\\OU=...\' because it does not exist',
+      cause: 'Le lecteur AD: n’est pas monté, ou le nom distinctif est incorrect.',
+      fix: 'Importer le module ActiveDirectory avant, ce que fait ce script, et vérifier le chemin d’OU.',
+    },
+    {
+      message: 'Les identités s’affichent en S-1-5-21-…',
+      cause: 'Le compte ou le groupe correspondant a été supprimé : le SID reste inscrit dans l’ACL.',
+      fix: 'Retirer l’entrée une par une dans l’onglet Sécurité avancé, après avoir vérifié qu’elle ne correspond à rien d’attendu.',
+    },
+    {
+      message: 'Une délégation existe mais l’opérateur n’arrive toujours pas à agir',
+      cause: 'La délégation porte sur une classe d’objet ou un attribut différent de ce qu’il tente, ou l’héritage est bloqué plus bas.',
+      fix: 'Lire la colonne « sur … » du rapport : elle nomme la classe ou le droit étendu visé par chaque entrée.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le rapport annonce le nombre d’OU examinées : il doit correspondre au périmètre attendu.',
+    'Chaque entrée porte son identité, son droit, sa cible et la mention hérité ou explicite.',
+    'Les compteurs finaux donnent le nombre de droits très larges et d’identités non résolues.',
+  ],
+  rollback: {
+    summary: 'Ce script lit ; il ne modifie aucune ACL. Il n’y a rien à annuler. La seule trace possible est le fichier de rapport.',
+    diagnostic: '# Relire une ACL precise pour comparer avant et apres une correction manuelle.\n(Get-Acl -Path \'AD:\\<dn-de-l-ou>\').Access | Where-Object { -not $_.IsInherited } | Format-Table IdentityReference,ActiveDirectoryRights,AccessControlType',
+    command: '# Retirer un rapport devenu inutile.\nGet-ChildItem -Path ([Environment]::GetFolderPath(\'Desktop\')) -Filter \'kjemo-ad-delegations*\' | Remove-Item -Confirm',
+    warning: 'Le rapport décrit précisément qui peut faire quoi dans l’annuaire. C’est exactement la carte que cherche un attaquant : il se range comme un document sensible.',
+  },
+  checks: [
+    'Commencer par les délégations explicites : ce sont celles que quelqu’un a posées.',
+    'Traiter en priorité les droits très larges accordés à des groupes très larges.',
+    'Les corrections se font une entrée à la fois, dans l’interface graphique.',
+  ],
+  source: 'https://learn.microsoft.com/windows-server/identity/ad-ds/plan/delegating-administration-of-account-ous-and-resource-ous',
+  sources: [
+    { label: 'Déléguer l’administration des OU', url: 'https://learn.microsoft.com/windows-server/identity/ad-ds/plan/delegating-administration-of-account-ous-and-resource-ous' },
+    { label: 'Get-Acl', url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl' },
+    { label: 'Get-ADRootDSE', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adrootdse' },
+  ],
+};
+
+/**
+ * 10. ad-computer-cleanup — les ordinateurs qui ne reviendront pas.
+ *
+ * Un objet ordinateur qui ne s'est plus authentifié depuis un an est presque
+ * toujours une machine réinstallée, volée ou mise au rebut. Presque. C'est
+ * pourquoi ce script exporte d'abord, désactive ensuite, met en quarantaine si
+ * on le lui demande — et ne supprime jamais.
+ */
+export const outilNettoyageOrdinateurs = {
+  id: 'ad-computer-cleanup',
+  icon: '▣',
+  category: 'Active Directory',
+  subcategory: 'Maintenance des objets',
+  title: 'Recenser et mettre en quarantaine les ordinateurs inactifs',
+  risk: 'caution',
+  summary: 'Recense les objets ordinateurs inactifs, désactivés ou en doublon, les exporte en CSV, puis peut les désactiver et les déplacer vers une OU de quarantaine. Ne supprime jamais un objet.',
+  fields: [
+    champDomaine(),
+    {
+      id: 'ordOu', label: 'Limiter à une OU (facultatif)', default: '',
+      help: 'Chemin parent/enfant, relatif au domaine. Laisse vide pour examiner tout le domaine.',
+    },
+    {
+      id: 'ordInactif', label: 'Ordinateur considéré inactif après (jours)', default: '180',
+      help: 'Un poste allumé change son mot de passe de compte tous les 30 jours : au-delà de 90 jours sans contact, la machine ne parle plus au domaine.',
+    },
+    {
+      id: 'ordQuarantaine', label: 'OU de quarantaine', default: 'Administration/Quarantaine',
+      help: 'OU où déplacer les objets désactivés, le temps de confirmer qu’aucun service ne dépendait d’eux. Elle doit exister.',
+    },
+    {
+      id: 'ordAction', label: 'Action en mode Appliquer', type: 'select', default: 'DesactiverSeulement',
+      options: [
+        ['DesactiverSeulement', 'Désactiver seulement — l’objet reste en place'],
+        ['DesactiverEtDeplacer', 'Désactiver et déplacer en quarantaine'],
+      ],
+      help: 'Aucune de ces deux actions ne supprime quoi que ce soit. La suppression reste une décision humaine, prise plus tard.',
+    },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    const ou = String(v.ordOu ?? '').trim();
+    if (ou !== '') verifier(errors, 'ordOu', validerCheminOu(ou));
+    verifier(errors, 'ordInactif', validerJours(v.ordInactif, { min: 30, max: 3650, label: 'Le seuil d’inactivité' }));
+    verifier(errors, 'ordQuarantaine', validerCheminOu(v.ordQuarantaine));
+    verifier(errors, 'ordAction', validerChoix(v.ordAction, ['DesactiverSeulement', 'DesactiverEtDeplacer'], 'L’action'));
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const ou = String(v.ordOu ?? '').trim();
+    const racine = ou === '' ? domainToDn(domaine) : cheminOuVersDn(validerCheminOu(ou).value, domaine);
+    const dnQuarantaine = cheminOuVersDn(validerCheminOu(v.ordQuarantaine).value, domaine);
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Domaine = ${psB64(domaine)}`,
+      `$Racine = ${psB64(racine)}`,
+      `$DnQuarantaine = ${psB64(dnQuarantaine)}`,
+      `$Action = ${psB64(v.ordAction)}`,
+      `$SeuilInactif = ${validerJours(v.ordInactif, { min: 30, max: 3650 }).value}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. Inventaire ----------------------------------------------------------',
+      '$limite = (Get-Date).AddDays(-$SeuilInactif)',
+      '$ordis = @()',
+      'if ($moduleOk) {',
+      '  try {',
+      '    $ordis = @(Get-ADComputer -SearchBase $Racine -Filter * -Properties Enabled,LastLogonDate,PasswordLastSet,OperatingSystem,DistinguishedName,whenCreated,Description -ErrorAction Stop)',
+      '  } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Inventaire' -Controle 'Lecture' -Etat 'PROBLEME' -Valeur $_.Exception.Message)",
+      '  }',
+      '}',
+      "[void](Add-KjemoResultat -Categorie 'Inventaire' -Controle 'Objets ordinateurs' -Etat 'INFO' -Valeur $ordis.Count -Commentaire $Racine)",
+      "",
+      '# --- 2. Inactifs -------------------------------------------------------------',
+      '# Le mot de passe du compte ordinateur se renouvelle tous les 30 jours quand',
+      '# la machine est en service : PasswordLastSet est donc un indicateur plus sur',
+      '# que LastLogonDate, qui se replique avec du retard.',
+      '$inactifs = @($ordis | Where-Object {',
+      '  $_.Enabled -eq $true -and (',
+      '    ($_.PasswordLastSet -ne $null -and $_.PasswordLastSet -lt $limite) -or',
+      '    ($_.PasswordLastSet -eq $null -and $_.whenCreated -lt $limite)',
+      '  )',
+      '})',
+      "$etat = 'OK'",
+      "if ($inactifs.Count -gt 0) { $etat = 'ATTENTION' }",
+      '[void](Add-KjemoResultat -Categorie \'Inactifs\' -Controle "Sans contact depuis plus de $SeuilInactif jours" -Etat $etat -Valeur $inactifs.Count)',
+      'foreach ($o in ($inactifs | Sort-Object PasswordLastSet)) {',
+      "  $quand = 'jamais'",
+      "  if ($o.PasswordLastSet -ne $null) { $quand = $o.PasswordLastSet.ToString('yyyy-MM-dd') }",
+      '  [void](Add-KjemoResultat -Categorie \'Inactifs\' -Controle $o.Name -Etat \'ATTENTION\' -Valeur ("dernier contact : $quand") -Commentaire ("$($o.OperatingSystem) — $($o.DistinguishedName)"))',
+      '}',
+      "",
+      '# --- 3. Deja desactives -------------------------------------------------------',
+      '$deja = @($ordis | Where-Object { $_.Enabled -eq $false })',
+      "[void](Add-KjemoResultat -Categorie 'Deja desactives' -Controle 'Total' -Etat 'INFO' -Valeur $deja.Count -Commentaire 'Objets desactives lors d''un passage precedent, ou a la main.')",
+      'foreach ($o in ($deja | Sort-Object Name)) {',
+      "  [void](Add-KjemoResultat -Categorie 'Deja desactives' -Controle $o.Name -Etat 'INFO' -Valeur $o.DistinguishedName)",
+      '}',
+      "",
+      '# --- 4. Doublons --------------------------------------------------------------',
+      "# Deux objets pour une meme machine arrivent apres une reinstallation faite",
+      "# sans retirer l'ancien compte. Le plus recent est celui qui fonctionne.",
+      '$groupes = $ordis | Group-Object -Property Name | Where-Object { $_.Count -gt 1 }',
+      "$etat = 'OK'",
+      "if ($groupes) { $etat = 'ATTENTION' }",
+      '$nbDoublons = 0',
+      'if ($groupes) { $nbDoublons = @($groupes).Count }',
+      "[void](Add-KjemoResultat -Categorie 'Doublons' -Controle 'Noms portes par plusieurs objets' -Etat $etat -Valeur $nbDoublons)",
+      'foreach ($g in $groupes) {',
+      '  foreach ($o in $g.Group) {',
+      "    $quand = 'jamais'",
+      "    if ($o.PasswordLastSet -ne $null) { $quand = $o.PasswordLastSet.ToString('yyyy-MM-dd') }",
+      "    [void](Add-KjemoResultat -Categorie 'Doublons' -Controle $g.Name -Etat 'ATTENTION' -Valeur (\"$($o.DistinguishedName) — dernier contact : $quand\") -Commentaire 'Ne retire jamais le plus recent : c''est celui par lequel la machine s''authentifie.')",
+      '  }',
+      '}',
+      "",
+      '# --- 5. Export avant toute action ---------------------------------------------',
+      "# L'export precede l'action, toujours : c'est lui qui permet de revenir en",
+      "# arriere, et de savoir ce qui a ete touche.",
+      "$dossier = [Environment]::GetFolderPath('Desktop')",
+      "$horodatage = (Get-Date).ToString('yyyyMMdd-HHmmss')",
+      '$cheminExport = Join-Path $dossier "kjemo-ad-ordinateurs-avant-$horodatage.csv"',
+      'try {',
+      '  $ordis | Select-Object Name,Enabled,OperatingSystem,PasswordLastSet,LastLogonDate,whenCreated,DistinguishedName,Description |',
+      '    Sort-Object Name | Export-Csv -Path $cheminExport -NoTypeInformation -Encoding UTF8',
+      "  [void](Add-KjemoResultat -Categorie 'Sauvegarde' -Controle 'Export avant action' -Etat 'OK' -Valeur $cheminExport)",
+      '} catch {',
+      "  [void](Add-KjemoResultat -Categorie 'Sauvegarde' -Controle 'Export avant action' -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'Sans export, aucune action ne sera tentee.')",
+      '  $cheminExport = $null',
+      '}',
+      "",
+      '# --- 6. OU de quarantaine ------------------------------------------------------',
+      '$quarantaineOk = $false',
+      'if ($moduleOk) {',
+      '  try { if (Get-ADOrganizationalUnit -Identity $DnQuarantaine -ErrorAction SilentlyContinue) { $quarantaineOk = $true } } catch { }',
+      '}',
+      "if ($Action -eq 'DesactiverEtDeplacer') {",
+      '  if ($quarantaineOk) {',
+      "    [void](Add-KjemoResultat -Categorie 'Quarantaine' -Controle 'OU de quarantaine' -Etat 'OK' -Valeur $DnQuarantaine)",
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Quarantaine' -Controle 'OU de quarantaine' -Etat 'PROBLEME' -Valeur $DnQuarantaine -Commentaire 'Cree cette OU avant, avec l''outil de hierarchie d''OU. Aucun deplacement ne sera tente.')",
+      '  }',
+      '}',
+      "",
+      '# --- 7. Ce que la desactivation implique ---------------------------------------',
+      "[void](Add-KjemoResultat -Categorie 'Avertissement' -Controle 'Canal securise' -Etat 'INFO' -Valeur 'desactiver rompt l''authentification de la machine' -Commentaire 'Si la machine revient en service, elle ne pourra plus ouvrir de session de domaine tant que son objet est desactive. La reactiver suffit : le SID est conserve.')",
+      "[void](Add-KjemoResultat -Categorie 'Avertissement' -Controle 'Suppression' -Etat 'INFO' -Valeur 'jamais automatique' -Commentaire 'Supprimer l''objet detruit son SID. Rejoindre le domaine ensuite cree un nouvel objet, et tout ce qui reposait sur l''ancien SID est perdu : c''est irreversible.')",
+      "",
+      '# --- 8. Action, uniquement en mode Appliquer -----------------------------------',
+      "if ($Mode -eq 'Appliquer' -and $cheminExport -ne $null) {",
+      '  foreach ($o in $inactifs) {',
+      '    try {',
+      '      Disable-ADAccount -Identity $o.DistinguishedName -ErrorAction Stop',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle $o.Name -Etat 'OK' -Valeur 'desactive')",
+      '    } catch {',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle $o.Name -Etat 'PROBLEME' -Valeur $_.Exception.Message)",
+      '      continue',
+      '    }',
+      "    if ($Action -eq 'DesactiverEtDeplacer' -and $quarantaineOk) {",
+      '      try {',
+      '        Move-ADObject -Identity $o.DistinguishedName -TargetPath $DnQuarantaine -ErrorAction Stop',
+      "        [void](Add-KjemoResultat -Categorie 'Action' -Controle $o.Name -Etat 'OK' -Valeur 'deplace en quarantaine')",
+      '      } catch {',
+      "        [void](Add-KjemoResultat -Categorie 'Action' -Controle $o.Name -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'Objet probablement protege contre la suppression accidentelle.')",
+      '      }',
+      '    }',
+      '  }',
+      "  Write-Host ''",
+      "  Write-Host '--- Verification apres action ---'",
+      '  foreach ($o in $inactifs) {',
+      '    $apres = $null',
+      '    try { $apres = Get-ADComputer -Identity $o.ObjectGUID -Properties Enabled,DistinguishedName -ErrorAction SilentlyContinue } catch { }',
+      '    if ($apres) {',
+      '      [void](Add-KjemoResultat -Categorie \'Verification\' -Controle $apres.Name -Etat \'INFO\' -Valeur ("actif : $($apres.Enabled) — $($apres.DistinguishedName)"))',
+      '    }',
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  foreach ($o in $inactifs) {',
+      '    Disable-ADAccount -Identity $o.DistinguishedName -WhatIf',
+      "    if ($Action -eq 'DesactiverEtDeplacer' -and $quarantaineOk) {",
+      '      Move-ADObject -Identity $o.DistinguishedName -TargetPath $DnQuarantaine -WhatIf',
+      '    }',
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+      blocAucuneSuppression('ordinateur'),
+    ];
+
+    return assembler({
+      titre: 'Recenser et mettre en quarantaine les ordinateurs inactifs',
+      outil: 'ad-computer-cleanup',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['Racine', psB64(racine)],
+        ['SeuilInactifJours', psB64(String(v.ordInactif))],
+        ['Action', psB64(v.ordAction)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-ordinateurs',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Utilisateurs et ordinateurs Active Directory (dsa.msc) > OU Computers, ou l’OU concernée.',
+    'Requêtes enregistrées > Nouveau > Requête : « Jours depuis la dernière ouverture de session ».',
+    'Clic droit sur un objet > Désactiver le compte.',
+    'Clic droit > Déplacer, vers l’OU de quarantaine.',
+    'La suppression se fait à la main, plus tard, une fois qu’on est sûr que la machine ne revient pas.',
+  ],
+  keywords: [
+    'ordinateur inactif', 'objet ordinateur', 'get-adcomputer', 'poste obsolete',
+    'menage annuaire', 'quarantaine', 'desactiver un ordinateur', 'doublon',
+    'passwordlastset', 'machine reinstallee',
+  ],
+  requiresAdmin: true,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de désactiver et de déplacer des objets ordinateurs dans le périmètre examiné.',
+    'Une OU de quarantaine créée à l’avance, si l’action de déplacement est retenue.',
+    'Un délai d’observation convenu : la quarantaine ne sert à rien si personne ne la relit.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Disable-ADAccount : Access is denied',
+      code: '0x5',
+      cause: 'Droits insuffisants sur l’OU qui contient l’objet ordinateur.',
+      fix: 'Utiliser un compte délégué sur cette OU, ou vérifier la délégation.',
+    },
+    {
+      message: 'Move-ADObject : Access is denied, alors que la désactivation a fonctionné',
+      cause: 'L’objet est protégé contre la suppression accidentelle : cette protection bloque aussi le déplacement.',
+      fix: 'Décocher la protection dans dsa.msc (Fonctionnalités avancées > onglet Objet), déplacer, puis la remettre.',
+    },
+    {
+      message: 'Une machine désactivée par erreur ne peut plus ouvrir de session',
+      cause: 'Le compte ordinateur désactivé refuse l’authentification de la machine auprès du domaine.',
+      fix: 'Réactiver l’objet : le SID est conservé, la machine retrouve sa place sans rejoindre le domaine à nouveau.',
+      command: 'Enable-ADAccount -Identity \'<nom-machine>$\'',
+    },
+    {
+      message: 'PasswordLastSet est vide sur un objet récent',
+      cause: 'L’objet ordinateur a été pré-créé mais aucune machine ne l’a encore utilisé pour joindre le domaine.',
+      fix: 'Le script retombe alors sur la date de création. Vérifier qu’il ne s’agit pas d’une pré-création en attente.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Un fichier CSV est écrit sur le Bureau AVANT toute action : il contient l’état complet de tous les objets ordinateurs.',
+    'Le script relit chaque objet touché par son GUID et affiche son état et son emplacement.',
+    'Aucun objet n’est supprimé : le rapport le dit explicitement en fin d’exécution.',
+  ],
+  rollback: {
+    summary: 'La désactivation et le déplacement se défont tous les deux : réactiver l’objet et le renvoyer à son OU d’origine, que le CSV d’export consigne. Le SID de l’objet ne change pas, donc rien n’est perdu.',
+    diagnostic: '# Relire le CSV produit avant l\'action, puis l\'etat actuel d\'un objet.\nGet-ChildItem -Path ([Environment]::GetFolderPath(\'Desktop\')) -Filter \'kjemo-ad-ordinateurs-avant-*.csv\' | Sort-Object LastWriteTime -Descending | Select-Object -First 1\nGet-ADComputer -Identity \'<nom-machine>\' -Properties Enabled,DistinguishedName,whenChanged | Format-List Name,Enabled,DistinguishedName,whenChanged',
+    command: '# Reactiver un objet desactive par erreur.\nEnable-ADAccount -Identity \'<nom-machine>$\'\n\n# Le renvoyer a son emplacement d\'origine, lu dans le CSV.\nMove-ADObject -Identity \'<dn-actuel>\' -TargetPath \'<dn-origine>\'',
+    exceptional: '# AVERTISSEMENT CRITIQUE — suppression d\'un objet ordinateur.\n#\n# Ce script ne supprime jamais. Si la suppression devient necessaire, elle se\n# fait a la main, et il faut savoir ce qu\'elle detruit :\n#\n#   - Le SID de la machine disparait. Toute ACL, toute delegation, tout groupe\n#     qui designait cet ordinateur perd sa reference.\n#   - Le canal securise est rompu definitivement. Si la machine existe encore,\n#     elle devra rejoindre le domaine a nouveau, ce qui cree un objet NEUF,\n#     avec un SID different : ce n\'est pas une restauration.\n#   - Les certificats et les inscriptions lies au compte machine deviennent\n#     invalides.\n#\n# Avant d\'y penser :\n#   1. Le CSV d\'export existe et a ete relu.\n#   2. La corbeille Active Directory est activee.\n#   3. L\'objet est reste en quarantaine assez longtemps pour qu\'une machine\n#      encore en service se soit manifestee.\n#\n# Reference officielle :\n# https://learn.microsoft.com/powershell/module/activedirectory/remove-adcomputer\n#\n# Commande, a executer manuellement, objet par objet :\n#   Remove-ADComputer -Identity \'<nom-machine>\' -Confirm',
+    warning: 'Désactiver un objet ordinateur empêche la machine correspondante d’ouvrir une session de domaine dès son prochain démarrage. C’est précisément l’effet recherché pour une machine hors service — et un incident si la machine était encore en usage.',
+  },
+  checks: [
+    'Lire le rapport en mode Diagnostic avant tout : la liste des inactifs est ce qui décide.',
+    'Un CSV complet est écrit avant chaque action ; sans lui, le script n’agit pas.',
+    'Désactiver et déplacer, jamais supprimer : la suppression se décide plus tard, à la main.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adcomputer',
+  sources: [
+    { label: 'Get-ADComputer', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adcomputer' },
+    { label: 'Disable-ADAccount', url: 'https://learn.microsoft.com/powershell/module/activedirectory/disable-adaccount' },
+    { label: 'Move-ADObject', url: 'https://learn.microsoft.com/powershell/module/activedirectory/move-adobject' },
+    { label: 'Remove-ADComputer', url: 'https://learn.microsoft.com/powershell/module/activedirectory/remove-adcomputer' },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Catalogue exporté — complété au fil des sous-rubriques du LOT 3
 // ---------------------------------------------------------------------------
@@ -2074,4 +2840,7 @@ export const toolsAd = [
   outilCheminsProfils,
   outilSanteComptes,
   outilRecuperationCompte,
+  outilRechercheDeplacement,
+  outilAuditDelegation,
+  outilNettoyageOrdinateurs,
 ];
