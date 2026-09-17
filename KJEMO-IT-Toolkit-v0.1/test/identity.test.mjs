@@ -1626,8 +1626,39 @@ for (const outil of outilsRecents) {
   assert(!/Set-ExecutionPolicy/i.test(script), `${outil.id} : aucun contournement d’ExecutionPolicy`);
   assert(!/Invoke-WebRequest|Invoke-RestMethod|curl\s+http|wget\s+http|DownloadString/i.test(script),
     `${outil.id} : aucun téléchargement de code externe`);
-  assert(!/Get-Credential|ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
-    `${outil.id} : aucune manipulation d’identifiants`);
+  // Aucun secret ne doit venir du site, ni finir en clair, ni etre journalise.
+  // Les deux formes d'acquisition LOCALE et interactive — Get-Credential et
+  // Read-Host -AsSecureString — sont au contraire la bonne reponse : elles
+  // demandent le secret a la console, au moment de l'execution. Ce qui reste
+  // interdit sans exception, c'est de le fabriquer, de le convertir en clair,
+  // ou de le laisser trainer.
+  assert(!/ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
+    `${outil.id} : aucun secret fabriqué ni converti en clair`);
+  const lignes = script.split('\n');
+  const acquisitions = lignes.filter((l) => /Get-Credential|Read-Host[^\n]*-AsSecureString/i.test(l));
+  for (const ligne of acquisitions) {
+    assert(!/-UserName\s+['"]/i.test(ligne),
+      `${outil.id} : l’acquisition d’identifiants ne préremplit aucun compte`);
+  }
+  if (acquisitions.length > 0) {
+    // La variable qui recoit le secret est identifiee, puis suivie a la trace :
+    // elle ne doit apparaitre ni dans un resultat de rapport, ni dans un fichier.
+    const variables = acquisitions
+      .map((l) => (l.match(/\$([A-Za-z][A-Za-z0-9_]*)\s*=\s*(?:Get-Credential|Read-Host)/i) ?? [])[1])
+      .filter(Boolean);
+    assert(variables.length === acquisitions.length,
+      `${outil.id} : chaque acquisition d’identifiants est affectée à une variable nommée`);
+    for (const nom of variables) {
+      const motif = new RegExp('\\$' + nom + '\\b');
+      for (const ligne of lignes) {
+        if (!motif.test(ligne)) continue;
+        assert(!/Add-KjemoResultat|Out-File|Set-Content|Export-Csv|ConvertTo-Json|Write-Host/i.test(ligne),
+          `${outil.id} : la variable $${nom} n’est ni journalisée ni écrite dans un fichier`);
+      }
+      assert(new RegExp('\\$' + nom + '\\s*=\\s*\\$null').test(script),
+        `${outil.id} : la variable $${nom} est remise à $null après usage`);
+    }
+  }
   assert(!/\bTODO\b|\bFIXME\b|\bXXX\b/.test(script), `${outil.id} : aucun marqueur TODO`);
   assert(!/http:\/\//.test(script), `${outil.id} : aucune URL non chiffrée`);
 
