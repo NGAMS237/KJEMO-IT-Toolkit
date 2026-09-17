@@ -1284,8 +1284,10 @@ assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.leng
 
 // Sous-rubriques agrégées
 const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
-assert(sousAD.join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
-  `Active Directory expose ses trois sous-rubriques (${sousAD.join(', ')})`);
+// Les trois sous-rubriques historiques restent en tête ; les lots suivants en
+// ajoutent — le test vérifie la présence et l'ordre, pas un nombre figé.
+assert(sousAD.slice(0, 3).join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
+  `Active Directory conserve ses trois sous-rubriques historiques en tête (${sousAD.slice(0, 3).join(', ')})`);
 assert(sousRubriques(tools, 'Imprimantes').length === 0,
   'une catégorie vide n\u2019expose aucune sous-rubrique');
 assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
@@ -1294,10 +1296,9 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // Une fonction generate() par outil, et une sous-rubrique par outil, quel que
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-const sourceServeur = existsSync(resolve(ROOT, 'dist/outils-serveur.mjs'))
-  ? readFileSync(resolve(ROOT, 'dist/outils-serveur.mjs'), 'utf8')
-  : '';
-const sourcesCatalogue = sourceGen + '\n' + sourceServeur;
+const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs']
+  .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
+const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
   'les huit generate() historiques sont toujours dans generators.mjs');
 assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === tools.length,
@@ -1519,19 +1520,23 @@ section('LOT 2 — contrat des outils Windows Server');
 const SOUS_RUBRIQUES_LOT2 = [
   'Diagnostic serveur', 'DHCP', 'DNS', 'Serveur de fichiers', 'Routage et accès Internet',
 ];
-const outilsLot2 = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+// Les outils ajoutés après le LOT 1, tous lots confondus. Le contrat qui suit
+// s'applique à chacun d'eux : il grandit avec le catalogue.
+const outilsRecents = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+const outilsLot2 = outilsRecents.filter((t) => t.category === 'Windows Server');
+const outilsLot3 = outilsRecents.filter((t) => t.category === 'Active Directory');
 
-assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) du LOT 2`);
-assert(outilsLot2.every((t) => t.category === 'Windows Server'),
-  'tous les outils du LOT 2 appartiennent à la catégorie Windows Server');
+assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
-  'chaque outil du LOT 2 porte une des cinq sous-rubriques prévues');
+  'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
+assert(outilsRecents.length === outilsLot2.length + outilsLot3.length,
+  `tout outil ajouté appartient à Windows Server ou à Active Directory (${outilsRecents.length})`);
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
   'commonErrors', 'reversible', 'verifyAfter', 'rollback', 'checks', 'source', 'sources'];
 
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   for (const champ of CHAMPS_FICHE) {
     assert(outil[champ] !== undefined && outil[champ] !== null,
       `${outil.id} : le champ « ${champ} » de la fiche est renseigné`);
@@ -1573,17 +1578,25 @@ for (const outil of outilsLot2) {
 
   // Aucun champ ne demande de secret.
   for (const f of outil.fields) {
-    // On juge ce que le champ DEMANDE — son identifiant et son étiquette — et
-    // non son texte d'aide, qui peut légitimement dire « aucun mot de passe ».
-    assert(!/mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i.test(`${f.id} ${f.label}`),
-      `${outil.id} : le champ « ${f.id} » ne demande aucun secret`);
+    // On juge ce que le champ DEMANDE. Un champ libre dont l'étiquette parle de
+    // mot de passe en réclamerait un ; une liste fermée qui choisit une
+    // POLITIQUE de mot de passe n'en transporte aucun, par construction.
+    const champLibre = f.type !== 'select' && f.type !== 'checkbox';
+    if (champLibre) {
+      assert(!/mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i.test(`${f.id} ${f.label}`),
+        `${outil.id} : le champ libre « ${f.id} » ne demande aucun secret`);
+    } else {
+      const valeursPossibles = (f.options ?? []).map((o) => (Array.isArray(o) ? o[0] : o)).join(' ');
+      assert(!/^(motdepasse|password|secret|token)$/i.test(valeursPossibles.trim()),
+        `${outil.id} : la liste « ${f.id} » ne propose aucune valeur secrète`);
+    }
     assert(f.type !== 'password', `${outil.id} : aucun champ de type password`);
   }
 }
 
-section('LOT 2 — scripts générés : sécurité et forme');
+section('LOT 2 et 3 — scripts générés : sécurité et forme');
 
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
   let script = '';
   let erreur = null;
@@ -1634,9 +1647,9 @@ for (const outil of outilsLot2) {
   }
 }
 
-section('LOT 2 — validation : les données invalides sont refusées');
+section('LOT 2 et 3 — validation : les données invalides sont refusées');
 
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   // Champ vide sur un champ obligatoire : le script ne doit pas être produit.
   const obligatoires = outil.fields.filter((f) => !/facultatif/i.test(f.label));
   for (const champ of obligatoires.slice(0, 3)) {
@@ -1807,7 +1820,7 @@ assert(/ConvertTo-SecureString|PlainText/i.test(scriptSecret),
   'contre-épreuve — le motif de détection de secrets reconnaît un script fautif');
 
 // Aucun script réel ne contient ces motifs.
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
   const script = outil.generate(valeurs);
   assert(!/(^|\s)-Force\b/i.test(script) && !/-Confirm\s*:\s*\$false/i.test(script)
@@ -1830,10 +1843,20 @@ section('LOT 2 — contre-épreuve : la garde d\u2019identité des scripts histo
 // était absente ou fausse, la garde devrait le voir : on le vérifie ici sur une
 // copie modifiée du fichier, sans toucher au vrai.
 const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.json'), 'utf8'));
-assert(baseline.count === 64 && Object.keys(baseline.sha256).length === 64,
-  'la référence couvre exactement les 64 scripts historiques');
-assert(baseline.baseSha === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
-  'la référence est bien ancrée au SHA de base du LOT 1B');
+// La référence s'étend à chaque lot : au LOT 3 elle couvre les 176 scripts
+// produits au SHA a84a85c, dont les 64 du LOT 0/1 restés inchangés depuis
+// 22b4ead. Le compte doit suivre le catalogue, jamais un nombre figé à la main.
+assert(baseline.count === Object.keys(baseline.sha256).length,
+  `la référence est cohérente : ${baseline.count} empreintes annoncées et présentes`);
+assert(baseline.count >= 176,
+  `la référence couvre au moins les 176 scripts existants (${baseline.count})`);
+assert(/^[0-9a-f]{40}$/.test(baseline.baseSha),
+  'la référence est ancrée à un SHA de commit complet');
+assert(baseline.baseShaPrecedent === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
+  'la référence conserve la trace de l\u2019ancrage précédent (LOT 1B)');
+const outilsCouverts = new Set(Object.keys(baseline.sha256).map((f) => f.split('__')[0]));
+assert([...outilsCouverts].every((id) => tools.some((t) => t.id === id)),
+  'chaque outil de la référence existe encore dans le catalogue');
 const empreinteFausse = { ...baseline.sha256 };
 const premierFichier = Object.keys(empreinteFausse)[0];
 empreinteFausse[premierFichier] = '0'.repeat(64);

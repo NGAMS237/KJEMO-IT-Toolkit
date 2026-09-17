@@ -24,6 +24,7 @@ import { psB64, assertValid } from './noyau.mjs';
 import { validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName } from './validateurs.mjs';
 import { toolsServeur } from './outils-serveur.mjs';
+import { toolsAd } from './outils-ad.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1561,4 +1562,10 @@ tools.push(createDiskScanTool());
 // ---------------------------------------------------------------------------
 for (const outil of toolsServeur) tools.push(outil);
 
+// ---------------------------------------------------------------------------
+// LOT 3 — catalogue Active Directory avancé
+// Même principe qu'au LOT 2 : les outils vivent dans leur module, et rejoignent
+// ici le catalogue unique. L'ordre reste stable, lot après lot.
+// ---------------------------------------------------------------------------
+for (const outil of toolsAd) tools.push(outil);
 

@@ -535,6 +535,15 @@ function formMarkup(tool) {
     if (field.type === 'select') {
       return `<div class="field"><label for="${field.id}">${field.label}</label><select id="${field.id}">${field.options.map(([value, label]) => `<option value="${value}" ${value === field.default ? 'selected' : ''}>${label}</option>`).join('')}</select>${field.help ? `<small>${field.help}</small>` : ''}<span id="${field.id}-error" class="field-error" aria-live="polite" hidden></span></div>`;
     }
+    // Champ multiligne : une liste d'OU, un bloc de noms, tout ce qui se copie
+    // depuis un tableau de conception. La valeur se lit comme celle d'un input.
+    if (field.type === 'textarea') {
+      const lignes = String(field.default ?? '').split('\n').length;
+      return `<div class="field"><label for="${field.id}">${field.label}</label>`
+        + `<textarea id="${field.id}" rows="${Math.min(Math.max(lignes, 3), 14)}" spellcheck="false">${textToCode(field.default ?? '')}</textarea>`
+        + (field.help ? `<small>${field.help}</small>` : '')
+        + `<span id="${field.id}-error" class="field-error" aria-live="polite" hidden></span></div>`;
+    }
     const attributes = [field.min !== undefined ? `min="${field.min}"` : '', field.max !== undefined ? `max="${field.max}"` : '', field.step !== undefined ? `step="${field.step}"` : ''].filter(Boolean).join(' ');
     if (field.type === 'checkbox') {
       return `<div class="field checkbox-field"><label><input id="${field.id}" type="checkbox" ${field.default ? 'checked' : ''} /> ${field.label}</label>${field.help ? `<small>${field.help}</small>` : ''}<span id="${field.id}-error" class="field-error" aria-live="polite" hidden></span></div>`;
