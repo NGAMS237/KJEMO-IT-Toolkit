@@ -1695,15 +1695,23 @@ console.log('\n[sécurité v2] — avertissements en mode compact');
   await ctx.close();
 }
 
-// --- LOT 2 : les 22 outils dans l'interface --------------------------------
-console.log('\n[LOT 2] — catalogue de 22 outils, catégories et sous-rubriques');
+// --- Catalogue complet dans l'interface -------------------------------------
+console.log('\n[Catalogue] — outils, catégories et sous-rubriques dans la page');
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
   await page.goto(BASE_URL);
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
 
-  assert(tools.length === 22, `le catalogue compte ${tools.length} outils`);
+  // Le catalogue grandit d'un lot a l'autre : on verifie sa composition, non un
+  // nombre fige. Les huit outils historiques et les quatorze du LOT 2 sont des
+  // socles stables ; le LOT 3 ajoute a la categorie Active Directory.
+  const parCategorie = (nom) => tools.filter((t) => t.category === nom).length;
+  assert(parCategorie('Windows Server') === 15,
+    `Windows Server conserve ses 15 outils (${parCategorie('Windows Server')})`);
+  assert(tools.length >= 22, `le catalogue compte ${tools.length} outils (22 au minimum)`);
+  assert(new Set(tools.map((t) => t.id)).size === tools.length,
+    'chaque outil du catalogue porte un identifiant unique');
   const cartes = await page.locator('#toolGrid .open-tool').count();
   assert(cartes === tools.length,
     `les ${tools.length} outils sont tous affichés sur l’accueil (${cartes})`);

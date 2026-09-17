@@ -749,10 +749,805 @@ export const outilUtilisateursCsv = {
   ],
 };
 
+/**
+ * 3. ad-groups — créer des groupes, avec la portée qui convient.
+ *
+ * La portée n'est pas un détail : c'est elle qui décide si le groupe peut
+ * contenir des comptes d'un autre domaine, et s'il peut recevoir des
+ * permissions ailleurs dans la forêt. Le modèle AGDLP en dépend entièrement.
+ */
+export const outilGroupes = {
+  id: 'ad-groups',
+  icon: '\u25cb',
+  category: 'Active Directory',
+  subcategory: 'Utilisateurs et groupes',
+  title: 'Créer et vérifier des groupes Active Directory',
+  risk: 'caution',
+  summary: 'Crée des groupes de sécurité ou de distribution avec la bonne portée, sans jamais écraser un groupe existant, et rappelle le modèle AGDLP.',
+  fields: [
+    champDomaine(),
+    {
+      id: 'grpList', label: 'Groupes à créer, un par ligne', type: 'textarea',
+      default: 'GG-Medecins\nGG-Infirmieres\nGG-Administration\nDL-Dossiers-Patients-RW\nDL-Dossiers-Patients-R',
+      help: 'Un nom par ligne. Convention utile : GG- pour les groupes globaux de personnes, DL- pour les groupes de domaine local porteurs de permissions.',
+    },
+    { id: 'grpOu', label: 'OU de destination', default: 'Administration', help: 'Chemin parent/enfant, relatif au domaine.' },
+    {
+      id: 'grpCategory', label: 'Catégorie', type: 'select', default: 'Security',
+      options: [['Security', 'Sécurité — porte des permissions'], ['Distribution', 'Distribution — messagerie seulement']],
+    },
+    {
+      id: 'grpScope', label: 'Portée', type: 'select', default: 'Global',
+      options: [
+        ['Global', 'Globale — regroupe des comptes du domaine'],
+        ['DomainLocal', 'Domaine local — porte les permissions sur une ressource'],
+        ['Universal', 'Universelle — traverse les domaines de la forêt'],
+      ],
+      help: 'AGDLP : comptes dans un groupe Global, permissions sur un groupe de Domaine local, le Global membre du Domaine local.',
+    },
+    { id: 'grpDescription', label: 'Description', default: 'Groupe créé par KJEMO IT Toolkit', help: 'Une description explicite évite les groupes orphelins dont personne ne sait à quoi ils servent.' },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+
+    const lignes = String(v.grpList ?? '').split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '');
+    if (lignes.length === 0) errors.grpList = 'Indique au moins un groupe, un par ligne.';
+    else if (lignes.length > 50) errors.grpList = 'Pas plus de 50 groupes par exécution.';
+    else {
+      for (const nom of lignes) {
+        const r = validateGroupName(nom);
+        if (!r.ok) { errors.grpList = `« ${nom} » : ${r.error}`; break; }
+      }
+      const vus = lignes.map((l) => l.toLowerCase());
+      if (!errors.grpList && new Set(vus).size !== vus.length) {
+        errors.grpList = 'La liste contient deux fois le même groupe.';
+      }
+    }
+
+    verifier(errors, 'grpOu', validerCheminOu(v.grpOu));
+    verifier(errors, 'grpCategory', validerCategorieGroupe(v.grpCategory));
+    verifier(errors, 'grpScope', validerPorteeGroupe(v.grpScope));
+    const desc = String(v.grpDescription ?? '');
+    if (desc.length > 1024) errors.grpDescription = 'La description ne doit pas dépasser 1024 caractères.';
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const segments = validerCheminOu(v.grpOu).value;
+    const dnOu = cheminOuVersDn(segments, domaine);
+    const groupes = String(v.grpList).split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '');
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Domaine = ${psB64(domaine)}`,
+      `$DnOu = ${psB64(dnOu)}`,
+      `$Categorie = ${psB64(v.grpCategory)}`,
+      `$Portee = ${psB64(v.grpScope)}`,
+      `$Description = ${psB64(v.grpDescription)}`,
+      `$Groupes = @(${groupes.map((g) => psB64(g)).join(', ')})`,
+      "$KjemoFormat = 'Console'",
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. L\'OU de destination existe-t-elle ? -------------------------------',
+      '$ouOk = $false',
+      'if ($moduleOk) {',
+      '  try {',
+      '    $ouObj = Get-ADOrganizationalUnit -Identity $DnOu -ErrorAction SilentlyContinue',
+      '    if ($ouObj) { $ouOk = $true }',
+      '  } catch { }',
+      '}',
+      'if ($ouOk) {',
+      "  [void](Add-KjemoResultat -Categorie 'Destination' -Controle 'OU cible' -Etat 'OK' -Valeur $DnOu)",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Destination' -Controle 'OU cible' -Etat 'PROBLEME' -Valeur $DnOu -Commentaire 'OU introuvable : cree-la avant, avec l''outil de hierarchie d''OU.')",
+      '}',
+      "",
+      '# --- 2. Etat des groupes demandes ------------------------------------------',
+      '$aCreer = New-Object System.Collections.ArrayList',
+      '$existants = New-Object System.Collections.ArrayList',
+      'foreach ($nom in $Groupes) {',
+      '  if (-not $moduleOk) { continue }',
+      '  $existant = $null',
+      '  try { $existant = Get-ADGroup -Filter "Name -eq \'$nom\'" -Properties GroupScope,GroupCategory,DistinguishedName,Description -ErrorAction SilentlyContinue } catch { }',
+      '  if ($existant) {',
+      '    [void]$existants.Add($existant)',
+      "    $ecart = ''",
+      '    if ($existant.GroupScope -ne $Portee) { $ecart = "Portee differente : $($existant.GroupScope) au lieu de $Portee. " }',
+      '    if ($existant.GroupCategory -ne $Categorie) { $ecart = $ecart + "Categorie differente : $($existant.GroupCategory) au lieu de $Categorie." }',
+      "    $etatG = 'OK'",
+      '    if ($ecart -ne \'\') { $etatG = \'ATTENTION\' }',
+      "    [void](Add-KjemoResultat -Categorie 'Groupes existants' -Controle $nom -Etat $etatG -Valeur (\"$($existant.GroupCategory) / $($existant.GroupScope) — $($existant.DistinguishedName)\") -Commentaire ($ecart + \" Le groupe n''est ni recree, ni modifie.\"))",
+      '  } else {',
+      '    [void]$aCreer.Add($nom)',
+      "    [void](Add-KjemoResultat -Categorie 'Groupes a creer' -Controle $nom -Etat 'INFO' -Valeur \"$Categorie / $Portee dans $DnOu\")",
+      '  }',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Resume\' -Controle \'Inventaire\' -Etat \'INFO\' -Valeur ("a creer : $($aCreer.Count) ; existants : $($existants.Count)"))',
+      "",
+      '# --- 3. Rappel du modele AGDLP ---------------------------------------------',
+      "# A comme comptes, G comme groupe Global, DL comme groupe de Domaine Local,",
+      "# P comme permissions. Les comptes entrent dans un groupe Global ; les",
+      "# permissions se posent sur un groupe de Domaine Local ; le Global devient",
+      "# membre du Domaine Local. Dans une foret multi-domaines, un groupe",
+      "# Universel s'intercale : AGUDLP.",
+      "[void](Add-KjemoResultat -Categorie 'Modele' -Controle 'AGDLP' -Etat 'INFO' -Valeur 'comptes -> groupe Global -> groupe de Domaine local -> permissions' -Commentaire 'Poser une permission directement sur un compte, ou sur un groupe Global, rend les droits impossibles a maintenir.')",
+      "if ($Portee -eq 'Global' -and $Categorie -eq 'Security') {",
+      "  [void](Add-KjemoResultat -Categorie 'Modele' -Controle 'Usage attendu' -Etat 'INFO' -Valeur 'groupe de personnes' -Commentaire 'Un groupe Global rassemble des comptes ; il ne devrait pas porter de permissions directement.')",
+      "} elseif ($Portee -eq 'DomainLocal') {",
+      "  [void](Add-KjemoResultat -Categorie 'Modele' -Controle 'Usage attendu' -Etat 'INFO' -Valeur 'groupe de permissions' -Commentaire 'Un groupe de Domaine local porte les droits sur une ressource et contient des groupes Globaux.')",
+      "} elseif ($Portee -eq 'Universal') {",
+      "  [void](Add-KjemoResultat -Categorie 'Modele' -Controle 'Usage attendu' -Etat 'INFO' -Valeur 'foret multi-domaines' -Commentaire 'Un groupe Universel est replique dans le catalogue global : a reserver aux besoins inter-domaines.')",
+      '}',
+      "",
+      '# --- 4. Creation, uniquement en mode Appliquer -----------------------------',
+      "if ($Mode -eq 'Appliquer' -and $moduleOk -and $ouOk) {",
+      '  foreach ($nom in $aCreer) {',
+      '    try {',
+      '      New-ADGroup -Name $nom -SamAccountName $nom -GroupCategory $Categorie -GroupScope $Portee -Path $DnOu -Description $Description -ErrorAction Stop',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle $nom -Etat 'OK' -Valeur 'cree')",
+      '    } catch {',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle $nom -Etat 'PROBLEME' -Valeur $_.Exception.Message)",
+      '    }',
+      '  }',
+      "  Write-Host ''",
+      "  Write-Host '--- Groupes apres creation ---'",
+      '  foreach ($nom in $Groupes) {',
+      '    $verif = $null',
+      '    try { $verif = Get-ADGroup -Filter "Name -eq \'$nom\'" -Properties GroupScope,GroupCategory,DistinguishedName -ErrorAction SilentlyContinue } catch { }',
+      '    if ($verif) {',
+      '      [void](Add-KjemoResultat -Categorie \'Verification\' -Controle $nom -Etat \'OK\' -Valeur ("$($verif.GroupCategory) / $($verif.GroupScope) — $($verif.DistinguishedName)"))',
+      '    } else {',
+      "      [void](Add-KjemoResultat -Categorie 'Verification' -Controle $nom -Etat 'PROBLEME' -Valeur 'absent apres execution')",
+      '    }',
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  foreach ($nom in $aCreer) {',
+      '    New-ADGroup -Name $nom -SamAccountName $nom -GroupCategory $Categorie -GroupScope $Portee -Path $DnOu -Description $Description -WhatIf',
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+      blocAucuneSuppression('groupe'),
+    ];
+
+    return assembler({
+      titre: 'Creer des groupes Active Directory',
+      outil: 'ad-groups',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['OuCible', psB64(dnOu)],
+        ['Portee', psB64(v.grpScope)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-groupes',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Utilisateurs et ordinateurs Active Directory (dsa.msc).',
+    'Clic droit sur l\u2019OU de destination > Nouveau > Groupe.',
+    'Choisir l\u2019étendue (Globale, Domaine local, Universelle) et le type (Sécurité ou Distribution).',
+    'Renseigner la description : c\u2019est ce qui évite les groupes dont plus personne ne connaît l\u2019usage.',
+    'Onglet Membres et Membre de, pour construire la chaîne AGDLP.',
+  ],
+  keywords: [
+    'groupe', 'new-adgroup', 'agdlp', 'agudlp', 'portee', 'global', 'domaine local',
+    'universel', 'groupe de securite', 'distribution', 'droits ntfs par groupe',
+  ],
+  requiresAdmin: true,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de créer des groupes dans l\u2019OU visée.',
+    'Convention de nommage arrêtée : renommer un groupe plus tard n\u2019est pas anodin quand des permissions y font référence.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'New-ADGroup : The specified group already exists',
+      cause: 'Un groupe porte déjà ce nom dans le domaine.',
+      fix: 'Le script le détecte avant d\u2019agir et signale si la portée ou la catégorie diffèrent de ce qui est demandé.',
+    },
+    {
+      message: 'Impossible de changer la portée d\u2019un groupe existant',
+      cause: 'Active Directory n\u2019autorise que certaines conversions de portée, et seulement si les membres le permettent.',
+      fix: 'Créer un nouveau groupe avec la bonne portée, y basculer les membres, puis retirer l\u2019ancien après vérification.',
+    },
+    {
+      message: 'Les permissions ne suivent pas les utilisateurs ajoutés au groupe',
+      cause: 'Le jeton de sécurité de la session ouverte ne contient pas les nouveaux groupes.',
+      fix: 'Fermer puis rouvrir la session de l\u2019utilisateur. Un redémarrage n\u2019est pas nécessaire.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Get-ADGroup affiche chaque groupe avec sa portée, sa catégorie et son DN.',
+    'Les groupes existants sont signalés, avec l\u2019écart éventuel de portée ou de catégorie.',
+    'Dans dsa.msc, les groupes apparaissent dans l\u2019OU demandée.',
+  ],
+  rollback: {
+    summary: 'Un groupe créé par erreur et sans membre ni permission se supprime proprement. Dès qu\u2019il porte des permissions, sa suppression laisse des ACL orphelines : on vide d\u2019abord, on documente, puis on décide.',
+    diagnostic: '# Constater avant de defaire : membres, appartenances et anciennete.\nGet-ADGroup -Identity \'<nom-du-groupe>\' -Properties Members,MemberOf,WhenCreated,Description | Format-List Name,GroupScope,GroupCategory,WhenCreated,Description\nGet-ADGroupMember -Identity \'<nom-du-groupe>\' | Format-Table Name,ObjectClass',
+    command: '# Retirer un groupe cree par erreur, apres avoir verifie qu\'il est vide et\n# qu\'aucune ressource ne s\'y refere. -Confirm est explicite.\nRemove-ADGroup -Identity \'<nom-du-groupe>\' -Confirm',
+    exceptional: '# AVERTISSEMENT CRITIQUE — suppression d\'un groupe porteur de permissions.\n#\n# Supprimer un groupe detruit son SID. Toutes les ACL qui le mentionnent\n# deviennent orphelines : elles affichent un SID brut, et les droits qu\'elles\n# accordaient disparaissent sans que rien ne l\'annonce. Recreer un groupe du\n# meme nom ne les retablit pas : ce serait un autre SID.\n#\n# Avant d\'y penser :\n#   1. Auditer ou ce groupe est utilise (partages, NTFS, applications).\n#   2. Exporter la liste de ses membres.\n#   3. Verifier que la corbeille Active Directory est activee.\n#\n# Reference officielle :\n# https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroup\n#\n# Commande, a executer manuellement :\n#   Remove-ADGroup -Identity \'<nom>\' -Confirm',
+    warning: 'Un groupe de sécurité supprimé laisse des ACL orphelines partout où il était référencé. C\u2019est précisément ce que l\u2019outil d\u2019audit des permissions du LOT 2 détecte sous le nom « ACL orpheline ».',
+  },
+  checks: [
+    'Choisir la portée d\u2019abord : elle conditionne tout le reste.',
+    'Séparer les groupes de personnes (Global) des groupes de permissions (Domaine local).',
+    'Renseigner une description : un groupe sans description devient un groupe qu\u2019on n\u2019ose plus toucher.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/new-adgroup',
+  sources: [
+    { label: 'New-ADGroup', url: 'https://learn.microsoft.com/powershell/module/activedirectory/new-adgroup' },
+    { label: 'Get-ADGroup', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adgroup' },
+    { label: 'Remove-ADGroup', url: 'https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroup' },
+  ],
+};
+
+/**
+ * 4. ad-group-members-csv — ajouter des membres, sans jamais en retirer.
+ *
+ * L'ajout est réversible et sans perte ; le retrait ne l'est pas toujours,
+ * parce qu'il faut savoir ce qui dépendait de cette appartenance. Ce script
+ * ajoute, et c'est tout.
+ */
+export const outilMembresCsv = {
+  id: 'ad-group-members-csv',
+  icon: '\u25c7',
+  category: 'Active Directory',
+  subcategory: 'Utilisateurs et groupes',
+  title: 'Importer les membres de groupes depuis un CSV',
+  risk: 'caution',
+  summary: 'Valide chaque compte et chaque groupe, détecte les doublons du fichier et les membres déjà présents, puis ajoute — sans jamais retirer personne.',
+  fields: [
+    champDomaine(),
+    { id: 'memCsvPath', label: 'Chemin local du fichier CSV', default: 'C:\\Imports\\membres.csv', help: 'Deux colonnes : le compte et le groupe.' },
+    { id: 'memColumns', label: 'Colonnes attendues', default: 'SamAccountName,Groupe', help: 'Les deux colonnes sont obligatoires.' },
+    { id: 'memDelimiter', label: 'Séparateur', type: 'select', default: ';', options: [[';', 'Point-virgule (Excel français)'], [',', 'Virgule'], ['\t', 'Tabulation']] },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    verifier(errors, 'memCsvPath', validerCheminWindowsLocal(v.memCsvPath));
+    if (!/\.csv$/i.test(String(v.memCsvPath ?? '').trim()) && !errors.memCsvPath) {
+      errors.memCsvPath = 'Le fichier doit porter l\u2019extension .csv.';
+    }
+    verifier(errors, 'memColumns', validerColonnesCsv(v.memColumns, { obligatoires: ['SamAccountName', 'Groupe'] }));
+    verifier(errors, 'memDelimiter', validerChoix(v.memDelimiter, [';', ',', '\t'], 'Le séparateur'));
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const colonnes = validerColonnesCsv(v.memColumns, { obligatoires: ['SamAccountName', 'Groupe'] }).value;
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Domaine = ${psB64(domaine)}`,
+      `$Fichier = ${psB64(validerCheminWindowsLocal(v.memCsvPath).value)}`,
+      `$Separateur = ${psB64(v.memDelimiter)}`,
+      `$ColonnesAttendues = @(${colonnes.map((c) => psB64(c)).join(', ')})`,
+      "$KjemoFormat = 'Console'",
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. Lecture et schema du fichier ---------------------------------------',
+      'if (-not (Test-Path -LiteralPath $Fichier)) {',
+      "  [void](Add-KjemoResultat -Categorie 'Fichier' -Controle 'Existence' -Etat 'PROBLEME' -Valeur $Fichier -Commentaire 'Fichier introuvable sur cette machine.')",
+      '  return',
+      '}',
+      '$lignes = @()',
+      'try { $lignes = @(Import-Csv -LiteralPath $Fichier -Delimiter $Separateur -Encoding UTF8) } catch {',
+      "  [void](Add-KjemoResultat -Categorie 'Fichier' -Controle 'Lecture' -Etat 'PROBLEME' -Valeur $_.Exception.Message)",
+      '  return',
+      '}',
+      'if (@($lignes).Count -eq 0) {',
+      "  [void](Add-KjemoResultat -Categorie 'Fichier' -Controle 'Contenu' -Etat 'PROBLEME' -Valeur '0 ligne' -Commentaire 'Fichier vide, ou separateur incorrect.')",
+      '  return',
+      '}',
+      '$colonnesReelles = @($lignes[0].PSObject.Properties.Name)',
+      '$manquantes = @($ColonnesAttendues | Where-Object { $colonnesReelles -notcontains $_ })',
+      'if (@($manquantes).Count -gt 0) {',
+      '  [void](Add-KjemoResultat -Categorie \'Schema\' -Controle \'Colonnes manquantes\' -Etat \'PROBLEME\' -Valeur ($manquantes -join \', \'))',
+      '  return',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Fichier\' -Controle \'Lignes lues\' -Etat \'OK\' -Valeur ("$(@($lignes).Count) ligne(s)"))',
+      "",
+      '# --- 2. Controles ligne par ligne -------------------------------------------',
+      '$paires = @{}',
+      '$aAjouter = New-Object System.Collections.ArrayList',
+      '$ignores = New-Object System.Collections.ArrayList',
+      '$erreurs = New-Object System.Collections.ArrayList',
+      '$numero = 0',
+      'foreach ($ligne in $lignes) {',
+      '  $numero++',
+      '  $sam = ("" + $ligne.SamAccountName).Trim()',
+      '  $groupe = ("" + $ligne.Groupe).Trim()',
+      "  if ($sam -eq '' -or $groupe -eq '') {",
+      '    [void]$erreurs.Add([pscustomobject]@{ Ligne = $numero; Compte = $sam; Groupe = $groupe; Raison = \'Colonne vide\' })',
+      '    [void](Add-KjemoResultat -Categorie \'Erreurs\' -Controle "Ligne $numero" -Etat \'PROBLEME\' -Valeur "$sam / $groupe" -Commentaire \'Compte ou groupe vide.\')',
+      '    continue',
+      '  }',
+      '  $cle = ($sam + \'|\' + $groupe).ToLower()',
+      '  if ($paires.ContainsKey($cle)) {',
+      '    [void]$ignores.Add([pscustomobject]@{ Ligne = $numero; Compte = $sam; Groupe = $groupe; Raison = "Doublon du fichier, deja vu ligne $($paires[$cle])" })',
+      '    [void](Add-KjemoResultat -Categorie \'Ignores\' -Controle "Ligne $numero" -Etat \'INFO\' -Valeur "$sam -> $groupe" -Commentaire "Doublon dans le fichier, deja vu ligne $($paires[$cle]).")',
+      '    continue',
+      '  }',
+      '  $paires[$cle] = $numero',
+      '  if (-not $moduleOk) { continue }',
+      "",
+      '  $compteObj = $null',
+      '  try { $compteObj = Get-ADUser -Filter "SamAccountName -eq \'$sam\'" -ErrorAction SilentlyContinue } catch { }',
+      '  if (-not $compteObj) {',
+      '    [void]$erreurs.Add([pscustomobject]@{ Ligne = $numero; Compte = $sam; Groupe = $groupe; Raison = \'Compte introuvable\' })',
+      '    [void](Add-KjemoResultat -Categorie \'Erreurs\' -Controle "Ligne $numero" -Etat \'PROBLEME\' -Valeur $sam -Commentaire \'Compte introuvable dans l\'\'annuaire.\')',
+      '    continue',
+      '  }',
+      '  $groupeObj = $null',
+      '  try { $groupeObj = Get-ADGroup -Filter "Name -eq \'$groupe\'" -ErrorAction SilentlyContinue } catch { }',
+      '  if (-not $groupeObj) {',
+      '    [void]$erreurs.Add([pscustomobject]@{ Ligne = $numero; Compte = $sam; Groupe = $groupe; Raison = \'Groupe introuvable\' })',
+      '    [void](Add-KjemoResultat -Categorie \'Erreurs\' -Controle "Ligne $numero" -Etat \'PROBLEME\' -Valeur $groupe -Commentaire \'Groupe introuvable dans l\'\'annuaire.\')',
+      '    continue',
+      '  }',
+      '  $dejaMembre = $false',
+      '  try {',
+      '    $membres = @(Get-ADGroupMember -Identity $groupeObj.DistinguishedName -ErrorAction SilentlyContinue)',
+      '    if ($membres | Where-Object { $_.distinguishedName -eq $compteObj.DistinguishedName }) { $dejaMembre = $true }',
+      '  } catch { }',
+      '  if ($dejaMembre) {',
+      '    [void]$ignores.Add([pscustomobject]@{ Ligne = $numero; Compte = $sam; Groupe = $groupe; Raison = \'Deja membre\' })',
+      '    [void](Add-KjemoResultat -Categorie \'Ignores\' -Controle "Ligne $numero" -Etat \'OK\' -Valeur "$sam -> $groupe" -Commentaire \'Deja membre : rien a faire.\')',
+      '    continue',
+      '  }',
+      '  [void]$aAjouter.Add([pscustomobject]@{ Ligne = $numero; Compte = $compteObj.DistinguishedName; CompteNom = $sam; Groupe = $groupeObj.DistinguishedName; GroupeNom = $groupe })',
+      '  [void](Add-KjemoResultat -Categorie \'A ajouter\' -Controle "Ligne $numero" -Etat \'INFO\' -Valeur "$sam -> $groupe")',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Resume\' -Controle \'Bilan\' -Etat \'INFO\' -Valeur ("a ajouter : $($aAjouter.Count) ; ignores : $($ignores.Count) ; erreurs : $($erreurs.Count)"))',
+      "",
+      '# --- 3. Ajout, uniquement en mode Appliquer ----------------------------------',
+      "if ($Mode -eq 'Appliquer' -and $moduleOk) {",
+      '  foreach ($paire in $aAjouter) {',
+      '    try {',
+      '      Add-ADGroupMember -Identity $paire.Groupe -Members $paire.Compte -ErrorAction Stop',
+      '      [void](Add-KjemoResultat -Categorie \'Action\' -Controle "$($paire.CompteNom) -> $($paire.GroupeNom)" -Etat \'OK\' -Valeur \'ajoute\')',
+      '    } catch {',
+      '      [void](Add-KjemoResultat -Categorie \'Action\' -Controle "$($paire.CompteNom) -> $($paire.GroupeNom)" -Etat \'PROBLEME\' -Valeur $_.Exception.Message)',
+      '      [void]$erreurs.Add([pscustomobject]@{ Ligne = $paire.Ligne; Compte = $paire.CompteNom; Groupe = $paire.GroupeNom; Raison = $_.Exception.Message })',
+      '    }',
+      '  }',
+      "  Write-Host ''",
+      "  Write-Host '--- Appartenances apres import ---'",
+      '  foreach ($paire in $aAjouter) {',
+      '    $ok = $false',
+      '    try {',
+      '      $m = @(Get-ADGroupMember -Identity $paire.Groupe -ErrorAction SilentlyContinue)',
+      '      if ($m | Where-Object { $_.distinguishedName -eq $paire.Compte }) { $ok = $true }',
+      '    } catch { }',
+      "    $etatV = 'PROBLEME'",
+      "    if ($ok) { $etatV = 'OK' }",
+      '    [void](Add-KjemoResultat -Categorie \'Verification\' -Controle "$($paire.CompteNom) -> $($paire.GroupeNom)" -Etat $etatV -Valeur $ok)',
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  foreach ($paire in $aAjouter) {',
+      '    Add-ADGroupMember -Identity $paire.Groupe -Members $paire.Compte -WhatIf',
+      '  }',
+      '}',
+      "",
+      '# --- 4. Journal ---------------------------------------------------------------',
+      '$journal = Join-Path (Join-Path $env:USERPROFILE \'Desktop\') ("kjemo-ad-membres-" + (Get-Date -Format \'yyyyMMdd-HHmmss\') + ".csv")',
+      '$toutes = @()',
+      "$toutes += @($aAjouter | ForEach-Object { [pscustomobject]@{ Ligne = $_.Ligne; Compte = $_.CompteNom; Groupe = $_.GroupeNom; Statut = 'A ajouter ou ajoute'; Detail = '' } })",
+      "$toutes += @($ignores | ForEach-Object { [pscustomobject]@{ Ligne = $_.Ligne; Compte = $_.Compte; Groupe = $_.Groupe; Statut = 'Ignore'; Detail = $_.Raison } })",
+      "$toutes += @($erreurs | ForEach-Object { [pscustomobject]@{ Ligne = $_.Ligne; Compte = $_.Compte; Groupe = $_.Groupe; Statut = 'Erreur'; Detail = $_.Raison } })",
+      'if (@($toutes).Count -gt 0) {',
+      '  $toutes | Export-Csv -LiteralPath $journal -NoTypeInformation -Encoding UTF8',
+      '  Write-Host "Journal : $journal"',
+      '}',
+      "",
+      "Write-Host ''",
+      "Write-Host '--- Portee de ce script ---'",
+      "Write-Host 'Ce script AJOUTE des membres. Il n''en retire aucun : retirer une'",
+      "Write-Host 'appartenance peut couper un acces dont personne n''avait note la'",
+      "Write-Host 'dependance. Le retrait se fait a la main, apres verification.'",
+      blocModeDiagnostic(),
+    ];
+
+    return assembler({
+      titre: 'Importer les membres de groupes depuis un CSV',
+      outil: 'ad-group-members-csv',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['Fichier', psB64(v.memCsvPath)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-membres',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'dsa.msc > le groupe > Propriétés > onglet Membres > Ajouter.',
+    'Ou : le compte > Propriétés > onglet Membre de > Ajouter, pour partir de l\u2019utilisateur.',
+    'Pour vérifier : Get-ADGroupMember, ou l\u2019onglet Membres du groupe.',
+    'Après ajout, l\u2019utilisateur doit fermer et rouvrir sa session pour que son jeton contienne le groupe.',
+  ],
+  keywords: [
+    'membre de groupe', 'add-adgroupmember', 'import membres', 'appartenance',
+    'csv groupes', 'ajouter au groupe', 'jeton de securite', 'droits ne suivent pas',
+  ],
+  requiresAdmin: true,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de modifier l\u2019appartenance des groupes visés.',
+    'Les comptes et les groupes doivent exister : le script ne crée ni l\u2019un ni l\u2019autre.',
+    'Fichier CSV en UTF-8, avec les deux colonnes attendues.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Add-ADGroupMember : The specified account name is already a member of the group',
+      cause: 'Le compte appartient déjà au groupe.',
+      fix: 'Le script détecte ce cas avant d\u2019agir et classe la ligne en « ignoré ».',
+    },
+    {
+      message: 'Add-ADGroupMember : The server is unwilling to process the request',
+      cause: 'La portée du groupe n\u2019autorise pas ce type de membre — un groupe Global ne peut pas contenir un compte d\u2019un autre domaine.',
+      fix: 'Revoir la portée du groupe, ou passer par un groupe Universel dans une forêt multi-domaines.',
+    },
+    {
+      message: 'L\u2019utilisateur ne voit pas ses nouveaux droits',
+      cause: 'Le jeton de sécurité de sa session date d\u2019avant l\u2019ajout.',
+      fix: 'Fermer puis rouvrir la session.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le journal CSV liste chaque paire compte/groupe avec son statut.',
+    'Get-ADGroupMember montre les nouveaux membres.',
+    'Dans dsa.msc, l\u2019onglet Membres du groupe est à jour.',
+  ],
+  rollback: {
+    summary: 'Retirer une appartenance ajoutée par erreur est simple et réversible — encore faut-il savoir ce qui en dépendait. Le journal de l\u2019import donne exactement la liste des paires ajoutées.',
+    diagnostic: '# Relire ce qui a ete ajoute, et l\'etat actuel du groupe.\nGet-ADGroupMember -Identity \'<groupe>\' | Format-Table Name,SamAccountName,ObjectClass\nGet-ADUser -Identity \'<compte>\' -Properties MemberOf | Select-Object -ExpandProperty MemberOf',
+    command: '# Retirer une appartenance ajoutee par erreur. -Confirm est explicite :\n# PowerShell demandera confirmation avant de retirer le membre.\nRemove-ADGroupMember -Identity \'<groupe>\' -Members \'<compte>\' -Confirm',
+    exceptional: '',
+    warning: 'Retirer un compte d\u2019un groupe lui coupe les accès qui en dépendaient — parfois des accès dont personne n\u2019avait noté la dépendance. Vérifier avant, surtout sur les groupes d\u2019administration.',
+  },
+  checks: [
+    'Vérifier que les comptes et les groupes existent avant de lancer l\u2019import.',
+    'Le mode Diagnostic donne la liste exacte des ajouts qui auront lieu.',
+    'Ce script n\u2019enlève jamais personne d\u2019un groupe : c\u2019est volontaire.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/add-adgroupmember',
+  sources: [
+    { label: 'Add-ADGroupMember', url: 'https://learn.microsoft.com/powershell/module/activedirectory/add-adgroupmember' },
+    { label: 'Get-ADGroupMember', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adgroupmember' },
+    { label: 'Remove-ADGroupMember', url: 'https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroupmember' },
+  ],
+};
+
+/**
+ * 5. ad-home-profile-paths — dossiers personnels et profils itinérants.
+ *
+ * Trois attributs d'annuaire, mais surtout deux couches de permissions et un
+ * partage qui doivent suivre. Le script relève l'état existant AVANT de le
+ * changer, et écrit les anciennes valeurs dans un fichier de reprise.
+ */
+export const outilCheminsProfils = {
+  id: 'ad-home-profile-paths',
+  icon: '\u25e8',
+  category: 'Active Directory',
+  subcategory: 'Utilisateurs et groupes',
+  title: 'Dossiers personnels et profils itinérants',
+  risk: 'caution',
+  summary: 'Vérifie partage, dossiers et permissions, sauvegarde les anciennes valeurs, puis pose HomeDirectory, HomeDrive et ProfilePath de façon idempotente.',
+  fields: [
+    champDomaine(),
+    { id: 'hpOu', label: 'OU des comptes concernés', default: 'Médecin', help: 'Chemin parent/enfant, relatif au domaine. Tous les comptes de cette OU sont traités.' },
+    { id: 'hpHomeRoot', label: 'Racine des dossiers personnels (UNC)', default: '\\\\srv-fichiers\\Personnels', help: 'Le dossier de chaque compte est créé sous cette racine, à son nom.' },
+    { id: 'hpDrive', label: 'Lettre de lecteur', default: 'H:', help: 'Lecteur auquel le dossier personnel sera monté.' },
+    { id: 'hpProfileRoot', label: 'Racine des profils itinérants (UNC)', default: '\\\\srv-fichiers\\Profils', help: 'Windows ajoute le suffixe de version (.V6) de lui-même.' },
+    {
+      id: 'hpProfiles', label: 'Profils itinérants', type: 'select', default: 'Non',
+      options: [['Non', 'Non — dossier personnel seulement'], ['Oui', 'Oui — dossier personnel et profil itinérant']],
+      help: 'Le profil itinérant copie tout le profil à chaque ouverture et fermeture de session : à réserver aux cas qui le justifient.',
+    },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    verifier(errors, 'hpOu', validerCheminOu(v.hpOu));
+    verifier(errors, 'hpHomeRoot', validerCheminUnc(v.hpHomeRoot));
+    verifier(errors, 'hpDrive', validerLettreLecteur(v.hpDrive));
+    const avecProfils = String(v.hpProfiles ?? '') === 'Oui';
+    const racineProfil = String(v.hpProfileRoot ?? '').trim();
+    if (avecProfils || racineProfil) {
+      verifier(errors, 'hpProfileRoot', validerCheminUnc(racineProfil));
+    }
+    verifier(errors, 'hpProfiles', validerChoix(v.hpProfiles, ['Oui', 'Non'], 'L\u2019option de profil itinérant'));
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const dnOu = cheminOuVersDn(validerCheminOu(v.hpOu).value, domaine);
+    const avecProfils = v.hpProfiles === 'Oui';
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$DnOu = ${psB64(dnOu)}`,
+      `$RacinePersonnels = ${psB64(validerCheminUnc(v.hpHomeRoot).value)}`,
+      `$Lecteur = ${psB64(validerLettreLecteur(v.hpDrive).value)}`,
+      `$RacineProfils = ${psB64(String(v.hpProfileRoot ?? '').trim())}`,
+      `$AvecProfils = $${avecProfils ? 'true' : 'false'}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. Les partages repondent-ils ? ---------------------------------------',
+      '# Un chemin UNC inscrit dans l\'annuaire alors que le partage n\'existe pas',
+      "# donne un symptome deroutant : la session s'ouvre, mais le lecteur reseau",
+      '# reste absent, sans message clair.',
+      'function Test-KjemoPartage {',
+      '  param([Parameter(Mandatory=$true)][string]$Chemin)',
+      '  $ok = $false',
+      '  try { $ok = Test-Path -LiteralPath $Chemin -ErrorAction SilentlyContinue } catch { }',
+      '  return $ok',
+      '}',
+      "",
+      '$racineOk = Test-KjemoPartage -Chemin $RacinePersonnels',
+      "$etatRacine = 'PROBLEME'",
+      "$commentaireRacine = 'Racine injoignable : verifie le partage, le nom du serveur et les droits.'",
+      "if ($racineOk) { $etatRacine = 'OK'; $commentaireRacine = '' }",
+      '[void](Add-KjemoResultat -Categorie \'Partages\' -Controle \'Racine des dossiers personnels\' -Etat $etatRacine -Valeur $RacinePersonnels -Commentaire $commentaireRacine)',
+      "",
+      'if ($AvecProfils) {',
+      '  $profilsOk = Test-KjemoPartage -Chemin $RacineProfils',
+      "  $etatProfils = 'PROBLEME'",
+      "  if ($profilsOk) { $etatProfils = 'OK' }",
+      '  [void](Add-KjemoResultat -Categorie \'Partages\' -Controle \'Racine des profils\' -Etat $etatProfils -Valeur $RacineProfils)',
+      '}',
+      "",
+      '# Permissions SMB et NTFS de la racine : les deux comptent, et c\'est',
+      "# l'intersection qui s'applique.",
+      '$nomServeur = ($RacinePersonnels -split \'\\\\\')[2]',
+      '$nomPartage = ($RacinePersonnels -split \'\\\\\')[3]',
+      'if ($nomServeur -and $nomPartage) {',
+      '  try {',
+      '    $acces = @(Get-SmbShareAccess -Name $nomPartage -CimSession $nomServeur -ErrorAction SilentlyContinue)',
+      '    foreach ($a in $acces) {',
+      '      [void](Add-KjemoResultat -Categorie \'Permissions SMB\' -Controle $a.AccountName -Etat \'INFO\' -Valeur ("$($a.AccessControlType) $($a.AccessRight)"))',
+      '    }',
+      '  } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Permissions SMB' -Controle 'Lecture' -Etat 'IGNORE' -Valeur 'non lisible a distance' -Commentaire 'Execute le diagnostic depuis le serveur de fichiers pour ce controle.')",
+      '  }',
+      '  try {',
+      '    $acl = Get-Acl -LiteralPath $RacinePersonnels -ErrorAction SilentlyContinue',
+      '    if ($acl) {',
+      '      foreach ($regle in @($acl.Access | Where-Object { -not $_.IsInherited })) {',
+      '        [void](Add-KjemoResultat -Categorie \'Permissions NTFS\' -Controle $regle.IdentityReference.Value -Etat \'INFO\' -Valeur ("$($regle.AccessControlType) $($regle.FileSystemRights)"))',
+      '      }',
+      '    }',
+      '  } catch { }',
+      '}',
+      "",
+      '# --- 2. Comptes concernes et etat actuel -----------------------------------',
+      '$comptes = @()',
+      'if ($moduleOk) {',
+      '  try { $comptes = @(Get-ADUser -SearchBase $DnOu -Filter * -Properties HomeDirectory,HomeDrive,ProfilePath,SamAccountName) } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Comptes' -Controle 'Lecture' -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'OU introuvable, ou droits insuffisants.')",
+      '  }',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Comptes\' -Controle \'Comptes trouves\' -Etat \'INFO\' -Valeur ("$(@($comptes).Count) compte(s) dans $DnOu"))',
+      "",
+      '$aModifier = New-Object System.Collections.ArrayList',
+      '$conformes = New-Object System.Collections.ArrayList',
+      '$ancien = New-Object System.Collections.ArrayList',
+      "",
+      'foreach ($compte in $comptes) {',
+      '  $cheminVoulu = Join-Path $RacinePersonnels $compte.SamAccountName',
+      "  $profilVoulu = ''",
+      '  if ($AvecProfils) { $profilVoulu = Join-Path $RacineProfils $compte.SamAccountName }',
+      "",
+      '  [void]$ancien.Add([pscustomobject]@{',
+      '    SamAccountName = $compte.SamAccountName',
+      '    HomeDirectory  = $compte.HomeDirectory',
+      '    HomeDrive      = $compte.HomeDrive',
+      '    ProfilePath    = $compte.ProfilePath',
+      '  })',
+      "",
+      '  $dejaConforme = ($compte.HomeDirectory -eq $cheminVoulu) -and ($compte.HomeDrive -eq $Lecteur)',
+      '  if ($AvecProfils) { $dejaConforme = $dejaConforme -and ($compte.ProfilePath -eq $profilVoulu) }',
+      "",
+      '  if ($dejaConforme) {',
+      '    [void]$conformes.Add($compte.SamAccountName)',
+      '    [void](Add-KjemoResultat -Categorie \'Comptes conformes\' -Controle $compte.SamAccountName -Etat \'OK\' -Valeur ("$($compte.HomeDrive) $($compte.HomeDirectory)") -Commentaire \'Deja conforme : aucune ecriture.\')',
+      '  } else {',
+      '    [void]$aModifier.Add([pscustomobject]@{ Sam = $compte.SamAccountName; Dn = $compte.DistinguishedName; Chemin = $cheminVoulu; Profil = $profilVoulu })',
+      '    [void](Add-KjemoResultat -Categorie \'Comptes a modifier\' -Controle $compte.SamAccountName -Etat \'INFO\' -Valeur ("actuel : $($compte.HomeDrive) $($compte.HomeDirectory) -> voulu : $Lecteur $cheminVoulu"))',
+      '  }',
+      "",
+      '  # Le dossier existe-t-il deja sous la racine ?',
+      '  if ($racineOk) {',
+      '    $existe = Test-KjemoPartage -Chemin $cheminVoulu',
+      '    if (-not $existe) {',
+      "      [void](Add-KjemoResultat -Categorie 'Dossiers' -Controle $compte.SamAccountName -Etat 'ATTENTION' -Valeur $cheminVoulu -Commentaire \"Dossier absent : il sera cree en mode Appliquer, avec un droit de modification pour l''utilisateur.\")",
+      '    } else {',
+      '      [void](Add-KjemoResultat -Categorie \'Dossiers\' -Controle $compte.SamAccountName -Etat \'OK\' -Valeur $cheminVoulu)',
+      '    }',
+      '  }',
+      '}',
+      '[void](Add-KjemoResultat -Categorie \'Resume\' -Controle \'Bilan\' -Etat \'INFO\' -Valeur ("a modifier : $($aModifier.Count) ; deja conformes : $($conformes.Count)"))',
+      "",
+      '# --- 3. Sauvegarde des anciennes valeurs, AVANT toute ecriture -------------',
+      '$sauvegarde = Join-Path (Join-Path $env:USERPROFILE \'Desktop\') ("kjemo-ad-chemins-avant-" + (Get-Date -Format \'yyyyMMdd-HHmmss\') + ".csv")',
+      'if (@($ancien).Count -gt 0) {',
+      '  $ancien | Export-Csv -LiteralPath $sauvegarde -NoTypeInformation -Encoding UTF8',
+      "  [void](Add-KjemoResultat -Categorie 'Sauvegarde' -Controle 'Anciennes valeurs' -Etat 'OK' -Valeur $sauvegarde -Commentaire 'Ce fichier permet de remettre les valeurs precedentes, compte par compte.')",
+      '}',
+      "",
+      '# --- 4. Application, uniquement en mode Appliquer ---------------------------',
+      "if ($Mode -eq 'Appliquer' -and $moduleOk) {",
+      '  foreach ($cible in $aModifier) {',
+      '    # 4a. Creer le dossier personnel s\'il manque, et donner a l\'utilisateur',
+      '    #     le droit de modifier SON dossier — pas plus.',
+      '    if ($racineOk -and -not (Test-KjemoPartage -Chemin $cible.Chemin)) {',
+      '      try {',
+      '        New-Item -ItemType Directory -Path $cible.Chemin -ErrorAction Stop | Out-Null',
+      '        $aclDossier = Get-Acl -LiteralPath $cible.Chemin',
+      '        $regle = New-Object System.Security.AccessControl.FileSystemAccessRule(',
+      '          $cible.Sam, \'Modify\', \'ContainerInherit,ObjectInherit\', \'None\', \'Allow\')',
+      '        $aclDossier.AddAccessRule($regle)',
+      '        Set-Acl -LiteralPath $cible.Chemin -AclObject $aclDossier',
+      "        [void](Add-KjemoResultat -Categorie 'Action' -Controle $cible.Sam -Etat 'OK' -Valeur 'dossier cree et droits poses')",
+      '      } catch {',
+      "        [void](Add-KjemoResultat -Categorie 'Action' -Controle $cible.Sam -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'Creation du dossier ou pose des droits refusee.')",
+      '      }',
+      '    }',
+      '    # 4b. Ecrire les attributs d\'annuaire.',
+      '    try {',
+      '      if ($AvecProfils) {',
+      '        Set-ADUser -Identity $cible.Dn -HomeDirectory $cible.Chemin -HomeDrive $Lecteur -ProfilePath $cible.Profil -ErrorAction Stop',
+      '      } else {',
+      '        Set-ADUser -Identity $cible.Dn -HomeDirectory $cible.Chemin -HomeDrive $Lecteur -ErrorAction Stop',
+      '      }',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle $cible.Sam -Etat 'OK' -Valeur 'attributs mis a jour')",
+      '    } catch {',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle $cible.Sam -Etat 'PROBLEME' -Valeur $_.Exception.Message)",
+      '    }',
+      '  }',
+      "",
+      "  Write-Host ''",
+      "  Write-Host '--- Attributs apres modification ---'",
+      '  foreach ($cible in $aModifier) {',
+      '    $verif = $null',
+      '    try { $verif = Get-ADUser -Identity $cible.Dn -Properties HomeDirectory,HomeDrive,ProfilePath -ErrorAction SilentlyContinue } catch { }',
+      '    if ($verif) {',
+      '      [void](Add-KjemoResultat -Categorie \'Verification\' -Controle $cible.Sam -Etat \'OK\' -Valeur ("$($verif.HomeDrive) $($verif.HomeDirectory) ; profil : $($verif.ProfilePath)"))',
+      '    }',
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation (-WhatIf) ---'",
+      '  foreach ($cible in $aModifier) {',
+      '    Set-ADUser -Identity $cible.Dn -HomeDirectory $cible.Chemin -HomeDrive $Lecteur -WhatIf',
+      '  }',
+      '}',
+      "",
+      "Write-Host ''",
+      "Write-Host '--- Methode alternative ---'",
+      "Write-Host 'La redirection de dossiers par strategie de groupe remplace avantageusement'",
+      "Write-Host 'les profils itinerants dans la plupart des cas : elle ne copie que ce qui'",
+      "Write-Host 'change, et n''allonge pas l''ouverture de session. Elle releve de la'",
+      "Write-Host 'categorie GPO, et n''est pas traitee dans ce lot.'",
+      blocModeDiagnostic(),
+    ];
+
+    return assembler({
+      titre: 'Dossiers personnels et profils itinerants',
+      outil: 'ad-home-profile-paths',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['OuCible', psB64(dnOu)],
+        ['RacinePersonnels', psB64(v.hpHomeRoot)],
+        ['Lecteur', psB64(v.hpDrive)],
+        ['Profils', psB64(v.hpProfiles)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-chemins',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'dsa.msc > le compte > Propriétés > onglet Profil.',
+    'Dossier de base : cocher « Connecter », choisir la lettre et saisir le chemin UNC.',
+    'Chemin du profil : le renseigner seulement si un profil itinérant est réellement voulu.',
+    'Sur le serveur de fichiers : vérifier que le partage existe et que les droits SMB et NTFS le permettent.',
+    'La sélection multiple dans dsa.msc permet de traiter plusieurs comptes d\u2019un coup avec %username%.',
+  ],
+  keywords: [
+    'dossier personnel', 'home directory', 'homedrive', 'profil itinerant', 'profilepath',
+    'lecteur reseau', 'h:', 'unc', 'partage profils', 'redirection de dossiers',
+  ],
+  requiresAdmin: true,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de modifier les comptes de l\u2019OU visée.',
+    'Partage SMB existant, avec des droits permettant au serveur de créer les dossiers.',
+    'Droits NTFS cohérents sur la racine : chaque utilisateur doit pouvoir écrire dans SON dossier, et pas dans celui des autres.',
+    'Exécuter depuis le serveur de fichiers permet de lire aussi les permissions SMB locales.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Le lecteur réseau n\u2019apparaît pas à l\u2019ouverture de session',
+      cause: 'Chemin UNC incorrect, partage absent, ou droits insuffisants sur le dossier.',
+      fix: 'Le diagnostic de ce script teste le partage et le dossier avant d\u2019écrire quoi que ce soit.',
+    },
+    {
+      message: 'Le profil itinérant n\u2019est pas chargé et la session utilise un profil temporaire',
+      cause: 'Droits insuffisants sur le dossier de profil, ou suffixe de version incompatible.',
+      fix: 'Windows ajoute le suffixe .V6 de lui-même : ne pas l\u2019écrire dans le chemin. Vérifier les droits sur le dossier créé.',
+    },
+    {
+      message: 'Set-ADUser : Access is denied',
+      cause: 'Droits insuffisants sur les comptes de cette OU.',
+      fix: 'Vérifier la délégation sur l\u2019OU avec l\u2019outil d\u2019audit de délégation.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le fichier CSV des anciennes valeurs est écrit sur le Bureau avant toute modification.',
+    'Get-ADUser -Properties HomeDirectory,HomeDrive,ProfilePath montre les nouvelles valeurs.',
+    'À l\u2019ouverture de session d\u2019un utilisateur concerné, le lecteur apparaît et il peut y écrire.',
+    'Les comptes déjà conformes ne sont pas réécrits.',
+  ],
+  rollback: {
+    summary: 'Les anciennes valeurs sont exportées avant toute écriture : l\u2019annulation consiste à les remettre, compte par compte, depuis ce fichier. Les dossiers créés, eux, contiennent des données utilisateur et ne sont pas supprimés.',
+    diagnostic: '# Relire le fichier de sauvegarde et l\'etat actuel des comptes.\nImport-Csv -LiteralPath \'<fichier-kjemo-ad-chemins-avant.csv>\' | Format-Table SamAccountName,HomeDirectory,HomeDrive,ProfilePath\nGet-ADUser -SearchBase \'<dn-de-l-ou>\' -Filter * -Properties HomeDirectory,HomeDrive,ProfilePath | Format-Table SamAccountName,HomeDrive,HomeDirectory,ProfilePath',
+    command: '# Remettre les valeurs precedentes depuis la sauvegarde. Le script ci-dessous\n# ne touche qu\'aux trois attributs concernes, compte par compte.\nImport-Csv -LiteralPath \'<fichier-kjemo-ad-chemins-avant.csv>\' | ForEach-Object {\n  Set-ADUser -Identity $_.SamAccountName -HomeDirectory $_.HomeDirectory -HomeDrive $_.HomeDrive -ProfilePath $_.ProfilePath -Confirm\n}',
+    exceptional: '',
+    warning: 'Les dossiers personnels créés contiennent des données des utilisateurs. Remettre les anciens attributs ne les supprime pas, et c\u2019est voulu : on ne détruit pas des données pour annuler un changement de chemin.',
+  },
+  checks: [
+    'Vérifier le partage et les droits avant de pointer des centaines de comptes vers un chemin qui ne répond pas.',
+    'Le profil itinérant allonge l\u2019ouverture et la fermeture de session : ne l\u2019activer que si le besoin le justifie.',
+    'La redirection de dossiers par GPO est souvent la meilleure réponse — elle relève du lot GPO.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/set-aduser',
+  sources: [
+    { label: 'Set-ADUser', url: 'https://learn.microsoft.com/powershell/module/activedirectory/set-aduser' },
+    { label: 'Get-ADUser', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-aduser' },
+    { label: 'Get-SmbShareAccess', url: 'https://learn.microsoft.com/powershell/module/smbshare/get-smbshareaccess' },
+    { label: 'Get-Acl', url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl' },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Catalogue exporté — complété au fil des sous-rubriques du LOT 3
 // ---------------------------------------------------------------------------
 export const toolsAd = [
   outilOuHierarchie,
   outilUtilisateursCsv,
+  outilGroupes,
+  outilMembresCsv,
+  outilCheminsProfils,
 ];
