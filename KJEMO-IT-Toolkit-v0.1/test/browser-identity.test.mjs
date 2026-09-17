@@ -1516,14 +1516,19 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
   assert(noms.length === 7,
     `« Tout » + six catégories pourvues (${noms.length})`);
 
-  // Windows Server existe à l'écran parce que shared-folder l'habite.
+  // Windows Server réunit shared-folder et les outils du LOT 2.
+  const attendusWs = tools.filter((t) => t.category === 'Windows Server').length;
   await page.click('#categoryGrid .category-card[data-category="Windows Server"]');
   await page.waitForFunction(
-    () => document.querySelectorAll('#toolGrid .open-tool').length === 1, { timeout: 8000 });
-  const titre = await page.$eval('#toolGrid h3', (el) => el.textContent);
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    attendusWs, { timeout: 8000 });
+  const titresWs = await page.$$eval('#toolGrid h3', (els) => els.map((e) => e.textContent));
   const sharedFolder = tools.find((t) => t.id === 'shared-folder');
-  assert(titre === sharedFolder.title,
-    `Windows Server contient bien « ${sharedFolder.title} »`);
+  assert(titresWs.includes(sharedFolder.title),
+    `Windows Server contient « ${sharedFolder.title} » parmi ses ${attendusWs} outils`);
+  const sousRubriquesWs = [...new Set(tools.filter((t) => t.category === 'Windows Server').map((t) => t.subcategory))];
+  assert(sousRubriquesWs.length === 5,
+    `Windows Server expose ses cinq sous-rubriques (${sousRubriquesWs.join(', ')})`);
 
   // Les sous-rubriques sont annoncées sur la carte de catégorie et sur l'outil.
   await page.click('#categoryGrid .category-card[data-category="Tout"]');
@@ -1686,6 +1691,245 @@ console.log('\n[sécurité v2] — avertissements en mode compact');
   const sousRub = await page.$eval('#techMeta', (el) => el.textContent);
   assert(sousRub.includes(outil.subcategory),
     `la fiche technique annonce la sous-rubrique « ${outil.subcategory} »`);
+
+  await ctx.close();
+}
+
+// --- LOT 2 : les 22 outils dans l'interface --------------------------------
+console.log('\n[LOT 2] — catalogue de 22 outils, catégories et sous-rubriques');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+
+  assert(tools.length === 22, `le catalogue compte ${tools.length} outils`);
+  const cartes = await page.locator('#toolGrid .open-tool').count();
+  assert(cartes === tools.length,
+    `les ${tools.length} outils sont tous affichés sur l’accueil (${cartes})`);
+
+  const compteur = await page.$eval('#toolCount', (el) => el.textContent);
+  assert(compteur.includes(String(tools.length)),
+    `le compteur annonce ${tools.length} outils (« ${compteur} »)`);
+
+  // Windows Server : 15 outils — shared-folder et les 14 du LOT 2.
+  const outilsWs = tools.filter((t) => t.category === 'Windows Server');
+  assert(outilsWs.length === 15,
+    `Windows Server réunit ${outilsWs.length} outils`);
+  await page.click('#categoryGrid .category-card[data-category="Windows Server"]');
+  await page.waitForFunction((n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    outilsWs.length, { timeout: 8000 });
+  const etiquettes = await page.$$eval('#toolGrid .tag', (els) => els.map((e) => e.textContent));
+  for (const sous of ['Diagnostic serveur', 'DHCP', 'DNS', 'Serveur de fichiers', 'Routage et accès Internet']) {
+    assert(etiquettes.some((e) => e.includes(sous)),
+      `la sous-rubrique « ${sous} » est visible sur les cartes de Windows Server`);
+  }
+
+  // Aucune catégorie principale n'a été créée pour DHCP, DNS ou fichiers.
+  const nomsCategories = await page.$$eval('#categoryGrid .category-card',
+    (els) => els.map((e) => e.dataset.category));
+  for (const interdite of ['DHCP', 'DNS', 'Serveur de fichiers', 'Routage et accès Internet']) {
+    assert(!nomsCategories.includes(interdite),
+      `« ${interdite} » reste une sous-rubrique, pas une catégorie principale`);
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 2 : chaque nouvel outil s'ouvre, se remplit et se génère -----------
+console.log('\n[LOT 2] — ouverture, routes directes et modes des 14 nouveaux outils');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  const nouveaux = tools.filter((t) => t.category === 'Windows Server' && t.id !== 'shared-folder');
+  assert(nouveaux.length === 14, `${nouveaux.length} outils ajoutés par le LOT 2`);
+
+  for (const outil of nouveaux) {
+    // Route directe : le lien partagé ouvre bien la fiche.
+    await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+    await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+
+    const titre = await page.$eval('.tool-header h1', (el) => el.textContent);
+    assert(titre.includes(outil.title), `${outil.id} : la route directe ouvre la bonne fiche`);
+
+    const etiquette = await page.$eval('.tool-header .tag', (el) => el.textContent);
+    assert(etiquette.includes('WINDOWS SERVER') && etiquette.includes(outil.subcategory),
+      `${outil.id} : catégorie et sous-rubrique affichées (« ${etiquette} »)`);
+
+    // L'aperçu correspond exactement à la référence Node.
+    const attendu = normalizeScript(outil.generate(
+      Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]))));
+    const affiche = await page.$eval('#scriptOutput', (el) => el.textContent);
+    assert(affiche === attendu, `${outil.id} : l’aperçu est identique à generate() côté Node`);
+
+    // Les champs du formulaire sont tous présents et étiquetés.
+    for (const champ of outil.fields) {
+      const present = await page.locator(`#${champ.id}`).count();
+      assert(present === 1, `${outil.id} : le champ « ${champ.id} » est présent dans le formulaire`);
+    }
+
+    // Copier et Télécharger restent disponibles.
+    assert(await page.locator('#copyButton').isVisible() && await page.locator('#downloadButton').isVisible(),
+      `${outil.id} : Copier et Télécharger sont accessibles`);
+
+    // Un outil modifiant doit ouvrir en mode Diagnostic.
+    const aMode = outil.fields.some((f) => f.id === 'mode' || f.id === 'bkMode');
+    if (aMode) {
+      const idMode = outil.fields.some((f) => f.id === 'mode') ? 'mode' : 'bkMode';
+      const valeur = await page.$eval(`#${idMode}`, (el) => el.value);
+      assert(valeur === 'Diagnostic', `${outil.id} : le formulaire ouvre en mode Diagnostic`);
+    }
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 2 : données invalides refusées dans l'interface -------------------
+console.log('\n[LOT 2] — refus des données invalides dans le navigateur');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+
+  const casInvalides = [
+    ['dhcp-scope-options', 'scopeStart', '192.168.30.250', 'scopeEnd', '192.168.30.10'],
+    ['dhcp-reservation', 'resClient', '00-15-5D-01-2A-ZZ', null, null],
+    ['dns-record', 'recIPv4', '192.168.30.300', null, null],
+    ['dhcp-backup', 'bkFolder', '\\\\serveur\\partage', null, null],
+  ];
+
+  for (const [id, champ, valeur, champ2, valeur2] of casInvalides) {
+    await page.goto(`${BASE_URL}#/outil/${id}`);
+    await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+    const avant = await page.$eval('#scriptOutput', (el) => el.textContent);
+
+    await page.fill(`#${champ}`, valeur);
+    if (champ2) await page.fill(`#${champ2}`, valeur2);
+    await page.click('#toolForm .primary-button');
+    await page.waitForTimeout(200);
+
+    const messages = await page.$$eval('.field-error:not([hidden])', (els) => els.map((e) => e.textContent.trim()));
+    assert(messages.some((m) => m.length > 0),
+      `${id} : « ${champ} = ${valeur} » produit un message d’erreur sous le champ`);
+
+    const apres = await page.$eval('#scriptOutput', (el) => el.textContent);
+    assert(apres === avant,
+      `${id} : aucun script n’est généré à partir d’une saisie invalide`);
+
+    const marque = await page.$eval(`#${champ}`, (el) => el.classList.contains('field-invalid'));
+    assert(marque, `${id} : le champ fautif est signalé visuellement`);
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 2 : recherche, favoris et historique sur les nouveaux outils ------
+console.log('\n[LOT 2] — recherche, favoris et historique');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+
+  for (const [requete, idAttendu] of [
+    ['etendue dhcp', 'dhcp-scope-options'],
+    ['reservation', 'dhcp-reservation'],
+    ['zone inversee', 'dns-zone'],
+    ['permissions ntfs', 'file-permissions-audit'],
+    ['ics', 'ics-readiness'],
+    ['rras', 'rras-nat-readiness'],
+    ['pas d internet', 'internet-client-diagnostic'],
+    ['sauvegarde dhcp', 'dhcp-backup'],
+  ]) {
+    await page.fill('#search', requete);
+    await page.waitForTimeout(150);
+    const titres = await page.$$eval('#toolGrid h3', (els) => els.map((e) => e.textContent));
+    const attendu = tools.find((t) => t.id === idAttendu);
+    assert(titres.includes(attendu.title),
+      `recherche « ${requete} » → ${idAttendu} (${titres.length} résultat(s))`);
+  }
+  await page.fill('#search', '');
+  await page.waitForTimeout(150);
+
+  // Favori sur un outil du LOT 2, puis persistance.
+  await page.goto(`${BASE_URL}#/outil/dns-diagnostic`);
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  await page.fill('#search', 'dns');
+  await page.waitForTimeout(150);
+  await page.locator('#toolGrid .fav-toggle').first().click();
+  await page.fill('#search', '');
+  await page.waitForTimeout(200);
+  const favoris = await page.$eval('#shortcutsZone', (el) => el.textContent);
+  assert(favoris.includes('Favoris'), 'un outil du LOT 2 peut être mis en favori');
+  const historique = await page.$eval('#shortcutsZone', (el) => el.textContent);
+  assert(historique.includes('Consultés récemment') || historique.includes('Favoris'),
+    'l’historique retient la fiche consultée');
+
+  await ctx.close();
+}
+
+// --- LOT 2 : affichage des nouvelles fiches aux trois tailles --------------
+console.log('\n[LOT 2] — responsive des fiches Windows Server');
+for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
+                   { nom: 'tablette 768x1024', width: 768, height: 1024 },
+                   { nom: 'téléphone 390x844', width: 390, height: 844 }]) {
+  const ctx  = await browser.newContext({ viewport: { width: vue.width, height: vue.height } });
+  const page = await ctx.newPage();
+
+  // Une fiche courte, une fiche longue : le formulaire de l'étendue DHCP est le
+  // plus fourni du catalogue, c'est lui qui met la mise en page à l'épreuve.
+  for (const id of ['server-health-report', 'dhcp-scope-options', 'ics-readiness']) {
+    await page.goto(`${BASE_URL}#/outil/${id}`);
+    await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+    const debord = await page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert(debord <= 1, `${vue.nom} — ${id} : aucun débordement horizontal (${debord}px)`);
+
+    const boutons = await page.evaluate(() => {
+      const r = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const b = el.getBoundingClientRect();
+        return { dedans: b.left >= -1 && b.right <= document.documentElement.clientWidth + 1, h: b.height };
+      };
+      return { copier: r('#copyButton'), telecharger: r('#downloadButton'), generer: r('#toolForm .primary-button') };
+    });
+    for (const [nom, mesure] of Object.entries(boutons)) {
+      assert(mesure && mesure.dedans && mesure.h >= 32,
+        `${vue.nom} — ${id} : le bouton ${nom} est dans l’écran et assez grand`);
+    }
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 2 : modes Débutant et Technicien sur une fiche serveur ------------
+console.log('\n[LOT 2] — modes et avertissements sur une fiche Windows Server');
+{
+  const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto(`${BASE_URL}#/outil/dhcp-scope-options`);
+  await page.waitForSelector('#modeBlock', { timeout: 8000 });
+
+  const lireAvertissements = () => page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  const deb = await lireAvertissements();
+  assert(deb.length > 0, `mode Débutant : ${deb.length} avertissement(s) affiché(s)`);
+  for (const sel of ['#prereqBlock', '#execNotes', '#commonErrors', '#verifyAfter',
+                     '#rollbackBlock', '#toolForm', '#scriptOutput', '#copyButton', '#downloadButton']) {
+    assert(await page.locator(sel).count() === 1,
+      `mode Débutant : ${sel} présent sur une fiche Windows Server`);
+  }
+
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForSelector('#techMeta', { timeout: 8000 });
+  const tech = await lireAvertissements();
+  assert(tech.join(' | ') === deb.join(' | '),
+    'les avertissements sont identiques dans les deux modes, sur une fiche Windows Server');
+  const meta = await page.$eval('#techMeta', (el) => el.textContent);
+  assert(meta.includes('DHCP'), 'le mode Technicien annonce la sous-rubrique DHCP');
+  assert(meta.includes('dhcp-scope-options'), 'le mode Technicien annonce l’identifiant de l’outil');
 
   await ctx.close();
 }

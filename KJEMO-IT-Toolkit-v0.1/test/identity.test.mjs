@@ -45,7 +45,7 @@ import {
   domainToDn,
 } from '../dist/generators.mjs';
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import {
   CATEGORIES,
   CATEGORIE_TOUT,
@@ -78,6 +78,50 @@ import {
   libelle,
   langueDisponible,
 } from '../dist/libelles.mjs';
+
+import {
+  validerIPv6,
+  validerFqdn,
+  validerNomHote,
+  validerPrefixe,
+  validerMasque,
+  validerReseauCidr,
+  validerPlageIp,
+  validerScopeId,
+  validerMac,
+  validerClientId,
+  validerCheminWindowsLocal,
+  validerNomZoneDns,
+  validerNomEnregistrement,
+  validerTypeEnregistrement,
+  validerProfondeur,
+  validerDureeBail,
+  validerFormatRapport,
+  validerModeExecution,
+  validerChoix,
+  validerListeIPv4,
+  validerEntier,
+  ipDansReseau,
+  adresseReseau,
+  adresseDiffusion,
+  prefixeVersMasque,
+  ipVersEntier,
+  entierVersIp,
+  TYPES_ENREGISTREMENT,
+  FORMATS_RAPPORT,
+  MODES_EXECUTION,
+} from '../dist/validateurs.mjs';
+
+import {
+  VERSION_OUTILS,
+  enteteScript,
+  fonctionsRapport,
+  blocExportRapport,
+  blocParametres,
+  blocModeDiagnostic,
+} from '../dist/rapport-ps.mjs';
+
+import { psB64 as psB64Noyau, assertValid as assertValidNoyau } from '../dist/noyau.mjs';
 
 // ---------------------------------------------------------------------------
 // Comptage
@@ -224,7 +268,17 @@ assert(
 section('catalogue tools');
 
 assert(Array.isArray(tools), 'tools est un tableau');
-assert(tools.length === 8, `8 outils attendus, ${tools.length} trouvés`);
+// Le catalogue s'étend au fil des lots. Les huit outils historiques restent
+// en tête, dans leur ordre d'origine : c'est ce qui garantit que les routes
+// directes partagées avant le LOT 2 continuent de fonctionner.
+const IDS_HISTORIQUES = ['static-ip', 'ad-ou', 'ad-user', 'shared-folder',
+                         'second-dc', 'wifi-repair', 'gpo-password', 'disk-scan'];
+assert(tools.length >= IDS_HISTORIQUES.length,
+  `au moins les ${IDS_HISTORIQUES.length} outils historiques, ${tools.length} trouvés`);
+assert(tools.slice(0, IDS_HISTORIQUES.length).map((t) => t.id).join(',') === IDS_HISTORIQUES.join(','),
+  'les huit outils historiques restent en tête du catalogue, dans leur ordre');
+assert(new Set(tools.map((t) => t.id)).size === tools.length,
+  'aucun identifiant d\u2019outil en double dans le catalogue');
 
 const ids = tools.map((t) => t.id);
 const EXPECTED_IDS = ['static-ip', 'ad-ou', 'ad-user', 'shared-folder', 'second-dc', 'wifi-repair', 'gpo-password', 'disk-scan'];
@@ -1191,8 +1245,8 @@ const CLASSEMENT = {
   'disk-scan':     ['Analyse et nettoyage des disques', 'Occupation de l\u2019espace'],
 };
 
-assert(Object.keys(CLASSEMENT).length === tools.length,
-  `le classement canonique couvre les ${tools.length} outils`);
+assert(Object.keys(CLASSEMENT).length === 8,
+  'le classement canonique couvre les huit outils historiques');
 
 for (const [id, [cat, sous]] of Object.entries(CLASSEMENT)) {
   const outil = tools.find((t) => t.id === id);
@@ -1215,8 +1269,9 @@ const nomsVisibles = vis2.map((c) => c.name);
 
 assert(nomsVisibles.includes('Windows Server'),
   'Windows Server est visible : shared-folder l\u2019habite');
-assert(vis2.find((c) => c.name === 'Windows Server').count === 1,
-  'Windows Server contient exactement un outil');
+const windowsServer = vis2.find((c) => c.name === 'Windows Server');
+assert(windowsServer.count >= 1 && tools.some((t) => t.id === 'shared-folder' && t.category === 'Windows Server'),
+  `Windows Server contient ${windowsServer.count} outil(s), dont shared-folder`);
 assert(nomsVisibles.includes('Windows poste de travail')
     && nomsVisibles.includes('Analyse et nettoyage des disques'),
   'Windows poste de travail et Analyse des disques sont visibles');
@@ -1225,7 +1280,7 @@ assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
 assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
   'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
 assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
-  `six catégories visibles couvrant les ${tools.length} outils`);
+  `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
 const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
@@ -1236,12 +1291,556 @@ assert(sousRubriques(tools, 'Imprimantes').length === 0,
 assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
   'les décomptes des sous-rubriques correspondent au décompte de la catégorie');
 
-// Les métadonnées seules ont bougé : aucune signature de generate() touchée.
+// Une fonction generate() par outil, et une sous-rubrique par outil, quel que
+// soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === tools.length,
-  `les ${tools.length} fonctions generate() sont toujours là, une par outil`);
-assert((sourceGen.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
-  'chaque outil déclare sa sous-rubrique dans le module canonique');
+const sourceServeur = existsSync(resolve(ROOT, 'dist/outils-serveur.mjs'))
+  ? readFileSync(resolve(ROOT, 'dist/outils-serveur.mjs'), 'utf8')
+  : '';
+const sourcesCatalogue = sourceGen + '\n' + sourceServeur;
+assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
+  'les huit generate() historiques sont toujours dans generators.mjs');
+assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === tools.length,
+  `une fonction generate() par outil du catalogue (${tools.length})`);
+assert((sourcesCatalogue.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
+  `chaque outil déclare sa sous-rubrique (${tools.length})`);
+assert(tools.every((t) => typeof t.generate === 'function' && typeof t.validate === 'function'),
+  'chaque outil expose bien generate() et validate()');
+
+// ---------------------------------------------------------------------------
+// LOT 2 (1/n) — Validateurs Windows Server
+// ---------------------------------------------------------------------------
+section('LOT 2 — validateurs : adressage IPv4');
+
+assert(validerPrefixe('24').ok && validerPrefixe('24').value === 24, 'préfixe 24 accepté et converti en entier');
+assert(validerPrefixe('32').ok && validerPrefixe('0').ok, 'les bornes 0 et 32 sont acceptées');
+assert(!validerPrefixe('33').ok, 'préfixe 33 refusé');
+assert(!validerPrefixe('-1').ok, 'préfixe négatif refusé');
+assert(!validerPrefixe('24abc').ok, 'préfixe « 24abc » refusé : pas de parseInt permissif');
+assert(!validerPrefixe('024').ok, 'préfixe avec zéro de tête refusé');
+assert(!validerPrefixe('').ok, 'préfixe vide refusé');
+
+assert(validerMasque('255.255.255.0').ok && validerMasque('255.255.255.0').value.prefixe === 24,
+  'masque 255.255.255.0 reconnu comme /24');
+assert(validerMasque('255.255.240.0').value.prefixe === 20, 'masque 255.255.240.0 reconnu comme /20');
+assert(!validerMasque('255.0.255.0').ok, 'masque non contigu refusé');
+assert(!validerMasque('255.255.255.256').ok, 'masque avec octet invalide refusé');
+
+assert(prefixeVersMasque(24) === '255.255.255.0', 'préfixe 24 → masque 255.255.255.0');
+assert(prefixeVersMasque(30) === '255.255.255.252', 'préfixe 30 → masque 255.255.255.252');
+assert(prefixeVersMasque(0) === '0.0.0.0', 'préfixe 0 → masque 0.0.0.0');
+assert(ipVersEntier('0.0.0.1') === 1 && entierVersIp(1) === '0.0.0.1', 'conversion IP ↔ entier symétrique');
+assert(entierVersIp(ipVersEntier('192.168.30.254')) === '192.168.30.254', 'aller-retour sur une adresse réelle');
+assert(ipVersEntier('999.1.1.1') === null, 'une IP invalide ne se convertit pas');
+
+assert(adresseReseau('192.168.30.77', 24) === '192.168.30.0', 'adresse de réseau calculée pour /24');
+assert(adresseReseau('192.168.30.77', 25) === '192.168.30.0', 'adresse de réseau calculée pour /25');
+assert(adresseReseau('192.168.30.130', 25) === '192.168.30.128', 'seconde moitié d\u2019un /25');
+assert(adresseDiffusion('192.168.30.0', 24) === '192.168.30.255', 'adresse de diffusion d\u2019un /24');
+assert(ipDansReseau('192.168.30.50', '192.168.30.0', 24), 'appartenance au réseau vérifiée');
+assert(!ipDansReseau('192.168.31.50', '192.168.30.0', 24), 'adresse hors réseau détectée');
+assert(!ipDansReseau('192.168.30.200', '192.168.30.0', 25), 'adresse hors de la première moitié d\u2019un /25');
+
+section('LOT 2 — validateurs : réseau CIDR et plages');
+
+const cidrOk = validerReseauCidr('192.168.30.0/24');
+assert(cidrOk.ok && cidrOk.value.reseau === '192.168.30.0' && cidrOk.value.masque === '255.255.255.0',
+  'CIDR 192.168.30.0/24 analysé correctement');
+assert(!validerReseauCidr('192.168.30.7/24').ok,
+  'une adresse d\u2019hôte n\u2019est pas acceptée comme réseau');
+assert(validerReseauCidr('192.168.30.7/24').error.includes('192.168.30.0'),
+  'le message propose le réseau correct');
+assert(!validerReseauCidr('192.168.30.0').ok, 'réseau sans préfixe refusé');
+assert(!validerReseauCidr('192.168.30.0/24/8').ok, 'double préfixe refusé');
+assert(!validerReseauCidr('').ok, 'réseau vide refusé');
+
+const plageOk = validerPlageIp('192.168.30.1', '192.168.30.244', '192.168.30.0', 24);
+assert(plageOk.ok && plageOk.value.taille === 244, 'plage valide : 244 adresses');
+const plageInversee = validerPlageIp('192.168.30.244', '192.168.30.1', '192.168.30.0', 24);
+assert(!plageInversee.ok && /inversée/.test(plageInversee.error), 'plage inversée détectée');
+assert(!validerPlageIp('192.168.31.1', '192.168.30.244', '192.168.30.0', 24).ok,
+  'première adresse hors réseau refusée');
+assert(!validerPlageIp('192.168.30.1', '192.168.31.244', '192.168.30.0', 24).ok,
+  'dernière adresse hors réseau refusée');
+assert(!validerPlageIp('192.168.30.0', '192.168.30.244', '192.168.30.0', 24).ok,
+  'adresse de réseau refusée comme début de plage');
+assert(!validerPlageIp('192.168.30.1', '192.168.30.255', '192.168.30.0', 24).ok,
+  'adresse de diffusion refusée comme fin de plage');
+assert(validerPlageIp('10.0.0.5', '10.0.0.5').ok, 'plage d\u2019une seule adresse acceptée hors contexte réseau');
+
+assert(validerScopeId('192.168.30.0').ok, 'ScopeId valide accepté');
+assert(!validerScopeId('192.168.30').ok, 'ScopeId tronqué refusé');
+assert(!validerScopeId('scope1').ok, 'ScopeId non numérique refusé');
+
+section('LOT 2 — validateurs : IPv6, noms et DNS');
+
+assert(validerIPv6('2001:db8::1').ok, 'IPv6 abrégée acceptée');
+assert(validerIPv6('2001:0db8:0000:0000:0000:0000:0000:0001').ok, 'IPv6 complète acceptée');
+assert(validerIPv6('::1').ok, 'boucle locale IPv6 acceptée');
+assert(validerIPv6('::ffff:192.168.1.1').ok, 'forme mixte IPv4 acceptée');
+assert(!validerIPv6('2001:db8::1::2').ok, 'double abréviation refusée');
+assert(!validerIPv6('2001:db8:zzzz::1').ok, 'groupe non hexadécimal refusé');
+assert(!validerIPv6('2001:db8:1:2:3:4:5').ok, 'adresse incomplète sans abréviation refusée');
+assert(!validerIPv6('fe80::1%eth0').ok, 'identifiant de zone refusé');
+assert(!validerIPv6('').ok, 'IPv6 vide refusée');
+
+assert(validerFqdn('srv-dhcp.hopitalbn.lan').ok, 'FQDN valide accepté');
+assert(validerFqdn('srv.hopitalbn.lan.').value === 'srv.hopitalbn.lan', 'le point final est retiré');
+assert(!validerFqdn('srv').ok, 'nom court refusé comme FQDN');
+assert(!validerFqdn('srv..lan').ok, 'double point refusé');
+assert(!validerFqdn('-srv.lan').ok, 'étiquette commençant par un tiret refusée');
+assert(!validerFqdn('srv_.lan').ok, 'souligné refusé dans un FQDN');
+
+assert(validerNomHote('SRV-DHCP').ok, 'nom d\u2019hôte valide accepté');
+assert(!validerNomHote('srv.hopitalbn.lan').ok, 'un FQDN n\u2019est pas un nom d\u2019hôte court');
+assert(!validerNomHote('serveur-beaucoup-trop-long').ok, 'nom NetBIOS de plus de 15 caractères refusé');
+assert(!validerNomHote('srv-').ok, 'nom se terminant par un tiret refusé');
+
+assert(validerNomZoneDns('hopitalbn.lan').ok, 'zone directe acceptée');
+assert(validerNomZoneDns('30.168.192.in-addr.arpa').ok, 'zone inversée IPv4 acceptée');
+assert(validerNomZoneDns('0.8.b.d.1.0.0.2.ip6.arpa').ok, 'zone inversée IPv6 acceptée');
+assert(!validerNomZoneDns('in-addr.arpa').ok, 'zone inversée sans réseau refusée');
+assert(!validerNomZoneDns('zone lan').ok, 'espace refusé dans un nom de zone');
+
+assert(validerNomEnregistrement('srv-fichiers').ok, 'nom d\u2019enregistrement simple accepté');
+assert(validerNomEnregistrement('@').ok, '« @ » accepté pour la zone elle-même');
+assert(!validerNomEnregistrement('*.test').ok, 'enregistrement générique refusé dans ce lot');
+assert(!validerNomEnregistrement('').ok, 'nom d\u2019enregistrement vide refusé');
+
+assert(TYPES_ENREGISTREMENT.join(',') === 'A,AAAA,CNAME,PTR', 'quatre types pris en charge, et seulement eux');
+assert(validerTypeEnregistrement('a').value === 'A', 'le type est normalisé en majuscules');
+assert(!validerTypeEnregistrement('MX').ok, 'MX refusé : hors périmètre de ce lot');
+assert(!validerTypeEnregistrement('SRV').ok, 'SRV refusé : hors périmètre de ce lot');
+assert(!validerTypeEnregistrement('TXT').ok, 'TXT refusé : hors périmètre de ce lot');
+
+section('LOT 2 — validateurs : MAC, ClientId, chemins et formats');
+
+assert(validerMac('00-15-5D-01-2A-3B').value === '00-15-5D-01-2A-3B', 'MAC à tirets normalisée');
+assert(validerMac('00:15:5d:01:2a:3b').value === '00-15-5D-01-2A-3B', 'MAC à deux-points normalisée');
+assert(validerMac('00155d012a3b').value === '00-15-5D-01-2A-3B', 'MAC sans séparateur normalisée');
+assert(validerMac('0015.5d01.2a3b').value === '00-15-5D-01-2A-3B', 'MAC au format Cisco normalisée');
+assert(!validerMac('00-15-5D-01-2A').ok, 'MAC trop courte refusée');
+assert(!validerMac('00-15-5D-01-2A-3B-4C').ok, 'MAC trop longue refusée');
+assert(!validerMac('00-15-5D-01-2A-ZZ').ok, 'MAC non hexadécimale refusée');
+assert(!validerMac('').ok, 'MAC vide refusée');
+
+assert(validerClientId('00155d012a3b').ok, 'ClientId de 6 octets accepté');
+assert(validerClientId('0102').ok, 'ClientId de 2 octets accepté');
+assert(!validerClientId('010').ok, 'ClientId de longueur impaire refusé');
+assert(!validerClientId('01').ok, 'ClientId d\u2019un seul octet refusé');
+assert(!validerClientId('0'.repeat(34)).ok, 'ClientId de plus de 16 octets refusé');
+
+assert(validerCheminWindowsLocal('C:\\Sauvegardes\\DHCP').ok, 'chemin local accepté');
+assert(!validerCheminWindowsLocal('\\\\serveur\\partage').ok, 'chemin UNC refusé');
+assert(/UNC|réseau/.test(validerCheminWindowsLocal('\\\\serveur\\partage').error),
+  'le message explique que le chemin réseau est refusé');
+assert(!validerCheminWindowsLocal('Sauvegardes\\DHCP').ok, 'chemin relatif refusé');
+assert(!validerCheminWindowsLocal('C:\\Sauve<gardes').ok, 'caractère interdit refusé');
+assert(!validerCheminWindowsLocal('').ok, 'chemin vide refusé');
+
+assert(validerProfondeur('3').ok && validerProfondeur('3').value === 3, 'profondeur valide');
+assert(!validerProfondeur('11').ok, 'profondeur au-delà de 10 refusée');
+assert(!validerProfondeur('2.5').ok, 'profondeur décimale refusée');
+assert(!validerProfondeur('trois').ok, 'profondeur non numérique refusée');
+
+assert(validerDureeBail('8').ok, 'bail de 8 heures accepté');
+assert(!validerDureeBail('0').ok, 'bail nul refusé');
+assert(!validerDureeBail('9000').ok, 'bail supérieur à un an refusé');
+
+assert(FORMATS_RAPPORT.join(',') === 'Console,JSON,HTML,CSV', 'quatre formats de rapport');
+assert(validerFormatRapport('JSON').ok, 'format JSON accepté');
+assert(!validerFormatRapport('PDF').ok, 'format inconnu refusé');
+assert(!validerFormatRapport('json').ok, 'la casse compte : « json » n\u2019est pas « JSON »');
+
+assert(MODES_EXECUTION.join(',') === 'Diagnostic,Appliquer', 'deux modes d\u2019exécution');
+assert(validerModeExecution('Diagnostic').ok && validerModeExecution('Appliquer').ok, 'les deux modes sont acceptés');
+assert(!validerModeExecution('Force').ok, 'mode inconnu refusé');
+
+assert(validerChoix('Both', ['Both', 'Dhcp', 'Bootp']).ok, 'choix dans une liste fermée');
+assert(!validerChoix('Autre', ['Both', 'Dhcp', 'Bootp']).ok, 'valeur hors liste refusée');
+
+const listeDns = validerListeIPv4('192.168.30.254, 192.168.30.253');
+assert(listeDns.ok && listeDns.value.length === 2, 'liste de deux serveurs DNS acceptée');
+assert(!validerListeIPv4('192.168.30.254, 192.168.30.254').ok, 'doublon dans la liste refusé');
+assert(!validerListeIPv4('192.168.30.254, 300.1.1.1').ok, 'adresse invalide dans la liste refusée');
+assert(!validerListeIPv4('a, b, c, d').ok, 'liste trop longue et invalide refusée');
+assert(!validerListeIPv4('').ok, 'liste vide refusée');
+
+assert(validerEntier('42', 1, 100, 'Le test').ok, 'entier dans les bornes accepté');
+assert(!validerEntier('0', 1, 100, 'Le test').ok, 'entier sous la borne refusé');
+assert(!validerEntier('101', 1, 100, 'Le test').ok, 'entier au-dessus de la borne refusé');
+assert(!validerEntier('12abc', 1, 100, 'Le test').ok, 'parseInt permissif explicitement refusé');
+
+section('LOT 2 — noyau et fragments de rapport');
+
+const generatorsMod = await import('../dist/generators.mjs');
+assert(generatorsMod.psB64 === psB64Noyau,
+  'psB64 exporté par generators.mjs EST la fonction de noyau.mjs, pas une copie');
+assert(generatorsMod.assertValid === assertValidNoyau,
+  'assertValid exporté par generators.mjs EST la fonction de noyau.mjs');
+assert(psB64Noyau('D\u2019Adam').includes('FromBase64String'),
+  'psB64 encode les apostrophes typographiques en Base64');
+let leveAssert = false;
+try { assertValidNoyau({ validate: () => ({ champ: 'invalide' }) }, {}); } catch { leveAssert = true; }
+assert(leveAssert, 'assertValid lève bien sur une entrée invalide');
+
+const entete = enteteScript({ titre: 'Essai', outil: 'essai-outil' });
+assert(entete.startsWith('#Requires -Version 5.1'),
+  'l\u2019en-tête déclare explicitement le plancher PowerShell 5.1');
+assert(entete.includes('essai-outil') && entete.includes(VERSION_OUTILS),
+  'l\u2019en-tête identifie l\u2019outil et sa version');
+assert(entete.includes('$KjemoResultats'), 'l\u2019en-tête prépare la collecte des résultats');
+
+const fonctions = fonctionsRapport();
+assert(fonctions.includes('function Add-KjemoResultat'), 'la fonction de collecte est définie');
+assert(fonctions.includes("ValidateSet('OK','ATTENTION','PROBLEME','INFO','IGNORE')"),
+  'les états possibles sont contraints par ValidateSet');
+
+const exportBloc = blocExportRapport({ prefixeFichier: 'kjemo-essai' });
+for (const attendu of ['ConvertTo-Json', 'Export-Csv', 'ConvertTo-Html', 'Conclusion', 'Avertissements']) {
+  assert(exportBloc.includes(attendu), `le bloc de rapport contient ${attendu}`);
+}
+assert(!/password|motdepasse|Get-Credential|token/i.test(exportBloc),
+  'le bloc de rapport ne manipule aucun secret');
+assert(blocParametres([['Cle', "'valeur'"]]).includes('$KjemoParametres'),
+  'le bloc de paramètres alimente le rapport');
+assert(blocModeDiagnostic().includes('MODE DIAGNOSTIC'),
+  'la garde de mode annonce clairement qu\u2019elle n\u2019a rien modifié');
+
+// ---------------------------------------------------------------------------
+// LOT 2 — contrat commun à chaque outil Windows Server
+//
+// Ce bloc s'applique automatiquement à tout outil du LOT 2 : il grandit avec le
+// catalogue. Un outil ajouté sans prérequis, sans procédure d'annulation ou
+// sans source officielle échoue ici, pas en revue.
+// ---------------------------------------------------------------------------
+section('LOT 2 — contrat des outils Windows Server');
+
+const SOUS_RUBRIQUES_LOT2 = [
+  'Diagnostic serveur', 'DHCP', 'DNS', 'Serveur de fichiers', 'Routage et accès Internet',
+];
+const outilsLot2 = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+
+assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) du LOT 2`);
+assert(outilsLot2.every((t) => t.category === 'Windows Server'),
+  'tous les outils du LOT 2 appartiennent à la catégorie Windows Server');
+assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
+  'chaque outil du LOT 2 porte une des cinq sous-rubriques prévues');
+
+const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
+  'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
+  'commonErrors', 'reversible', 'verifyAfter', 'rollback', 'checks', 'source', 'sources'];
+
+for (const outil of outilsLot2) {
+  for (const champ of CHAMPS_FICHE) {
+    assert(outil[champ] !== undefined && outil[champ] !== null,
+      `${outil.id} : le champ « ${champ} » de la fiche est renseigné`);
+  }
+  assert(['diagnostic', 'safe', 'caution', 'destructive'].includes(outil.risk),
+    `${outil.id} : niveau de risque déclaré (${outil.risk})`);
+  assert(outil.fields.length > 0, `${outil.id} : le formulaire a au moins un champ`);
+  assert(outil.gui.length >= 3, `${outil.id} : la méthode graphique a au moins trois étapes`);
+  assert(outil.prereqs.length >= 3, `${outil.id} : les prérequis sont détaillés`);
+  assert(outil.verifyAfter.length >= 2, `${outil.id} : au moins deux vérifications après exécution`);
+  assert(outil.commonErrors.length >= 2, `${outil.id} : au moins deux erreurs fréquentes expliquées`);
+  assert(outil.os.some((o) => /Windows Server 2019/.test(o)) && outil.os.some((o) => /5\.1/.test(o)),
+    `${outil.id} : compatibilité déclarée précisément (2019 et PowerShell 5.1)`);
+  assert(outil.rollback && outil.rollback.summary && outil.rollback.diagnostic && outil.rollback.command,
+    `${outil.id} : procédure d’annulation en blocs distincts`);
+
+  // Sources : uniquement des pages Microsoft précises, en HTTPS.
+  assert(/^https:\/\/learn\.microsoft\.com\//.test(outil.source),
+    `${outil.id} : source principale sur learn.microsoft.com`);
+  assert(Array.isArray(outil.sources) && outil.sources.length >= 1,
+    `${outil.id} : liste de sources officielles fournie`);
+  for (const src of outil.sources) {
+    assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(src.url),
+      `${outil.id} : source « ${src.label} » pointe vers une page Microsoft précise`);
+    assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(src.url),
+      `${outil.id} : source « ${src.label} » n’est pas la page d’accueil`);
+  }
+
+  // Les outils modifiants commencent en Diagnostic ; les diagnostics exportent.
+  const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode');
+  if (outil.risk === 'diagnostic') {
+    assert(outil.fields.some((f) => /Format/i.test(f.label)),
+      `${outil.id} : un outil de diagnostic propose un format de rapport`);
+  } else {
+    assert(champMode, `${outil.id} : un outil modifiant porte un sélecteur de mode`);
+    assert(champMode.default === 'Diagnostic',
+      `${outil.id} : le mode par défaut est Diagnostic`);
+  }
+
+  // Aucun champ ne demande de secret.
+  for (const f of outil.fields) {
+    // On juge ce que le champ DEMANDE — son identifiant et son étiquette — et
+    // non son texte d'aide, qui peut légitimement dire « aucun mot de passe ».
+    assert(!/mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i.test(`${f.id} ${f.label}`),
+      `${outil.id} : le champ « ${f.id} » ne demande aucun secret`);
+    assert(f.type !== 'password', `${outil.id} : aucun champ de type password`);
+  }
+}
+
+section('LOT 2 — scripts générés : sécurité et forme');
+
+for (const outil of outilsLot2) {
+  const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  let script = '';
+  let erreur = null;
+  try { script = outil.generate(valeurs); } catch (e) { erreur = e; }
+  assert(!erreur, `${outil.id} : le script se génère avec les valeurs par défaut${erreur ? ' — ' + erreur.message : ''}`);
+  if (erreur) continue;
+
+  assert(script.startsWith('#Requires -Version 5.1'),
+    `${outil.id} : le script déclare son plancher PowerShell 5.1`);
+  assert(script.includes(outil.id), `${outil.id} : le script s’identifie`);
+
+  // Interdits absolus du LOT 2.
+  assert(!/-Confirm\s*:\s*\$false/i.test(script), `${outil.id} : aucun -Confirm:$false`);
+  assert(!/(^|\s)-Force\b/i.test(script), `${outil.id} : aucun -Force`);
+  assert(!/Invoke-Expression|\biex\b/i.test(script), `${outil.id} : aucun Invoke-Expression`);
+  assert(!/Set-ExecutionPolicy/i.test(script), `${outil.id} : aucun contournement d’ExecutionPolicy`);
+  assert(!/Invoke-WebRequest|Invoke-RestMethod|curl\s+http|wget\s+http|DownloadString/i.test(script),
+    `${outil.id} : aucun téléchargement de code externe`);
+  assert(!/Get-Credential|ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
+    `${outil.id} : aucune manipulation d’identifiants`);
+  assert(!/\bTODO\b|\bFIXME\b|\bXXX\b/.test(script), `${outil.id} : aucun marqueur TODO`);
+  assert(!/http:\/\//.test(script), `${outil.id} : aucune URL non chiffrée`);
+
+  // Un outil modifiant doit garder ses actions derrière la garde de mode.
+  if (outil.risk !== 'diagnostic') {
+    assert(/\$Mode\s*=|\$Mode -eq/.test(script),
+      `${outil.id} : le script porte la garde de mode`);
+    assert(/-WhatIf\b/.test(script) || /MODE DIAGNOSTIC/.test(script),
+      `${outil.id} : le mode Diagnostic simule ou annonce explicitement qu’il n’écrit rien`);
+  }
+
+  // Les valeurs saisies passent par Base64 : aucune apostrophe typographique brute.
+  const lignesDeCode = script.split('\n').filter((l) => !l.trim().startsWith('#'));
+  for (const ligne of lignesDeCode) {
+    assert(!/[‘’“”]/.test(ligne),
+      `${outil.id} : aucune apostrophe typographique hors commentaire (« ${ligne.slice(0, 40)} »)`);
+  }
+
+  // Un diagnostic pur ne doit contenir aucun verbe modifiant hors simulation.
+  if (outil.risk === 'diagnostic') {
+    const modifiants = lignesDeCode.join('\n')
+      .match(/\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g) ?? [];
+    const autorises = ['Add-KjemoResultat', 'New-Object', 'New-TimeSpan', 'Set-Content',
+                       'New-Item', 'Add-Member', 'Start-Sleep'];
+    const interdits = [...new Set(modifiants.filter((c) => !autorises.includes(c)))];
+    assert(interdits.length === 0,
+      `${outil.id} : aucun cmdlet modifiant dans un outil de diagnostic (${interdits.join(', ') || 'aucun'})`);
+  }
+}
+
+section('LOT 2 — validation : les données invalides sont refusées');
+
+for (const outil of outilsLot2) {
+  // Champ vide sur un champ obligatoire : le script ne doit pas être produit.
+  const obligatoires = outil.fields.filter((f) => !/facultatif/i.test(f.label));
+  for (const champ of obligatoires.slice(0, 3)) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    valeurs[champ.id] = '';
+    const errors = outil.validate(valeurs);
+    assert(Object.keys(errors).length > 0,
+      `${outil.id} : « ${champ.id} » vide est refusé par validate()`);
+    let leve = false;
+    try { outil.generate(valeurs); } catch { leve = true; }
+    assert(leve, `${outil.id} : generate() refuse de produire un script avec « ${champ.id} » vide`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// LOT 2 (8/n) — Contre-épreuves
+//
+// Un test qui ne peut pas échouer ne prouve rien. Chaque contrôle du lot est
+// donc soumis à un cas qui DOIT le faire échouer. Si l'une de ces
+// contre-épreuves passe, c'est le contrôle correspondant qui est défaillant,
+// pas le code testé.
+// ---------------------------------------------------------------------------
+section('LOT 2 — contre-épreuves : la validation détecte-t-elle vraiment ?');
+
+const outilEtendue = tools.find((t) => t.id === 'dhcp-scope-options');
+const baseEtendue = Object.fromEntries(outilEtendue.fields.map((f) => [f.id, String(f.default ?? '')]));
+
+const casEtendue = [
+  ['plage inversée', { scopeStart: '192.168.30.244', scopeEnd: '192.168.30.1' }, 'scopeStart|scopeEnd'],
+  ['première adresse hors du réseau', { scopeStart: '192.168.31.10' }, 'scopeStart|scopeEnd'],
+  ['adresse de réseau distribuée', { scopeStart: '192.168.30.0' }, 'scopeStart|scopeEnd'],
+  ['adresse de diffusion distribuée', { scopeEnd: '192.168.30.255' }, 'scopeStart|scopeEnd'],
+  ['réseau écrit comme une adresse d\u2019hôte', { scopeCidr: '192.168.30.7/24' }, 'scopeCidr'],
+  ['passerelle hors du réseau', { scopeGateway: '10.0.0.1' }, 'scopeGateway'],
+  ['passerelle comprise dans la plage distribuée', { scopeGateway: '192.168.30.100' }, 'scopeGateway'],
+  ['serveur DNS compris dans la plage distribuée', { scopeDns: '192.168.30.100' }, 'scopeDns'],
+  ['exclusion hors de la plage', { scopeExclStart: '192.168.30.245', scopeExclEnd: '192.168.30.250' }, 'scopeExclStart'],
+  ['durée de bail non entière', { scopeLease: '8,5' }, 'scopeLease'],
+  ['état d\u2019étendue inconnu', { scopeState: 'Peut-être' }, 'scopeState'],
+];
+
+for (const [nom, mutation, champsAttendus] of casEtendue) {
+  const valeurs = { ...baseEtendue, ...mutation };
+  const errors = outilEtendue.validate(valeurs);
+  const cles = Object.keys(errors);
+  assert(cles.length > 0, `contre-épreuve détectée — ${nom}`);
+  assert(cles.some((c) => new RegExp(champsAttendus).test(c)),
+    `contre-épreuve — ${nom} : l\u2019erreur porte sur le bon champ (${cles.join(', ')})`);
+  let leve = false;
+  try { outilEtendue.generate(valeurs); } catch { leve = true; }
+  assert(leve, `contre-épreuve — ${nom} : aucun script n\u2019est produit`);
+}
+
+// Contrôle POSITIF : les valeurs d'exemple du laboratoire doivent, elles, passer.
+assert(Object.keys(outilEtendue.validate(baseEtendue)).length === 0,
+  'contrôle positif : l\u2019exemple de laboratoire 192.168.30.0/24 est accepté');
+
+const outilReservation = tools.find((t) => t.id === 'dhcp-reservation');
+const baseReservation = Object.fromEntries(outilReservation.fields.map((f) => [f.id, String(f.default ?? '')]));
+for (const [nom, mutation, champ] of [
+  ['adresse hors de l\u2019étendue', { resIp: '192.168.40.50' }, 'resIp'],
+  ['ScopeId incorrect', { resScopeId: 'scope-1' }, 'resScopeId'],
+  ['MAC trop courte', { resClient: '00-15-5D-01-2A' }, 'resClient'],
+  ['MAC non hexadécimale', { resClient: '00-15-5D-01-2A-ZZ' }, 'resClient'],
+  ['type de réservation inconnu', { resType: 'Autre' }, 'resType'],
+]) {
+  const valeurs = { ...baseReservation, ...mutation };
+  const errors = outilReservation.validate(valeurs);
+  assert(errors[champ], `contre-épreuve détectée — ${nom} (champ ${champ})`);
+}
+assert(Object.keys(outilReservation.validate(baseReservation)).length === 0,
+  'contrôle positif : la réservation d\u2019exemple est acceptée');
+
+const outilSauvegarde = tools.find((t) => t.id === 'dhcp-backup');
+const baseSauvegarde = Object.fromEntries(outilSauvegarde.fields.map((f) => [f.id, String(f.default ?? '')]));
+const errUnc = outilSauvegarde.validate({ ...baseSauvegarde, bkFolder: '\\\\serveur\\sauvegardes' });
+assert(errUnc.bkFolder && /UNC|réseau/.test(errUnc.bkFolder),
+  'contre-épreuve détectée — chemin UNC refusé pour la sauvegarde DHCP');
+
+const outilZone = tools.find((t) => t.id === 'dns-zone');
+const baseZone = Object.fromEntries(outilZone.fields.map((f) => [f.id, String(f.default ?? '')]));
+for (const [nom, mutation, champ] of [
+  ['zone inversée sans notation CIDR', { zoneType: 'Inversée', zoneName: 'hopitalbn.lan' }, 'zoneName'],
+  ['nom de zone avec espace', { zoneName: 'zone invalide' }, 'zoneName'],
+  ['mises à jour sécurisées sur zone fichier', { zoneStorage: 'Fichier', zoneUpdates: 'Secure' }, 'zoneUpdates'],
+  ['étendue de réplication inconnue', { zoneReplication: 'Univers' }, 'zoneReplication'],
+]) {
+  const errors = outilZone.validate({ ...baseZone, ...mutation });
+  assert(errors[champ], `contre-épreuve détectée — ${nom} (champ ${champ})`);
+}
+
+const outilEnregistrement = tools.find((t) => t.id === 'dns-record');
+const baseEnregistrement = Object.fromEntries(outilEnregistrement.fields.map((f) => [f.id, String(f.default ?? '')]));
+for (const [nom, mutation, champ] of [
+  ['type MX hors périmètre', { recType: 'MX' }, 'recType'],
+  ['PTR dans une zone directe', { recType: 'PTR', recZone: 'hopitalbn.lan' }, 'recZone'],
+  ['enregistrement A dans une zone inversée', { recType: 'A', recZone: '30.168.192.in-addr.arpa' }, 'recZone'],
+  ['adresse IPv4 invalide pour un type A', { recIPv4: '192.168.30.300' }, 'recIPv4'],
+  ['adresse IPv6 invalide pour un type AAAA', { recType: 'AAAA', recIPv6: '2001:db8::1::2' }, 'recIPv6'],
+  ['cible CNAME non qualifiée', { recType: 'CNAME', recTarget: 'srv' }, 'recTarget'],
+]) {
+  const errors = outilEnregistrement.validate({ ...baseEnregistrement, ...mutation });
+  assert(errors[champ], `contre-épreuve détectée — ${nom} (champ ${champ})`);
+}
+
+const outilIcs = tools.find((t) => t.id === 'ics-readiness');
+const baseIcs = Object.fromEntries(outilIcs.fields.map((f) => [f.id, String(f.default ?? '')]));
+const errIcs = outilIcs.validate({ ...baseIcs, icsExternal: baseIcs.icsInternal });
+assert(errIcs.icsExternal, 'contre-épreuve détectée — carte interne et carte Internet identiques (ICS)');
+
+const outilRras = tools.find((t) => t.id === 'rras-nat-readiness');
+const baseRras = Object.fromEntries(outilRras.fields.map((f) => [f.id, String(f.default ?? '')]));
+const errRras = outilRras.validate({ ...baseRras, rrasExternal: baseRras.rrasInternal });
+assert(errRras.rrasExternal, 'contre-épreuve détectée — interfaces interne et externe identiques (RRAS)');
+
+section('LOT 2 — contre-épreuves : l\u2019audit de sécurité détecte-t-il vraiment ?');
+
+// Outils fictifs, construits uniquement pour faire échouer l'auditeur.
+const outilFictif = (rollback) => ({ id: 'outil-fictif', rollback });
+
+const casAudit = [
+  ['-Confirm:$false dans la procédure normale',
+    { summary: 's', diagnostic: 'Get-DhcpServerv4Scope', command: 'Remove-DhcpServerv4Scope -ScopeId x -Confirm:$false', exceptional: '' },
+    /-Confirm:\$false/],
+  ['-Force dans la procédure normale',
+    { summary: 's', diagnostic: 'Get-SmbShare', command: 'Remove-SmbShare -Name x -Force', exceptional: '' },
+    /-Force/],
+  ['commande destructrice sans confirmation',
+    { summary: 's', diagnostic: 'Get-DnsServerZone', command: 'Remove-DnsServerZone -Name x', exceptional: '' },
+    /aucune confirmation/],
+  ['modification dans le bloc diagnostic',
+    { summary: 's', diagnostic: 'Remove-DhcpServerv4Reservation -ScopeId x -ClientId y', command: 'Get-DhcpServerv4Reservation', exceptional: '' },
+    /bloc diagnostic/],
+  ['bloc exceptionnel sensible sans avertissement critique',
+    { summary: 's', diagnostic: 'Get-Service', command: 'Get-Service', exceptional: 'Uninstall-WindowsFeature -Name DHCP -Confirm\nhttps://learn.microsoft.com/x' },
+    /AVERTISSEMENT CRITIQUE/],
+  ['bloc exceptionnel sans renvoi à une procédure officielle',
+    { summary: 's', diagnostic: 'Get-Service', command: 'Get-Service', exceptional: 'AVERTISSEMENT CRITIQUE\nUninstall-WindowsFeature -Name DHCP -Confirm' },
+    /procédure Microsoft officielle/],
+];
+
+for (const [nom, rollback, motif] of casAudit) {
+  const pbs = auditerAnnulation(outilFictif(rollback));
+  assert(pbs.length > 0, `contre-épreuve détectée par l\u2019auditeur — ${nom}`);
+  assert(pbs.some((p) => motif.test(p)),
+    `contre-épreuve — ${nom} : le message nomme la règle enfreinte (${pbs.join(' | ')})`);
+}
+
+// Contrôle POSITIF : les 22 outils réels passent l'auditeur.
+const problemesReels = tools.flatMap((t) => auditerAnnulation(t));
+assert(problemesReels.length === 0,
+  `contrôle positif : les ${tools.length} outils passent l\u2019audit d\u2019annulation (${problemesReels.join(' | ')})`);
+
+section('LOT 2 — contre-épreuves : les gardes de script et de rapport');
+
+// Le contrôle « aucun -Force » doit réagir sur un script fabriqué qui en contient un.
+const scriptFautif = '#Requires -Version 5.1\nRemove-Item C:\\x -Force\n';
+assert(/(^|\s)-Force\b/i.test(scriptFautif),
+  'contre-épreuve — le motif de détection de -Force reconnaît un script fautif');
+const scriptConfirmFalse = 'Remove-DhcpServerv4Scope -ScopeId x -Confirm:$false';
+assert(/-Confirm\s*:\s*\$false/i.test(scriptConfirmFalse),
+  'contre-épreuve — le motif de détection de -Confirm:$false reconnaît un script fautif');
+const scriptTelechargement = 'Invoke-WebRequest https://exemple/x.ps1 | Invoke-Expression';
+assert(/Invoke-Expression/i.test(scriptTelechargement) && /Invoke-WebRequest/i.test(scriptTelechargement),
+  'contre-épreuve — les motifs de téléchargement et d\u2019exécution dynamique reconnaissent un script fautif');
+const scriptSecret = "$MotDePasse = ConvertTo-SecureString 'x' -AsPlainText -Force";
+assert(/ConvertTo-SecureString|PlainText/i.test(scriptSecret),
+  'contre-épreuve — le motif de détection de secrets reconnaît un script fautif');
+
+// Aucun script réel ne contient ces motifs.
+for (const outil of outilsLot2) {
+  const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const script = outil.generate(valeurs);
+  assert(!/(^|\s)-Force\b/i.test(script) && !/-Confirm\s*:\s*\$false/i.test(script)
+      && !/Invoke-Expression/i.test(script) && !/ConvertTo-SecureString|PlainText/i.test(script),
+    `contrôle positif : ${outil.id} ne contient aucun de ces motifs`);
+}
+
+// Un rapport ne doit jamais exporter de donnée sensible : le bloc d'export ne
+// référence que des variables de contexte, jamais un champ de mot de passe.
+const blocRapportReel = blocExportRapport({ prefixeFichier: 'kjemo-essai' });
+const motifsSensibles = [/password/i, /motdepasse/i, /credential/i, /token/i, /secret/i, /Get-Content.*\\.txt/i];
+for (const motif of motifsSensibles) {
+  assert(!motif.test(blocRapportReel),
+    `contre-épreuve — le bloc de rapport ne contient rien qui corresponde à ${motif}`);
+}
+
+section('LOT 2 — contre-épreuve : la garde d\u2019identité des scripts historiques');
+
+// Le fichier de référence protège les 64 scripts historiques. Si une empreinte
+// était absente ou fausse, la garde devrait le voir : on le vérifie ici sur une
+// copie modifiée du fichier, sans toucher au vrai.
+const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.json'), 'utf8'));
+assert(baseline.count === 64 && Object.keys(baseline.sha256).length === 64,
+  'la référence couvre exactement les 64 scripts historiques');
+assert(baseline.baseSha === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
+  'la référence est bien ancrée au SHA de base du LOT 1B');
+const empreinteFausse = { ...baseline.sha256 };
+const premierFichier = Object.keys(empreinteFausse)[0];
+empreinteFausse[premierFichier] = '0'.repeat(64);
+assert(empreinteFausse[premierFichier] !== baseline.sha256[premierFichier],
+  `contre-épreuve — une empreinte modifiée diffère de la référence (${premierFichier})`);
+assert(Object.keys(baseline.sha256).every((f) => /^[a-z0-9-]+__[a-z0-9-]+\.ps1$/.test(f)),
+  'chaque entrée de la référence nomme un script <outil>__<jeu>.ps1');
 
 // Résumé
 console.log('');

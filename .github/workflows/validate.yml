@@ -69,7 +69,9 @@ jobs:
         shell: bash
 
       # -----------------------------------------------------------------------
-      # 6. Générer les .ps1 (64 fichiers — 8 assistants × 8 jeux valides)
+      # 6. Générer les .ps1 (176 fichiers — 22 assistants × 8 jeux valides)
+      #    Le script vérifie aussi que les 64 scripts historiques sont restés
+      #    identiques aux empreintes figées dans test/scripts-baseline.json.
       # -----------------------------------------------------------------------
       - name: Générer les scripts .ps1
         working-directory: KJEMO-IT-Toolkit-v0.1
