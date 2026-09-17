@@ -21,10 +21,12 @@
 // Windows Server, qui a besoin des mêmes fonctions.
 // ---------------------------------------------------------------------------
 import { psB64, assertValid } from './noyau.mjs';
-import { validateIPv4, validateShareName } from './validateurs.mjs';
+import { validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
+         validateSamAccountName, validateGroupName, validateOuName } from './validateurs.mjs';
 import { toolsServeur } from './outils-serveur.mjs';
 
-export { psB64, assertValid, validateIPv4, validateShareName };
+export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
+         validateSamAccountName, validateGroupName, validateOuName };
 
 // ---------------------------------------------------------------------------
 // Fonctions d'échappement
@@ -54,25 +56,6 @@ export function escapePowerShellDoubleQuoted(v) {
     .replace(/"/g, '`"');
 }
 
-/**
- * Échappe une valeur pour un composant RDN LDAP (RFC 4514).
- * Caractères spéciaux : , + = " \ < > ; — ainsi que # en début et espaces en début/fin.
- */
-export function escapeLdapRdn(v) {
-  let s = String(v ?? '');
-  // 1. Backslash en premier
-  s = s.replace(/\\/g, '\\\\');
-  // 2. NUL et autres caractères de contrôle RFC 4514 → \HH
-  s = s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, (c) => '\\' + c.charCodeAt(0).toString(16).padStart(2, '0'));
-  // 3. Caractères spéciaux RFC 4514
-  s = s.replace(/[,+="<>;]/g, (c) => '\\' + c);
-  // 4. Dièse en début de valeur
-  if (s.startsWith('#')) s = '\\#' + s.slice(1);
-  // 5. Espaces en début et en fin
-  s = s.replace(/^( +)/, (m) => m.replace(/ /g, '\\ '));
-  s = s.replace(/( +)$/, (m) => m.replace(/ /g, '\\ '));
-  return s;
-}
 
 // ---------------------------------------------------------------------------
 // Validateurs stricts
@@ -96,23 +79,7 @@ export function validateDomain(v) {
 }
 
 
-export function validateSamAccountName(v) {
-  const s = String(v ?? '').trim();
-  if (!s) return { ok: false, value: s, error: 'Le SamAccountName ne peut pas être vide.' };
-  if (s.length > 20) return { ok: false, value: s, error: 'Le SamAccountName ne doit pas dépasser 20 caractères.' };
-  if (/["\/\\[\]:;|=,+*?<>@\x00-\x1f\x7f]/.test(s)) {
-    return { ok: false, value: s, error: 'Le SamAccountName contient un caractère non autorisé (" / \\ [ ] : ; | = , + * ? < > @).' };
-  }
-  return { ok: true, value: s, error: null };
-}
 
-export function validateGroupName(v) {
-  const s = String(v ?? '').trim();
-  if (!s) return { ok: false, value: s, error: 'Le nom du groupe ne peut pas être vide.' };
-  if (s.length > 256) return { ok: false, value: s, error: 'Le nom du groupe ne doit pas dépasser 256 caractères.' };
-  if (/[\x00-\x1f\x7f]/.test(s)) return { ok: false, value: s, error: 'Le nom du groupe contient un caractère de contrôle non autorisé.' };
-  return { ok: true, value: s, error: null };
-}
 
 
 export function validateIntegerStrict(v, min, max, label) {
@@ -149,13 +116,6 @@ export function validateFloatStrict(v, min, max, label) {
   return { ok: true, value: n, error: null };
 }
 
-export function validateOuName(v) {
-  const s = String(v ?? '').trim();
-  if (!s) return { ok: false, value: s, error: "Le nom de l'OU ne peut pas être vide." };
-  if (s.length > 64) return { ok: false, value: s, error: "Le nom de l'OU ne doit pas dépasser 64 caractères." };
-  if (/[\x00-\x1f\x7f]/.test(s)) return { ok: false, value: s, error: "Le nom de l'OU contient un caractère de contrôle non autorisé." };
-  return { ok: true, value: s, error: null };
-}
 
 /**
  * Valide un chemin local Windows absolu pour New-SmbShare.
@@ -193,13 +153,6 @@ export function validatePath(v) {
 // Utilitaires partagés
 // ---------------------------------------------------------------------------
 
-/**
- * Convertit un nom de domaine en Distinguished Name LDAP (RFC 4514).
- */
-export function domainToDn(domain) {
-  return String(domain).trim().split('.').filter(Boolean)
-    .map((part) => `DC=${escapeLdapRdn(part)}`).join(',');
-}
 
 /**
  * Normalise un script PowerShell généré : convertit \ + newline en backtick + newline.
@@ -1607,4 +1560,5 @@ tools.push(createDiskScanTool());
 // ensuite, pour que les routes directes et les tests restent lisibles.
 // ---------------------------------------------------------------------------
 for (const outil of toolsServeur) tools.push(outil);
+
 

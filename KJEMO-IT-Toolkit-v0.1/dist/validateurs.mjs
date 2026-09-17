@@ -480,3 +480,360 @@ export function validerListeIPv4(v, { min = 1, max = 3, label = 'La liste' } = {
   }
   return { ok: true, value: items, error: null };
 }
+
+// ---------------------------------------------------------------------------
+// LDAP — échappement et noms distinctifs
+// Déplacés depuis generators.mjs au LOT 3, à l'identique, pour que le
+// catalogue Active Directory puisse les utiliser sans import circulaire.
+// generators.mjs les ré-exporte : rien ne change pour les importateurs.
+// ---------------------------------------------------------------------------
+/**
+ * Échappe une valeur pour un composant RDN LDAP (RFC 4514).
+ * Caractères spéciaux : , + = " \ < > ; — ainsi que # en début et espaces en début/fin.
+ */
+export function escapeLdapRdn(v) {
+  let s = String(v ?? '');
+  // 1. Backslash en premier
+  s = s.replace(/\\/g, '\\\\');
+  // 2. NUL et autres caractères de contrôle RFC 4514 → \HH
+  s = s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, (c) => '\\' + c.charCodeAt(0).toString(16).padStart(2, '0'));
+  // 3. Caractères spéciaux RFC 4514
+  s = s.replace(/[,+="<>;]/g, (c) => '\\' + c);
+  // 4. Dièse en début de valeur
+  if (s.startsWith('#')) s = '\\#' + s.slice(1);
+  // 5. Espaces en début et en fin
+  s = s.replace(/^( +)/, (m) => m.replace(/ /g, '\\ '));
+  s = s.replace(/( +)$/, (m) => m.replace(/ /g, '\\ '));
+  return s;
+}
+
+/**
+ * Convertit un nom de domaine en Distinguished Name LDAP (RFC 4514).
+ */
+export function domainToDn(domain) {
+  return String(domain).trim().split('.').filter(Boolean)
+    .map((part) => `DC=${escapeLdapRdn(part)}`).join(',');
+}
+
+// ---------------------------------------------------------------------------
+// Annuaire — noms de comptes, de groupes et d'unités d'organisation
+// Déplacés depuis generators.mjs au LOT 3, à l'identique. generators.mjs les
+// ré-exporte : les huit outils historiques ne voient aucune différence.
+// ---------------------------------------------------------------------------
+export function validateSamAccountName(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le SamAccountName ne peut pas être vide.' };
+  if (s.length > 20) return { ok: false, value: s, error: 'Le SamAccountName ne doit pas dépasser 20 caractères.' };
+  if (/["\/\\[\]:;|=,+*?<>@\x00-\x1f\x7f]/.test(s)) {
+    return { ok: false, value: s, error: 'Le SamAccountName contient un caractère non autorisé (" / \\ [ ] : ; | = , + * ? < > @).' };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+export function validateGroupName(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le nom du groupe ne peut pas être vide.' };
+  if (s.length > 256) return { ok: false, value: s, error: 'Le nom du groupe ne doit pas dépasser 256 caractères.' };
+  if (/[\x00-\x1f\x7f]/.test(s)) return { ok: false, value: s, error: 'Le nom du groupe contient un caractère de contrôle non autorisé.' };
+  return { ok: true, value: s, error: null };
+}
+
+export function validateOuName(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: "Le nom de l'OU ne peut pas être vide." };
+  if (s.length > 64) return { ok: false, value: s, error: "Le nom de l'OU ne doit pas dépasser 64 caractères." };
+  if (/[\x00-\x1f\x7f]/.test(s)) return { ok: false, value: s, error: "Le nom de l'OU contient un caractère de contrôle non autorisé." };
+  return { ok: true, value: s, error: null };
+}
+
+// ---------------------------------------------------------------------------
+// LOT 3 — Active Directory avancé
+// Validateurs des noms distinctifs, des hiérarchies d'OU, des comptes, des
+// groupes et des fichiers CSV d'import.
+// ---------------------------------------------------------------------------
+
+/**
+ * Nom distinctif (DN) LDAP.
+ *
+ * L'analyse respecte RFC 4514 : une virgule précédée d'un backslash fait partie
+ * de la valeur, elle ne sépare pas deux composants. Découper naïvement sur la
+ * virgule casse tout DN contenant « Dupont, Marie », et c'est l'erreur la plus
+ * fréquente des scripts trouvés en ligne.
+ */
+export function validerDn(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le nom distinctif ne peut pas être vide (ex. : OU=Medecin,DC=hopitalbn,DC=lan).' };
+  if (/[\x00-\x1f\x7f]/.test(s)) {
+    return { ok: false, value: s, error: 'Le nom distinctif contient un caractère de contrôle non autorisé.' };
+  }
+
+  // Découpage en respectant l'échappement par backslash.
+  const composants = [];
+  let courant = '';
+  let echappe = false;
+  for (const c of s) {
+    if (echappe) { courant += c; echappe = false; continue; }
+    if (c === '\\') { courant += c; echappe = true; continue; }
+    if (c === ',') { composants.push(courant); courant = ''; continue; }
+    courant += c;
+  }
+  composants.push(courant);
+  if (echappe) return { ok: false, value: s, error: 'Le nom distinctif se termine par un backslash isolé.' };
+
+  const types = [];
+  for (const brut of composants) {
+    const composant = brut.trim();
+    if (!composant) return { ok: false, value: s, error: 'Le nom distinctif contient un composant vide (deux virgules de suite ?).' };
+    const egal = indexEgalNonEchappe(composant);
+    if (egal <= 0) {
+      return { ok: false, value: s, error: `« ${composant} » n\u2019est pas un composant valide : il faut la forme TYPE=valeur.` };
+    }
+    const type = composant.slice(0, egal).trim().toUpperCase();
+    const valeur = composant.slice(egal + 1);
+    if (!/^[A-Z][A-Z0-9-]*$/.test(type)) {
+      return { ok: false, value: s, error: `« ${type} » n\u2019est pas un type d\u2019attribut valide (CN, OU, DC…).` };
+    }
+    if (!valeur.trim()) {
+      return { ok: false, value: s, error: `Le composant « ${type}= » n\u2019a pas de valeur.` };
+    }
+    types.push(type);
+  }
+
+  if (!types.includes('DC')) {
+    return { ok: false, value: s, error: 'Le nom distinctif doit se terminer par le domaine (ex. : ,DC=hopitalbn,DC=lan).' };
+  }
+  // Les composants DC sont toujours les derniers.
+  const premierDc = types.indexOf('DC');
+  if (types.slice(premierDc).some((t) => t !== 'DC')) {
+    return { ok: false, value: s, error: 'Les composants DC doivent être les derniers du nom distinctif.' };
+  }
+
+  return { ok: true, value: s, error: null, composants: types };
+}
+
+/** Position du premier « = » non échappé, ou -1. */
+function indexEgalNonEchappe(texte) {
+  let echappe = false;
+  for (let i = 0; i < texte.length; i++) {
+    const c = texte[i];
+    if (echappe) { echappe = false; continue; }
+    if (c === '\\') { echappe = true; continue; }
+    if (c === '=') return i;
+  }
+  return -1;
+}
+
+/**
+ * Chemin d'unité d'organisation, écrit du parent vers l'enfant et séparé par
+ * des barres obliques : « Medecin/Specialiste ».
+ *
+ * La barre oblique est le séparateur du formulaire, pas un caractère de nom :
+ * un nom d'OU qui en contient doit être saisi autrement. C'est un compromis
+ * assumé, documenté dans l'aide du champ.
+ */
+export function validerCheminOu(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le chemin d\u2019OU ne peut pas être vide (ex. : Medecin/Specialiste).' };
+  if (s.startsWith('/') || s.endsWith('/')) {
+    return { ok: false, value: s, error: 'Le chemin ne doit pas commencer ni finir par une barre oblique.' };
+  }
+  if (s.includes('//')) {
+    return { ok: false, value: s, error: 'Le chemin contient deux barres obliques de suite : un niveau est vide.' };
+  }
+  const segments = s.split('/').map((x) => x.trim());
+  if (segments.length > 10) {
+    return { ok: false, value: s, error: 'Dix niveaux d\u2019OU au maximum : au-delà, la structure devient ingérable.' };
+  }
+  for (const segment of segments) {
+    const r = validateOuName(segment);
+    if (!r.ok) return { ok: false, value: s, error: `« ${segment} » : ${r.error}` };
+  }
+  return { ok: true, value: segments, error: null };
+}
+
+/**
+ * Liste d'OU saisie sur plusieurs lignes, telle qu'on la copie d'un tableau de
+ * conception.
+ *
+ * Le résultat est TRIÉ : les parents précèdent toujours leurs enfants, sinon
+ * New-ADOrganizationalUnit échoue sur un parent absent. Les niveaux
+ * intermédiaires implicites sont ajoutés — écrire « Medecin/Specialiste » sans
+ * « Medecin » est une omission, pas une erreur de conception.
+ */
+export function validerListeOu(v, { max = 100 } = {}) {
+  const brut = String(v ?? '');
+  const lignes = brut.split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '' && !l.startsWith('#'));
+  if (lignes.length === 0) {
+    return { ok: false, value: [], error: 'Indique au moins une OU, une par ligne (ex. : Medecin puis Medecin/Specialiste).' };
+  }
+  if (lignes.length > max) {
+    return { ok: false, value: [], error: `Pas plus de ${max} OU par exécution : découpe en plusieurs lots.` };
+  }
+
+  const chemins = new Map();   // chemin normalisé -> segments
+  const doublons = [];
+  for (const ligne of lignes) {
+    const r = validerCheminOu(ligne);
+    if (!r.ok) return { ok: false, value: [], error: `Ligne « ${ligne} » : ${r.error}` };
+    const segments = r.value;
+    // Chaque niveau intermédiaire est nécessaire : on le rend explicite.
+    for (let i = 1; i <= segments.length; i++) {
+      const partiel = segments.slice(0, i);
+      const cle = partiel.join('/').toLowerCase();
+      if (!chemins.has(cle)) chemins.set(cle, partiel);
+      else if (i === segments.length && chemins.get(cle).join('/') === partiel.join('/')
+               && lignes.filter((l) => l.toLowerCase() === ligne.toLowerCase()).length > 1
+               && !doublons.includes(ligne)) {
+        doublons.push(ligne);
+      }
+    }
+  }
+  if (doublons.length) {
+    return { ok: false, value: [], error: `Ligne(s) en double : ${doublons.join(', ')}.` };
+  }
+
+  // Tri : profondeur croissante, puis ordre alphabétique pour être déterministe.
+  const ordonnees = [...chemins.values()].sort((a, b) => (a.length - b.length)
+    || a.join('/').localeCompare(b.join('/')));
+
+  return {
+    ok: true,
+    error: null,
+    value: ordonnees.map((segments) => ({
+      segments,
+      chemin: segments.join('/'),
+      nom: segments[segments.length - 1],
+      parent: segments.length > 1 ? segments.slice(0, -1) : null,
+      profondeur: segments.length,
+      implicite: !lignes.some((l) => l.toLowerCase() === segments.join('/').toLowerCase()),
+    })),
+  };
+}
+
+/**
+ * Nom d'ouverture de session principal (UPN) : utilisateur@domaine.
+ */
+export function validerUpn(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'L\u2019UPN ne peut pas être vide (ex. : m.tremblay@hopitalbn.lan).' };
+  const morceaux = s.split('@');
+  if (morceaux.length !== 2) {
+    return { ok: false, value: s, error: 'L\u2019UPN doit contenir exactement un @ (ex. : m.tremblay@hopitalbn.lan).' };
+  }
+  const [compte, domaine] = morceaux;
+  if (!compte) return { ok: false, value: s, error: 'La partie avant le @ est vide.' };
+  if (compte.length > 64) return { ok: false, value: s, error: 'La partie avant le @ dépasse 64 caractères.' };
+  if (/["\/\\[\]:;|=,+*?<>\s]/.test(compte)) {
+    return { ok: false, value: s, error: 'La partie avant le @ contient un caractère non autorisé.' };
+  }
+  const d = validerFqdn(domaine);
+  if (!d.ok) return { ok: false, value: s, error: `Domaine de l\u2019UPN : ${d.error}` };
+  return { ok: true, value: `${compte}@${d.value}`, error: null };
+}
+
+/** Portées de groupe Active Directory. */
+export const PORTEES_GROUPE = ['Global', 'DomainLocal', 'Universal'];
+/** Catégories de groupe. */
+export const CATEGORIES_GROUPE = ['Security', 'Distribution'];
+
+export function validerPorteeGroupe(v) {
+  return validerChoix(v, PORTEES_GROUPE, 'La portée du groupe');
+}
+
+export function validerCategorieGroupe(v) {
+  return validerChoix(v, CATEGORIES_GROUPE, 'La catégorie du groupe');
+}
+
+/**
+ * Chemin UNC : \\serveur\partage[\sous-dossier].
+ * L'inverse du validateur de chemin local : ici, un chemin local est refusé.
+ */
+export function validerCheminUnc(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le chemin réseau ne peut pas être vide (ex. : \\\\srv-fichiers\\Profils).' };
+  if (/^[a-zA-Z]:\\/.test(s)) {
+    return { ok: false, value: s, error: 'Un chemin local ne convient pas ici : les dossiers personnels et les profils se déclarent en chemin réseau (\\\\serveur\\partage).' };
+  }
+  if (!s.startsWith('\\\\')) {
+    return { ok: false, value: s, error: 'Un chemin UNC commence par deux backslashes (ex. : \\\\srv-fichiers\\Profils).' };
+  }
+  const reste = s.slice(2);
+  const parties = reste.split('\\').filter((x) => x !== '');
+  if (parties.length < 2) {
+    return { ok: false, value: s, error: 'Le chemin doit comporter au moins un serveur et un partage (\\\\serveur\\partage).' };
+  }
+  const [serveur, partage] = parties;
+  if (!validerNomHote(serveur).ok && !validerFqdn(serveur).ok && !validateIPv4(serveur).ok) {
+    return { ok: false, value: s, error: `« ${serveur} » n\u2019est pas un nom de serveur valide.` };
+  }
+  const p = validateShareName(partage);
+  if (!p.ok) return { ok: false, value: s, error: `Partage « ${partage} » : ${p.error}` };
+  if (/["*?<>|]/.test(reste)) {
+    return { ok: false, value: s, error: 'Le chemin contient un caractère interdit par Windows (" * ? < > |).' };
+  }
+  return { ok: true, value: s.replace(/\\+$/, ''), error: null };
+}
+
+/** Lettre de lecteur pour HomeDrive : « H: ». */
+export function validerLettreLecteur(v) {
+  const s = String(v ?? '').trim().toUpperCase();
+  if (!s) return { ok: false, value: s, error: 'Indique une lettre de lecteur (ex. : H:).' };
+  if (!/^[D-Z]:$/.test(s)) {
+    return { ok: false, value: s, error: 'La lettre doit être comprise entre D: et Z:, suivie de deux-points. A:, B: et C: sont réservées.' };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/** Nom d'ordinateur : nom NetBIOS, 15 caractères au plus. */
+export function validerNomOrdinateur(v) {
+  const s = String(v ?? '').trim().replace(/\$$/, '');
+  if (!s) return { ok: false, value: s, error: 'Le nom de l\u2019ordinateur ne peut pas être vide.' };
+  if (s.length > 15) return { ok: false, value: s, error: 'Un nom d\u2019ordinateur NetBIOS fait 15 caractères au plus.' };
+  if (!/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(s)) {
+    return { ok: false, value: s, error: 'Le nom n\u2019accepte que lettres, chiffres et tirets, sans commencer par un tiret.' };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/** Nombre de jours d'inactivité, d'ancienneté ou d'expiration. */
+export function validerJours(v, { min = 1, max = 3650, label = 'Le nombre de jours' } = {}) {
+  return validerEntier(v, min, max, label);
+}
+
+/**
+ * Schéma de colonnes attendu dans un fichier CSV d'import.
+ * On valide la LISTE des colonnes déclarées, pas le fichier : le navigateur ne
+ * lit pas le disque, et le script vérifiera le fichier réel à l'exécution.
+ */
+export function validerColonnesCsv(v, { obligatoires = [], max = 30 } = {}) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: [], error: 'Indique les colonnes du fichier, séparées par des virgules.' };
+  const colonnes = s.split(',').map((c) => c.trim()).filter((c) => c !== '');
+  if (colonnes.length === 0) return { ok: false, value: [], error: 'Aucune colonne lisible dans la liste.' };
+  if (colonnes.length > max) return { ok: false, value: [], error: `Pas plus de ${max} colonnes.` };
+  for (const colonne of colonnes) {
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(colonne)) {
+      return { ok: false, value: [], error: `« ${colonne} » n\u2019est pas un nom de colonne valide : lettres, chiffres et souligné, commençant par une lettre.` };
+    }
+  }
+  const vues = colonnes.map((c) => c.toLowerCase());
+  if (new Set(vues).size !== vues.length) {
+    return { ok: false, value: [], error: 'La liste contient deux fois la même colonne.' };
+  }
+  const manquantes = obligatoires.filter((o) => !vues.includes(o.toLowerCase()));
+  if (manquantes.length) {
+    return { ok: false, value: [], error: `Colonne(s) obligatoire(s) manquante(s) : ${manquantes.join(', ')}.` };
+  }
+  return { ok: true, value: colonnes, error: null };
+}
+
+/**
+ * Construit le DN d'une OU à partir de ses segments et du domaine, en
+ * échappant chaque composant selon RFC 4514.
+ * « Medecin/Specialiste » dans hopitalbn.lan donne :
+ *   OU=Specialiste,OU=Medecin,DC=hopitalbn,DC=lan
+ */
+export function cheminOuVersDn(segments, domaine) {
+  const parties = [...segments].reverse().map((s) => `OU=${escapeLdapRdn(s)}`);
+  return [...parties, domainToDn(domaine)].join(',');
+}
