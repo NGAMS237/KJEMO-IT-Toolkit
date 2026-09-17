@@ -863,6 +863,833 @@ console.log('\n[routes] — liens directs, favoris et historique local');
   await ctx.close();
 }
 
+// --- LOT 1B : accueil, catégories et recherche mise en avant ---------------
+console.log('\n[accueil 1B] — structure d’accueil et navigation par catégories');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
+
+  const utilisees = [...new Set(tools.map((t) => t.category))];
+
+  const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => ({
+    nom: e.dataset.category,
+    presse: e.getAttribute('aria-pressed'),
+    texte: e.textContent,
+    selectionnee: e.classList.contains('is-selected'),
+  })));
+
+  assert(cartes.length === utilisees.length + 1,
+    `la grille affiche « Tout » + les ${utilisees.length} catégories pourvues (${cartes.length})`);
+  assert(utilisees.every((c) => cartes.some((k) => k.nom === c)),
+    'chaque catégorie réellement utilisée a sa carte');
+  for (const vide of ['Imprimantes', 'Linux']) {
+    assert(!cartes.some((k) => k.nom === vide),
+      `aucune catégorie vide affichée : « ${vide} » est absente`);
+  }
+  assert(cartes.every((k) => k.presse === 'true' || k.presse === 'false'),
+    'chaque carte de catégorie porte aria-pressed');
+  assert(cartes.filter((k) => k.presse === 'true').length === 1,
+    'une seule catégorie est marquée comme sélectionnée');
+  assert(cartes.find((k) => k.presse === 'true').selectionnee,
+    'l’état sélectionné est aussi visible (classe is-selected)');
+  assert(cartes.every((k) => /\d+\s+outil/.test(k.texte)),
+    'chaque carte annonce son nombre d’outils');
+
+  // Le décompte annoncé doit correspondre au catalogue réel.
+  for (const nom of utilisees) {
+    const attendu = tools.filter((t) => t.category === nom).length;
+    const carte   = cartes.find((k) => k.nom === nom);
+    assert(new RegExp(`${attendu} outil`).test(carte.texte),
+      `« ${nom} » annonce ${attendu} outil(s)`);
+  }
+
+  // Sélection d'une catégorie : la grille d'outils doit être filtrée.
+  const cible   = utilisees[0];
+  const attendu = tools.filter((t) => t.category === cible).length;
+  await page.click(`#categoryGrid .category-card[data-category="${cible}"]`);
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    attendu, { timeout: 8000 });
+  const affiches = await page.locator('#toolGrid .open-tool').count();
+  assert(affiches === attendu,
+    `« ${cible} » sélectionnée : ${affiches} outil(s) affiché(s) sur ${tools.length}`);
+  const presseApres = await page.getAttribute(
+    `#categoryGrid .category-card[data-category="${cible}"]`, 'aria-pressed');
+  assert(presseApres === 'true', 'la catégorie cliquée passe à aria-pressed="true"');
+
+  // La barre latérale reflète la même sélection (aria-current).
+  const navCourant = await page.$eval('#navigation button[aria-current="true"]',
+    (el) => el.dataset.category).catch(() => null);
+  assert(navCourant === cible,
+    'la navigation latérale marque la même catégorie avec aria-current');
+
+  // Retour à « Tout »
+  await page.click('#categoryGrid .category-card[data-category="Tout"]');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  assert(await page.locator('#toolGrid .open-tool').count() === tools.length,
+    '« Tous les outils » rétablit le catalogue complet');
+
+  // La recherche est l'action principale : champ dans le hero, étiquette accessible.
+  const champDansHero = await page.$eval('#search', (el) => !!el.closest('.hero'));
+  assert(champDansHero, 'le champ de recherche est présenté dans le hero');
+  const etiquette = await page.$eval('#search', (el) => {
+    const lab = el.closest('label') || document.querySelector('label[for="search"]');
+    return lab ? lab.textContent.trim() : '';
+  });
+  assert(etiquette.length > 0, 'le champ de recherche porte une étiquette associée');
+
+  // Bouton d'effacement : masqué à vide, actif dès la saisie.
+  assert(await page.locator('#searchClear').isHidden(),
+    'le bouton d’effacement est masqué quand la recherche est vide');
+  await page.fill('#search', 'wifi');
+  await page.waitForSelector('#searchClear:not([hidden])', { timeout: 8000 });
+  assert(await page.locator('#searchClear').isVisible(),
+    'le bouton d’effacement apparaît dès qu’une recherche est saisie');
+  await page.click('#searchClear');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  assert(await page.inputValue('#search') === '',
+    'le bouton d’effacement vide réellement le champ');
+
+  // Échap efface aussi la recherche — aucun contrôle réservé à la souris.
+  await page.fill('#search', 'disque');
+  await page.waitForSelector('#searchClear:not([hidden])', { timeout: 8000 });
+  await page.press('#search', 'Escape');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  assert(await page.inputValue('#search') === '',
+    'la touche Échap efface la recherche');
+
+  // Les cartes de catégorie sont de vrais boutons, atteignables au clavier.
+  const focusable = await page.$eval('#categoryGrid .category-card',
+    (el) => el.tagName === 'BUTTON' && el.tabIndex >= 0);
+  assert(focusable, 'les catégories sont des boutons atteignables au clavier');
+
+  // Aucune erreur JavaScript pendant toute la séquence.
+  const erreurs1B = [];
+  page.on('pageerror', (e) => erreurs1B.push(e.message));
+  await page.click('#categoryGrid .category-card[data-category="Tout"]');
+  await page.waitForTimeout(150);
+  assert(erreurs1B.length === 0,
+    `accueil 1B : aucune erreur JavaScript non rattrapée (${erreurs1B.length})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B : modes Débutant et Technicien ---------------------------------
+console.log('\n[modes 1B] — Débutant / Technicien, persistance et sécurité');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.risk === 'caution') ?? tools[0];
+
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+
+  const options = await page.$$eval('#modeSelector .mode-option',
+    (els) => els.map((e) => ({ mode: e.dataset.mode, presse: e.getAttribute('aria-pressed') })));
+  assert(options.length === 2 && options.map((o) => o.mode).join(',') === 'debutant,technicien',
+    'le sélecteur propose Débutant et Technicien');
+  assert(options.filter((o) => o.presse === 'true').length === 1,
+    'un seul mode est marqué aria-pressed="true"');
+  assert(options.find((o) => o.mode === 'debutant').presse === 'true',
+    'au premier chargement, le mode Débutant est actif');
+
+  // --- Mode Débutant -------------------------------------------------------
+  assert(await page.locator('#modeBlock.mode-debutant').isVisible(),
+    'mode Débutant : le bloc « En clair » est affiché');
+  const nbEtapes = await page.locator('#beginnerSteps li').count();
+  assert(nbEtapes > 0 && nbEtapes <= 3,
+    `mode Débutant : trois étapes au plus dans « En clair » (${nbEtapes})`);
+  assert((await page.locator('.plain-risk').innerText()).trim().length > 0,
+    'mode Débutant : le niveau de risque est formulé en langage courant');
+
+  // SÉCURITÉ : rien d'essentiel ne doit disparaître en mode Débutant.
+  const essentiels = ['#prereqBlock', '#execNotes', '#commonErrors',
+                      '#verifyAfter', '#rollbackBlock', '#toolForm',
+                      '#scriptOutput', '#copyButton', '#downloadButton'];
+  for (const sel of essentiels) {
+    assert(await page.locator(sel).count() === 1,
+      `mode Débutant : ${sel} reste présent dans la fiche`);
+  }
+  assert(await page.locator('.tool-header .risk').isVisible()
+      && await page.locator('#ficheRisque').isVisible(),
+    'mode Débutant : le niveau de risque reste visible, en-tête et fiche');
+  assert(await page.locator('.admin-flag').isVisible(),
+    'mode Débutant : l’exigence d’élévation reste visible');
+  const avertDeb = await page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  assert(avertDeb.length > 0,
+    `mode Débutant : les avertissements de sécurité sont présents (${avertDeb.length})`);
+
+  const scriptDebutant = await page.$eval('#scriptOutput', (el) => el.textContent);
+
+  // --- Bascule vers Technicien --------------------------------------------
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForSelector('#modeBlock.mode-technicien', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'la bascule met à jour aria-pressed');
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'false',
+    'l’ancien mode repasse à aria-pressed="false"');
+  assert(await page.locator('#techMeta').isVisible(),
+    'mode Technicien : la fiche technique est affichée');
+  assert(await page.locator('#beginnerSteps').count() === 0,
+    'mode Technicien : la marche à suivre pas-à-pas laisse place au détail technique');
+
+  const avertTech = await page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  assert(avertTech.join(' | ') === avertDeb.join(' | '),
+    'les avertissements de sécurité sont strictement les mêmes dans les deux modes');
+
+  // MÊME GÉNÉRATEUR : le script produit ne dépend pas du mode.
+  const scriptTechnicien = await page.$eval('#scriptOutput', (el) => el.textContent);
+  assert(scriptTechnicien === scriptDebutant,
+    'le script généré est identique dans les deux modes (même générateur)');
+  assert(scriptTechnicien === normalizeScript(outil.generate(
+    Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')])))),
+    'le script affiché correspond exactement à generate() côté Node');
+
+  // --- Persistance ---------------------------------------------------------
+  await page.reload();
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'le mode choisi survit au rechargement de la page');
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'le mode choisi vaut aussi pour l’accueil');
+
+  // Une valeur corrompue dans le stockage ne doit pas casser l'interface.
+  await page.evaluate(() => localStorage.setItem('kjemo.mode.v1', 'expert'));
+  await page.reload();
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'true',
+    'une valeur de mode inconnue retombe proprement sur le défaut');
+
+  await ctx.close();
+}
+
+// --- LOT 1B : le mode fonctionne même sans stockage ------------------------
+console.log('\n[modes 1B] — repli quand localStorage est bloqué');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    const jette = () => { throw new Error('stockage bloqué'); };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { return { getItem: jette, setItem: jette, removeItem: jette }; },
+    });
+  });
+  const erreurs = [];
+  page.on('pageerror', (e) => erreurs.push(e.message));
+
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'true',
+    'stockage bloqué : le mode par défaut s’applique quand même');
+
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForFunction(
+    () => document.querySelector('#modeSelector .mode-option[data-mode="technicien"]')
+            ?.getAttribute('aria-pressed') === 'true', { timeout: 8000 });
+  assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
+    'stockage bloqué : le changement de mode reste possible pour la session');
+
+  await page.locator('#toolGrid .open-tool').first().click();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  assert(await page.locator('#modeBlock').count() === 1,
+    'stockage bloqué : la fiche s’affiche normalement dans le mode choisi');
+  assert(erreurs.length === 0,
+    `stockage bloqué : aucune erreur JavaScript non rattrapée (${erreurs.length})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B : affichage progressif de la fiche et accessibilité ------------
+console.log('\n[fiche 1B] — ordre de lecture, repli progressif et accessibilité');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.risk === 'destructive') ?? tools[0];
+
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#sectionScript', { timeout: 8000 });
+
+  // 1. L'ordre des neuf sections est celui du document, pas celui du CSS.
+  const ordre = await page.$$eval('.fiche > .fiche-section, .fiche > .tool-content > .fiche-section',
+    (els) => els.map((e) => e.dataset.section));
+  assert(ordre.join(',') === '1,2,3,4,5,6,7,8,9',
+    `les neuf sections se suivent dans l’ordre imposé (${ordre.join(',')})`);
+
+  const attendus = {
+    1: 'sectionProbleme', 2: 'sectionRisque', 3: 'sectionFormulaire',
+    4: 'sectionScript', 5: 'sectionVerification', 6: 'sectionAnnulation',
+    7: 'sectionGraphique', 8: 'sectionErreurs', 9: 'sectionSources',
+  };
+  for (const [n, id] of Object.entries(attendus)) {
+    assert(await page.locator(`#${id}[data-section="${n}"]`).count() === 1,
+      `section ${n} présente : #${id}`);
+  }
+
+  // 2. Jamais repliés : formulaire, aperçu, Générer, Copier, Télécharger.
+  for (const sel of ['#toolForm', '#scriptOutput', '#copyButton', '#downloadButton',
+                     '#toolForm .primary-button']) {
+    assert(await page.locator(sel).isVisible(),
+      `${sel} est visible sans aucune manipulation`);
+    const replie = await page.$eval(sel, (el) => !!el.closest('details:not([open])'));
+    assert(!replie, `${sel} n’est enfermé dans aucune section repliée`);
+  }
+
+  // 3. Le détail secondaire est replié, mais présent et annoncé.
+  const replies = ['#execNotes', '#verifyAfter', '#rollbackBlock', '#guiMethod', '#commonErrors'];
+  for (const sel of replies) {
+    assert(await page.locator(sel).count() === 1, `${sel} est présent dans la fiche`);
+    assert(await page.$eval(sel, (el) => el.tagName === 'DETAILS' && !el.open),
+      `${sel} est replié par défaut`);
+    const resume = await page.$eval(`${sel} > summary`, (el) => el.textContent.trim());
+    assert(resume.length > 0, `${sel} porte un intitulé explicite : « ${resume} »`);
+  }
+  assert(replies.length === 5,
+    'aucune section longue n’est ouverte d’office');
+
+  // 4. Un repli s'ouvre au clavier seul — aucun contrôle réservé à la souris.
+  await page.focus('#guiMethod > summary');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#guiMethod')?.open === true,
+    { timeout: 8000 });
+  assert(await page.$eval('#guiMethod', (el) => el.open),
+    'une section repliée s’ouvre à la touche Entrée');
+  assert(await page.locator('#guiMethod .steps li').count() === outil.gui.length,
+    `la méthode graphique conserve ses ${outil.gui.length} étapes`);
+
+  // 5. Ce qui touche à la sécurité n'est jamais dans un repli fermé au départ.
+  assert(await page.locator('#ficheRisque').isVisible(),
+    'le niveau de risque est affiché sans repli');
+  assert(await page.locator('#prereqBlock').isVisible(),
+    'les prérequis sont affichés sans repli');
+  assert(await page.locator('.tool-header .risk').isVisible(),
+    'le badge de risque de l’en-tête reste visible');
+
+  // 6. Étiquettes de formulaire réellement associées à leur champ.
+  const champsSansEtiquette = await page.$$eval('#toolForm input, #toolForm select',
+    (els) => els.filter((el) => {
+      const parLabel = document.querySelector(`label[for="${el.id}"]`);
+      const englobant = el.closest('label');
+      return !parLabel && !englobant && !el.getAttribute('aria-label');
+    }).map((el) => el.id));
+  assert(champsSansEtiquette.length === 0,
+    `chaque champ du formulaire porte une étiquette associée (${champsSansEtiquette.join(', ') || 'aucun manquant'})`);
+
+  // 7. Chaque section porte un titre relié par aria-labelledby.
+  const sansTitre = await page.$$eval('.fiche-section', (els) => els.filter((e) => {
+    const id = e.getAttribute('aria-labelledby');
+    return !id || !document.getElementById(id);
+  }).length);
+  assert(sansTitre === 0, 'chaque section est reliée à son titre par aria-labelledby');
+
+  // 8. Ordre de tabulation : le formulaire vient avant les actions du script.
+  const rangs = await page.evaluate(() => {
+    const focusables = [...document.querySelectorAll(
+      '#toolView a[href], #toolView button, #toolView input, #toolView select, #toolView summary, #toolView [tabindex]')]
+      .filter((el) => el.offsetParent !== null || el === document.activeElement);
+    const rang = (sel) => focusables.indexOf(document.querySelector(sel));
+    return { form: rang('#toolForm input, #toolForm select'), copie: rang('#copyButton') };
+  });
+  assert(rangs.form >= 0 && rangs.copie > rangs.form,
+    `l’ordre de tabulation suit l’ordre de lecture (formulaire ${rangs.form} avant Copier ${rangs.copie})`);
+
+  // 9. L'aperçu du script est atteignable au clavier et défile à l'intérieur.
+  assert(await page.$eval('#scriptOutput', (el) => el.tabIndex >= 0),
+    'l’aperçu du script est atteignable au clavier');
+  assert(await page.$eval('#scriptOutput', (el) => getComputedStyle(el).overflow !== 'visible'),
+    'l’aperçu du script défile à l’intérieur de son cadre');
+
+  // 10. Le focus clavier reste visible.
+  await page.focus('#copyButton');
+  const contour = await page.$eval('#copyButton', (el) => {
+    const st = getComputedStyle(el);
+    return { style: st.outlineStyle, width: parseFloat(st.outlineWidth) || 0 };
+  });
+  assert(contour.style !== 'none' && contour.width > 0,
+    `le focus clavier est visible (contour ${contour.style} ${contour.width}px)`);
+
+  // 11. La fiche reste fonctionnelle : générer produit bien le script attendu.
+  const attendu = normalizeScript(outil.generate(
+    Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]))));
+  assert(await page.$eval('#scriptOutput', (el) => el.textContent) === attendu,
+    'l’aperçu affiché correspond exactement à generate()');
+
+  await ctx.close();
+}
+
+// --- LOT 1B : thèmes Clair / Sombre / Système ------------------------------
+console.log('\n[thème 1B] — Clair / Sombre / Système, persistance et repli');
+{
+  const ctx  = await browser.newContext({ colorScheme: 'dark' });
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#themeSelector .theme-option', { timeout: 8000 });
+
+  const opts = await page.$$eval('#themeSelector .theme-option',
+    (els) => els.map((e) => ({ id: e.dataset.theme, presse: e.getAttribute('aria-pressed'),
+                               nom: e.getAttribute('aria-label') })));
+  assert(opts.map((o) => o.id).join(',') === 'clair,sombre,systeme',
+    'le sélecteur propose Clair, Sombre et Système');
+  assert(opts.every((o) => o.nom && o.nom.trim().length > 0),
+    'chaque bouton de thème porte un nom accessible (aria-label)');
+  assert(opts.filter((o) => o.presse === 'true').length === 1,
+    'un seul thème est marqué aria-pressed="true"');
+  assert(opts.find((o) => o.id === 'systeme').presse === 'true',
+    'au premier chargement, le thème suit le système');
+
+  const fond = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const texte = () => page.evaluate(() => getComputedStyle(document.body).color);
+
+  const fondSysteme = await fond();
+
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  const fondClair = await fond();
+  const texteClair = await texte();
+  assert(await page.getAttribute('#themeSelector .theme-option[data-theme="clair"]', 'aria-pressed') === 'true',
+    'le thème choisi passe à aria-pressed="true"');
+
+  await page.click('#themeSelector .theme-option[data-theme="sombre"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'sombre',
+    { timeout: 8000 });
+  const fondSombre = await fond();
+  const texteSombre = await texte();
+
+  assert(fondClair !== fondSombre,
+    `Clair et Sombre produisent bien deux fonds distincts (${fondClair} / ${fondSombre})`);
+  assert(fondSombre === fondSysteme,
+    'sous un système en mode sombre, « Système » donne le même fond que « Sombre »');
+
+  // Lisibilité : le contraste texte/fond doit rester franc dans les deux thèmes.
+  const luminance = (rgb) => {
+    const [r, g, b] = rgb.match(/\d+/g).slice(0, 3).map(Number).map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contraste = (a, b) => {
+    const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+    return (x + 0.05) / (y + 0.05);
+  };
+  const cClair  = contraste(texteClair, fondClair);
+  const cSombre = contraste(texteSombre, fondSombre);
+  assert(cClair >= 4.5, `thème Clair : contraste texte/fond ${cClair.toFixed(1)}:1 (seuil 4.5)`);
+  assert(cSombre >= 4.5, `thème Sombre : contraste texte/fond ${cSombre.toFixed(1)}:1 (seuil 4.5)`);
+
+  // Persistance, y compris avant la première peinture.
+  await page.reload();
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'sombre',
+    'le thème choisi survit au rechargement');
+  assert(await page.getAttribute('#themeSelector .theme-option[data-theme="sombre"]', 'aria-pressed') === 'true',
+    'le sélecteur reflète le thème restauré');
+
+  // Valeur corrompue : retour propre au défaut.
+  await page.evaluate(() => localStorage.setItem('kjemo.theme.v1', 'neon'));
+  await page.reload();
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'systeme',
+    'un thème inconnu retombe proprement sur « Système »');
+
+  // Le thème ne touche pas le script produit.
+  await page.locator('#toolGrid .open-tool').first().click();
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const scriptSombre = await page.$eval('#scriptOutput', (el) => el.textContent);
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  assert(await page.$eval('#scriptOutput', (el) => el.textContent) === scriptSombre,
+    'changer de thème ne modifie pas le script généré');
+
+  await ctx.close();
+}
+
+// Système en mode clair : « Système » doit réellement suivre.
+{
+  const ctx  = await browser.newContext({ colorScheme: 'light' });
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  const fondAuto = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  const fondClair = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  assert(fondAuto === fondClair,
+    'sous un système en mode clair, « Système » donne le thème clair');
+  await ctx.close();
+}
+
+// Thème et stockage bloqué.
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    const jette = () => { throw new Error('stockage bloqué'); };
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { return { getItem: jette, setItem: jette, removeItem: jette }; },
+    });
+  });
+  const erreurs = [];
+  page.on('pageerror', (e) => erreurs.push(e.message));
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#themeSelector', { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'systeme',
+    'stockage bloqué : le thème par défaut s’applique quand même');
+  await page.click('#themeSelector .theme-option[data-theme="clair"]');
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'clair',
+    { timeout: 8000 });
+  assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'clair',
+    'stockage bloqué : le changement de thème reste possible pour la session');
+  assert(erreurs.length === 0,
+    `stockage bloqué : aucune erreur JavaScript non rattrapée (${erreurs.length})`);
+  await ctx.close();
+}
+
+// --- LOT 1B : affichage responsive ----------------------------------------
+console.log('\n[responsive 1B] — 1440x900, 768x1024, 390x844');
+for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
+                   { nom: 'tablette 768x1024', width: 768, height: 1024 },
+                   { nom: 'téléphone 390x844', width: 390, height: 844 }]) {
+  const ctx  = await browser.newContext({ viewport: { width: vue.width, height: vue.height } });
+  const page = await ctx.newPage();
+  const outil = tools[0];
+
+  // Accueil
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  const debord = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(debord <= 1,
+    `${vue.nom} — accueil : aucun débordement horizontal (${debord}px)`);
+  assert(await page.locator('#search').isVisible(),
+    `${vue.nom} — la recherche reste visible`);
+
+  // Le menu doit rester atteignable : barre latérale sur grand écran,
+  // bouton de menu sur petit écran.
+  const nav = await page.locator('#navigation button').first().isVisible().catch(() => false);
+  const menu = await page.locator('#menuButton').isVisible().catch(() => false);
+  assert(nav || menu,
+    `${vue.nom} — la navigation est atteignable (latérale ${nav}, bouton ${menu})`);
+  if (!nav && menu) {
+    await page.click('#menuButton');
+    await page.waitForTimeout(120);
+    assert(await page.locator('#navigation button').first().isVisible(),
+      `${vue.nom} — le bouton de menu ouvre réellement la navigation`);
+    await page.click('#menuButton');
+  }
+
+  // Fiche
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  const debordFiche = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(debordFiche <= 1,
+    `${vue.nom} — fiche : aucun débordement horizontal (${debordFiche}px)`);
+
+  // Le script long ne doit pas élargir la page : il défile dans son cadre.
+  const apercu = await page.$eval('#scriptOutput', (el) => ({
+    debordeSaBoite: el.scrollWidth > el.clientWidth + 1,
+    defile: getComputedStyle(el).overflow !== 'visible',
+    largeurOk: el.getBoundingClientRect().width <= document.documentElement.clientWidth + 1,
+  }));
+  assert(apercu.defile && apercu.largeurOk,
+    `${vue.nom} — l’aperçu du script reste dans l’écran et défile à l’intérieur`);
+
+  // Copier et Télécharger : visibles, cliquables, assez grands au doigt.
+  for (const sel of ['#copyButton', '#downloadButton', '#toolForm .primary-button']) {
+    const boite = await page.$eval(sel, (el) => {
+      const r = el.getBoundingClientRect();
+      return { w: r.width, h: r.height, dansEcran: r.left >= -1 && r.right <= document.documentElement.clientWidth + 1 };
+    });
+    assert(boite.dansEcran, `${vue.nom} — ${sel} est entièrement dans l’écran`);
+    assert(boite.h >= 36 && boite.w >= 60,
+      `${vue.nom} — ${sel} reste assez grand (${Math.round(boite.w)}x${Math.round(boite.h)})`);
+  }
+
+  // Les cartes de catégorie et le sélecteur de mode restent utilisables.
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
+  const petits = await page.$$eval('#categoryGrid .category-card, .mode-option, .theme-option',
+    (els) => els.filter((e) => e.getBoundingClientRect().height < 32).length);
+  assert(petits === 0,
+    `${vue.nom} — aucun bouton de navigation n’est trop petit (${petits})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B : menu sur petit écran, état annoncé et fermeture au clavier ---
+console.log('\n[menu 1B] — panneau latéral sur téléphone');
+{
+  const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#menuButton', { timeout: 8000 });
+
+  assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
+    'le bouton de menu annonce son état fermé (aria-expanded)');
+  await page.click('#menuButton');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'true',
+    { timeout: 8000 });
+  assert(await page.locator('#navigation button').first().isVisible(),
+    'le panneau s’ouvre et la navigation devient visible');
+
+  // Le bouton doit rester cliquable par-dessus le panneau, sinon il n'y a plus
+  // aucun moyen de le refermer au doigt.
+  await page.click('#menuButton', { timeout: 5000 });
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'false',
+    { timeout: 8000 });
+  assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
+    'le même bouton referme le panneau');
+
+  // Échap referme aussi : pas de piège au clavier.
+  await page.click('#menuButton');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'true',
+    { timeout: 8000 });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'false',
+    { timeout: 8000 });
+  assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
+    'la touche Échap referme le panneau latéral');
+  assert(await page.evaluate(() => document.activeElement?.id) === 'menuButton',
+    'le focus revient sur le bouton de menu après fermeture');
+
+  // Choisir une catégorie referme le panneau et filtre la grille.
+  await page.click('#menuButton');
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'true',
+    { timeout: 8000 });
+  const cible = [...new Set(tools.map((t) => t.category))][0];
+  await page.click(`#navigation button[data-category="${cible}"]`);
+  await page.waitForFunction(
+    () => document.querySelector('#menuButton')?.getAttribute('aria-expanded') === 'false',
+    { timeout: 8000 });
+  const attendu = tools.filter((t) => t.category === cible).length;
+  assert(await page.locator('#toolGrid .open-tool').count() === attendu,
+    `le choix d’une catégorie referme le panneau et filtre la grille (${attendu})`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B v2 : catégories canoniques à l'écran ---------------------------
+console.log('\n[catégories v2] — catalogue canonique affiché');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
+
+  const cartes = await page.$$eval('#categoryGrid .category-card',
+    (els) => els.map((e) => ({ nom: e.dataset.category, texte: e.textContent })));
+  const noms = cartes.map((c) => c.nom);
+
+  for (const attendue of ['Windows poste de travail', 'Analyse et nettoyage des disques',
+                          'Windows Server', 'Active Directory', 'GPO', 'Réseau']) {
+    assert(noms.includes(attendue), `catégorie canonique affichée : « ${attendue} »`);
+  }
+  for (const interdite of ['Dépannage Windows', 'Fichiers & imprimantes', 'Stockage']) {
+    assert(!noms.includes(interdite),
+      `catégorie abandonnée absente de l’écran : « ${interdite} »`);
+  }
+  for (const vide of ['Imprimantes', 'Linux']) {
+    assert(!noms.includes(vide), `catégorie vide masquée : « ${vide} »`);
+  }
+  assert(noms.length === 7,
+    `« Tout » + six catégories pourvues (${noms.length})`);
+
+  // Windows Server existe à l'écran parce que shared-folder l'habite.
+  await page.click('#categoryGrid .category-card[data-category="Windows Server"]');
+  await page.waitForFunction(
+    () => document.querySelectorAll('#toolGrid .open-tool').length === 1, { timeout: 8000 });
+  const titre = await page.$eval('#toolGrid h3', (el) => el.textContent);
+  const sharedFolder = tools.find((t) => t.id === 'shared-folder');
+  assert(titre === sharedFolder.title,
+    `Windows Server contient bien « ${sharedFolder.title} »`);
+
+  // Les sous-rubriques sont annoncées sur la carte de catégorie et sur l'outil.
+  await page.click('#categoryGrid .category-card[data-category="Tout"]');
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('#toolGrid .open-tool').length === n,
+    tools.length, { timeout: 8000 });
+  const carteAD = cartes.find((c) => c.nom === 'Active Directory');
+  for (const sous of ['Unités organisationnelles', 'Utilisateurs', 'Contrôleurs de domaine']) {
+    assert(carteAD.texte.includes(sous),
+      `la carte Active Directory annonce « ${sous} »`);
+  }
+  const etiquettes = await page.$$eval('#toolGrid .tag', (els) => els.map((e) => e.textContent));
+  for (const t of tools) {
+    assert(etiquettes.some((e) => e.includes(t.subcategory)),
+      `la carte de ${t.id} affiche sa sous-rubrique « ${t.subcategory} »`);
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 1B v2 : fiche compacte, bouton Commencer et navigation d'ancres ---
+console.log('\n[fiche v2] — densité mobile, Commencer et navigation compacte');
+for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
+                   { nom: 'téléphone 390x844', width: 390, height: 844 }]) {
+  const ctx  = await browser.newContext({ viewport: { width: vue.width, height: vue.height } });
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.id === 'static-ip');
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#sectionFormulaire', { timeout: 8000 });
+
+  // 1. « En clair » : explication courte, avertissement, trois étapes au plus.
+  const nbEtapes = await page.locator('#beginnerSteps li').count();
+  assert(nbEtapes > 0 && nbEtapes <= 3,
+    `${vue.nom} — « En clair » ne montre que ${nbEtapes} étape(s), trois au plus`);
+  assert(await page.locator('#plainSummary').isVisible(),
+    `${vue.nom} — l’explication courte est affichée`);
+  assert((await page.locator('#plainRisk').innerText()).trim().length > 0,
+    `${vue.nom} — l’avertissement de risque est affiché sans repli`);
+
+  // 2. Le mode d'emploi complet existe, replié.
+  assert(await page.$eval('#modeEmploi', (el) => el.tagName === 'DETAILS' && !el.open),
+    `${vue.nom} — le mode d’emploi complet est replié par défaut`);
+  const resume = await page.$eval('#modeEmploi > summary', (el) => el.textContent.trim());
+  assert(resume === 'Voir le mode d’emploi complet',
+    `${vue.nom} — intitulé exact du repli : « ${resume} »`);
+  await page.focus('#modeEmploi > summary');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#modeEmploi')?.open === true,
+    { timeout: 8000 });
+  assert(await page.$eval('#modeEmploi ol li', (el) => el.textContent.length > 0),
+    `${vue.nom} — le mode d’emploi complet s’ouvre au clavier et contient les détails`);
+
+  // 3. « Commencer » mène au formulaire et y place le curseur.
+  assert(await page.locator('#startButton').isVisible(),
+    `${vue.nom} — le bouton « Commencer » est visible`);
+  await page.click('#startButton');
+  await page.waitForTimeout(250);
+  const apresCommencer = await page.evaluate(() => {
+    const actif = document.activeElement;
+    const form = document.querySelector('#sectionFormulaire');
+    return {
+      dansFormulaire: !!actif && form.contains(actif),
+      champ: actif ? actif.tagName : null,
+      formVisible: form.getBoundingClientRect().top < window.innerHeight
+                && form.getBoundingClientRect().bottom > 0,
+    };
+  });
+  assert(apresCommencer.dansFormulaire,
+    `${vue.nom} — « Commencer » place le focus dans le formulaire (${apresCommencer.champ})`);
+  assert(apresCommencer.formVisible,
+    `${vue.nom} — « Commencer » amène le formulaire à l’écran`);
+
+  // 4. Navigation compacte : cinq ancres internes, vrais liens.
+  const liens = await page.$$eval('#ficheNav .fiche-nav-link',
+    (els) => els.map((e) => ({ texte: e.textContent.trim(), href: e.getAttribute('href'),
+                               balise: e.tagName })));
+  assert(liens.map((l) => l.texte).join(',') === 'Formulaire,Script,Vérifier,Annuler,Interface graphique',
+    `${vue.nom} — les cinq entrées attendues, dans l’ordre`);
+  assert(liens.every((l) => l.balise === 'A' && l.href.startsWith('#section')),
+    `${vue.nom} — ce sont des ancres internes, donc atteignables au clavier`);
+
+  const cibles = { Formulaire: 'sectionFormulaire', Script: 'sectionScript',
+                   'Vérifier': 'sectionVerification', Annuler: 'sectionAnnulation',
+                   'Interface graphique': 'sectionGraphique' };
+  for (const [libelle, id] of Object.entries(cibles)) {
+    await page.click(`#ficheNav .fiche-nav-link[data-cible="${id}"]`);
+    await page.waitForTimeout(220);
+    const etat = await page.evaluate((cible) => {
+      const sec = document.getElementById(cible);
+      const titre = sec.querySelector('.fiche-section-title');
+      const r = titre.getBoundingClientRect();
+      const actif = document.activeElement;
+      return {
+        titreVisible: r.top >= 0 && r.bottom <= window.innerHeight,
+        titreNonMasque: document.elementFromPoint(
+          Math.min(r.left + 5, window.innerWidth - 1), r.top + r.height / 2) === titre
+          || titre.contains(document.elementFromPoint(
+            Math.min(r.left + 5, window.innerWidth - 1), r.top + r.height / 2)),
+        focusDansSection: !!actif && sec.contains(actif),
+        route: location.hash,
+      };
+    }, id);
+    assert(etat.titreVisible,
+      `${vue.nom} — « ${libelle} » amène le titre de la section à l’écran`);
+    assert(etat.titreNonMasque,
+      `${vue.nom} — « ${libelle} » : le titre ciblé n’est masqué par rien`);
+    assert(etat.focusDansSection,
+      `${vue.nom} — « ${libelle} » déplace aussi le focus clavier`);
+    assert(etat.route === `#/outil/${outil.id}`,
+      `${vue.nom} — « ${libelle} » ne casse pas la route directe (${etat.route})`);
+  }
+
+  // 5. La navigation s'active aussi entièrement au clavier.
+  await page.focus('#ficheNav .fiche-nav-link[data-cible="sectionScript"]');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(220);
+  assert(await page.evaluate(() =>
+    document.querySelector('#sectionScript').contains(document.activeElement)),
+    `${vue.nom} — la navigation compacte s’active à la touche Entrée`);
+
+  // 6. Aucun débordement horizontal, et les avertissements restent visibles.
+  const debord = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  assert(debord <= 1, `${vue.nom} — aucun débordement horizontal (${debord}px)`);
+  assert(await page.locator('#ficheRisque').isVisible()
+      && await page.locator('#prereqBlock').isVisible(),
+    `${vue.nom} — risque et prérequis restent affichés`);
+
+  await ctx.close();
+}
+
+// --- LOT 1B v2 : les avertissements restent identiques dans les deux modes --
+console.log('\n[sécurité v2] — avertissements en mode compact');
+{
+  const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const outil = tools.find((t) => t.risk === 'destructive') ?? tools[0];
+  await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+  await page.waitForSelector('#modeBlock', { timeout: 8000 });
+
+  const lireAvertissements = () => page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+
+  const deb = await lireAvertissements();
+  assert(deb.length > 0, `mode Débutant compact : ${deb.length} avertissement(s) présent(s)`);
+  for (const sel of ['#prereqBlock', '#execNotes', '#commonErrors', '#verifyAfter',
+                     '#rollbackBlock', '#toolForm', '#scriptOutput', '#copyButton',
+                     '#downloadButton']) {
+    assert(await page.locator(sel).count() === 1,
+      `mode Débutant compact : ${sel} toujours présent`);
+  }
+
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForSelector('#techMeta', { timeout: 8000 });
+  const tech = await lireAvertissements();
+  assert(tech.join(' | ') === deb.join(' | '),
+    'les avertissements sont strictement identiques dans les deux modes, à 390 px');
+  assert(await page.locator('#ficheNav').isVisible(),
+    'la navigation compacte est disponible dans les deux modes');
+  const sousRub = await page.$eval('#techMeta', (el) => el.textContent);
+  assert(sousRub.includes(outil.subcategory),
+    `la fiche technique annonce la sous-rubrique « ${outil.subcategory} »`);
+
+  await ctx.close();
+}
+
 // --- Stockage indisponible : l'application doit continuer de fonctionner ---
 console.log('\n[stockage] — dégradation propre quand localStorage est bloqué');
 {

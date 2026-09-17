@@ -45,6 +45,40 @@ import {
   domainToDn,
 } from '../dist/generators.mjs';
 
+import { readFileSync } from 'node:fs';
+import {
+  CATEGORIES,
+  CATEGORIE_TOUT,
+  compterOutils,
+  categoriesVisibles,
+  categoriesEnAttente,
+  categorieParNom,
+  sousRubriques,
+} from '../dist/categories.mjs';
+
+import {
+  MODES,
+  MODE_DEFAUT,
+  CLE_MODE,
+  estMode,
+  creerPreference,
+} from '../dist/preferences.mjs';
+
+import {
+  THEMES,
+  THEME_DEFAUT,
+  CLE_THEME,
+  estTheme,
+} from '../dist/preferences.mjs';
+
+import {
+  LANGUES,
+  LANGUE_DEFAUT,
+  LIBELLES,
+  libelle,
+  langueDisponible,
+} from '../dist/libelles.mjs';
+
 // ---------------------------------------------------------------------------
 // Comptage
 // ---------------------------------------------------------------------------
@@ -949,6 +983,265 @@ assert(/Disable-ADAccount[^\n]*-Confirm\b/.test(codeExecute(au2.rollback.command
   'ad-user : Disable-ADAccount porte une confirmation explicite');
 assert(/Remove-ADUser/.test(au2.rollback.exceptional) && !/Remove-ADUser/.test(codeExecute(au2.rollback.command)),
   'ad-user : la suppression définitive est reléguée au cas exceptionnel');
+
+// ---------------------------------------------------------------------------
+// LOT 1B (1/n) — Catalogue de catégories et navigation
+// ---------------------------------------------------------------------------
+section('LOT 1B — navigation par catégories');
+
+const visibles = categoriesVisibles(tools);
+const enAttente = categoriesEnAttente(tools);
+
+assert(visibles.every((c) => c.count > 0),
+  'aucune catégorie vide n\u2019est proposée à la navigation');
+assert(visibles.reduce((n, c) => n + c.count, 0) === tools.length,
+  `les catégories visibles couvrent les ${tools.length} outils`);
+assert(new Set(tools.map((t) => t.category)).size === visibles.length,
+  'une catégorie visible par catégorie réellement utilisée');
+assert(visibles.every((c) => !c.horsCatalogue),
+  'chaque catégorie utilisée est décrite dans le catalogue');
+assert(visibles.every((c) => typeof c.icon === 'string' && c.icon.length > 0),
+  'chaque catégorie visible porte une icône');
+assert(visibles.every((c) => typeof c.description === 'string' && c.description.length > 0),
+  'chaque catégorie visible porte une courte description');
+assert(new Set(CATEGORIES.map((c) => c.id)).size === CATEGORIES.length,
+  'les identifiants de catégorie sont uniques');
+assert(new Set(CATEGORIES.map((c) => c.name)).size === CATEGORIES.length,
+  'les noms de catégorie sont uniques');
+assert(enAttente.length > 0 && enAttente.every((c) => c.count === 0),
+  `catégories prévues mais masquées tant qu\u2019elles sont vides : ${enAttente.length}`);
+for (const prevue of ['Imprimantes', 'Linux']) {
+  assert(CATEGORIES.some((c) => c.name === prevue),
+    `la feuille de route est préparée : « ${prevue} » est déclarée`);
+  assert(!visibles.some((c) => c.name === prevue),
+    `« ${prevue} » n\u2019est pas affichée puisqu\u2019elle est vide`);
+}
+assert(categorieParNom('Réseau') !== null && categorieParNom('Inexistante') === null,
+  'categorieParNom() retrouve une catégorie connue et rejette l\u2019inconnue');
+assert(compterOutils(tools, CATEGORIE_TOUT) === tools.length,
+  '« Tout » compte l\u2019ensemble des outils');
+
+// Aucune donnée technique d'outil ne doit migrer dans le catalogue de présentation.
+const sourceCategories = readFileSync(resolve(ROOT, 'dist/categories.mjs'), 'utf8');
+for (const interdit of ['generate', 'Remove-', 'Set-Net', 'powershell', 'Get-AD']) {
+  assert(!sourceCategories.includes(interdit),
+    `categories.mjs ne contient aucun contenu technique (« ${interdit} »)`);
+}
+
+// ---------------------------------------------------------------------------
+// LOT 1B (2/n) — Modes Débutant et Technicien
+// ---------------------------------------------------------------------------
+section('LOT 1B — modes de lecture');
+
+assert(MODES.length === 2 && MODES.map((m) => m.id).join(',') === 'debutant,technicien',
+  'deux modes de lecture : Débutant et Technicien');
+assert(MODE_DEFAUT === 'debutant',
+  'le mode par défaut est Débutant : c\u2019est le public le plus exposé');
+assert(MODES.every((m) => m.label && m.description),
+  'chaque mode porte un libellé et une description');
+assert(estMode('debutant') && estMode('technicien') && !estMode('expert') && !estMode(null),
+  'estMode() n\u2019accepte que les modes connus');
+assert(CLE_MODE.startsWith('kjemo.'),
+  'la clé de stockage du mode est préfixée par l\u2019application');
+
+// Sans localStorage (cas de Node), la préférence doit fonctionner en mémoire.
+const pref = creerPreference({ cle: CLE_MODE, valeurs: MODES.map((m) => m.id), defaut: MODE_DEFAUT });
+assert(pref.lire() === MODE_DEFAUT,
+  'stockage indisponible : la préférence retombe sur le défaut sans lever');
+assert(pref.estPersistante() === false,
+  'stockage indisponible : la préférence se déclare non persistante');
+assert(pref.definir('technicien') === 'technicien' && pref.lire() === 'technicien',
+  'stockage indisponible : le changement de mode reste possible en mémoire');
+assert(pref.definir('expert') === 'technicien' && pref.lire() === 'technicien',
+  'une valeur inconnue est ignorée, pas appliquée silencieusement');
+assert(pref.definir(null) === 'technicien',
+  'une valeur nulle ne casse pas la préférence');
+
+let refus = null;
+try { creerPreference({ cle: 'x', valeurs: ['a', 'b'], defaut: 'c' }); }
+catch (e) { refus = e; }
+assert(refus instanceof Error,
+  'un défaut hors de la liste admise est refusé à la construction');
+
+// Le mode ne doit toucher ni les générateurs ni le contenu technique.
+const sourcePrefs = readFileSync(resolve(ROOT, 'dist/preferences.mjs'), 'utf8');
+for (const interdit of ['generate', 'Remove-', 'powershell', 'normalizeScript']) {
+  assert(!sourcePrefs.includes(interdit),
+    `preferences.mjs ne contient aucun contenu technique (« ${interdit} »)`);
+}
+
+// Le même générateur sert les deux modes : app.js ne doit appeler generate()
+// que par un chemin unique, jamais conditionné au mode.
+const sourceApp = readFileSync(resolve(ROOT, 'dist/app.js'), 'utf8');
+const appelsGenerate = (sourceApp.match(/tool\.generate\(/g) ?? []).length;
+assert(appelsGenerate === 2,
+  `app.js n\u2019appelle generate() que pour l\u2019aperçu initial et la soumission (${appelsGenerate})`);
+assert(!/estDebutant\(\)[^;]*generate\(/.test(sourceApp),
+  'aucun appel à generate() n\u2019est conditionné au mode de lecture');
+
+// ---------------------------------------------------------------------------
+// LOT 1B (4/n) — Thèmes et préparation à la traduction
+// ---------------------------------------------------------------------------
+section('LOT 1B — thèmes');
+
+assert(THEMES.map((t) => t.id).join(',') === 'clair,sombre,systeme',
+  'trois thèmes : Clair, Sombre, Système');
+assert(THEME_DEFAUT === 'systeme',
+  'par défaut, le thème suit la préférence du système');
+assert(estTheme('clair') && estTheme('sombre') && estTheme('systeme') && !estTheme('neon'),
+  'estTheme() n\u2019accepte que les thèmes connus');
+assert(CLE_THEME !== CLE_MODE,
+  'thème et mode ont des clés de stockage distinctes');
+
+const prefT = creerPreference({ cle: CLE_THEME, valeurs: THEMES.map((t) => t.id), defaut: THEME_DEFAUT });
+assert(prefT.lire() === 'systeme' && prefT.estPersistante() === false,
+  'stockage indisponible : le thème retombe sur « Système » sans lever');
+assert(prefT.definir('clair') === 'clair' && prefT.definir('neon') === 'clair',
+  'stockage indisponible : le thème change en mémoire, une valeur inconnue est ignorée');
+
+// La feuille de style doit décrire les deux thèmes par jetons, sans couleur en
+// dur dans le corps des règles : sinon le thème clair serait illisible par
+// endroits.
+const css = readFileSync(resolve(ROOT, 'dist/styles.css'), 'utf8');
+const finRoot = css.indexOf('}') + 1;
+const blocRoot = css.slice(0, finRoot);
+const debutClair = css.indexOf(':root[data-theme="clair"]');
+assert(debutClair > 0, 'le thème clair est défini par un bloc :root[data-theme="clair"]');
+assert(/@media\(prefers-color-scheme:light\)/.test(css),
+  '« Système » s\u2019appuie sur prefers-color-scheme');
+assert(/@media\(prefers-reduced-motion:reduce\)/.test(css),
+  'la préférence de mouvement réduit est respectée');
+
+const corpsRegles = css.slice(finRoot, debutClair);
+const couleursEnDur = corpsRegles.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+assert(couleursEnDur.length === 0,
+  `aucune couleur en dur hors des jetons de thème (${couleursEnDur.join(', ') || 'aucune'})`);
+
+const jetonsSombre = [...blocRoot.matchAll(/(--[a-z0-9-]+):/g)].map((m) => m[1]);
+const blocClair = css.slice(debutClair, css.indexOf('}', debutClair));
+const jetonsClair = [...blocClair.matchAll(/(--[a-z0-9-]+):/g)].map((m) => m[1]);
+assert(jetonsSombre.length > 0 && jetonsSombre.every((j) => jetonsClair.includes(j)),
+  `le thème clair redéfinit les ${jetonsSombre.length} jetons du thème sombre`);
+
+// Le thème s'applique avant la première peinture, sinon la page clignote.
+const html = readFileSync(resolve(ROOT, 'dist/index.html'), 'utf8');
+assert(html.indexOf('kjemo.theme.v1') < html.indexOf('app.js'),
+  'le thème est appliqué avant le chargement du module applicatif');
+assert(/try\s*{[^}]*localStorage/.test(html),
+  'la lecture du thème au démarrage est protégée contre un stockage bloqué');
+
+section('LOT 1B — préparation à la traduction');
+
+assert(LANGUE_DEFAUT === 'fr' && LANGUES.length === 1 && LANGUES[0].id === 'fr',
+  'une seule langue est déclarée : le français, complet');
+assert(!langueDisponible('en'),
+  'l\u2019anglais n\u2019est pas proposé tant qu\u2019il est incomplet');
+assert(Object.keys(LIBELLES).length === 1,
+  'aucun dictionnaire partiel n\u2019est embarqué');
+assert(libelle('action.copier') === 'Copier',
+  'libelle() résout un libellé connu');
+assert(libelle('cle.inexistante') === 'cle.inexistante',
+  'une clé absente se voit à l\u2019écran au lieu de produire un trou silencieux');
+assert(libelle('action.copier', 'de') === 'Copier',
+  'une langue inconnue retombe sur le français');
+
+const sourceLibelles = readFileSync(resolve(ROOT, 'dist/libelles.mjs'), 'utf8');
+for (const interdit of ['Remove-', 'Get-AD', 'Set-Net', 'powershell.exe']) {
+  assert(!sourceLibelles.includes(interdit),
+    `libelles.mjs ne contient aucun contenu technique (« ${interdit} »)`);
+}
+assert(!/\b(Copy|Download|Search|Settings)\b/.test(sourceLibelles),
+  'aucun libellé anglais n\u2019est embarqué à moitié');
+
+// ---------------------------------------------------------------------------
+// LOT 1B (5/n) — Catégories canoniques et sous-rubriques
+// ---------------------------------------------------------------------------
+section('LOT 1B v2 — catégories canoniques');
+
+const CANON = [
+  'Windows poste de travail',
+  'Analyse et nettoyage des disques',
+  'Windows Server',
+  'Active Directory',
+  'GPO',
+  'Réseau',
+  'Imprimantes',
+  'Linux',
+];
+
+assert(CATEGORIES.map((c) => c.name).join(' | ') === CANON.join(' | '),
+  'le catalogue contient exactement les huit catégories canoniques, dans l\u2019ordre');
+
+const INTERDITES = ['Dépannage Windows', 'Fichiers & imprimantes', 'Stockage'];
+for (const morte of INTERDITES) {
+  assert(!CATEGORIES.some((c) => c.name === morte),
+    `catégorie abandonnée absente du catalogue : « ${morte} »`);
+  assert(!tools.some((t) => t.category === morte),
+    `aucun outil ne porte encore la catégorie « ${morte} »`);
+}
+
+const CLASSEMENT = {
+  'static-ip':     ['Réseau', 'Adressage IP'],
+  'ad-ou':         ['Active Directory', 'Unités organisationnelles'],
+  'ad-user':       ['Active Directory', 'Utilisateurs'],
+  'shared-folder': ['Windows Server', 'Serveur de fichiers'],
+  'second-dc':     ['Active Directory', 'Contrôleurs de domaine'],
+  'wifi-repair':   ['Windows poste de travail', 'Réseau et Wi-Fi'],
+  'gpo-password':  ['GPO', 'Sécurité des comptes'],
+  'disk-scan':     ['Analyse et nettoyage des disques', 'Occupation de l\u2019espace'],
+};
+
+assert(Object.keys(CLASSEMENT).length === tools.length,
+  `le classement canonique couvre les ${tools.length} outils`);
+
+for (const [id, [cat, sous]] of Object.entries(CLASSEMENT)) {
+  const outil = tools.find((t) => t.id === id);
+  assert(outil, `outil présent : ${id}`);
+  assert(outil.category === cat,
+    `${id} → catégorie « ${cat} » (lu : « ${outil.category} »)`);
+  assert(outil.subcategory === sous,
+    `${id} → sous-rubrique « ${sous} » (lu : « ${outil.subcategory}»)`);
+  assert(CANON.includes(outil.category),
+    `${id} : sa catégorie fait partie des canoniques`);
+}
+
+assert(tools.every((t) => typeof t.subcategory === 'string' && t.subcategory.length > 0),
+  'chaque outil porte une sous-rubrique non vide');
+
+// Visibilité : Windows Server existe parce que shared-folder l'habite.
+const vis2 = categoriesVisibles(tools);
+const attente2 = categoriesEnAttente(tools);
+const nomsVisibles = vis2.map((c) => c.name);
+
+assert(nomsVisibles.includes('Windows Server'),
+  'Windows Server est visible : shared-folder l\u2019habite');
+assert(vis2.find((c) => c.name === 'Windows Server').count === 1,
+  'Windows Server contient exactement un outil');
+assert(nomsVisibles.includes('Windows poste de travail')
+    && nomsVisibles.includes('Analyse et nettoyage des disques'),
+  'Windows poste de travail et Analyse des disques sont visibles');
+assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
+  `seules Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
+assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
+  'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
+assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+  `six catégories visibles couvrant les ${tools.length} outils`);
+
+// Sous-rubriques agrégées
+const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
+assert(sousAD.join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
+  `Active Directory expose ses trois sous-rubriques (${sousAD.join(', ')})`);
+assert(sousRubriques(tools, 'Imprimantes').length === 0,
+  'une catégorie vide n\u2019expose aucune sous-rubrique');
+assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
+  'les décomptes des sous-rubriques correspondent au décompte de la catégorie');
+
+// Les métadonnées seules ont bougé : aucune signature de generate() touchée.
+const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
+assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === tools.length,
+  `les ${tools.length} fonctions generate() sont toujours là, une par outil`);
+assert((sourceGen.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
+  'chaque outil déclare sa sous-rubrique dans le module canonique');
 
 // Résumé
 console.log('');
