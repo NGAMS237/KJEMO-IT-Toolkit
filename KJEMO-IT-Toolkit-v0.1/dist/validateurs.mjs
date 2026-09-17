@@ -808,7 +808,11 @@ export function validerJours(v, { min = 1, max = 3650, label = 'Le nombre de jou
 export function validerColonnesCsv(v, { obligatoires = [], max = 30 } = {}) {
   const s = String(v ?? '').trim();
   if (!s) return { ok: false, value: [], error: 'Indique les colonnes du fichier, séparées par des virgules.' };
-  const colonnes = s.split(',').map((c) => c.trim()).filter((c) => c !== '');
+  const brutes = s.split(',').map((c) => c.trim());
+  if (brutes.some((c) => c === '')) {
+    return { ok: false, value: [], error: 'Une colonne sans nom : deux virgules se suivent, ou la liste se termine par une virgule.' };
+  }
+  const colonnes = brutes;
   if (colonnes.length === 0) return { ok: false, value: [], error: 'Aucune colonne lisible dans la liste.' };
   if (colonnes.length > max) return { ok: false, value: [], error: `Pas plus de ${max} colonnes.` };
   for (const colonne of colonnes) {

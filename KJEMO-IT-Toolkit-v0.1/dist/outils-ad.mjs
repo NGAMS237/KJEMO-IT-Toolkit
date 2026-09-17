@@ -1579,8 +1579,8 @@ export const outilSanteComptes = {
     verifier(errors, 'adDomain', validerFqdn(v.adDomain));
     const ou = String(v.sanOu ?? '').trim();
     if (ou !== '') verifier(errors, 'sanOu', validerCheminOu(ou));
-    verifier(errors, 'sanInactif', validerJours(v.sanInactif, { min: 7, max: 3650, label: 'Le seuil d’inactivité' }));
-    verifier(errors, 'sanAgeMotDePasse', validerJours(v.sanAgeMotDePasse, { min: 30, max: 3650, label: 'L’âge maximal du mot de passe' }));
+    verifier(errors, 'sanInactif', validerJours(v.sanInactif, { min: 7, max: 3650, label: 'La durée d’inactivité' }));
+    verifier(errors, 'sanAgeMotDePasse', validerJours(v.sanAgeMotDePasse, { min: 30, max: 3650, label: 'La durée de validité du mot de passe' }));
     verifier(errors, 'sanFormat', validerFormatRapport(v.sanFormat));
     return errors;
   },
@@ -2589,7 +2589,7 @@ export const outilNettoyageOrdinateurs = {
     verifier(errors, 'adDomain', validerFqdn(v.adDomain));
     const ou = String(v.ordOu ?? '').trim();
     if (ou !== '') verifier(errors, 'ordOu', validerCheminOu(ou));
-    verifier(errors, 'ordInactif', validerJours(v.ordInactif, { min: 30, max: 3650, label: 'Le seuil d’inactivité' }));
+    verifier(errors, 'ordInactif', validerJours(v.ordInactif, { min: 30, max: 3650, label: 'La durée d’inactivité' }));
     verifier(errors, 'ordQuarantaine', validerCheminOu(v.ordQuarantaine));
     verifier(errors, 'ordAction', validerChoix(v.ordAction, ['DesactiverSeulement', 'DesactiverEtDeplacer'], 'L’action'));
     verifier(errors, 'mode', validerModeExecution(v.mode));
@@ -3158,11 +3158,11 @@ export const outilDnsAd = {
     'Vérifier les serveurs DNS déclarés sur les cartes, pas seulement les redirecteurs.',
     'Un contrôle « non applicable » n’est pas un échec : il signale seulement que la machine n’est pas un contrôleur.',
   ],
-  source: 'https://learn.microsoft.com/troubleshoot/windows-server/active-directory/troubleshoot-dns-event-id-4013-dns-server',
+  source: 'https://learn.microsoft.com/troubleshoot/windows-server/networking/troubleshoot-dns-event-id-4013',
   sources: [
     { label: 'Resolve-DnsName', url: 'https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname' },
     { label: 'Get-DnsServerZone', url: 'https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverzone' },
-    { label: 'Dépanner l’événement DNS 4013', url: 'https://learn.microsoft.com/troubleshoot/windows-server/active-directory/troubleshoot-dns-event-id-4013-dns-server' },
+    { label: 'Dépanner l’événement DNS 4013', url: 'https://learn.microsoft.com/troubleshoot/windows-server/networking/troubleshoot-dns-event-id-4013' },
     { label: 'Get-ADDomainController', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-addomaincontroller' },
   ],
 };
@@ -3415,7 +3415,7 @@ export const outilDcdiag = {
   source: 'https://learn.microsoft.com/windows-server/administration/windows-commands/dcdiag',
   sources: [
     { label: 'dcdiag', url: 'https://learn.microsoft.com/windows-server/administration/windows-commands/dcdiag' },
-    { label: 'Dépanner la réplication Active Directory', url: 'https://learn.microsoft.com/troubleshoot/windows-server/active-directory/troubleshoot-ad-replication-error-8524' },
+    { label: 'Dépanner les problèmes de réplication Active Directory', url: 'https://learn.microsoft.com/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems' },
     { label: 'Get-Command', url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/get-command' },
   ],
 };
@@ -3650,11 +3650,11 @@ export const outilRepadmin = {
     'Un écho sans réponse ne prouve pas une panne : confirmer avec un test de port.',
     'Un contrôleur trop longtemps hors ligne ne se rebranche pas : il se reconstruit.',
   ],
-  source: 'https://learn.microsoft.com/windows-server/administration/windows-commands/repadmin',
+  source: 'https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc770963(v=ws.11)',
   sources: [
-    { label: 'repadmin', url: 'https://learn.microsoft.com/windows-server/administration/windows-commands/repadmin' },
+    { label: 'repadmin', url: 'https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc770963(v=ws.11)' },
     { label: 'Get-ADReplicationPartnerMetadata', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adreplicationpartnermetadata' },
-    { label: 'Erreur de réplication 8524', url: 'https://learn.microsoft.com/troubleshoot/windows-server/active-directory/troubleshoot-ad-replication-error-8524' },
+    { label: 'Dépanner les problèmes de réplication Active Directory', url: 'https://learn.microsoft.com/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems' },
     { label: 'Erreur de réplication 1722', url: 'https://learn.microsoft.com/troubleshoot/windows-server/active-directory/replication-error-1722-rpc-server-unavailable' },
   ],
 };
@@ -3696,7 +3696,7 @@ export const outilCanalSecurise = {
   validate(v) {
     const errors = {};
     verifier(errors, 'adDomain', validerFqdn(v.adDomain));
-    verifier(errors, 'canDerive', validerEntier(v.canDerive, 30, 3600, 'Le décalage toléré'));
+    verifier(errors, 'canDerive', validerEntier(v.canDerive, 30, 3600, 'La tolérance de décalage'));
     verifier(errors, 'canPorts', validerChoix(v.canPorts, ['Oui', 'Non'], 'Le choix'));
     verifier(errors, 'mode', validerModeExecution(v.mode));
     return errors;
@@ -4001,7 +4001,7 @@ export const outilRapportDomaine = {
     const errors = {};
     verifier(errors, 'adDomain', validerFqdn(v.adDomain));
     verifier(errors, 'cplJours', validerJours(v.cplJours, { min: 1, max: 90, label: 'La fenêtre d’examen' }));
-    verifier(errors, 'cplInactif', validerJours(v.cplInactif, { min: 30, max: 3650, label: 'Le seuil d’obsolescence' }));
+    verifier(errors, 'cplInactif', validerJours(v.cplInactif, { min: 30, max: 3650, label: 'La durée avant obsolescence' }));
     verifier(errors, 'cplPorts', validerChoix(v.cplPorts, ['Oui', 'Non'], 'Le choix'));
     verifier(errors, 'cplFormat', validerFormatRapport(v.cplFormat));
     return errors;

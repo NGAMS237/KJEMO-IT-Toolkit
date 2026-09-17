@@ -1976,6 +1976,264 @@ console.log('\n[stockage] — dégradation propre quand localStorage est bloqué
   await ctx.close();
 }
 
+
+// --- LOT 3 : les 15 outils Active Directory dans l'interface ---------------
+console.log('\n[LOT 3] — ouverture, routes directes, champs et modes des 15 outils AD');
+const IDS_LOT3 = [
+  'ad-ou-hierarchy', 'ad-users-csv', 'ad-groups', 'ad-group-members-csv',
+  'ad-home-profile-paths', 'ad-account-health', 'ad-account-recovery',
+  'ad-object-search-move', 'ad-delegation-audit', 'ad-computer-cleanup',
+  'ad-dns-health', 'ad-dcdiag-report', 'ad-repadmin-report',
+  'ad-secure-channel', 'ad-domain-full-report',
+];
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  const outilsLot3 = tools.filter((t) => IDS_LOT3.includes(t.id));
+  assert(outilsLot3.length === 15, `${outilsLot3.length} outils ajoutés par le LOT 3`);
+
+  for (const outil of outilsLot3) {
+    await page.goto(`${BASE_URL}#/outil/${outil.id}`);
+    await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+
+    const titre = await page.$eval('.tool-header h1', (el) => el.textContent);
+    assert(titre.includes(outil.title), `${outil.id} : la route directe ouvre la bonne fiche`);
+
+    const etiquette = await page.$eval('.tool-header .tag', (el) => el.textContent);
+    assert(etiquette.includes('ACTIVE DIRECTORY') && etiquette.includes(outil.subcategory),
+      `${outil.id} : catégorie et sous-rubrique affichées (« ${etiquette} »)`);
+
+    const attendu = normalizeScript(outil.generate(
+      Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]))));
+    const affiche = await page.$eval('#scriptOutput', (el) => el.textContent);
+    assert(affiche === attendu, `${outil.id} : l’aperçu est identique à generate() côté Node`);
+
+    for (const champ of outil.fields) {
+      const present = await page.locator(`#${champ.id}`).count();
+      assert(present === 1, `${outil.id} : le champ « ${champ.id} » est présent dans le formulaire`);
+      if (champ.type === 'textarea') {
+        const balise = await page.$eval(`#${champ.id}`, (el) => el.tagName.toLowerCase());
+        assert(balise === 'textarea',
+          `${outil.id} : le champ « ${champ.id} » est bien une zone multiligne`);
+        const contenu = await page.$eval(`#${champ.id}`, (el) => el.value);
+        assert(contenu.split('\n').length >= 2,
+          `${outil.id} : la zone « ${champ.id} » est préremplie sur plusieurs lignes`);
+      }
+    }
+
+    assert(await page.locator('#copyButton').isVisible() && await page.locator('#downloadButton').isVisible(),
+      `${outil.id} : Copier et Télécharger sont accessibles`);
+
+    // Aucun champ de mot de passe dans l'interface, pour aucun outil du lot.
+    const champsSecrets = await page.locator('input[type="password"]').count();
+    assert(champsSecrets === 0, `${outil.id} : aucun champ de mot de passe dans la fiche`);
+
+    if (outil.fields.some((f) => f.id === 'mode')) {
+      const valeur = await page.$eval('#mode', (el) => el.value);
+      assert(valeur === 'Diagnostic', `${outil.id} : le formulaire ouvre en mode Diagnostic`);
+      // Bascule en Appliquer : le script doit changer, et rester conforme.
+      // Changer un champ marque l'apercu comme obsolete : il faut regenerer.
+      await page.selectOption('#mode', 'Appliquer');
+      await page.click('#toolForm .primary-button');
+      await page.waitForFunction(
+        (ancien) => document.querySelector('#scriptOutput').textContent !== ancien,
+        affiche, { timeout: 8000 });
+      const applique = await page.$eval('#scriptOutput', (el) => el.textContent);
+      assert(applique !== affiche, `${outil.id} : le mode Appliquer produit un script différent`);
+      assert(!/-Confirm\s*:\s*\$false/i.test(applique) && !/(^|\s)-Force\b/i.test(applique),
+        `${outil.id} : le script en mode Appliquer reste sans -Force ni -Confirm:$false`);
+    }
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 3 : l'interface refuse les données fautives -----------------------
+console.log('\n[LOT 3] — refus des données invalides dans le navigateur');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+
+  const cas = [
+    ['ad-ou-hierarchy',       'ouList',      'Medecin\nMedecin'],
+    ['ad-groups',             'grpOu',       'Administration/'],
+    ['ad-account-health',     'sanInactif',  'beaucoup'],
+    ['ad-object-search-move', 'objRecherche','m.tremb*'],
+    ['ad-computer-cleanup',   'ordInactif',  '5'],
+    ['ad-secure-channel',     'canDerive',   '5'],
+  ];
+  for (const [id, champ, valeurFautive] of cas) {
+    await page.goto(`${BASE_URL}#/outil/${id}`);
+    await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+    const avant = await page.$eval('#scriptOutput', (el) => el.textContent);
+
+    await page.fill(`#${champ}`, valeurFautive);
+    await page.click('#toolForm .primary-button');
+    await page.waitForTimeout(200);
+
+    const message = await page.$eval(`#${champ}-error`, (el) => el.textContent);
+    assert(message.trim().length > 0,
+      `${id} : « ${valeurFautive} » affiche un message d’erreur sur ${champ} (« ${message.trim().slice(0, 60)} »)`);
+
+    const apres = await page.$eval('#scriptOutput', (el) => el.textContent);
+    assert(apres === avant,
+      `${id} : aucun script n’est régénéré tant que ${champ} est fautif`);
+
+    const marque = await page.$eval(`#${champ}`, (el) => el.classList.contains('field-invalid'));
+    assert(marque, `${id} : le champ fautif est signalé visuellement`);
+  }
+
+  await ctx.close();
+}
+
+// --- LOT 3 : recherche par problème et par message d'erreur ----------------
+console.log('\n[LOT 3] — recherche, favoris et historique sur les outils AD');
+{
+  const ctx  = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+
+  // On cherche comme cherche quelqu'un qui a un problème : par le symptôme,
+  // par le message d'erreur, par le nom de la commande.
+  for (const [requete, idAttendu] of [
+    ['relation d approbation',      'ad-secure-channel'],
+    ['compte verrouille',           'ad-account-recovery'],
+    ['replication',                 'ad-repadmin-report'],
+    ['delegation',                  'ad-delegation-audit'],
+    ['ordinateur inactif',          'ad-computer-cleanup'],
+    ['agdlp',                       'ad-groups'],
+    ['srv',                         'ad-dns-health'],
+    ['dcdiag',                      'ad-dcdiag-report'],
+    ['deplacer',                    'ad-object-search-move'],
+    ['sysvol',                      'ad-domain-full-report'],
+    ['homedirectory',               'ad-home-profile-paths'],
+    ['import csv',                  'ad-users-csv'],
+  ]) {
+    await page.fill('#search', requete);
+    await page.waitForTimeout(150);
+    const titres = await page.$$eval('#toolGrid h3', (els) => els.map((e) => e.textContent));
+    const attendu = tools.find((t) => t.id === idAttendu);
+    assert(titres.includes(attendu.title),
+      `recherche « ${requete} » → ${idAttendu} (${titres.length} résultat(s))`);
+  }
+  await page.fill('#search', '');
+  await page.waitForTimeout(150);
+
+  // Favori et historique sur un outil du lot.
+  await page.goto(`${BASE_URL}#/outil/ad-domain-full-report`);
+  await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+  await page.goto(BASE_URL);
+  await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
+  await page.fill('#search', 'sysvol');
+  await page.waitForTimeout(150);
+  await page.locator('#toolGrid .fav-toggle').first().click();
+  await page.fill('#search', '');
+  await page.waitForTimeout(200);
+  const raccourcis = await page.$eval('#shortcutsZone', (el) => el.textContent);
+  assert(raccourcis.includes('Favoris'),
+    'un outil du LOT 3 peut être mis en favori');
+  assert(raccourcis.includes('Consultés récemment') || raccourcis.includes('Favoris'),
+    'l’historique retient la fiche Active Directory consultée');
+
+  await ctx.close();
+}
+
+// --- LOT 3 : les fiches AD aux trois tailles, sans débordement -------------
+console.log('\n[LOT 3] — responsive des fiches Active Directory');
+{
+  const tailles = [
+    { nom: 'bureau',    width: 1440, height: 900 },
+    { nom: 'tablette',  width: 768,  height: 1024 },
+    { nom: 'telephone', width: 390,  height: 844 },
+  ];
+  // Trois fiches représentatives : une zone multiligne, un formulaire long,
+  // et le rapport complet, qui est la fiche la plus dense du catalogue.
+  const fiches = ['ad-ou-hierarchy', 'ad-computer-cleanup', 'ad-domain-full-report'];
+
+  for (const taille of tailles) {
+    const ctx  = await browser.newContext({ viewport: { width: taille.width, height: taille.height } });
+    const page = await ctx.newPage();
+    for (const id of fiches) {
+      await page.goto(`${BASE_URL}#/outil/${id}`);
+      await page.waitForSelector('#scriptOutput', { timeout: 8000 });
+
+      const debordement = await page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      assert(debordement <= 0,
+        `${id} en ${taille.nom} (${taille.width}px) : aucun débordement horizontal (${debordement}px)`);
+
+      const tropLarges = await page.evaluate(() => {
+        const limite = document.documentElement.clientWidth;
+        return [...document.querySelectorAll('#tool input, #tool select, #tool textarea, #tool button')]
+          .filter((el) => el.getBoundingClientRect().width > limite + 1)
+          .map((el) => el.id || el.tagName.toLowerCase());
+      });
+      assert(tropLarges.length === 0,
+        `${id} en ${taille.nom} : aucun champ ne dépasse la largeur de l’écran (${tropLarges.join(', ')})`);
+
+      const titreVisible = await page.locator('.tool-header h1').isVisible();
+      assert(titreVisible, `${id} en ${taille.nom} : le titre de la fiche reste visible`);
+    }
+    await ctx.close();
+  }
+}
+
+// --- LOT 3 : modes, thèmes et avertissements sur une fiche AD --------------
+console.log('\n[LOT 3] — modes Débutant/Technicien, thèmes et avertissements');
+{
+  const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto(`${BASE_URL}#/outil/ad-computer-cleanup`);
+  await page.waitForSelector('#modeBlock', { timeout: 8000 });
+
+  const lireAvertissements = () => page.$$eval('.exec-warning, .rollback-warning',
+    (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  const lireFiche = () => page.$eval('#toolView', (el) => el.textContent);
+
+  const avertDeb = await lireAvertissements();
+  assert(avertDeb.length > 0, `mode Débutant : ${avertDeb.length} avertissement(s) affiché(s)`);
+  const ficheDeb = await lireFiche();
+  assert(/ne supprime jamais|Ne supprime|jamais supprim/i.test(ficheDeb),
+    'mode Débutant : la fiche annonce que l’outil ne supprime jamais d’objet');
+  for (const sel of ['#prereqBlock', '#commonErrors', '#verifyAfter', '#rollbackBlock',
+                     '#toolForm', '#scriptOutput', '#copyButton', '#downloadButton']) {
+    assert(await page.locator(sel).count() === 1,
+      `mode Débutant : ${sel} présent sur une fiche Active Directory`);
+  }
+
+  await page.click('#modeSelector .mode-option[data-mode="technicien"]');
+  await page.waitForSelector('#techMeta', { timeout: 8000 });
+  const avertTech = await lireAvertissements();
+  assert(avertTech.join(' | ') === avertDeb.join(' | '),
+    'les avertissements sont identiques dans les deux modes, sur une fiche Active Directory');
+  const ficheTech = await lireFiche();
+  assert(/ne supprime jamais|Ne supprime|jamais supprim/i.test(ficheTech),
+    'mode Technicien : la fiche annonce toujours que l’outil ne supprime jamais d’objet');
+  const meta = await page.$eval('#techMeta', (el) => el.textContent);
+  assert(meta.includes('Maintenance des objets'),
+    'le mode Technicien annonce la sous-rubrique « Maintenance des objets »');
+  assert(meta.includes('ad-computer-cleanup'), 'le mode Technicien annonce l’identifiant de l’outil');
+
+  // Les trois thèmes s'appliquent sans faire disparaître le contenu.
+  for (const theme of ['clair', 'sombre', 'systeme']) {
+    await page.click(`#themeSelector .theme-option[data-theme="${theme}"]`);
+    await page.waitForTimeout(150);
+    const applique = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    assert(applique === theme, `thème ${theme} : appliqué sur la racine du document (${applique})`);
+    const fond = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    assert(fond !== 'rgba(0, 0, 0, 0)' && fond !== 'transparent',
+      `thème ${theme} : le corps de la page porte une couleur de fond explicite (${fond})`);
+    assert(await page.locator('.tool-header h1').isVisible(),
+      `thème ${theme} : le contenu de la fiche reste visible`);
+    const debordement = await page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert(debordement <= 0, `thème ${theme} : aucun débordement horizontal à 390px (${debordement}px)`);
+  }
+
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 
