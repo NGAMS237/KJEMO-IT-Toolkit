@@ -1541,6 +1541,528 @@ export const outilCheminsProfils = {
   ],
 };
 
+/**
+ * 6. ad-account-health — l'état des comptes, sans rien toucher.
+ *
+ * Un annuaire vieillit mal tout seul. Des comptes désactivés qu'on n'a jamais
+ * retirés, des mots de passe qui n'expirent pas, des comptes qui ne se
+ * connectent plus depuis deux ans : rien de tout cela ne fait de bruit, et
+ * tout cela agrandit la surface d'attaque. Cet outil ne fait que regarder, et
+ * conclure.
+ */
+export const outilSanteComptes = {
+  id: 'ad-account-health',
+  icon: '▤',
+  category: 'Active Directory',
+  subcategory: 'Cycle de vie des comptes',
+  title: 'État de santé des comptes du domaine',
+  risk: 'diagnostic',
+  summary: 'Recense les comptes désactivés, expirés, verrouillés, inactifs, à mot de passe expiré ou sans expiration, et les comptes privilégiés. N’écrit rien dans l’annuaire.',
+  fields: [
+    champDomaine(),
+    {
+      id: 'sanOu', label: 'Limiter à une OU (facultatif)', default: '',
+      help: 'Chemin parent/enfant, relatif au domaine. Laisse vide pour examiner tout le domaine.',
+    },
+    {
+      id: 'sanInactif', label: 'Compte considéré inactif après (jours)', default: '90',
+      help: 'Calculé sur LastLogonDate, qui est répliqué avec une marge de quelques jours.',
+    },
+    {
+      id: 'sanAgeMotDePasse', label: 'Âge maximal du mot de passe (jours)', default: '365',
+      help: 'Seuil de signalement. Aucun mot de passe n’est lu, écrit ni affiché : seule la DATE du dernier changement est relevée.',
+    },
+    champFormat('sanFormat'),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    const ou = String(v.sanOu ?? '').trim();
+    if (ou !== '') verifier(errors, 'sanOu', validerCheminOu(ou));
+    verifier(errors, 'sanInactif', validerJours(v.sanInactif, { min: 7, max: 3650, label: 'Le seuil d’inactivité' }));
+    verifier(errors, 'sanAgeMotDePasse', validerJours(v.sanAgeMotDePasse, { min: 30, max: 3650, label: 'L’âge maximal du mot de passe' }));
+    verifier(errors, 'sanFormat', validerFormatRapport(v.sanFormat));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const ou = String(v.sanOu ?? '').trim();
+    const dnRecherche = ou === '' ? domainToDn(domaine) : cheminOuVersDn(validerCheminOu(ou).value, domaine);
+
+    const corps = [
+      `$Domaine = ${psB64(domaine)}`,
+      `$DnRecherche = ${psB64(dnRecherche)}`,
+      `$SeuilInactif = ${validerJours(v.sanInactif, { min: 7, max: 3650 }).value}`,
+      `$SeuilMotDePasse = ${validerJours(v.sanAgeMotDePasse, { min: 30, max: 3650 }).value}`,
+      `$KjemoFormat = ${psB64(v.sanFormat)}`,
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 0. Perimetre ----------------------------------------------------------',
+      "[void](Add-KjemoResultat -Categorie 'Perimetre' -Controle 'Racine de recherche' -Etat 'INFO' -Valeur $DnRecherche)",
+      '$limiteInactif = (Get-Date).AddDays(-$SeuilInactif)',
+      '$limiteMotDePasse = (Get-Date).AddDays(-$SeuilMotDePasse)',
+      "",
+      '$comptes = @()',
+      'if ($moduleOk) {',
+      '  try {',
+      '    $comptes = @(Get-ADUser -SearchBase $DnRecherche -Filter * -Properties Enabled,LockedOut,AccountExpirationDate,PasswordLastSet,PasswordNeverExpires,PasswordExpired,LastLogonDate,whenCreated,DistinguishedName,Description -ErrorAction Stop)',
+      '  } catch {',
+      "    [void](Add-KjemoResultat -Categorie 'Perimetre' -Controle 'Lecture des comptes' -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'Verifie que la racine de recherche existe et que le compte a le droit de lire cette partie de l''annuaire.')",
+      '  }',
+      '}',
+      "[void](Add-KjemoResultat -Categorie 'Perimetre' -Controle 'Comptes examines' -Etat 'INFO' -Valeur $comptes.Count)",
+      "",
+      '# --- 1. Comptes desactives -------------------------------------------------',
+      '$desactives = @($comptes | Where-Object { $_.Enabled -eq $false })',
+      "$etat = 'OK'",
+      "if ($desactives.Count -gt 0) { $etat = 'INFO' }",
+      "[void](Add-KjemoResultat -Categorie 'Comptes desactives' -Controle 'Total' -Etat $etat -Valeur $desactives.Count -Commentaire 'Un compte desactive garde ses appartenances et son SID : il est inoffensif, mais il encombre.')",
+      'foreach ($c in ($desactives | Sort-Object SamAccountName | Select-Object -First 50)) {',
+      "  [void](Add-KjemoResultat -Categorie 'Comptes desactives' -Controle $c.SamAccountName -Etat 'INFO' -Valeur $c.DistinguishedName)",
+      '}',
+      "",
+      '# --- 2. Comptes expires ----------------------------------------------------',
+      '$expires = @($comptes | Where-Object { $_.AccountExpirationDate -ne $null -and $_.AccountExpirationDate -lt (Get-Date) })',
+      "$etat = 'OK'",
+      "if ($expires.Count -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Comptes expires' -Controle 'Total' -Etat $etat -Valeur $expires.Count -Commentaire 'Un compte expire ne peut plus ouvrir de session : c''est souvent la cause d''un appel au support.')",
+      'foreach ($c in ($expires | Sort-Object SamAccountName | Select-Object -First 50)) {',
+      '  [void](Add-KjemoResultat -Categorie \'Comptes expires\' -Controle $c.SamAccountName -Etat \'ATTENTION\' -Valeur ("expire le " + $c.AccountExpirationDate.ToString(\'yyyy-MM-dd\')))',
+      '}',
+      "",
+      '# --- 3. Comptes verrouilles ------------------------------------------------',
+      '$verrouilles = @($comptes | Where-Object { $_.LockedOut -eq $true })',
+      "$etat = 'OK'",
+      "if ($verrouilles.Count -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Comptes verrouilles' -Controle 'Total' -Etat $etat -Valeur $verrouilles.Count -Commentaire 'Un verrouillage repete signale soit une erreur de saisie, soit une session ou un service qui rejoue un ancien mot de passe.')",
+      'foreach ($c in ($verrouilles | Sort-Object SamAccountName)) {',
+      "  [void](Add-KjemoResultat -Categorie 'Comptes verrouilles' -Controle $c.SamAccountName -Etat 'ATTENTION' -Valeur $c.DistinguishedName -Commentaire 'A traiter avec l''outil de recuperation de compte.')",
+      '}',
+      "",
+      '# --- 4. Mots de passe : age et expiration ----------------------------------',
+      "# Aucune valeur de mot de passe n'est lue : seules des DATES le sont.",
+      '$mdpExpires = @($comptes | Where-Object { $_.Enabled -eq $true -and $_.PasswordExpired -eq $true })',
+      "$etat = 'OK'",
+      "if ($mdpExpires.Count -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Mots de passe' -Controle 'Expires' -Etat $etat -Valeur $mdpExpires.Count)",
+      '$mdpAnciens = @($comptes | Where-Object { $_.Enabled -eq $true -and $_.PasswordLastSet -ne $null -and $_.PasswordLastSet -lt $limiteMotDePasse })',
+      "$etat = 'OK'",
+      "if ($mdpAnciens.Count -gt 0) { $etat = 'ATTENTION' }",
+      '[void](Add-KjemoResultat -Categorie \'Mots de passe\' -Controle "Non changes depuis plus de $SeuilMotDePasse jours" -Etat $etat -Valeur $mdpAnciens.Count)',
+      'foreach ($c in ($mdpAnciens | Sort-Object PasswordLastSet | Select-Object -First 50)) {',
+      '  [void](Add-KjemoResultat -Categorie \'Mots de passe\' -Controle $c.SamAccountName -Etat \'ATTENTION\' -Valeur ("dernier changement le " + $c.PasswordLastSet.ToString(\'yyyy-MM-dd\')))',
+      '}',
+      '$jamaisExpire = @($comptes | Where-Object { $_.Enabled -eq $true -and $_.PasswordNeverExpires -eq $true })',
+      "$etat = 'OK'",
+      "if ($jamaisExpire.Count -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Mots de passe' -Controle 'Sans expiration' -Etat $etat -Valeur $jamaisExpire.Count -Commentaire 'Un mot de passe qui n''expire jamais est une exception qui doit etre justifiee compte par compte.')",
+      'foreach ($c in ($jamaisExpire | Sort-Object SamAccountName | Select-Object -First 50)) {',
+      "  [void](Add-KjemoResultat -Categorie 'Mots de passe' -Controle $c.SamAccountName -Etat 'ATTENTION' -Valeur 'PasswordNeverExpires' -Commentaire $c.DistinguishedName)",
+      '}',
+      "",
+      '# --- 5. Inactivite ---------------------------------------------------------',
+      '$inactifs = @($comptes | Where-Object { $_.Enabled -eq $true -and $_.LastLogonDate -ne $null -and $_.LastLogonDate -lt $limiteInactif })',
+      "$etat = 'OK'",
+      "if ($inactifs.Count -gt 0) { $etat = 'ATTENTION' }",
+      '[void](Add-KjemoResultat -Categorie \'Inactivite\' -Controle "Sans connexion depuis plus de $SeuilInactif jours" -Etat $etat -Valeur $inactifs.Count -Commentaire \'LastLogonDate se replique avec un decalage de quelques jours : le chiffre est un ordre de grandeur, pas une preuve.\')',
+      'foreach ($c in ($inactifs | Sort-Object LastLogonDate | Select-Object -First 50)) {',
+      '  [void](Add-KjemoResultat -Categorie \'Inactivite\' -Controle $c.SamAccountName -Etat \'ATTENTION\' -Valeur ("derniere connexion le " + $c.LastLogonDate.ToString(\'yyyy-MM-dd\')))',
+      '}',
+      '$jamaisConnectes = @($comptes | Where-Object { $_.Enabled -eq $true -and $_.LastLogonDate -eq $null })',
+      "$etat = 'OK'",
+      "if ($jamaisConnectes.Count -gt 0) { $etat = 'ATTENTION' }",
+      "[void](Add-KjemoResultat -Categorie 'Inactivite' -Controle 'Aucune connexion enregistree' -Etat $etat -Valeur $jamaisConnectes.Count -Commentaire 'Compte cree et jamais utilise, ou connexion jamais repliquee vers ce controleur.')",
+      'foreach ($c in ($jamaisConnectes | Sort-Object whenCreated | Select-Object -First 50)) {',
+      '  [void](Add-KjemoResultat -Categorie \'Inactivite\' -Controle $c.SamAccountName -Etat \'ATTENTION\' -Valeur ("cree le " + $c.whenCreated.ToString(\'yyyy-MM-dd\')))',
+      '}',
+      "",
+      '# --- 6. Comptes privilegies ------------------------------------------------',
+      '# Les groupes sensibles sont designes par leur SID connu, parce que leur nom',
+      '# est traduit dans la langue du systeme.',
+      "$groupesSensibles = @('512:Admins du domaine', '519:Administrateurs de l''entreprise', '518:Administrateurs du schema', '520:Proprietaires createurs de la strategie de groupe')",
+      'if ($moduleOk -and $domaineObj) {',
+      '  foreach ($entree in $groupesSensibles) {',
+      "    $rid = $entree.Split(':')[0]",
+      "    $libelle = $entree.Split(':')[1]",
+      '    $sid = "$($domaineObj.DomainSID.Value)-$rid"',
+      '    $grp = $null',
+      '    try { $grp = Get-ADGroup -Identity $sid -ErrorAction SilentlyContinue } catch { }',
+      '    if (-not $grp) {',
+      "      [void](Add-KjemoResultat -Categorie 'Comptes privilegies' -Controle $libelle -Etat 'INFO' -Valeur 'groupe absent de ce domaine')",
+      '      continue',
+      '    }',
+      '    $membres = @()',
+      '    try { $membres = @(Get-ADGroupMember -Identity $grp -Recursive -ErrorAction SilentlyContinue) } catch { }',
+      "    $etatG = 'OK'",
+      "    if ($membres.Count -gt 5) { $etatG = 'ATTENTION' }",
+      "    [void](Add-KjemoResultat -Categorie 'Comptes privilegies' -Controle $libelle -Etat $etatG -Valeur (\"$($membres.Count) membre(s) : \" + (($membres | ForEach-Object { $_.SamAccountName }) -join ', ')) -Commentaire 'Chaque membre d''un groupe d''administration doit correspondre a une personne identifiee et a un besoin courant.')",
+      '  }',
+      '}',
+      "",
+      '# --- 7. Conclusion ---------------------------------------------------------',
+      '$aExaminer = $expires.Count + $verrouilles.Count + $mdpExpires.Count + $mdpAnciens.Count + $jamaisExpire.Count + $inactifs.Count',
+      'if ($aExaminer -eq 0) {',
+      "  [void](Add-KjemoResultat -Categorie 'Conclusion' -Controle 'Synthese' -Etat 'OK' -Valeur 'aucun point signale par les seuils demandes')",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Conclusion' -Controle 'Synthese' -Etat 'ATTENTION' -Valeur \"$aExaminer signalement(s)\" -Commentaire 'Ce rapport ne decide rien : il donne la liste a examiner. Aucun compte n''est modifie ni supprime.')",
+      '}',
+    ];
+
+    return assembler({
+      titre: 'Etat de sante des comptes Active Directory',
+      outil: 'ad-account-health',
+      diagnostic: true,
+      admin: false,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['RacineRecherche', psB64(dnRecherche)],
+        ['SeuilInactifJours', psB64(String(v.sanInactif))],
+        ['Format', psB64(v.sanFormat)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-sante-comptes',
+    });
+  },
+  gui: [
+    'Utilisateurs et ordinateurs Active Directory (dsa.msc) > Requêtes enregistrées.',
+    'Clic droit > Nouveau > Requête : « Comptes d’utilisateurs désactivés », « Comptes dont le mot de passe n’expire jamais », « Jours depuis la dernière ouverture de session ».',
+    'Centre d’administration Active Directory (dsac.exe) > Recherche globale, pour un filtre ponctuel.',
+    'Ces vues affichent la même information ; elles ne produisent pas de rapport exportable.',
+  ],
+  keywords: [
+    'compte desactive', 'compte verrouille', 'compte expire', 'mot de passe expire',
+    'passwordneverexpires', 'lastlogondate', 'compte inactif', 'audit des comptes',
+    'admins du domaine', 'comptes privilegies', 'menage annuaire',
+  ],
+  requiresAdmin: false,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de lecture sur la partie de l’annuaire examinée. La lecture des attributs listés est accordée par défaut aux utilisateurs authentifiés.',
+    'Aucun droit d’écriture n’est nécessaire : ce script ne modifie rien.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Get-ADUser : Directory object not found',
+      cause: 'La racine de recherche indiquée n’existe pas — souvent une OU mal orthographiée.',
+      fix: 'Vérifier le chemin d’OU, ou laisser le champ vide pour examiner tout le domaine.',
+    },
+    {
+      message: 'LastLogonDate est vide alors que l’utilisateur travaille tous les jours',
+      cause: 'LastLogonTimeStamp n’est répliqué qu’après un décalage, réglé par défaut à 14 jours moins un aléa.',
+      fix: 'Traiter ce chiffre comme un ordre de grandeur. Pour une valeur exacte, interroger chaque contrôleur sur lastLogon, attribut non répliqué.',
+    },
+    {
+      message: 'Le nombre de comptes examinés est nettement inférieur à l’effectif réel',
+      cause: 'La recherche a été limitée à une OU, ou le compte utilisé ne voit pas tout l’annuaire.',
+      fix: 'Vider le champ d’OU, et vérifier les droits de lecture du compte utilisé.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le rapport annonce le nombre de comptes examinés : il doit correspondre au périmètre attendu.',
+    'Chaque catégorie porte un total, puis le détail des comptes concernés.',
+    'Aucun mot de passe, jeton ni identifiant ne figure dans le rapport : seules des dates et des noms de comptes.',
+  ],
+  rollback: {
+    summary: 'Ce script ne modifie rien. Il n’y a donc rien à annuler : le seul effet possible est le fichier de rapport écrit sur le Bureau.',
+    diagnostic: '# Retrouver les rapports produits par cet outil.\nGet-ChildItem -Path ([Environment]::GetFolderPath(\'Desktop\')) -Filter \'kjemo-ad-sante-comptes*\' | Format-Table Name,Length,LastWriteTime',
+    command: '# Retirer un rapport devenu inutile. -Confirm demande l\'accord avant chaque fichier.\nGet-ChildItem -Path ([Environment]::GetFolderPath(\'Desktop\')) -Filter \'kjemo-ad-sante-comptes*\' | Remove-Item -Confirm',
+    warning: 'Le rapport liste des noms de comptes et des dates. Il n’est pas secret, mais il décrit la surface d’attaque du domaine : il se range comme un document interne.',
+  },
+  checks: [
+    'Choisir le périmètre : tout le domaine, ou une OU.',
+    'Les seuils par défaut (90 jours d’inactivité, 365 jours de mot de passe) sont un point de départ, pas une norme.',
+    'Rien n’est modifié : ce rapport sert à décider, pas à agir.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/get-aduser',
+  sources: [
+    { label: 'Get-ADUser', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-aduser' },
+    { label: 'Get-ADGroupMember', url: 'https://learn.microsoft.com/powershell/module/activedirectory/get-adgroupmember' },
+    { label: 'Identificateurs de sécurité connus (SID)', url: 'https://learn.microsoft.com/windows-server/identity/ad-ds/manage/understand-security-identifiers' },
+  ],
+};
+
+/**
+ * 7. ad-account-recovery — remettre un compte en service, sans secret dans le
+ *    navigateur.
+ *
+ * Trois causes possibles à « je n'arrive plus à me connecter » : le compte est
+ * verrouillé, il est désactivé, il est expiré. Ce sont trois états distincts,
+ * avec trois corrections distinctes. Le script commence donc par établir
+ * lequel, avant de proposer quoi que ce soit.
+ *
+ * Le mot de passe, lui, ne traverse jamais le site : quand la réinitialisation
+ * est demandée, le script l'obtient localement, avec Read-Host -AsSecureString,
+ * au moment de son exécution.
+ */
+export const outilRecuperationCompte = {
+  id: 'ad-account-recovery',
+  icon: '↺',
+  category: 'Active Directory',
+  subcategory: 'Cycle de vie des comptes',
+  title: 'Débloquer et remettre en service un compte',
+  risk: 'caution',
+  summary: 'Établit pourquoi un compte ne peut plus ouvrir de session — verrouillé, désactivé, expiré, mot de passe expiré — puis corrige ce qui a été demandé. Aucun mot de passe ne transite par le site.',
+  fields: [
+    champDomaine(),
+    {
+      id: 'recCompte', label: 'Compte concerné', default: 'm.tremblay',
+      help: 'SamAccountName (m.tremblay) ou nom d’ouverture de session complet (m.tremblay@hopitalbn.lan).',
+    },
+    {
+      id: 'recAction', label: 'Correction souhaitée', type: 'select', default: 'Aucune',
+      options: [
+        ['Aucune', 'Aucune — diagnostic seulement'],
+        ['Deverrouiller', 'Déverrouiller le compte'],
+        ['Reactiver', 'Réactiver le compte désactivé'],
+        ['ProlongerExpiration', 'Retirer la date d’expiration du compte'],
+        ['ReinitialiserIdentifiant', 'Réinitialiser l’identifiant d’accès — saisi localement à l’exécution'],
+      ],
+      help: 'La réinitialisation ne place aucune valeur dans ce formulaire : le script la demande à la console, en saisie masquée, au moment où il s’exécute.',
+    },
+    {
+      id: 'recChangementObligatoire', label: 'Exiger un changement à la prochaine ouverture de session',
+      type: 'select', default: 'Oui',
+      options: [['Oui', 'Oui — recommandé après une réinitialisation'], ['Non', 'Non']],
+      help: 'S’applique uniquement à la réinitialisation. Un identifiant remis par un tiers ne doit pas rester en service.',
+    },
+    champMode(),
+  ],
+  validate(v) {
+    const errors = {};
+    verifier(errors, 'adDomain', validerFqdn(v.adDomain));
+    const compte = String(v.recCompte ?? '').trim();
+    if (compte.includes('@')) verifier(errors, 'recCompte', validerUpn(compte));
+    else verifier(errors, 'recCompte', validateSamAccountName(compte));
+    verifier(errors, 'recAction', validerChoix(v.recAction,
+      ['Aucune', 'Deverrouiller', 'Reactiver', 'ProlongerExpiration', 'ReinitialiserIdentifiant'], 'La correction'));
+    verifier(errors, 'recChangementObligatoire', validerChoix(v.recChangementObligatoire, ['Oui', 'Non'], 'Le choix'));
+    verifier(errors, 'mode', validerModeExecution(v.mode));
+    return errors;
+  },
+  generate(v) {
+    assertValid(this, v);
+    const domaine = validerFqdn(v.adDomain).value;
+    const compte = String(v.recCompte).trim();
+
+    const corps = [
+      `$Mode = ${psB64(v.mode)}`,
+      `$Domaine = ${psB64(domaine)}`,
+      `$Compte = ${psB64(compte)}`,
+      `$Action = ${psB64(v.recAction)}`,
+      `$ChangementObligatoire = ${psB64(v.recChangementObligatoire)}`,
+      "$KjemoFormat = 'Console'",
+      "",
+      blocModuleAd(),
+      "",
+      '# --- 1. Retrouver le compte ------------------------------------------------',
+      '$user = $null',
+      'if ($moduleOk) {',
+      '  try {',
+      '    $user = Get-ADUser -Identity $Compte -Properties Enabled,LockedOut,AccountExpirationDate,PasswordLastSet,PasswordExpired,PasswordNeverExpires,LastLogonDate,LastBadPasswordAttempt,BadLogonCount,DistinguishedName,UserPrincipalName -ErrorAction Stop',
+      '  } catch {',
+      '    try {',
+      '      $user = Get-ADUser -Filter "UserPrincipalName -eq \'$Compte\'" -Properties Enabled,LockedOut,AccountExpirationDate,PasswordLastSet,PasswordExpired,PasswordNeverExpires,LastLogonDate,LastBadPasswordAttempt,BadLogonCount,DistinguishedName,UserPrincipalName -ErrorAction SilentlyContinue',
+      '    } catch { }',
+      '  }',
+      '}',
+      'if (-not $user) {',
+      "  [void](Add-KjemoResultat -Categorie 'Compte' -Controle 'Recherche' -Etat 'PROBLEME' -Valeur $Compte -Commentaire 'Compte introuvable dans ce domaine. Verifie l''orthographe, ou cherche-le avec l''outil de recherche et deplacement d''objets.')",
+      '} else {',
+      "  [void](Add-KjemoResultat -Categorie 'Compte' -Controle 'Identite' -Etat 'INFO' -Valeur $user.DistinguishedName -Commentaire $user.UserPrincipalName)",
+      '}',
+      "",
+      '# --- 2. Pourquoi la connexion echoue ---------------------------------------',
+      '$causes = New-Object System.Collections.ArrayList',
+      'if ($user) {',
+      '  if ($user.LockedOut -eq $true) {',
+      '    [void]$causes.Add(\'Verrouille\')',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Verrouillage' -Etat 'PROBLEME' -Valeur 'compte verrouille' -Commentaire 'Le verrouillage vient de la strategie de mot de passe du domaine : trop de tentatives echouees.')",
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Verrouillage' -Etat 'OK' -Valeur 'non verrouille')",
+      '  }',
+      '  if ($user.Enabled -eq $false) {',
+      '    [void]$causes.Add(\'Desactive\')',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Activation' -Etat 'PROBLEME' -Valeur 'compte desactive' -Commentaire 'Un compte desactive a souvent ete ferme volontairement : verifie la raison avant de le rouvrir.')",
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Activation' -Etat 'OK' -Valeur 'actif')",
+      '  }',
+      '  if ($user.AccountExpirationDate -ne $null -and $user.AccountExpirationDate -lt (Get-Date)) {',
+      '    [void]$causes.Add(\'Expire\')',
+      '    [void](Add-KjemoResultat -Categorie \'Diagnostic\' -Controle \'Expiration du compte\' -Etat \'PROBLEME\' -Valeur ("expire le " + $user.AccountExpirationDate.ToString(\'yyyy-MM-dd\')) -Commentaire \'Frequent pour les comptes de stagiaires et de remplacants.\')',
+      '  } elseif ($user.AccountExpirationDate -ne $null) {',
+      '    [void](Add-KjemoResultat -Categorie \'Diagnostic\' -Controle \'Expiration du compte\' -Etat \'ATTENTION\' -Valeur ("expirera le " + $user.AccountExpirationDate.ToString(\'yyyy-MM-dd\')))',
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Expiration du compte' -Etat 'OK' -Valeur 'aucune date d''expiration')",
+      '  }',
+      '  if ($user.PasswordExpired -eq $true) {',
+      '    [void]$causes.Add(\'IdentifiantExpire\')',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Identifiant d''acces' -Etat 'PROBLEME' -Valeur 'expire' -Commentaire 'L''utilisateur peut le renouveler lui-meme a l''ouverture de session, si la strategie le permet.')",
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Identifiant d''acces' -Etat 'OK' -Valeur 'valide')",
+      '  }',
+      '  if ($user.PasswordLastSet -ne $null) {',
+      '    [void](Add-KjemoResultat -Categorie \'Diagnostic\' -Controle \'Dernier renouvellement\' -Etat \'INFO\' -Valeur $user.PasswordLastSet.ToString(\'yyyy-MM-dd HH:mm\'))',
+      '  }',
+      '  if ($user.LastBadPasswordAttempt -ne $null) {',
+      '    [void](Add-KjemoResultat -Categorie \'Diagnostic\' -Controle \'Derniere tentative echouee\' -Etat \'INFO\' -Valeur $user.LastBadPasswordAttempt.ToString(\'yyyy-MM-dd HH:mm\') -Commentaire "Tentatives echouees comptees sur ce controleur : $($user.BadLogonCount). Un chiffre qui remonte tout seul designe une session ou un service qui rejoue un ancien identifiant.")',
+      '  }',
+      '  if ($causes.Count -eq 0) {',
+      "    [void](Add-KjemoResultat -Categorie 'Diagnostic' -Controle 'Synthese' -Etat 'OK' -Valeur 'aucun blocage cote annuaire' -Commentaire 'Si la connexion echoue quand meme, cherche du cote du poste : heure, DNS, canal securise, ou restriction d''horaire.')",
+      '  } else {',
+      '    [void](Add-KjemoResultat -Categorie \'Diagnostic\' -Controle \'Synthese\' -Etat \'PROBLEME\' -Valeur ($causes -join \', \'))',
+      '  }',
+      '}',
+      "",
+      '# --- 3. Correction, uniquement en mode Appliquer ---------------------------',
+      "# Le mot de passe n'est jamais ecrit dans ce script. Quand la",
+      "# reinitialisation est demandee, il est saisi ici, masque, et reste en",
+      "# memoire le temps de l'appel.",
+      "if ($Mode -eq 'Appliquer' -and $user) {",
+      "  if ($Action -eq 'Deverrouiller') {",
+      '    try {',
+      '      Unlock-ADAccount -Identity $user.DistinguishedName -ErrorAction Stop',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Deverrouillage' -Etat 'OK' -Valeur 'effectue')",
+      "    } catch { [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Deverrouillage' -Etat 'PROBLEME' -Valeur $_.Exception.Message) }",
+      "  } elseif ($Action -eq 'Reactiver') {",
+      '    try {',
+      '      Enable-ADAccount -Identity $user.DistinguishedName -ErrorAction Stop',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Reactivation' -Etat 'OK' -Valeur 'effectue')",
+      "    } catch { [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Reactivation' -Etat 'PROBLEME' -Valeur $_.Exception.Message) }",
+      "  } elseif ($Action -eq 'ProlongerExpiration') {",
+      '    try {',
+      '      Clear-ADAccountExpiration -Identity $user.DistinguishedName -ErrorAction Stop',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Date d''expiration' -Etat 'OK' -Valeur 'retiree')",
+      "    } catch { [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Date d''expiration' -Etat 'PROBLEME' -Valeur $_.Exception.Message) }",
+      "  } elseif ($Action -eq 'ReinitialiserIdentifiant') {",
+      "    Write-Host ''",
+      "    Write-Host '--- Saisie locale ---'",
+      "    Write-Host 'La valeur saisie ci-dessous ne provient pas du site, n''y retourne pas,'",
+      "    Write-Host 'et ne figure dans aucun rapport. Elle est masquee a la frappe.'",
+      "    $nouvelleValeur = Read-Host -Prompt 'Nouvel identifiant d''acces pour ce compte' -AsSecureString",
+      '    try {',
+      '      Set-ADAccountPassword -Identity $user.DistinguishedName -Reset -NewPassword $nouvelleValeur -ErrorAction Stop',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Reinitialisation' -Etat 'OK' -Valeur 'effectuee' -Commentaire 'La valeur n''est pas journalisee.')",
+      "      if ($ChangementObligatoire -eq 'Oui') {",
+      '        Set-ADUser -Identity $user.DistinguishedName -ChangePasswordAtLogon $true -ErrorAction Stop',
+      "        [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Changement a la prochaine session' -Etat 'OK' -Valeur 'exige')",
+      '      }',
+      '    } catch {',
+      "      [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Reinitialisation' -Etat 'PROBLEME' -Valeur $_.Exception.Message -Commentaire 'Souvent : la valeur ne respecte pas la strategie de mot de passe du domaine, ou le compte n''a pas le droit de reinitialiser.')",
+      '    }',
+      '    $nouvelleValeur = $null',
+      '    [System.GC]::Collect()',
+      '  } else {',
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Correction' -Etat 'IGNORE' -Valeur 'aucune correction demandee')",
+      '  }',
+      "",
+      '  # --- 4. Relecture apres correction ---------------------------------------',
+      '  $apres = $null',
+      '  try { $apres = Get-ADUser -Identity $user.DistinguishedName -Properties Enabled,LockedOut,AccountExpirationDate,PasswordExpired -ErrorAction SilentlyContinue } catch { }',
+      '  if ($apres) {',
+      '    [void](Add-KjemoResultat -Categorie \'Verification\' -Controle \'Etat apres correction\' -Etat \'INFO\' -Valeur ("actif : $($apres.Enabled) ; verrouille : $($apres.LockedOut) ; identifiant expire : $($apres.PasswordExpired)"))',
+      '  }',
+      '} else {',
+      "  Write-Host ''",
+      "  Write-Host '--- Simulation ---'",
+      "  if ($user -and $Action -ne 'Aucune') {",
+      "    [void](Add-KjemoResultat -Categorie 'Action' -Controle 'Simulation' -Etat 'INFO' -Valeur \"correction prevue : $Action\" -Commentaire 'Rien n''a ete modifie. Choisis le mode Appliquer pour l''executer.')",
+      '  }',
+      '}',
+      blocModeDiagnostic(),
+      blocAucuneSuppression('compte'),
+    ];
+
+    return assembler({
+      titre: 'Debloquer et remettre en service un compte',
+      outil: 'ad-account-recovery',
+      diagnostic: v.mode !== 'Appliquer',
+      admin: true,
+      parametres: [
+        ['Domaine', psB64(domaine)],
+        ['Compte', psB64(compte)],
+        ['Correction', psB64(v.recAction)],
+        ['Mode', psB64(v.mode)],
+      ],
+      corps,
+      prefixeFichier: 'kjemo-ad-recuperation-compte',
+      formats: 'Console',
+    });
+  },
+  gui: [
+    'Utilisateurs et ordinateurs Active Directory (dsa.msc) > localiser le compte.',
+    'Onglet Compte : la case « Le compte est verrouillé » se décoche pour déverrouiller.',
+    'Clic droit > Activer le compte, pour un compte désactivé.',
+    'Onglet Compte > Expire : choisir « Jamais » pour retirer la date d’expiration.',
+    'Clic droit > Réinitialiser le mot de passe : la saisie se fait dans la console, jamais dans un courriel ni un message.',
+  ],
+  keywords: [
+    'compte verrouille', 'unlock-adaccount', 'compte desactive', 'enable-adaccount',
+    'mot de passe oublie', 'reinitialiser', 'set-adaccountpassword', 'changepasswordatlogon',
+    'compte expire', 'impossible de se connecter', 'badlogoncount', 'deblocage',
+  ],
+  requiresAdmin: true,
+  os: OS_AD,
+  prereqs: PREREQS_AD.concat([
+    'Droit de réinitialiser les mots de passe et de déverrouiller les comptes sur l’OU concernée — c’est la délégation la plus courante d’un poste de support.',
+    'Une procédure d’identification de la personne avant toute remise en service. Un identifiant remis à la mauvaise personne est une intrusion, pas un dépannage.',
+    'Aucun identifiant n’est saisi dans le site : la réinitialisation se fait à la console, en saisie masquée.',
+  ]),
+  commonErrors: ERREURS_AD.concat([
+    {
+      message: 'Set-ADAccountPassword : The password does not meet the length, complexity, or history requirement of the domain',
+      code: '0x800708C5',
+      cause: 'La valeur saisie ne respecte pas la stratégie de mot de passe du domaine.',
+      fix: 'Consulter la stratégie appliquée, puis saisir une valeur conforme.',
+      command: 'Get-ADDefaultDomainPasswordPolicy | Format-List MinPasswordLength,PasswordHistoryCount,ComplexityEnabled,LockoutThreshold,LockoutDuration',
+    },
+    {
+      message: 'Le compte se reverrouille quelques minutes après chaque déverrouillage',
+      cause: 'Une session ouverte, un service, une tâche planifiée ou un téléphone rejoue l’ancien identifiant.',
+      fix: 'Identifier la source avec les événements 4740 du journal Sécurité du contrôleur qui détient le rôle Émulateur PDC, puis corriger cette source.',
+      command: 'Get-WinEvent -FilterHashtable @{LogName=\'Security\'; Id=4740} -MaxEvents 20 | Format-List TimeCreated,Message',
+    },
+    {
+      message: 'Unlock-ADAccount : Access is denied',
+      code: '0x5',
+      cause: 'Le compte utilisé n’a pas la délégation de déverrouillage sur cette OU.',
+      fix: 'Vérifier la délégation avec l’outil d’audit de délégation, et utiliser un compte qui la détient.',
+    },
+    {
+      message: 'La connexion échoue toujours alors que le compte est sain',
+      cause: 'Le blocage n’est pas dans l’annuaire : heure du poste décalée, canal sécurisé rompu, restriction d’horaire ou de poste, ou DNS.',
+      fix: 'Passer à l’outil de vérification du canal sécurisé, puis au rapport complet du domaine.',
+    },
+  ]),
+  reversible: true,
+  verifyAfter: [
+    'Le script relit le compte après correction et affiche activation, verrouillage et expiration de l’identifiant.',
+    'L’utilisateur ouvre une session : c’est la seule vérification qui conclut vraiment.',
+    'Aucun identifiant ne figure dans la console, dans le rapport ni dans un fichier.',
+  ],
+  rollback: {
+    summary: 'Déverrouiller et réactiver sont des gestes réversibles : on peut redésactiver un compte rouvert par erreur. Une réinitialisation, elle, ne se défait pas : l’ancienne valeur n’existe plus nulle part. Elle se corrige par une nouvelle réinitialisation, avec la personne concernée.',
+    diagnostic: '# Constater l\'etat courant du compte avant de revenir en arriere.\nGet-ADUser -Identity \'<compte>\' -Properties Enabled,LockedOut,AccountExpirationDate,PasswordLastSet,whenChanged | Format-List SamAccountName,Enabled,LockedOut,AccountExpirationDate,PasswordLastSet,whenChanged',
+    command: '# Refermer un compte rouvert par erreur. Le compte reste en place : seule\n# l\'ouverture de session est refusee.\nDisable-ADAccount -Identity \'<compte>\' -Confirm\n\n# Remettre une date d\'expiration retiree par erreur.\nSet-ADAccountExpiration -Identity \'<compte>\' -DateTime \'2026-12-31\'',
+    warning: 'Une réinitialisation d’identifiant est irréversible : l’ancienne valeur n’est stockée nulle part en clair. Elle invalide aussi les secrets dérivés — connexions enregistrées, sessions de messagerie, comptes de service qui réutilisaient cet identifiant.',
+  },
+  checks: [
+    'Identifier la personne avant tout : un déblocage est aussi un contrôle d’accès.',
+    'Lire le diagnostic avant de choisir la correction — verrouillé, désactivé et expiré ne se soignent pas pareil.',
+    'La réinitialisation se saisit à la console, jamais dans un courriel, un message ni ce formulaire.',
+  ],
+  source: 'https://learn.microsoft.com/powershell/module/activedirectory/unlock-adaccount',
+  sources: [
+    { label: 'Unlock-ADAccount', url: 'https://learn.microsoft.com/powershell/module/activedirectory/unlock-adaccount' },
+    { label: 'Enable-ADAccount', url: 'https://learn.microsoft.com/powershell/module/activedirectory/enable-adaccount' },
+    { label: 'Set-ADAccountPassword', url: 'https://learn.microsoft.com/powershell/module/activedirectory/set-adaccountpassword' },
+    { label: 'Clear-ADAccountExpiration', url: 'https://learn.microsoft.com/powershell/module/activedirectory/clear-adaccountexpiration' },
+    { label: 'Read-Host', url: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/read-host' },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Catalogue exporté — complété au fil des sous-rubriques du LOT 3
 // ---------------------------------------------------------------------------
@@ -1550,4 +2072,6 @@ export const toolsAd = [
   outilGroupes,
   outilMembresCsv,
   outilCheminsProfils,
+  outilSanteComptes,
+  outilRecuperationCompte,
 ];

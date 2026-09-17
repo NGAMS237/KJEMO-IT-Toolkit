@@ -1583,8 +1583,19 @@ for (const outil of outilsRecents) {
     // POLITIQUE de mot de passe n'en transporte aucun, par construction.
     const champLibre = f.type !== 'select' && f.type !== 'checkbox';
     if (champLibre) {
-      assert(!/mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i.test(`${f.id} ${f.label}`),
-        `${outil.id} : le champ libre « ${f.id} » ne demande aucun secret`);
+      const evoqueSecret = /mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i
+        .test(`${f.id} ${f.label}`);
+      if (evoqueSecret) {
+        // Un champ peut légitimement PARLER de mot de passe — « âge maximal du
+        // mot de passe », en jours — sans jamais pouvoir en transporter un. On
+        // ne se contente pas de l'étiquette : on soumet au champ un mot de
+        // passe plausible, et la validation doit le refuser. C'est une preuve
+        // de comportement, plus forte qu'une interdiction de vocabulaire.
+        const defauts = Object.fromEntries(outil.fields.map((x) => [x.id, String(x.default ?? '')]));
+        const errs = outil.validate({ ...defauts, [f.id]: 'Hopital!2026Secret' });
+        assert(Boolean(errs[f.id]),
+          `${outil.id} : le champ « ${f.id} » évoque un secret mais refuse toute valeur qui en serait un`);
+      }
     } else {
       const valeursPossibles = (f.options ?? []).map((o) => (Array.isArray(o) ? o[0] : o)).join(' ');
       assert(!/^(motdepasse|password|secret|token)$/i.test(valeursPossibles.trim()),
