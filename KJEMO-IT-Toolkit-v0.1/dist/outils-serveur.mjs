@@ -1041,11 +1041,18 @@ export const outilDhcpReservation = {
     if (scope.ok && ip.ok && !ipDansReseau(ip.value, scope.value, 24)) {
       errors.resIp = `${ip.value} ne semble pas appartenir à l\u2019étendue ${scope.value}/24. Vérifie le ScopeId et l\u2019adresse.`;
     }
+    // Une saisie AVEC séparateurs est une tentative d'adresse MAC : elle doit
+    // faire six octets. Sans séparateur, l'utilisateur peut légitimement saisir
+    // un ClientId DHCP d'une autre longueur. Accepter « 00-15-5D-01-2A » comme
+    // ClientId de cinq octets laisserait passer une MAC tronquée.
     const client = String(v.resClient ?? '').trim();
+    const avecSeparateurs = /[-:.]/.test(client);
     const mac = validerMac(client);
-    if (!mac.ok) {
+    if (avecSeparateurs) {
+      if (!mac.ok) errors.resClient = mac.error;
+    } else if (!mac.ok) {
       const cid = validerClientId(client);
-      if (!cid.ok) errors.resClient = mac.error;
+      if (!cid.ok) errors.resClient = cid.error;
     }
     const nom = String(v.resName ?? '').trim();
     if (!nom) errors.resName = 'Le nom du client ne peut pas être vide.';

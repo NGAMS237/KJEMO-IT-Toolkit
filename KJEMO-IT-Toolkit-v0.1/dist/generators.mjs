@@ -1114,7 +1114,9 @@ export const tools = [
       'Vérifier le canal sécurisé et les ports avant la promotion.',
       'Le serveur redémarre automatiquement si l\u2019installation réussit.',
     ],
-    source: 'https://learn.microsoft.com/windows-server/identity/ad-ds/deploy/install-active-directory-domain-services--level-100',
+    // Corrigé au LOT 2 : l'URL précédente renvoyait une page 404. Vérifiée par
+    // scripts/verifier-sources.mjs, qui interroge réellement chaque source.
+    source: 'https://learn.microsoft.com/powershell/module/addsdeployment/install-addsdomaincontroller',
   },
 
   // ── 6. Réparation Wi-Fi ──────────────────────────────────────────────────

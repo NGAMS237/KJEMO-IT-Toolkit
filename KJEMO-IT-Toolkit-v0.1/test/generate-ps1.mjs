@@ -44,6 +44,7 @@ const DATASETS = [
     name: 'apostrophe-ascii',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-dhcp1.hopitalbn.lan", zoneName: "labo1.hopitalbn.lan", cliTestHost: "www.microsoft.com", healthEvents: "12", reportFormat: "JSON",
       scopeName: "LAN-D'Adam", resName: "poste-o'brien", resDesc: "Poste de D'Arcy", bkFolder: "C:\\Sauvegardes\\D'Adam", bkName: "dhcp-dadam", auditPath: "C:\\Partages\\D'Adam", auditShare: "Donnees-D'Adam", smbUserFilter: "o'brien", leaseFilter: "o'brien", icsInternal: "Ethernet D'Adam", rrasInternal: "Ethernet D'Adam", recName: "srv-dadam", dnsQuery: "srv-dadam.hopitalbn.lan",
       adapter: "Ethernet D'Adam", share: "Données-D'Adam", path: "C:\\Users\\D'Adam",
       firstName: "D'Arcy", lastName: "O'Brien", ou: "Direction-D'Adam",
@@ -54,6 +55,7 @@ const DATASETS = [
     name: 'apostrophe-typographique',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-dhcp2.hopitalbn.lan", zoneName: "labo2.hopitalbn.lan", cliTestHost: "learn.microsoft.com", healthEvents: "48", reportFormat: "HTML",
       scopeName: "LAN-D\u2019Adam", resName: "poste-d\u2019adam", resDesc: "Poste de D\u2019Arcy \u2014 accueil", bkFolder: "C:\\Sauvegardes\\D\u2019Adam", bkName: "dhcp-typo", auditPath: "C:\\Partages\\D\u2019Adam", auditShare: "Donnees-D\u2019Adam", smbUserFilter: "d\u2019adam", leaseFilter: "d\u2019adam", icsInternal: "Ethernet D\u2019Adam", rrasInternal: "Ethernet D\u2019Adam", recName: "srv-typo", dnsQuery: "srv-typo.hopitalbn.lan",
       adapter: 'Ethernet D\u2019Adam', share: 'Donn\u00e9es-D\u2019Adam',
       path: 'C:\\Users\\D\u2019Adam', firstName: 'D\u2019Arcy', lastName: 'O\u2019Brien',
@@ -64,6 +66,7 @@ const DATASETS = [
     name: 'dollar-backtick-guillemets',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-dhcp3.hopitalbn.lan", zoneName: "labo3.hopitalbn.lan", cliTestHost: "docs.microsoft.com", healthEvents: "6", reportFormat: "CSV",
       scopeName: "LAN $special", resName: "poste`test", resDesc: "Bureau \"Direction\" $special", bkFolder: "C:\\Sauvegardes\\Test$", bkName: "dhcp-special", auditPath: "C:\\Partages\\Test$", auditShare: "Partage$special", smbUserFilter: "test$", leaseFilter: "$test", icsInternal: "Ethernet $special", rrasInternal: "Ethernet $special", recName: "srv-special", dnsQuery: "srv-special.hopitalbn.lan",
       adapter: 'Ethernet $special', share: 'Share`Test', path: 'C:\\Users\\Test"Dir',
       firstName: 'Jean-$special', lastName: 'Tremblay`test', ou: 'Test-Special',
@@ -74,6 +77,7 @@ const DATASETS = [
     name: 'espaces-et-accents',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-comptabilite.hopitalbn.lan", zoneName: "comptabilite.hopitalbn.lan", cliTestHost: "www.microsoft.com", healthEvents: "72", reportFormat: "JSON",
       scopeName: "R\u00e9seau \u00c9l\u00e9onore", resName: "poste-\u00e9l\u00e9onore", resDesc: "Comptabilit\u00e9 \u2014 poste fixe", bkFolder: "C:\\Sauvegardes\\Comptabilit\u00e9", bkName: "dhcp-comptabilite", auditPath: "C:\\Partages\\Comptabilit\u00e9", auditShare: "Donn\u00e9es \u00c9l\u00e9onore", smbUserFilter: "\u00e9l\u00e9onore", leaseFilter: "\u00e9l\u00e9onore", icsInternal: "Adaptateur r\u00e9seau interne", rrasInternal: "Adaptateur r\u00e9seau interne", recName: "srv-comptabilite", dnsQuery: "srv-comptabilite.hopitalbn.lan",
       adapter: 'Adaptateur Wi-Fi', share: 'Données Éléonore',
       path: 'C:\\Users\\L\u00e9vesque-Tr\u00e9panier', firstName: '\u00c9l\u00e9onore',
@@ -85,6 +89,7 @@ const DATASETS = [
     name: 'virgule-et-point-virgule',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-dhcp4.hopitalbn.lan", zoneName: "labo4.hopitalbn.lan", cliTestHost: "azure.microsoft.com", healthEvents: "168", reportFormat: "Console",
       scopeName: "LAN,30;test", resName: "poste,accueil", resDesc: "Accueil; rez-de-chauss\u00e9e", bkFolder: "C:\\Sauvegardes\\DHCP,2026", bkName: "dhcp-2026", auditPath: "C:\\Partages\\Donnees,2026", auditShare: "Donnees;2026", smbUserFilter: "a,b", leaseFilter: "192.168.30.", icsInternal: "Ethernet,1", rrasInternal: "Ethernet,1", recName: "srv-virgule", dnsQuery: "srv-virgule.hopitalbn.lan",
       adapter: 'Ethernet,1', share: 'Partage;Test', path: 'C:\\Data,files;here',
       firstName: 'Marie,Anne', lastName: 'Tr;emblay', ou: 'Test,OU',
@@ -95,6 +100,7 @@ const DATASETS = [
     name: 'chemin-racine-c',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-racine.hopitalbn.lan", zoneName: "racine.hopitalbn.lan", cliTestHost: "www.microsoft.com", healthEvents: "1", reportFormat: "HTML",
       scopeName: "LAN-Racine", resName: "poste-racine", resDesc: "Racine du volume", bkFolder: "C:\\DHCP", bkName: "racine", auditPath: "C:\\Partages", auditShare: "RacineC", smbUserFilter: "", leaseFilter: "", icsInternal: "Ethernet", rrasInternal: "Ethernet", recName: "@", dnsQuery: "hopitalbn.lan",
       path: 'C:\\', share: 'RacineC',
       adapter: 'Ethernet', firstName: 'Marie', lastName: 'Tremblay',
@@ -105,6 +111,7 @@ const DATASETS = [
     name: 'chemin-avec-apostrophe',
     values: {
       // LOT 2 — champs des outils Windows Server
+      srvFqdn: "srv-obrien.hopitalbn.lan", zoneName: "obrien.hopitalbn.lan", cliTestHost: "support.microsoft.com", healthEvents: "24", reportFormat: "CSV",
       scopeName: "LAN-O'Brien", resName: "poste-o'brien-2", resDesc: "Bureau d'O'Brien", bkFolder: "C:\\Sauvegardes\\O'Brien\\DHCP", bkName: "dhcp-obrien", auditPath: "C:\\Users\\O'Brien\\Documents", auditShare: "OBrien", smbUserFilter: "o'b", leaseFilter: "00-15", icsInternal: "Ethernet O'Brien", rrasInternal: "Ethernet O'Brien", recName: "srv-obrien", dnsQuery: "srv-obrien.hopitalbn.lan",
       path: "C:\\Users\\O'Brien\\Documents", share: 'OBrien',
       adapter: 'Ethernet', firstName: 'Marie', lastName: "O'Brien",

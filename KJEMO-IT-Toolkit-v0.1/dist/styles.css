@@ -289,3 +289,15 @@ details.mode-emploi .mode-note{padding-bottom:12px}
 nav{grid-template-columns:minmax(0,1fr)}
 nav button{max-width:100%}
 .sidebar{overflow-x:hidden;overflow-y:auto}
+
+/* ==========================================================================
+   LOT 2 — formulaires plus fournis : contraintes de largeur
+   Un <select> se dimensionne sur son option la plus longue. Sur un écran de
+   390 px, « Inactive — créée mais ne distribue pas encore » débordait de la
+   page de 67 px. Les champs sont donc bornés à la largeur de leur panneau.
+   ========================================================================== */
+.field{min-width:0}
+.field input,.field select{max-width:100%;width:100%;box-sizing:border-box}
+.field small{overflow-wrap:anywhere}
+.panel,.fiche-section{min-width:0}
+.tool-content{min-width:0}

