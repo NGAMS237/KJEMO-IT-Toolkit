@@ -1,7 +1,8 @@
 # =============================================================================
 # validate.yml — LOT 0 · KJEMO IT Toolkit
 # =============================================================================
-# Workflow réutilisable (workflow_call) : vérification syntaxe PS + tests.
+# Workflow réutilisable (workflow_call) : syntaxe PowerShell, contre-épreuves
+# d'exécution sous les deux moteurs, puis tests Node et navigateur.
 # Appelé par ps-syntax-check.yml (push/PR) et deploy-pages.yml (déploiement).
 #
 # Contrainte : ne fusionner dans main et ne déployer qu'avec l'autorisation
@@ -19,7 +20,7 @@ on:
 
 jobs:
   validate:
-    name: Vérification syntaxe PowerShell (5.1 + 7) + Tests complets
+    name: Syntaxe PS (5.1 + 7), contre-épreuves d'exécution et tests complets
     runs-on: windows-latest
     outputs:
       status: ${{ steps.set-status.outputs.status }}
@@ -191,7 +192,50 @@ jobs:
         run: pwsh -File .\scripts\Test-PS-Roundtrip-v2.ps1
 
       # -----------------------------------------------------------------------
-      # 11. Installer Playwright/Chromium et exécuter les tests navigateur
+      # 12. Contre-épreuve d'exécution — ad-home-profile-paths
+      #
+      # Ce test n'inspecte pas le texte du script : il l'EXÉCUTE, dans une
+      # session où New-Item, Set-Acl et Set-ADUser sont remplacés par des
+      # mouchards, et où Export-Csv réussit ou lève selon la passe.
+      #
+      #   PASSE A — sauvegarde en échec : aucune modification ne doit avoir lieu
+      #   PASSE B — contrôle positif     : les modifications doivent avoir lieu
+      #   PASSE C — défaut réintroduit   : la passe A doit le détecter
+      #
+      # Les deux moteurs sont éprouvés séparément, et l'interpréteur est
+      # IMPOSÉ à chaque fois : le test échoue s'il est absent, et ne se rabat
+      # jamais sur l'autre. Un résultat obtenu sous PowerShell 7 ne dit rien
+      # de Windows PowerShell 5.1, qui reste la cible de référence.
+      #
+      # Ces deux étapes précèdent les tests navigateur et bloquent le workflow
+      # en cas d'échec : aucune continue-on-error, aucun `if` permissif.
+      # -----------------------------------------------------------------------
+      - name: Contre-épreuve sauvegarde bloquante — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          powershell.exe -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"
+          node test/sauvegarde-bloquante.test.mjs --powershell powershell
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuve PS 5.1 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Contre-épreuve sauvegarde bloquante — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          pwsh -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"
+          node test/sauvegarde-bloquante.test.mjs --powershell pwsh
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuve PS 7 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      # -----------------------------------------------------------------------
+      # 13. Installer Playwright/Chromium et exécuter les tests navigateur
       # -----------------------------------------------------------------------
       - name: Installer les navigateurs Playwright
         working-directory: KJEMO-IT-Toolkit-v0.1
@@ -206,7 +250,7 @@ jobs:
           PLAYWRIGHT_CHROMIUM_PATH: ''   # utilise le Chromium installé par playwright install
 
       # -----------------------------------------------------------------------
-      # 12. Rapport d'artefact (toujours, même en cas d'échec)
+      # 14. Rapport d'artefact (toujours, même en cas d'échec)
       # -----------------------------------------------------------------------
       - name: Publier les .ps1 générés
         if: always()
@@ -217,7 +261,7 @@ jobs:
           retention-days: 14
 
       # -----------------------------------------------------------------------
-      # 13. Résultat
+      # 15. Résultat
       # -----------------------------------------------------------------------
       - name: Définir le statut de sortie
         id: set-status
