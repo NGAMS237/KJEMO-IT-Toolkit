@@ -27,6 +27,7 @@ import { toolsServeur } from './outils-serveur.mjs';
 import { toolsAd } from './outils-ad.mjs';
 import { toolsGpo } from './outils-gpo.mjs';
 import { toolsReseau } from './outils-reseau.mjs';
+import { toolsPoste } from './outils-poste.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1080,7 +1081,7 @@ export const tools = [
     id: 'wifi-repair',
     icon: '\u2341',
     category: 'Réseau',
-    subcategory: 'Wi-Fi et sans-fil',
+    subcategory: 'Wi-Fi et VPN',
     title: 'Diagnostiquer et réinitialiser le Wi-Fi',
     risk: 'caution',
     summary: 'Vérifie la carte et le service WLAN, puis redémarre la carte choisie.',
@@ -1572,4 +1573,5 @@ for (const outil of toolsServeur) tools.push(outil);
 for (const outil of toolsAd) tools.push(outil);
 for (const outil of toolsGpo) tools.push(outil);
 for (const outil of toolsReseau) tools.push(outil);
+for (const outil of toolsPoste) tools.push(outil);
 

@@ -299,6 +299,47 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
+      # 11 quater. Contre-épreuves d'exécution du LOT 6 — les verrous bloquent-ils ?
+      #
+      # Trois assistants du LOT 6 modifient l'etat de la machine : redemarrage
+      # des services audio, reinitialisation de Windows Update, arret d'un
+      # processus. Chacun porte un verrou, et ce banc verifie qu'il BLOQUE —
+      # en executant les scripts, cmdlets modifiantes remplacees par des
+      # mouchards, et en comptant les appels.
+      #
+      # Il porte ses propres contre-epreuves : chaque verrou est desarme tour a
+      # tour, et le test doit alors voir l'appel interdit. Le second verrou de
+      # la reparation Windows Update — celui qui empeche de renommer un dossier
+      # qu'un service tient encore ouvert — a sa contre-epreuve distincte.
+      #
+      # Comme les precedentes : les DEUX moteurs, interpreteur impose, sans
+      # continue-on-error.
+      # -----------------------------------------------------------------------
+      - name: Contre-épreuves des verrous LOT 6 — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          node test/poste-verrous.test.mjs --powershell powershell
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuves LOT 6 PS 5.1 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Contre-épreuves des verrous LOT 6 — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          node test/poste-verrous.test.mjs --powershell pwsh
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuves LOT 6 PS 7 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      # -----------------------------------------------------------------------
       # 12 bis. Contrôle des commandes externes — LOT 4
       #
       # Un script qui appelle une applet de commande inexistante n'echoue pas

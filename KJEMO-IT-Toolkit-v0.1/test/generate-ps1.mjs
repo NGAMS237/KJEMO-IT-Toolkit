@@ -1238,6 +1238,246 @@ for (const jeu of DATASETS) {
   if (ajout) Object.assign(jeu.values, ajout);
 }
 
+
+const VALEURS_POSTE = {
+  "apostrophe-ascii": {
+    "whJours": "12",
+    "whSeuilDisque": "20",
+    "whFormat": "JSON",
+    "invPortee": "Complet",
+    "invMaxLogiciels": "150",
+    "wiFormat": "JSON",
+    "audJours": "12",
+    "audConfirmation": "",
+    "micJours": "10",
+    "micFormat": "JSON",
+    "camJours": "12",
+    "camFormat": "JSON",
+    "btJours": "10",
+    "btFormat": "JSON",
+    "ecrJours": "12",
+    "ecrFormat": "JSON",
+    "drvAnciennete": "4",
+    "drvInclureMicrosoft": "Non",
+    "drvFormat": "JSON",
+    "wudJours": "10",
+    "wudFormat": "JSON",
+    "wurJournal": "C:\\Kjemo\\Journaux\\D'Adam",
+    "wurCible": "SoftwareDistribution",
+    "wurConfirmation": "",
+    "appChemin": "C:\\Program Files\\D'Adam\\o'brien.exe",
+    "appProcessus": "o'brien",
+    "appJours": "12",
+    "appFormat": "JSON",
+    "prcTop": "20",
+    "prcPid": "",
+    "prcConfirmation": ""
+  },
+  "apostrophe-typographique": {
+    "whJours": "48",
+    "whSeuilDisque": "25",
+    "whFormat": "HTML",
+    "invPortee": "Logiciels",
+    "invMaxLogiciels": "300",
+    "wiFormat": "HTML",
+    "audJours": "48",
+    "audConfirmation": "",
+    "micJours": "14",
+    "micFormat": "HTML",
+    "camJours": "48",
+    "camFormat": "HTML",
+    "btJours": "14",
+    "btFormat": "HTML",
+    "ecrJours": "48",
+    "ecrFormat": "HTML",
+    "drvAnciennete": "6",
+    "drvInclureMicrosoft": "Oui",
+    "drvFormat": "HTML",
+    "wudJours": "14",
+    "wudFormat": "HTML",
+    "wurJournal": "C:\\Kjemo\\Journaux\\D’Adam",
+    "wurCible": "Les deux",
+    "wurConfirmation": "",
+    "appChemin": "C:\\Program Files\\D’Adam\\app-d’arcy.exe",
+    "appProcessus": "appdarcy",
+    "appJours": "48",
+    "appFormat": "HTML",
+    "prcTop": "25",
+    "prcPid": "",
+    "prcConfirmation": ""
+  },
+  "dollar-backtick-guillemets": {
+    "whJours": "6",
+    "whSeuilDisque": "30",
+    "whFormat": "CSV",
+    "invPortee": "Materiel",
+    "invMaxLogiciels": "80",
+    "wiFormat": "CSV",
+    "audJours": "6",
+    "audConfirmation": "",
+    "micJours": "21",
+    "micFormat": "CSV",
+    "camJours": "6",
+    "camFormat": "CSV",
+    "btJours": "21",
+    "btFormat": "CSV",
+    "ecrJours": "6",
+    "ecrFormat": "CSV",
+    "drvAnciennete": "3",
+    "drvInclureMicrosoft": "Non",
+    "drvFormat": "CSV",
+    "wudJours": "21",
+    "wudFormat": "CSV",
+    "wurJournal": "C:\\Kjemo\\Journaux\\Test$sp",
+    "wurCible": "SoftwareDistribution",
+    "wurConfirmation": "",
+    "appChemin": "C:\\Outils\\Test$special\\outil`test.exe",
+    "appProcessus": "outiltest",
+    "appJours": "6",
+    "appFormat": "CSV",
+    "prcTop": "30",
+    "prcPid": "",
+    "prcConfirmation": ""
+  },
+  "espaces-et-accents": {
+    "whJours": "30",
+    "whSeuilDisque": "10",
+    "whFormat": "HTML",
+    "invPortee": "Complet",
+    "invMaxLogiciels": "250",
+    "wiFormat": "HTML",
+    "audJours": "30",
+    "audConfirmation": "",
+    "micJours": "45",
+    "micFormat": "HTML",
+    "camJours": "30",
+    "camFormat": "HTML",
+    "btJours": "45",
+    "btFormat": "HTML",
+    "ecrJours": "30",
+    "ecrFormat": "HTML",
+    "drvAnciennete": "8",
+    "drvInclureMicrosoft": "Non",
+    "drvFormat": "HTML",
+    "wudJours": "45",
+    "wudFormat": "HTML",
+    "wurJournal": "C:\\Kjemo\\Journaux\\Hôpital Bénin",
+    "wurCible": "Les deux",
+    "wurConfirmation": "",
+    "appChemin": "C:\\Program Files\\Hôpital Bénin\\gestion de santé.exe",
+    "appProcessus": "gestionsante",
+    "appJours": "30",
+    "appFormat": "HTML",
+    "prcTop": "12",
+    "prcPid": "",
+    "prcConfirmation": ""
+  },
+  "virgule-et-point-virgule": {
+    "whJours": "3",
+    "whSeuilDisque": "40",
+    "whFormat": "JSON",
+    "invPortee": "Logiciels",
+    "invMaxLogiciels": "500",
+    "wiFormat": "JSON",
+    "audJours": "3",
+    "audConfirmation": "",
+    "micJours": "7",
+    "micFormat": "JSON",
+    "camJours": "3",
+    "camFormat": "JSON",
+    "btJours": "7",
+    "btFormat": "JSON",
+    "ecrJours": "3",
+    "ecrFormat": "JSON",
+    "drvAnciennete": "10",
+    "drvInclureMicrosoft": "Oui",
+    "drvFormat": "JSON",
+    "wudJours": "7",
+    "wudFormat": "JSON",
+    "wurJournal": "C:\\Kjemo\\Journaux\\Suite, v2; bis",
+    "wurCible": "SoftwareDistribution",
+    "wurConfirmation": "",
+    "appChemin": "C:\\Outils\\Suite, Bureau; v2\\lanceur.exe",
+    "appProcessus": "lanceur",
+    "appJours": "3",
+    "appFormat": "JSON",
+    "prcTop": "8",
+    "prcPid": "",
+    "prcConfirmation": ""
+  },
+  "chemin-avec-apostrophe": {
+    "whJours": "14",
+    "whSeuilDisque": "35",
+    "whFormat": "CSV",
+    "invPortee": "Complet",
+    "invMaxLogiciels": "120",
+    "wiFormat": "CSV",
+    "audJours": "14",
+    "audConfirmation": "",
+    "micJours": "60",
+    "micFormat": "CSV",
+    "camJours": "14",
+    "camFormat": "CSV",
+    "btJours": "60",
+    "btFormat": "CSV",
+    "ecrJours": "14",
+    "ecrFormat": "CSV",
+    "drvAnciennete": "2",
+    "drvInclureMicrosoft": "Non",
+    "drvFormat": "CSV",
+    "wudJours": "60",
+    "wudFormat": "CSV",
+    "wurJournal": "C:\\Users\\D'Adam\\Journaux",
+    "wurCible": "Les deux",
+    "wurConfirmation": "",
+    "appChemin": "C:\\Users\\D'Adam\\AppData\\Local\\Programmes\\agent.exe",
+    "appProcessus": "agent",
+    "appJours": "14",
+    "appFormat": "CSV",
+    "prcTop": "35",
+    "prcPid": "",
+    "prcConfirmation": ""
+  },
+  "chemin-racine-c": {
+    "whJours": "90",
+    "whSeuilDisque": "5",
+    "whFormat": "Console",
+    "invPortee": "Materiel",
+    "invMaxLogiciels": "10",
+    "wiFormat": "Console",
+    "audJours": "90",
+    "audConfirmation": "",
+    "micJours": "88",
+    "micFormat": "Console",
+    "camJours": "90",
+    "camFormat": "Console",
+    "btJours": "89",
+    "btFormat": "Console",
+    "ecrJours": "90",
+    "ecrFormat": "Console",
+    "drvAnciennete": "15",
+    "drvInclureMicrosoft": "Oui",
+    "drvFormat": "Console",
+    "wudJours": "180",
+    "wudFormat": "Console",
+    "wurJournal": "C:\\Kjemo",
+    "wurCible": "SoftwareDistribution",
+    "wurConfirmation": "",
+    "appChemin": "C:\\",
+    "appProcessus": "",
+    "appJours": "90",
+    "appFormat": "Console",
+    "prcTop": "50",
+    "prcPid": "",
+    "prcConfirmation": ""
+  }
+};
+
+for (const jeu of DATASETS) {
+  const ajout = VALEURS_POSTE[jeu.name];
+  if (ajout) Object.assign(jeu.values, ajout);
+}
+
 const report = { generated: [], errors: [] };
 
 for (const tool of tools) {
@@ -1340,21 +1580,49 @@ if (ecarts.length === 0) {
 //   3. les 440 scripts antérieurs sont inchangés — c'est le contrôle
 //      d'identité ci-dessus qui l'établit, octet pour octet.
 // ---------------------------------------------------------------------------
-const VERSION_LOT5 = 'LOT 5 — Réseau avancé — 5.0.0';
+// Chaque lot annonce SA version. La correspondance se fait par la categorie
+// de l'outil, lue dans le catalogue : c'est elle qui dit de quel lot vient un
+// script, et non son nom de fichier.
+const VERSIONS_PAR_LOT = [
+  { lot: 'LOT 5', categorie: 'Réseau', version: 'LOT 5 — Réseau avancé — 5.0.0' },
+  { lot: 'LOT 6', categorie: 'Poste de travail Windows', version: 'LOT 6 — Poste de travail Windows — 6.0.0' },
+];
 const VERSION_HERITEE = 'LOT 2 — 2.0.0';
 
-const nouveauxAvecLot5 = [];
-const nouveauxAvecVersionHeritee = [];
-for (const f of nouveaux) {
-  const texte = readFileSync(resolve(OUT_DIR, f), 'utf-8');
-  if (texte.includes(VERSION_LOT5)) nouveauxAvecLot5.push(f);
-  if (texte.includes(VERSION_HERITEE)) nouveauxAvecVersionHeritee.push(f);
+// Les outils historiques vivent eux aussi dans ces categories (static-ip et
+// wifi-repair sous Reseau) : leurs scripts sont figes par la reference et ne
+// font pas partie des « nouveaux ».
+const versionAttendue = new Map();
+for (const t of tools) {
+  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category);
+  if (regle) versionAttendue.set(t.id, regle);
 }
 
 const problemesVersion = [];
-if (nouveauxAvecLot5.length !== nouveaux.length) {
+const comptesParLot = {};
+let nouveauxAvecVersionHeritee = [];
+let nouveauxSansRegle = [];
+
+for (const f of nouveaux) {
+  const idOutil = f.split('__')[0];
+  const texte = readFileSync(resolve(OUT_DIR, f), 'utf-8');
+  const regle = versionAttendue.get(idOutil);
+  if (!regle) { nouveauxSansRegle.push(f); continue; }
+  comptesParLot[regle.lot] = comptesParLot[regle.lot] || { attendus: 0, justes: 0 };
+  comptesParLot[regle.lot].attendus += 1;
+  if (texte.includes(regle.version)) comptesParLot[regle.lot].justes += 1;
+  if (texte.includes(VERSION_HERITEE)) nouveauxAvecVersionHeritee.push(f);
+}
+
+if (nouveauxSansRegle.length > 0) {
   problemesVersion.push(
-    `${nouveauxAvecLot5.length}/${nouveaux.length} nouveaux scripts portent « ${VERSION_LOT5} ».`);
+    `${nouveauxSansRegle.length} nouveau(x) script(s) sans regle de version : `
+    + nouveauxSansRegle.slice(0, 5).join(', '));
+}
+for (const [lot, c] of Object.entries(comptesParLot)) {
+  if (c.justes !== c.attendus) {
+    problemesVersion.push(`${lot} : ${c.justes}/${c.attendus} scripts portent la bonne version.`);
+  }
 }
 if (nouveauxAvecVersionHeritee.length !== 0) {
   problemesVersion.push(
@@ -1364,8 +1632,12 @@ if (nouveauxAvecVersionHeritee.length !== 0) {
 
 console.log('');
 if (problemesVersion.length === 0) {
-  console.log(`Version des scripts : ${nouveauxAvecLot5.length}/${nouveaux.length} nouveaux scripts `
-    + `portent « ${VERSION_LOT5} », et aucun ne porte « ${VERSION_HERITEE} ».`);
+  for (const regle of VERSIONS_PAR_LOT) {
+    const c = comptesParLot[regle.lot];
+    if (!c) continue;
+    console.log(`Version des scripts — ${regle.lot} : ${c.justes}/${c.attendus} portent « ${regle.version} ».`);
+  }
+  console.log(`Aucun des ${nouveaux.length} nouveaux scripts ne porte « ${VERSION_HERITEE} ».`);
 } else {
   console.error('Version des scripts : écart.');
   problemesVersion.forEach((p) => console.error(`  ${p}`));

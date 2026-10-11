@@ -5416,7 +5416,7 @@ export const outilDiagnosticWifiVpn = {
   id: 'wifi-vpn-diagnostic',
   icon: '◡',
   category: 'Réseau',
-  subcategory: 'Sans-fil et VPN',
+  subcategory: 'Wi-Fi et VPN',
   title: 'Diagnostiquer le Wi-Fi ou le VPN',
   risk: 'diagnostic',
   summary: 'Deux parcours séparés, parce qu’ils n’ont rien à voir : Wi-Fi (carte, service, profil, signal, canal, adressage) ou VPN (interfaces, routes, DNS, métriques, tunnel partagé observable). Aucune clé Wi-Fi, aucun secret VPN, aucun mot de passe n’est affiché.',

@@ -859,9 +859,22 @@ for (const t of tools) {
   assert(!/TODO|TBD|à compléter/i.test(tous), `${t.id} : aucun marqueur TODO`);
 }
 
-const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id);
-assert(lectureSeule.length === 1 && lectureSeule[0] === 'disk-scan',
-  `un seul outil en lecture seule, et c'est disk-scan (${lectureSeule.join(', ') || 'aucun'})`);
+// `reversible: false` est une exception, et elle se declare NOMMEMENT.
+//
+//   disk-scan     : une mise a la corbeille peut echouer sur un fichier
+//                   verrouille, et l'element supprime definitivement par
+//                   Windows ne revient pas.
+//   process-hung  : un processus arrete net n'enregistre rien. Les donnees
+//                   non sauvegardees sont perdues, sans recuperation. Le
+//                   pretendre reversible serait un mensonge, et la fiche
+//                   fait reposer sa confirmation ecrite exactement la-dessus.
+//
+// Aucun autre outil n'y a droit : toute addition a cette liste doit etre
+// justifiee dans le rapport du lot qui l'introduit.
+const IRREVERSIBLES_ADMIS = ['disk-scan', 'process-hung'];
+const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
+assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
+  `les seuls outils declares irreversibles sont ${IRREVERSIBLES_ADMIS.join(' et ')} (${lectureSeule.join(', ') || 'aucun'})`);
 
 // ---------------------------------------------------------------------------
 // AUDIT DE SÉCURITÉ — scanner appliqué à TOUTES les commandes, pas à des cas
@@ -1252,7 +1265,7 @@ const CLASSEMENT = {
   'ad-user':       ['Active Directory', 'Utilisateurs'],
   'shared-folder': ['Windows Server', 'Serveur de fichiers'],
   'second-dc':     ['Active Directory', 'Contrôleurs de domaine'],
-  'wifi-repair':   ['Réseau', 'Wi-Fi et sans-fil'],
+  'wifi-repair':   ['Réseau', 'Wi-Fi et VPN'],
   'gpo-password':  ['GPO', 'Sécurité des comptes'],
   'disk-scan':     ['Analyse et nettoyage des disques', 'Occupation de l\u2019espace'],
 };
@@ -1287,18 +1300,17 @@ assert(windowsServer.count >= 1 && tools.some((t) => t.id === 'shared-folder' &&
 assert(nomsVisibles.includes('Analyse et nettoyage des disques'),
   'Analyse et nettoyage des disques est visible : disk-scan l\u2019habite');
 
-// « Poste de travail Windows » est DÉCLARÉE mais encore VIDE : wifi-repair,
-// son unique occupant historique, a rejoint le Réseau — le Wi-Fi est du
-// réseau, même si une carte sans fil est matériellement un périphérique.
-// Une catégorie vide reste masquée : c'est la règle, et c'est ce que le LOT 6
-// viendra remplir.
-assert(!nomsVisibles.includes('Poste de travail Windows'),
-  'Poste de travail Windows est masquée tant qu\u2019aucun outil ne l\u2019habite');
-assert(attente2.map((c) => c.name).join(',') === 'Poste de travail Windows,Imprimantes,Linux',
-  `Poste de travail Windows, Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
+// « Poste de travail Windows » est habitée par le LOT 6 : elle est donc
+// visible. wifi-repair, son unique occupant historique, avait rejoint le
+// Réseau au correctif de catégories — le Wi-Fi est du réseau, même si une
+// carte sans fil est matériellement un périphérique.
+assert(nomsVisibles.includes('Poste de travail Windows'),
+  'Poste de travail Windows est visible : les assistants du LOT 6 l\u2019habitent');
+assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
+  `seules Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
 assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
   'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
-assert(vis2.length === 5 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
   `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
@@ -1315,7 +1327,8 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // Une fonction generate() par outil, et une sous-rubrique par outil, quel que
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs', 'dist/outils-reseau.mjs']
+const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs',
+  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -1560,12 +1573,14 @@ const outilsLot2 = outilsRecents.filter((t) => t.category === 'Windows Server');
 const outilsLot3 = outilsRecents.filter((t) => t.category === 'Active Directory');
 const outilsLot4 = outilsRecents.filter((t) => t.category === 'GPO');
 const outilsLot5 = outilsRecents.filter((t) => t.category === 'Réseau');
+const outilsLot6 = outilsRecents.filter((t) => t.category === 'Poste de travail Windows');
 
 assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
-assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length + outilsLot5.length,
-  `tout outil ajouté appartient à Windows Server, Active Directory, GPO ou Réseau (${outilsRecents.length})`);
+assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length
+  + outilsLot5.length + outilsLot6.length,
+  `tout outil ajouté appartient à Windows Server, Active Directory, GPO, Réseau ou Poste de travail Windows (${outilsRecents.length})`);
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
@@ -3176,7 +3191,7 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     ['arp-neighbor-diagnostic', 'Routage et voisinage'],
     ['dhcp-client-diagnostic', 'Routage et voisinage'],
     ['network-share-diagnostic', 'Accès aux ressources'],
-    ['wifi-vpn-diagnostic', 'Sans-fil et VPN'],
+    ['wifi-vpn-diagnostic', 'Wi-Fi et VPN'],
     ['ipv4-subnet-calculator', 'Calculs réseau'],
   ];
 
@@ -3186,7 +3201,9 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     assert(Boolean(o), `LOT 5 : l’assistant « ${id} » existe`);
     if (o) assert(o.subcategory === sr, `LOT 5 : « ${id} » est classé dans « ${sr} » (${o.subcategory})`);
   }
-  assert(tools.length === 77, `LOT 5 : le catalogue compte 77 outils (${tools.length})`);
+  // Le LOT 5 a porte le catalogue a 77 outils. Les lots suivants l'augmentent :
+  // ce qui lui appartient, c'est ses 22 assistants, pas le total du catalogue.
+  assert(tools.length >= 77, `le catalogue compte au moins les 77 outils d’après le LOT 5 (${tools.length})`);
   assert(outilsReseau.every((t) => t.category === 'Réseau'),
     'LOT 5 : aucune catégorie principale nouvelle — tout reste sous Réseau');
   for (const interdite of ['DNS', 'DHCP', 'VPN', 'Wi-Fi', 'SMB', 'Sécurité réseau']) {
@@ -3611,14 +3628,26 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
   {
     const presentes = sousRubriques(tools, 'Réseau').map((x) => x.name);
     for (const sr of ['Vue d’ensemble', 'Connectivité IP', 'Résolution de noms', 'Ports et protocoles',
-      'Routage et voisinage', 'Accès aux ressources', 'Sans-fil et VPN', 'Calculs réseau']) {
+      'Routage et voisinage', 'Accès aux ressources', 'Wi-Fi et VPN', 'Calculs réseau']) {
       assert(presentes.includes(sr), `sous-rubrique « ${sr} » proposée pour la catégorie Réseau`);
     }
     // Les deux sous-rubriques historiques de la catégorie Réseau.
     assert(presentes.includes('Adressage IP'),
       'sous-rubrique « Adressage IP » conservée : static-ip l’occupe depuis le LOT 1');
-    assert(presentes.includes('Wi-Fi et sans-fil'),
-      'sous-rubrique « Wi-Fi et sans-fil » proposée : wifi-repair y a été reclassé');
+    assert(presentes.includes('Wi-Fi et VPN'),
+      'sous-rubrique « Wi-Fi et VPN » proposée : wifi-repair et wifi-vpn-diagnostic y vivent ensemble');
+    // Les deux sous-rubriques concurrentes ont fusionné : « Wi-Fi et sans-fil »
+    // et « Sans-fil et VPN » désignaient la même chose, et les afficher côte à
+    // côte envoyait chercher le Wi-Fi à deux endroits.
+    for (const morte of ['Wi-Fi et sans-fil', 'Sans-fil et VPN']) {
+      assert(!presentes.includes(morte),
+        `sous-rubrique fusionnée, donc absente : « ${morte} »`);
+      assert(!tools.some((t) => t.subcategory === morte),
+        `aucun outil ne porte encore la sous-rubrique « ${morte} »`);
+    }
+    const wifi = tools.filter((t) => t.subcategory === 'Wi-Fi et VPN').map((t) => t.id).sort();
+    assert(wifi.join(',') === 'wifi-repair,wifi-vpn-diagnostic',
+      `« Wi-Fi et VPN » réunit wifi-repair et wifi-vpn-diagnostic (${wifi.join(', ')})`);
   }
   for (const outil of nouveauxReseau) {
     const idDe = (r) => (r && r.tool ? r.tool.id : r.id);
@@ -3635,6 +3664,382 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     assert(outil.sources.length >= 2, `${outil.id} : au moins deux sources officielles`);
     assert(outil.gui.length >= 4, `${outil.id} : au moins quatre étapes de méthode alternative`);
     assert(outil.checks.length >= 3, `${outil.id} : au moins trois contrôles annoncés`);
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Deux outils de lecture, partagés par la section LOT 6.
+// ---------------------------------------------------------------------------
+
+/**
+ * Tous les scripts qu'un outil sait produire avec ses valeurs par défaut :
+ * le mode Diagnostic, et le mode Appliquer quand il en a un et qu'il accepte
+ * de le générer. Un outil qui REFUSE de générer en Appliquer sans confirmation
+ * fait son travail : on ne l'y force pas.
+ */
+function scriptsDeLOutil(outil) {
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const sorties = [];
+  const modes = outil.fields.some((f) => f.id === 'mode') ? ['Diagnostic', 'Appliquer'] : [null];
+  for (const mode of modes) {
+    const valeurs = { ...base };
+    if (mode) valeurs.mode = mode;
+    try { sorties.push(outil.generate(valeurs)); } catch { /* refus de validation : voulu */ }
+  }
+  return sorties;
+}
+
+/**
+ * Le code d'un script, sans ses commentaires ni ses Write-Host.
+ *
+ * Les scripts de ce projet EXPLIQUENT ce qu'ils ne font pas — « ce script ne
+ * désactive ni Defender ni le pare-feu ». Juger ces explications comme du code
+ * ferait échouer le contrôle sur la phrase qui dit pourquoi l'interdit existe.
+ */
+function codeSeulLot6(script) {
+  return script.split('\n')
+    .filter((l) => !/^\s*#/.test(l))
+    .filter((l) => !/^\s*Write-Host\b/.test(l))
+    .join('\n');
+}
+
+// ===========================================================================
+// LOT 6 — Poste de travail Windows
+// ===========================================================================
+{
+  const outilsPoste = tools.filter((t) => t.category === 'Poste de travail Windows');
+  const VERSION_LOT6 = 'LOT 6 — Poste de travail Windows — 6.0.0';
+
+  section('LOT 6 — le catalogue Poste de travail Windows');
+
+  const SOUS_RUBRIQUES_LOT6 = [
+    'Diagnostic général',
+    'Périphériques',
+    'Mises à jour et applications',
+    'Performance et incidents',
+    'Comptes et services',
+    'Sécurité',
+    'Réparation Windows',
+    'Stockage et nettoyage',
+  ];
+
+  const ATTENDUS_LOT6A = [
+    ['workstation-health-report', 'Diagnostic général'],
+    ['workstation-inventory', 'Diagnostic général'],
+    ['audio-diagnostic', 'Périphériques'],
+    ['microphone-diagnostic', 'Périphériques'],
+    ['webcam-diagnostic', 'Périphériques'],
+    ['bluetooth-diagnostic', 'Périphériques'],
+    ['display-diagnostic', 'Périphériques'],
+    ['driver-audit', 'Périphériques'],
+    ['windows-update-diagnostic', 'Mises à jour et applications'],
+    ['windows-update-repair', 'Mises à jour et applications'],
+    ['application-wont-start', 'Mises à jour et applications'],
+    ['process-hung', 'Mises à jour et applications'],
+  ];
+
+  assert(outilsPoste.length >= ATTENDUS_LOT6A.length,
+    `LOT 6 : au moins les ${ATTENDUS_LOT6A.length} assistants du LOT 6A (${outilsPoste.length})`);
+  for (const [id, sr] of ATTENDUS_LOT6A) {
+    const o = outilsPoste.find((t) => t.id === id);
+    assert(Boolean(o), `LOT 6 : l’assistant « ${id} » existe`);
+    if (o) assert(o.subcategory === sr, `LOT 6 : « ${id} » est classé dans « ${sr} » (${o.subcategory})`);
+  }
+
+  // Aucune catégorie principale parasite : le sujet du LOT 6 est vaste, et la
+  // tentation d'ouvrir une catégorie par domaine est exactement ce que la
+  // feuille de route interdit.
+  for (const interdite of ['Audio', 'Pilotes', 'Windows Update', 'Defender',
+    'Stockage', 'Comptes', 'Services', 'Applications', 'Périphériques', 'Sécurité']) {
+    assert(!tools.some((t) => t.category === interdite),
+      `LOT 6 : aucune catégorie principale « ${interdite} » n’a été créée`);
+  }
+  // Et aucun sujet des lots futurs n'a été entamé.
+  for (const future of ['Linux', 'Samba', 'Azure', 'AWS', 'Imprimantes', 'Cloud']) {
+    assert(!outilsPoste.some((t) => t.subcategory === future),
+      `LOT 6 : aucune sous-rubrique « ${future} » — ces sujets appartiennent aux lots futurs`);
+  }
+
+  const srLot6 = new Set(outilsPoste.map((t) => t.subcategory));
+  for (const sr of srLot6) {
+    assert(SOUS_RUBRIQUES_LOT6.includes(sr),
+      `LOT 6 : la sous-rubrique « ${sr} » fait partie des huit prévues`);
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — métadonnée de version');
+
+  let lot6Essais = 0;
+  let lot6Justes = 0;
+  let lot6Herite = 0;
+  for (const outil of outilsPoste) {
+    for (const script of scriptsDeLOutil(outil)) {
+      lot6Essais += 1;
+      if (script.includes(`$KjemoVersion = '${VERSION_LOT6}'`)
+        && script.includes(`# Outil KJEMO : ${outil.id} — ${VERSION_LOT6}`)) lot6Justes += 1;
+      if (script.includes(VERSION_OUTILS)) lot6Herite += 1;
+    }
+  }
+  assert(lot6Essais >= outilsPoste.length,
+    `LOT 6 : ${lot6Essais} script(s) produits pour cette vérification`);
+  assert(lot6Justes === lot6Essais,
+    `LOT 6 : tous les scripts annoncent « ${VERSION_LOT6} », en-tête ET $KjemoVersion (${lot6Justes}/${lot6Essais})`);
+  assert(lot6Herite === 0,
+    `LOT 6 : aucun script du lot ne porte « ${VERSION_OUTILS} » (${lot6Herite})`);
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — la console reste ouverte, et la machine ne redémarre pas');
+
+  // Ce sont les deux erreurs que la feuille de route nomme explicitement, et
+  // elles viennent d'incidents constatés : un script de nettoyage qui ferme la
+  // fenêtre emporte le message d'erreur avec elle.
+  const FERMETURE = [
+    [/^\s*exit\b/mi, 'un « exit » en début de ligne, qui fermerait la session interactive'],
+    [/\[Environment\]::Exit/i, '[Environment]::Exit, qui tue le processus hôte'],
+    [/\bRestart-Computer\b/i, 'un redémarrage automatique de la machine'],
+    [/\bStop-Computer\b/i, 'un arrêt automatique de la machine'],
+    [/\bshutdown(\.exe)?\b/i, 'un appel à shutdown.exe'],
+    [/\$Host\.SetShouldExit/i, '$Host.SetShouldExit, qui ferme la console'],
+    [/\bLogoff(\.exe)?\b/i, 'une fermeture de session'],
+  ];
+  // Contre-épreuve du jeu de motifs : il doit reconnaître un script fautif.
+  const FAUTIFS_FERMETURE = [
+    'Write-Host "fini"\nexit 0',
+    'Restart-Computer',
+    'shutdown.exe /r /t 0',
+    '[Environment]::Exit(1)',
+    '$Host.SetShouldExit(1)',
+  ];
+  for (const fautif of FAUTIFS_FERMETURE) {
+    assert(FERMETURE.some(([m]) => m.test(fautif)),
+      `contre-épreuve — le jeu de motifs reconnaît « ${fautif.split('\n').pop()} »`);
+  }
+
+  for (const outil of outilsPoste) {
+    for (const script of scriptsDeLOutil(outil)) {
+      for (const [motif, nom] of FERMETURE) {
+        assert(!motif.test(script), `${outil.id} : aucun ${nom}`);
+      }
+      assert(/ne ferme pas votre console/i.test(script),
+        `${outil.id} : le script dit explicitement qu’il ne ferme pas la console`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — le disque C: et les chemins');
+
+  const DANGERS_CHEMIN = [
+    [/Remove-Item[^\n]*-Recurse[^\n]*-Force/i, 'Remove-Item -Recurse -Force'],
+    [/Remove-Item[^\n]*\*[^\n]*-Recurse/i, 'une suppression récursive avec joker'],
+    [/Remove-Item\s+['"]?[A-Za-z]:\\?['"]?\s*$/im, 'une suppression visant une racine de volume'],
+    [/-LiteralPath\s+['"][A-Za-z]:\\?['"]/i, 'une opération visant directement une racine de volume'],
+    [/\bformat(\.com)?\s+[A-Za-z]:/i, 'un formatage'],
+    [/\bdel\s+\/s\b/i, 'un del /s'],
+    [/\brd\s+\/s\b/i, 'un rd /s'],
+  ];
+  const FAUTIFS_CHEMIN = [
+    'Remove-Item -LiteralPath $cible -Recurse -Force',
+    'Remove-Item C:\\Temp\\* -Recurse',
+    'format C:',
+    'del /s /q C:\\Temp',
+  ];
+  for (const fautif of FAUTIFS_CHEMIN) {
+    assert(DANGERS_CHEMIN.some(([m]) => m.test(fautif)),
+      `contre-épreuve — le jeu de motifs reconnaît « ${fautif} »`);
+  }
+
+  for (const outil of outilsPoste) {
+    for (const script of scriptsDeLOutil(outil)) {
+      const code = codeSeulLot6(script);
+      for (const [motif, nom] of DANGERS_CHEMIN) {
+        assert(!motif.test(code), `${outil.id} : aucun ${nom}`);
+      }
+    }
+  }
+
+  // Tout assistant qui reçoit un chemin doit passer par le gardien, et le
+  // gardien doit refuser les quatre formes dangereuses.
+  for (const outil of outilsPoste) {
+    const champsChemin = outil.fields.filter((f) => /chemin|dossier|répertoire/i.test(f.label));
+    if (champsChemin.length === 0) continue;
+    for (const script of scriptsDeLOutil(outil)) {
+      assert(/function Test-KjemoCheminSur/.test(script),
+        `${outil.id} : porte un chemin, donc embarque le gardien de chemin`);
+      assert(/Test-KjemoCheminSur -Chemin/.test(script),
+        `${outil.id} : le gardien est réellement appelé, pas seulement défini`);
+    }
+    // Et la validation du formulaire refuse ce qui ne doit pas passer.
+    for (const champ of champsChemin) {
+      const defauts = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      for (const mauvais of ['', '   ', 'Temp\\relatif']) {
+        const errs = outil.validate({ ...defauts, [champ.id]: mauvais });
+        assert(Boolean(errs[champ.id]),
+          `${outil.id} : le champ « ${champ.id} » refuse « ${mauvais || '(vide)'} »`);
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — verrou d’application sur les assistants modifiants');
+
+  const MODIFIANTS_LOT6 = ['audio-diagnostic', 'windows-update-repair', 'process-hung'];
+  for (const id of MODIFIANTS_LOT6) {
+    const outil = outilsPoste.find((t) => t.id === id);
+    assert(Boolean(outil), `LOT 6 : l’assistant modifiant « ${id} » existe`);
+    if (!outil) continue;
+
+    const champMode6 = outil.fields.find((f) => f.id === 'mode');
+    assert(champMode6 && champMode6.default === 'Diagnostic',
+      `${id} : part en mode Diagnostic`);
+
+    // Le script porte un verrou nommé, pas une suite de conditions éparpillées.
+    for (const script of scriptsDeLOutil(outil)) {
+      assert(/\$conditionsAppliquer\s*=/.test(script),
+        `${id} : le script construit un verrou explicite $conditionsAppliquer`);
+      assert(/-not \$conditionsAppliquer/.test(script),
+        `${id} : le verrou est réellement testé avant d’agir`);
+      assert(/-Etat 'IGNORE'/.test(script),
+        `${id} : un échec de condition porte IGNORE, pas un silence`);
+      assert(/-Etat 'PROBLEME'/.test(script),
+        `${id} : un échec de condition porte PROBLEME et nomme ce qui manque`);
+      assert(/SERAIT BLOQUE|BLOQUE/i.test(script),
+        `${id} : la simulation dit que l’action serait bloquée`);
+    }
+  }
+
+  // Une confirmation écrite ne s’obtient pas par hasard : le formulaire la
+  // refuse tant que la phrase exacte n’est pas retapée.
+  const CONFIRMATIONS = [
+    ['audio-diagnostic', 'audConfirmation', 'JE REDEMARRE LE SERVICE AUDIO'],
+    ['windows-update-repair', 'wurConfirmation', 'JE REINITIALISE L AFFICHAGE DE L HISTORIQUE'],
+    ['process-hung', 'prcConfirmation', 'JE PERDS LES DONNEES NON ENREGISTREES'],
+  ];
+  for (const [id, champ, phrase] of CONFIRMATIONS) {
+    const outil = outilsPoste.find((t) => t.id === id);
+    if (!outil) continue;
+    const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    if (id === 'process-hung') base.prcPid = '4242';
+    // Vide : refusé.
+    assert(Boolean(outil.validate({ ...base, mode: 'Appliquer', [champ]: '' })[champ]),
+      `${id} : le mode Appliquer refuse une confirmation vide`);
+    // Approchante : refusée aussi. Une confirmation qui tolère les à-peu-près
+    // n'est plus une confirmation.
+    for (const approchant of [phrase.toLowerCase(), phrase + ' !', phrase.slice(0, -1), 'oui']) {
+      assert(Boolean(outil.validate({ ...base, mode: 'Appliquer', [champ]: approchant })[champ]),
+        `${id} : « ${approchant.slice(0, 28)}… » n’est pas accepté comme confirmation`);
+    }
+    // Exacte : acceptée.
+    assert(!outil.validate({ ...base, mode: 'Appliquer', [champ]: phrase })[champ],
+      `${id} : la phrase exacte est acceptée`);
+    // Et en mode Diagnostic, elle n'est pas exigée.
+    assert(!outil.validate({ ...base, mode: 'Diagnostic', [champ]: '' })[champ],
+      `${id} : le mode Diagnostic n’exige aucune confirmation`);
+  }
+
+  // process-hung : les PID du noyau sont refusés par la validation, avant même
+  // que le script existe.
+  {
+    const outil = outilsPoste.find((t) => t.id === 'process-hung');
+    if (outil) {
+      const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      const complet = { ...base, mode: 'Appliquer', prcConfirmation: 'JE PERDS LES DONNEES NON ENREGISTREES' };
+      for (const interdit of ['0', '1', '2', '3', '4']) {
+        assert(Boolean(outil.validate({ ...complet, prcPid: interdit }).prcPid),
+          `process-hung : le PID ${interdit} est refusé (noyau et système)`);
+      }
+      assert(!outil.validate({ ...complet, prcPid: '4242' }).prcPid,
+        'process-hung : un PID ordinaire est accepté');
+      assert(Boolean(outil.validate({ ...complet, prcPid: 'chrome' }).prcPid),
+        'process-hung : un NOM est refusé — un nom peut désigner douze processus');
+      assert(Boolean(outil.validate({ ...complet, prcPid: '' }).prcPid),
+        'process-hung : le mode Appliquer exige un PID');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — aucun secret, aucune protection désactivée');
+
+  const INTERDITS_LOT6 = [
+    [/Set-MpPreference[^\n]*-Disable\w*\s+\$true/i, 'désactivation d’une protection Defender'],
+    [/Add-MpPreference[^\n]*-Exclusion/i, 'ajout automatique d’une exclusion Defender'],
+    [/Set-NetFirewallProfile[^\n]*-Enabled\s+False/i, 'désactivation du pare-feu'],
+    [/Remove-LocalUser/i, 'suppression d’un compte local'],
+    [/Remove-CimInstance[^\n]*Win32_UserProfile/i, 'suppression d’un profil utilisateur'],
+    [/Set-Service[^\n]*-StartupType\s+Disabled/i, 'désactivation d’un service'],
+    [/\bcipher\s+\/w/i, 'effacement de l’espace libre'],
+    [/ProductKey|DigitalProductId/i, 'lecture d’une clé de produit'],
+    [/-Confirm\s*:\s*\$false/i, '-Confirm:$false'],
+    [/(^|\s)-Force\b/i, '-Force'],
+  ];
+  const FAUTIFS_LOT6 = [
+    'Set-MpPreference -DisableRealtimeMonitoring $true',
+    'Add-MpPreference -ExclusionPath C:\\Temp',
+    'Set-NetFirewallProfile -Profile Domain -Enabled False',
+    'Remove-LocalUser -Name invite',
+    'Get-ItemProperty ... DigitalProductId',
+    'Stop-Service wuauserv -Force',
+  ];
+  for (const fautif of FAUTIFS_LOT6) {
+    assert(INTERDITS_LOT6.some(([m]) => m.test(fautif)),
+      `contre-épreuve — le jeu de motifs reconnaît « ${fautif.slice(0, 44)}… »`);
+  }
+  for (const outil of outilsPoste) {
+    for (const script of scriptsDeLOutil(outil)) {
+      const code = codeSeulLot6(script);
+      for (const [motif, nom] of INTERDITS_LOT6) {
+        assert(!motif.test(code), `${outil.id} : aucun ${nom}`);
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — l’annulation et la vérification ne sont pas décoratives');
+
+  for (const outil of outilsPoste) {
+    assert(outil.rollback.summary.length > 60,
+      `${outil.id} : la procédure d’annulation explique vraiment ce qu’elle rend`);
+    assert(outil.rollback.diagnostic.length > 30,
+      `${outil.id} : l’annulation porte une commande de diagnostic`);
+    assert(outil.rollback.command.length > 30,
+      `${outil.id} : l’annulation porte une commande`);
+    assert(outil.verifyAfter.length >= 3,
+      `${outil.id} : au moins trois vérifications après exécution`);
+    assert(outil.checks.length >= 3,
+      `${outil.id} : au moins trois contrôles annoncés`);
+    assert(outil.gui.length >= 4,
+      `${outil.id} : au moins quatre étapes de méthode graphique`);
+    assert(outil.keywords.length >= 8,
+      `${outil.id} : au moins huit mots-clés pour la recherche`);
+    assert(outil.sources.length >= 3,
+      `${outil.id} : au moins trois sources officielles`);
+    // Et la fiche ne promet pas une exécution depuis le navigateur.
+    const texteFiche = [outil.summary, outil.rollback.summary, ...outil.checks, ...outil.verifyAfter].join(' ');
+    assert(!/exécute (le script|la commande) (depuis|dans) (le site|le navigateur)/i.test(texteFiche),
+      `${outil.id} : la fiche ne promet aucune exécution depuis le navigateur`);
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 6 — recherche, sous-rubriques et routes directes');
+
+  {
+    const presentes = sousRubriques(tools, 'Poste de travail Windows').map((x) => x.name);
+    for (const sr of srLot6) {
+      assert(presentes.includes(sr),
+        `sous-rubrique « ${sr} » proposée pour la catégorie Poste de travail Windows`);
+    }
+  }
+  for (const outil of outilsPoste) {
+    const idDe = (r) => (r && r.tool ? r.tool.id : r.id);
+    assert(searchTools(outil.title).some((r) => idDe(r) === outil.id),
+      `recherche par titre — « ${outil.title} » retrouve ${outil.id}`);
+    assert(searchTools('', 'Poste de travail Windows').some((r) => idDe(r) === outil.id),
+      `filtre par catégorie — Poste de travail Windows contient ${outil.id}`);
+    assert(/^[a-z][a-z0-9-]*[a-z0-9]$/.test(outil.id),
+      `route directe — « ${outil.id} » est un identifiant d’URL valide`);
+    const derniere = outil.commonErrors[outil.commonErrors.length - 1];
+    assert(searchTools(derniere.message).some((r) => idDe(r) === outil.id),
+      `recherche par message d’erreur — « ${derniere.message.slice(0, 40)}… » retrouve ${outil.id}`);
   }
 }
 
