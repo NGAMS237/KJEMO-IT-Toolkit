@@ -25,6 +25,7 @@ import { validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName } from './validateurs.mjs';
 import { toolsServeur } from './outils-serveur.mjs';
 import { toolsAd } from './outils-ad.mjs';
+import { toolsGpo } from './outils-gpo.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1568,4 +1569,5 @@ for (const outil of toolsServeur) tools.push(outil);
 // ici le catalogue unique. L'ordre reste stable, lot après lot.
 // ---------------------------------------------------------------------------
 for (const outil of toolsAd) tools.push(outil);
+for (const outil of toolsGpo) tools.push(outil);
 

@@ -1308,7 +1308,7 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // Une fonction generate() par outil, et une sous-rubrique par outil, quel que
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs']
+const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -1537,12 +1537,13 @@ const SOUS_RUBRIQUES_LOT2 = [
 const outilsRecents = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
 const outilsLot2 = outilsRecents.filter((t) => t.category === 'Windows Server');
 const outilsLot3 = outilsRecents.filter((t) => t.category === 'Active Directory');
+const outilsLot4 = outilsRecents.filter((t) => t.category === 'GPO');
 
 assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
-assert(outilsRecents.length === outilsLot2.length + outilsLot3.length,
-  `tout outil ajouté appartient à Windows Server ou à Active Directory (${outilsRecents.length})`);
+assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length,
+  `tout outil ajouté appartient à Windows Server, Active Directory ou GPO (${outilsRecents.length})`);
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
@@ -1909,12 +1910,32 @@ const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.js
 // 22b4ead. Le compte doit suivre le catalogue, jamais un nombre figé à la main.
 assert(baseline.count === Object.keys(baseline.sha256).length,
   `la référence est cohérente : ${baseline.count} empreintes annoncées et présentes`);
-assert(baseline.count >= 176,
-  `la référence couvre au moins les 176 scripts existants (${baseline.count})`);
+assert(baseline.count >= 296,
+  `la référence couvre au moins les 296 scripts existants (${baseline.count})`);
 assert(/^[0-9a-f]{40}$/.test(baseline.baseSha),
   'la référence est ancrée à un SHA de commit complet');
-assert(baseline.baseShaPrecedent === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
-  'la référence conserve la trace de l\u2019ancrage précédent (LOT 1B)');
+
+// La référence grandit lot après lot, et elle garde la trace de chaque
+// ancrage. Sans cette chaîne, régénérer la référence après avoir cassé
+// quelque chose la rendrait « verte » sans que rien ne proteste.
+assert(Array.isArray(baseline.ancrages) && baseline.ancrages.length >= 3,
+  `la référence conserve sa chaîne d’ancrages (${(baseline.ancrages ?? []).length})`);
+for (const a of baseline.ancrages ?? []) {
+  assert(/^[0-9a-f]{40}$/.test(a.sha), `ancrage ${a.lot} : SHA de commit complet`);
+  assert(Number.isInteger(a.count) && a.count > 0, `ancrage ${a.lot} : nombre de scripts connu`);
+}
+const shaAncres = (baseline.ancrages ?? []).map((a) => a.sha);
+assert(shaAncres.includes('22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6'),
+  'la chaîne remonte jusqu’à l’ancrage du LOT 1B');
+assert(shaAncres.includes('a84a85c60690bcd38a0e08e4c2b6bfb3fe786b8b'),
+  'la chaîne passe par l’ancrage du LOT 2');
+assert(shaAncres[shaAncres.length - 1] === baseline.baseSha,
+  'le dernier ancrage de la chaîne est celui auquel la référence est figée');
+const comptes = (baseline.ancrages ?? []).map((a) => a.count);
+assert(comptes.every((c, i) => i === 0 || c >= comptes[i - 1]),
+  `la couverture ne recule jamais d’un ancrage au suivant (${comptes.join(' → ')})`);
+assert(baseline.baseShaPrecedent === 'a84a85c60690bcd38a0e08e4c2b6bfb3fe786b8b',
+  'la référence conserve la trace de l\u2019ancrage précédent (LOT 2)');
 const outilsCouverts = new Set(Object.keys(baseline.sha256).map((f) => f.split('__')[0]));
 assert([...outilsCouverts].every((id) => tools.some((t) => t.id === id)),
   'chaque outil de la référence existe encore dans le catalogue');
@@ -2479,6 +2500,409 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
   assert(/sauvegarde-bloquante/.test(pkg.scripts.test ?? ''),
     'npm test lance la contre-épreuve d’exécution');
+}
+
+// ===========================================================================
+// LOT 4 — stratégies de groupe avancées
+// ===========================================================================
+{
+  const V = await import('../dist/validateurs.mjs');
+  const outilsGpo = tools.filter((t) => t.category === 'GPO' && t.id !== 'gpo-password');
+
+  section('LOT 4 — le catalogue GPO');
+
+  const ATTENDUS = [
+    ['gpo-inventory-report', 'Diagnostic et inventaire'],
+    ['gpo-health-report', 'Diagnostic et inventaire'],
+    ['gpo-resultant-set', 'Diagnostic et inventaire'],
+    ['gpo-refresh-diagnostic', 'Diagnostic et inventaire'],
+    ['gpo-create-link', 'Création, liens et ciblage'],
+    ['gpo-link-audit', 'Création, liens et ciblage'],
+    ['gpo-security-filter', 'Création, liens et ciblage'],
+    ['gpo-wmi-filter-readiness', 'Création, liens et ciblage'],
+    ['gpo-drive-mapping', 'Environnement utilisateur'],
+    ['gpo-printer-deployment', 'Environnement utilisateur'],
+    ['gpo-logon-startup-scripts', 'Environnement utilisateur'],
+    ['gpo-folder-redirection', 'Environnement utilisateur'],
+    ['gpo-session-desktop', 'Sécurité des postes et serveurs'],
+    ['gpo-device-restrictions', 'Sécurité des postes et serveurs'],
+    ['gpo-firewall-defender', 'Sécurité des postes et serveurs'],
+    ['gpo-windows-update-services', 'Sécurité des postes et serveurs'],
+    ['gpo-software-shortcuts-browser', 'Déploiement et maintenance'],
+    ['gpo-backup-restore-compare', 'Déploiement et maintenance'],
+  ];
+
+  assert(outilsGpo.length === 18, `LOT 4 : dix-huit assistants GPO ajoutés (${outilsGpo.length})`);
+  for (const [id, sousRubrique] of ATTENDUS) {
+    const o = outilsGpo.find((t) => t.id === id);
+    assert(Boolean(o), `LOT 4 : l’assistant « ${id} » existe`);
+    if (o) assert(o.subcategory === sousRubrique,
+      `LOT 4 : « ${id} » est classé dans « ${sousRubrique} » (${o.subcategory})`);
+  }
+  assert(tools.filter((t) => t.id === 'gpo-password').length === 1,
+    'LOT 4 : l’assistant gpo-password du LOT 1 n’est pas dupliqué');
+  const ids = tools.map((t) => t.id);
+  assert(new Set(ids).size === ids.length, 'LOT 4 : aucun identifiant d’outil en double');
+  assert(tools.length === 55, `LOT 4 : le catalogue compte 55 outils (${tools.length})`);
+
+  // -------------------------------------------------------------------------
+  section('LOT 4 — validateurs : ce qui passe et ce qui est refusé');
+
+  const VALIDES = [
+    ['validerNomGpo', V.validerNomGpo, ['GPO-Medecins', 'GPO Comptabilité — Élévation', "GPO-D'Adam"]],
+    ['validerPorteeGpo', V.validerPorteeGpo, ['Ordinateur', 'Utilisateur', 'Les deux']],
+    ['validerOrdreLien', V.validerOrdreLien, ['1', '42', '999']],
+    ['validerCheminSysvol', V.validerCheminSysvol,
+      ['\\\\hopitalbn.lan\\SYSVOL\\hopitalbn.lan\\scripts', '\\\\hopitalbn.lan\\NETLOGON']],
+    ['validerNomScriptGpo', V.validerNomScriptGpo, ['connexion.ps1', 'demarrage.cmd', 'ancien.vbs']],
+    ['validerRequeteWql', V.validerRequeteWql,
+      ['SELECT * FROM Win32_OperatingSystem', 'SELECT * FROM Win32_ComputerSystem WHERE Model LIKE "%Latitude%"']],
+    ['validerEspaceNomsWmi', V.validerEspaceNomsWmi, ['root\\CIMv2', 'root\\Microsoft\\Windows\\Storage']],
+    ['validerMinutes', (x) => V.validerMinutes(x, { min: 1, max: 240 }), ['1', '15', '240']],
+    ['validerHeure', V.validerHeure, ['0', '7', '23']],
+    ['validerUrlHttps', V.validerUrlHttps,
+      ['https://intranet.hopitalbn.lan/accueil', 'https://intranet.hopitalbn.lan:8443/portail']],
+  ];
+  for (const [nom, fn, valeurs] of VALIDES) {
+    for (const v of valeurs) {
+      const r = fn(v);
+      assert(r.ok, `${nom} accepte « ${v} »`, r.error ?? '');
+    }
+  }
+
+  const REFUSES = [
+    ['validerNomGpo', V.validerNomGpo, ['', 'GPO/Medecins', 'GPO:Medecins', 'GPO*Medecins', 'GPO"Medecins', 'GPO|Medecins', 'GPO<Medecins']],
+    ['validerPorteeGpo', V.validerPorteeGpo, ['', 'ordinateur', 'Les Deux', 'Site']],
+    ['validerOrdreLien', V.validerOrdreLien, ['0', '1000', '-1', 'deux', '']],
+    ['validerCheminSysvol', V.validerCheminSysvol,
+      ['', 'C:\\scripts', '\\\\srv-fichiers\\Partage\\scripts']],
+    ['validerNomScriptGpo', V.validerNomScriptGpo,
+      ['', 'connexion.exe', 'connexion', '..\\connexion.ps1', 'sous\\dossier\\connexion.ps1']],
+    ['validerRequeteWql', V.validerRequeteWql,
+      ['', 'DELETE FROM Win32_OperatingSystem', 'UPDATE Win32_Service SET x = 1',
+       'DROP TABLE x', 'SELECT * FROM Win32_Service; SELECT * FROM Win32_Process',
+       'SELECT * FROM', 'Win32_OperatingSystem']],
+    ['validerEspaceNomsWmi', V.validerEspaceNomsWmi, ['', 'root/CIMv2', '2root', 'root\\CIM v2']],
+    ['validerMinutes', (x) => V.validerMinutes(x, { min: 1, max: 240 }), ['0', '241', '', 'quinze', '15.5']],
+    ['validerHeure', V.validerHeure, ['-1', '24', '', 'midi']],
+    ['validerUrlHttps', V.validerUrlHttps,
+      ['', 'http://intranet.hopitalbn.lan', 'javascript:alert(1)', 'data:text/html,x',
+       'https://intra net.lan', 'https://intranet.lan/"', "https://intranet.lan/'"]],
+  ];
+  for (const [nom, fn, valeurs] of REFUSES) {
+    for (const v of valeurs) {
+      assert(!fn(v).ok, `${nom} refuse « ${v} »`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 4 — contre-épreuve : les deux stratégies par défaut sont intouchables');
+
+  assert(Array.isArray(V.GPO_INTOUCHABLES) && V.GPO_INTOUCHABLES.length === 2,
+    'deux stratégies sont déclarées intouchables');
+  const DEFAUTS = [
+    'Default Domain Policy', 'default domain policy', 'DEFAULT DOMAIN POLICY',
+    '  Default Domain Policy  ', 'Défault Domain Policy',
+    'Default Domain Controllers Policy', 'default domain controllers policy',
+    'Défault Dömain Controllers Pölicy',
+  ];
+  for (const nom of DEFAUTS) {
+    assert(V.refuseGpoParDefaut(nom).ok === false,
+      `contre-épreuve — « ${nom} » est reconnue comme stratégie par défaut`);
+    assert(!V.validerNomGpoModifiable(nom).ok,
+      `contre-épreuve — « ${nom} » est refusée comme cible modifiable`);
+  }
+  assert(V.validerNomGpoModifiable('GPO-Medecins').ok,
+    'un nom ordinaire reste accepté comme cible modifiable');
+
+  // Chaque assistant GPO qui modifie refuse une stratégie par défaut.
+  for (const outil of outilsGpo) {
+    const champNom = outil.fields.find((f) => /NomGpo$/.test(f.id));
+    if (!champNom) continue;
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    valeurs[champNom.id] = 'Default Domain Policy';
+    const errors = outil.validate(valeurs);
+    assert(Boolean(errors[champNom.id]),
+      `contre-épreuve — ${outil.id} refuse « Default Domain Policy » dans ${champNom.id}`);
+    let leve = false;
+    try { outil.generate(valeurs); } catch { leve = true; }
+    assert(leve, `contre-épreuve — ${outil.id} ne produit aucun script pour une stratégie par défaut`);
+  }
+  // Le garde-fou vit aussi dans le script lui-même, pas seulement dans le
+  // formulaire — pour tout assistant qui désigne une stratégie cible. Les
+  // assistants qui n'en désignent aucune (inventaire, gpupdate, pare-feu)
+  // n'ont rien à garder : ils ne touchent aucune GPO nommée.
+  let gardesScripts = 0;
+  for (const outil of outilsGpo) {
+    if (!outil.fields.some((f) => /NomGpo$/.test(f.id))) continue;
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    const script = outil.generate(valeurs);
+    assert(/Default Domain Policy/.test(script) && /Default Domain Controllers Policy/.test(script),
+      `${outil.id} : le script nomme lui-même les deux stratégies qu’il refuse`);
+    gardesScripts++;
+  }
+  assert(gardesScripts >= 7,
+    `le garde-fou est présent dans les scripts de tous les assistants à GPO nommée (${gardesScripts})`);
+
+  // -------------------------------------------------------------------------
+  section('LOT 4 — règles de sécurité sur les scripts générés');
+
+  const INTERDITS = [
+    [/-Confirm\s*:\s*\$false/i, '-Confirm:$false'],
+    [/Invoke-Expression/i, 'Invoke-Expression'],
+    [/\bRemove-GPO\b/i, 'Remove-GPO (suppression de stratégie)'],
+    [/\bRemove-GPLink\b/i, 'Remove-GPLink (suppression de lien)'],
+    [/Set-ExecutionPolicy/i, 'Set-ExecutionPolicy'],
+    [/Set-MpPreference\s+-DisableRealtimeMonitoring\s+\$true/i, 'désactivation de Defender'],
+    [/Set-NetFirewallProfile[^\n]*-Enabled\s+False/i, 'désactivation du pare-feu'],
+    [/Restart-Computer/i, 'redémarrage automatique'],
+    [/\bshutdown(\.exe)?\b/i, 'arrêt automatique'],
+    [/gpupdate[^\n]*\/boot/i, 'gpupdate /boot'],
+    [/gpupdate[^\n]*\/logoff/i, 'gpupdate /logoff'],
+    [/ConvertTo-SecureString/i, 'secret en clair'],
+    [/(^|\s)-AsPlainText\b/i, 'secret en clair'],
+  ];
+  for (const outil of outilsGpo) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    const diag = outil.generate(valeurs);
+    const champMode = outil.fields.find((f) => f.id === 'mode');
+    const scripts = [['Diagnostic', diag]];
+    if (champMode) {
+      const vApp = { ...valeurs, mode: 'Appliquer' };
+      // Certaines fiches demandent une confirmation écrite avant d'appliquer.
+      const champConfirmation = outil.fields.find((f) => /Confirmation$/.test(f.id));
+      const champNomGpo = outil.fields.find((f) => /NomGpo$/.test(f.id));
+      if (champConfirmation && champNomGpo) vApp[champConfirmation.id] = vApp[champNomGpo.id];
+      let sApp = null;
+      try { sApp = outil.generate(vApp); } catch (e) { sApp = null; }
+      assert(sApp !== null, `${outil.id} : generate() fonctionne aussi en mode Appliquer`);
+      if (sApp) scripts.push(['Appliquer', sApp]);
+    }
+    for (const [mode, script] of scripts) {
+      for (const [motif, nom] of INTERDITS) {
+        assert(!motif.test(script), `${outil.id} (${mode}) : aucun ${nom}`);
+      }
+      assert(/#Requires -Version 5\.1/.test(script),
+        `${outil.id} (${mode}) : en-tête #Requires -Version 5.1`);
+      assert(!/[\u2018\u2019]/.test(script),
+        `${outil.id} (${mode}) : aucune apostrophe typographique littérale`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 4 — contre-épreuves : les contrôles détectent-ils vraiment ?');
+
+  // 1. Un script historique modifié doit être détecté par la référence.
+  {
+    const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.json'), 'utf8'));
+    const noms = Object.keys(baseline.sha256);
+    const unNom = noms[0];
+    const empreinteFaussee = baseline.sha256[unNom].replace(/^./, (c) => (c === 'a' ? 'b' : 'a'));
+    assert(empreinteFaussee !== baseline.sha256[unNom],
+      `contre-épreuve — une empreinte altérée diffère de la référence (${unNom})`);
+    assert(noms.length === 296,
+      `contre-épreuve — la référence fige bien les 296 scripts d’avant le LOT 4 (${noms.length})`);
+    assert(baseline.ancrages.length >= 3 && baseline.ancrages[baseline.ancrages.length - 1].count === 296,
+      'contre-épreuve — le dernier ancrage de la chaîne couvre 296 scripts');
+  }
+
+  // 2. Retirer une validation doit se voir : un outil sans validate() rejetterait rien.
+  {
+    const outilSansValidation = { fields: [{ id: 'x', label: 'X', default: '' }], validate() { return {}; } };
+    const errors = outilSansValidation.validate({ x: '' });
+    assert(Object.keys(errors).length === 0,
+      'contre-épreuve — un validate() vide ne signale rien : c’est bien ce que le contrôle doit détecter');
+    // Le contrôle réel : chaque champ libre obligatoire refuse le vide.
+    let champsControles = 0;
+    for (const outil of outilsGpo) {
+      for (const f of outil.fields) {
+        if (f.type === 'select' || /facultatif/i.test(f.label)) continue;
+        const valeurs = Object.fromEntries(outil.fields.map((g) => [g.id, String(g.default ?? '')]));
+        valeurs[f.id] = '';
+        assert(Boolean(outil.validate(valeurs)[f.id]),
+          `contre-épreuve — ${outil.id} : le champ obligatoire ${f.id} refuse une valeur vide`);
+        champsControles++;
+      }
+    }
+    assert(champsControles >= 40,
+      `contre-épreuve — le contrôle du vide porte sur un nombre significatif de champs (${champsControles})`);
+  }
+
+  // 3 et 4. -Confirm:$false et -Force non justifié doivent être repérés.
+  {
+    const fautif = {
+      id: 'faux-outil', rollback: {
+        summary: 's', diagnostic: 'Get-GPO -All',
+        command: 'Remove-GPO -Name \'x\' -Confirm:$false',
+      },
+    };
+    const pbs = auditerAnnulation(fautif);
+    assert(pbs.length > 0, 'contre-épreuve — l’auditeur repère -Confirm:$false dans une annulation');
+    assert(pbs.some((p) => /Confirm/i.test(p)),
+      `contre-épreuve — le message nomme -Confirm:$false (${pbs.join(' | ')})`);
+
+    const fautifForce = {
+      id: 'faux-outil-2', rollback: {
+        summary: 's', diagnostic: 'Get-GPO -All',
+        command: 'Remove-GPRegistryValue -Name \'x\' -Key \'y\' -ValueName \'z\' -Force',
+      },
+    };
+    const pbsForce = auditerAnnulation(fautifForce);
+    assert(pbsForce.length > 0, 'contre-épreuve — l’auditeur repère un -Force non justifié');
+
+    // Contrôle positif : les 18 annulations réelles passent.
+    const pbsReels = outilsGpo.flatMap((t) => auditerAnnulation(t));
+    assert(pbsReels.length === 0,
+      `contrôle positif — les 18 annulations GPO passent l’audit (${pbsReels.join(' | ')})`);
+  }
+
+  // 5. Une modification de Default Domain Policy doit être refusée — vérifié
+  //    plus haut sur chaque outil ; ici on vérifie que le contrôle lui-même
+  //    réagit à un nom qui n'est PAS une stratégie par défaut.
+  assert(V.refuseGpoParDefaut('GPO-Medecins-Verrouillage').ok,
+    'contre-épreuve — le garde-fou ne bloque pas une stratégie ordinaire');
+
+  // 6. Une restauration sans sauvegarde réussie doit être bloquée.
+  {
+    const restauration = tools.find((t) => t.id === 'gpo-backup-restore-compare');
+    const valeurs = Object.fromEntries(restauration.fields.map((f) => [f.id, String(f.default ?? '')]));
+    valeurs.brAction = 'Restaurer';
+    valeurs.mode = 'Appliquer';
+    valeurs.brConfirmation = '';
+    const errors = restauration.validate(valeurs);
+    assert(Boolean(errors.brConfirmation),
+      'contre-épreuve — restaurer en mode Appliquer sans confirmation écrite est refusé');
+
+    valeurs.brConfirmation = valeurs.brNomGpo;
+    const script = restauration.generate(valeurs);
+    assert(/\$sauvegardeOk\s*=\s*\$false/.test(script),
+      'le script part du principe qu’aucune sauvegarde n’a réussi');
+    assert(/elseif\s*\(-not \$sauvegardeOk\)/.test(script),
+      'contre-épreuve — la restauration est explicitement bloquée quand la sauvegarde a échoué');
+    const iBlocage = script.indexOf('-not $sauvegardeOk');
+    const iRestore = script.indexOf('Restore-GPO -BackupId');
+    assert(iBlocage > -1 && iRestore > -1 && iBlocage < iRestore,
+      'contre-épreuve — le blocage est évalué AVANT l’appel à Restore-GPO');
+    assert(/Backup-GPO/.test(script.slice(0, iRestore)),
+      'contre-épreuve — une sauvegarde est tentée avant toute restauration');
+    assert(!/Restore-GPO/.test(restauration.generate({ ...valeurs, mode: 'Diagnostic' }).split('--- 5.')[0]),
+      'contre-épreuve — aucune restauration n’apparaît avant la section qui la garde');
+  }
+
+  // 7. Un faux mode Diagnostic qui écrirait doit être détecté.
+  {
+    const ECRITURES = /\b(Set-GPRegistryValue|New-GPO|New-GPLink|Set-GPLink|Set-GPPermission|Restore-GPO|Backup-GPO|Set-Acl|New-Item|Set-ItemProperty|Remove-Item)\b/;
+    const fauxDiagnostic = "if ($Mode -eq 'Diagnostic') { Set-GPRegistryValue -Name 'x' -Key 'y' -ValueName 'z' -Type DWord -Value 1 }";
+    assert(ECRITURES.test(fauxDiagnostic),
+      'contre-épreuve — le motif de détection d’écriture reconnaît un faux mode Diagnostic');
+
+    // Contrôle réel : dans chaque script GPO, toute écriture se trouve après
+    // une garde « $Mode -eq 'Appliquer' ».
+    for (const outil of outilsGpo) {
+      const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      const script = outil.generate(valeurs);
+      const lignes = script.split('\n');
+      let gardeOuverte = false;
+      let fautes = [];
+      for (let i = 0; i < lignes.length; i++) {
+        const l = lignes[i];
+        if (/^\s*#/.test(l)) continue;
+        if (/\$Mode\s+-eq\s+'Appliquer'/.test(l)) gardeOuverte = true;
+        if (!gardeOuverte && ECRITURES.test(l) && !/^\s*(Write-Host|\[void\])/.test(l)) {
+          fautes.push(`L${i + 1} : ${l.trim().slice(0, 80)}`);
+        }
+      }
+      assert(fautes.length === 0,
+        `${outil.id} : aucune écriture avant la garde « mode Appliquer »`,
+        fautes.join(' | '));
+    }
+  }
+
+  // 8. Une source Microsoft « contenu introuvable » doit être rejetée.
+  {
+    const TITRES_ERREUR = [/we couldn.t find/i, /nous n.avons pas trouv/i, /page not found/i, /404/, /content not found/i];
+    const titreMort = '404 - Content not found';
+    assert(TITRES_ERREUR.some((m) => m.test(titreMort)),
+      'contre-épreuve — un titre « contenu introuvable » est reconnu comme une page morte');
+    const titreVivant = 'Backup-GPO (GroupPolicy) | Microsoft Learn';
+    assert(!TITRES_ERREUR.some((m) => m.test(titreVivant)),
+      'contre-épreuve — un titre valide n’est pas pris pour une page morte');
+    assert(existsSync(resolve(ROOT, 'test/sources-microsoft.mjs')),
+      'le banc de vérification des sources est présent dans le dépôt');
+    const bancSources = readFileSync(resolve(ROOT, 'test/sources-microsoft.mjs'), 'utf8');
+    assert(/kjemo-cmdlet-qui-n-existe-pas/.test(bancSources),
+      'le banc des sources embarque sa propre contre-épreuve d’URL morte');
+    assert(/<title>/.test(bancSources),
+      'le banc des sources contrôle le TITRE de la page, et pas seulement le code HTTP');
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 4 — préparer n’est pas appliquer');
+
+  const PREPARATION_SEULEMENT = [
+    'gpo-drive-mapping', 'gpo-printer-deployment',
+    'gpo-logon-startup-scripts', 'gpo-folder-redirection',
+  ];
+  for (const id of PREPARATION_SEULEMENT) {
+    const outil = tools.find((t) => t.id === id);
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    const script = outil.generate(valeurs);
+    assert(!outil.fields.some((f) => f.id === 'mode'),
+      `${id} : aucun mode Appliquer n’est proposé, parce qu’aucune applet officielle n’existe`);
+    assert(/RIEN configure/.test(script) && /de cmdlet officielle/.test(script.replace(/\n/g, ' ')),
+      `${id} : le script dit lui-même qu’il prépare sans appliquer`);
+    assert(/Aucun fichier XML de SYSVOL/.test(script),
+      `${id} : le script affirme n’avoir écrit aucun XML de SYSVOL`);
+    assert(!/Set-GPRegistryValue|New-GPO|Set-GPLink/.test(script),
+      `${id} : aucune écriture de stratégie`);
+    assert(!/\.xml['"]?\s*\)?\s*$/m.test(script.split('\n').filter((l) => /Set-Content|Out-File|Add-Content/.test(l)).join('\n')),
+      `${id} : aucun fichier XML de SYSVOL n’est écrit`);
+    assert(outil.gui.length >= 4,
+      `${id} : la procédure console est détaillée, puisqu’elle est le seul chemin réel`);
+  }
+
+  section('LOT 4 — navigation par sous-rubrique');
+
+  {
+    const attendues = ['Diagnostic et inventaire', 'Création, liens et ciblage',
+      'Environnement utilisateur', 'Sécurité des postes et serveurs',
+      'Déploiement et maintenance'];
+    const presentes = sousRubriques(tools, 'GPO').map((x) => x.name);
+    for (const sr of attendues) {
+      assert(presentes.includes(sr), `sous-rubrique « ${sr} » proposée pour la catégorie GPO`);
+      const dedans = tools.filter((t) => t.category === 'GPO' && t.subcategory === sr);
+      assert(dedans.length >= 2,
+        `la sous-rubrique « ${sr} » contient au moins deux assistants (${dedans.length})`);
+      for (const t of dedans) {
+        assert(t.category === 'GPO', `${t.id} : rangé sous GPO, cohérent avec sa sous-rubrique`);
+      }
+    }
+    const couvertes = new Set(outilsGpo.map((t) => t.subcategory));
+    assert(couvertes.size === 5,
+      `les 18 assistants se répartissent sur cinq sous-rubriques (${couvertes.size})`);
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 4 — recherche, routes et fiches');
+
+  for (const outil of outilsGpo) {
+    const idDe = (r) => (r && r.tool ? r.tool.id : r.id);
+    assert(searchTools(outil.title).some((r) => idDe(r) === outil.id),
+      `recherche par titre — « ${outil.title} » retrouve ${outil.id}`);
+    assert(searchTools('', outil.category).some((r) => idDe(r) === outil.id),
+      `filtre par catégorie — « ${outil.category} » contient ${outil.id}`);
+    assert(/^[a-z][a-z0-9-]*[a-z0-9]$/.test(outil.id),
+      `route directe — « ${outil.id} » est un identifiant d’URL valide`);
+    // Message d'erreur : le dernier message de la fiche, le plus spécifique,
+    // doit ramener CET outil et pas un autre.
+    const derniereErreur = outil.commonErrors[outil.commonErrors.length - 1];
+    assert(searchTools(derniereErreur.message).some((r) => idDe(r) === outil.id),
+      `recherche par message d’erreur — « ${derniereErreur.message.slice(0, 44)}… » retrouve ${outil.id}`);
+    assert(outil.keywords.length >= 6, `${outil.id} : au moins six mots-clés de recherche`);
+    assert(outil.sources.length >= 2, `${outil.id} : au moins deux sources officielles`);
+    assert(outil.checks.length >= 2, `${outil.id} : au moins deux contrôles annoncés`);
+    assert(outil.rollback.summary.length > 40, `${outil.id} : l’annulation est expliquée, pas résumée en trois mots`);
+  }
 }
 
 // Résumé

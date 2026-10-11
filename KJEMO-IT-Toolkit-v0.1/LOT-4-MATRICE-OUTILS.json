@@ -1,0 +1,1108 @@
+{
+  "genere": "2026-10-02T19:38:45.899Z",
+  "lot": "LOT 4 — stratégies de groupe avancées",
+  "shaBase": "fb0932112b098d9c7d519fd9f57902172ffecf21",
+  "catalogue": {
+    "outilsTotal": 55,
+    "outilsGpoAjoutes": 18
+  },
+  "outils": [
+    {
+      "id": "gpo-inventory-report",
+      "titre": "Inventorier les GPO du domaine",
+      "sousRubrique": "Diagnostic et inventaire",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "invRecent",
+          "etiquette": "Signaler les GPO modifiées dans les (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "30"
+        },
+        {
+          "id": "invFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 8,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce rapport lit l’annuaire et les rapports XML des stratégies. Il ne crée, ne modifie, ne délie et ne supprime rien. La seule trace est le fichier exporté.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/"
+      ]
+    },
+    {
+      "id": "gpo-health-report",
+      "titre": "Diagnostiquer la santé des stratégies de groupe",
+      "sousRubrique": "Diagnostic et inventaire",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "sanGpoJours",
+          "etiquette": "Fenêtre des événements examinés (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "7"
+        },
+        {
+          "id": "sanGpoFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 8,
+      "etapesConsole": 4,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce diagnostic lit des partages, des attributs d’annuaire et des journaux. Il ne modifie rien, et n’a donc rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance",
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpo",
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/force-authoritative-non-authoritative-synchronization"
+      ]
+    },
+    {
+      "id": "gpo-resultant-set",
+      "titre": "Produire un rapport gpresult / RSoP",
+      "sousRubrique": "Diagnostic et inventaire",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "rsopCible",
+          "etiquette": "Ordinateur examiné",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "PC-CONSULT-01"
+        },
+        {
+          "id": "rsopUtilisateur",
+          "etiquette": "Utilisateur (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "rsopPortee",
+          "etiquette": "Portée du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Les deux"
+        },
+        {
+          "id": "rsopFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 8,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Produire un jeu de stratégie résultant est une lecture. Rien n’est modifié sur la machine ni dans le domaine ; les seules traces sont les fichiers de rapport.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpresultantsetofpolicy",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpresultantsetofpolicy",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/gpresult",
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance"
+      ]
+    },
+    {
+      "id": "gpo-refresh-diagnostic",
+      "titre": "Actualiser et diagnostiquer gpupdate",
+      "sousRubrique": "Diagnostic et inventaire",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "majPortee",
+          "etiquette": "Moitié à actualiser",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Les deux"
+        },
+        {
+          "id": "majForce",
+          "etiquette": "Réappliquer toutes les stratégies (/force)",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Non"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Actualiser ne configure rien : cela demande au poste de relire les stratégies du domaine. Pour revenir en arrière, c’est la stratégie qu’il faut corriger, puis actualiser à nouveau.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/gpupdate",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/gpupdate",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/gpresult",
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance"
+      ]
+    },
+    {
+      "id": "gpo-create-link",
+      "titre": "Créer une GPO et la lier à une OU",
+      "sousRubrique": "Création, liens et ciblage",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "crNomGpo",
+          "etiquette": "Nom de la nouvelle GPO",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Medecins-Verrouillage"
+        },
+        {
+          "id": "crOu",
+          "etiquette": "OU à lier",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "Médecin"
+        },
+        {
+          "id": "crEtatLien",
+          "etiquette": "État du lien",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Inactive"
+        },
+        {
+          "id": "crOrdre",
+          "etiquette": "Ordre du lien sur l’OU",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "1"
+        },
+        {
+          "id": "crApplique",
+          "etiquette": "Marquer le lien « Appliqué » (Enforced)",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Non"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Un lien se retire sans rien détruire : la stratégie reste, seul son point d’application disparaît. Une stratégie créée par erreur et vide se supprime proprement — mais ce script ne la supprime jamais de lui-même.",
+        "exceptionnelle": true
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/grouppolicy/new-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/new-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/new-gplink",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gplink",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/remove-gpo"
+      ]
+    },
+    {
+      "id": "gpo-link-audit",
+      "titre": "Auditer l’héritage et les liens GPO",
+      "sousRubrique": "Création, liens et ciblage",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "auOu",
+          "etiquette": "Limiter à une OU (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "auVue",
+          "etiquette": "Vue",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Complete"
+        },
+        {
+          "id": "auFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 8,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Cet audit lit l’héritage et les liens. Il ne crée, ne modifie, n’active, ne désactive et ne retire aucun lien. La seule trace est le fichier de rapport.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpinheritance",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpinheritance",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpinheritance",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gplink"
+      ]
+    },
+    {
+      "id": "gpo-security-filter",
+      "titre": "Vérifier le filtrage de sécurité d’une GPO",
+      "sousRubrique": "Création, liens et ciblage",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "fsNomGpo",
+          "etiquette": "GPO examinée",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Medecins-Verrouillage"
+        },
+        {
+          "id": "fsGroupe",
+          "etiquette": "Groupe à autoriser",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GG-Medecins"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script ajoute une autorisation. La retirer est immédiat et sans perte de données — mais ce n’est pas anodin : les comptes concernés cesseront de recevoir la stratégie au prochain cycle, sans message.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gppermission",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gppermission",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gppermission",
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance"
+      ]
+    },
+    {
+      "id": "gpo-wmi-filter-readiness",
+      "titre": "Vérifier un filtre WMI avant association",
+      "sousRubrique": "Création, liens et ciblage",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "wmiRequete",
+          "etiquette": "Requête WQL",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "SELECT * FROM Win32_OperatingSystem WHERE ProductType = 1"
+        },
+        {
+          "id": "wmiEspace",
+          "etiquette": "Espace de noms",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "root\\CIMv2"
+        },
+        {
+          "id": "wmiNom",
+          "etiquette": "Nom du filtre à créer",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "Postes de travail seulement"
+        },
+        {
+          "id": "wmiFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script exécute une requête en lecture et lit l’annuaire. Il ne crée aucun filtre et n’en associe aucun : il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2003/cc779036(v=ws.10)",
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2003/cc779036(v=ws.10)",
+        "https://learn.microsoft.com/powershell/module/cimcmdlets/get-ciminstance",
+        "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-operatingsystem"
+      ]
+    },
+    {
+      "id": "gpo-drive-mapping",
+      "titre": "Préparer le mappage de lecteurs réseau",
+      "sousRubrique": "Environnement utilisateur",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "dmLettre",
+          "etiquette": "Lettre de lecteur",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "P:"
+        },
+        {
+          "id": "dmChemin",
+          "etiquette": "Chemin UNC du partage",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "\\\\srv-fichiers\\Partage"
+        },
+        {
+          "id": "dmLibelle",
+          "etiquette": "Libellé affiché",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "Partage du service"
+        },
+        {
+          "id": "dmGroupe",
+          "etiquette": "Groupe ciblé",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GG-Medecins"
+        },
+        {
+          "id": "dmAction",
+          "etiquette": "Action de la préférence",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Update"
+        },
+        {
+          "id": "dmFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script ne configure rien : il n’y a rien à annuler de son fait. Pour retirer un lecteur déjà déployé, c’est la préférence qu’il faut traiter — et la supprimer ne démonte pas le lecteur déjà monté sur les postes.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbshareaccess",
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc733022(v=ws.10)"
+      ]
+    },
+    {
+      "id": "gpo-printer-deployment",
+      "titre": "Préparer le déploiement d’une imprimante",
+      "sousRubrique": "Environnement utilisateur",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "imType",
+          "etiquette": "Type de déploiement",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Partagee"
+        },
+        {
+          "id": "imServeur",
+          "etiquette": "Serveur d’impression ou adresse",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "srv-impression"
+        },
+        {
+          "id": "imPartage",
+          "etiquette": "Nom de partage de l’imprimante",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "HP-Consultation"
+        },
+        {
+          "id": "imGroupe",
+          "etiquette": "Groupe ou OU ciblé",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GG-Medecins"
+        },
+        {
+          "id": "imFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script vérifie et n’installe rien : il n’y a rien à annuler de son fait. Retirer un déploiement se fait là où il a été posé — console Gestion de l’impression, ou préférence de stratégie.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc754699(v=ws.11)",
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc754699(v=ws.11)",
+        "https://learn.microsoft.com/powershell/module/printmanagement/get-printer",
+        "https://learn.microsoft.com/troubleshoot/windows-server/printing/event-ids-associated-point-print-restrictions"
+      ]
+    },
+    {
+      "id": "gpo-logon-startup-scripts",
+      "titre": "Préparer des scripts de connexion et de démarrage",
+      "sousRubrique": "Environnement utilisateur",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "scType",
+          "etiquette": "Type de script",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Ouverture"
+        },
+        {
+          "id": "scChemin",
+          "etiquette": "Dossier dans SYSVOL ou NETLOGON",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "\\\\hopitalbn.lan\\NETLOGON"
+        },
+        {
+          "id": "scFichier",
+          "etiquette": "Nom du fichier de script",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "connexion-medecins.ps1"
+        },
+        {
+          "id": "scFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script lit un dossier, un fichier et ses permissions. Il ne copie, ne modifie et n’attache rien : il n’y a rien à annuler de son fait.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport"
+      ]
+    },
+    {
+      "id": "gpo-folder-redirection",
+      "titre": "Préparer une redirection de dossiers",
+      "sousRubrique": "Environnement utilisateur",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "frDossier",
+          "etiquette": "Dossier redirigé",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Documents"
+        },
+        {
+          "id": "frRacine",
+          "etiquette": "Racine UNC",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "\\\\srv-fichiers\\Redirection"
+        },
+        {
+          "id": "frGroupe",
+          "etiquette": "Groupe ciblé",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GG-Medecins"
+        },
+        {
+          "id": "frDeplacer",
+          "etiquette": "Déplacer le contenu existant",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Non"
+        },
+        {
+          "id": "frFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script ne configure rien et ne déplace aucune donnée. En revanche, une redirection déjà déployée ne se retire pas d’un clic : le comportement au retrait se choisit AVANT, dans l’onglet Paramètres, et il décide si les fichiers reviennent sur le poste ou restent sur le serveur.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows-server/storage/folder-redirection/deploy-folder-redirection",
+        "https://learn.microsoft.com/windows-server/storage/folder-redirection/deploy-folder-redirection",
+        "https://learn.microsoft.com/windows-server/storage/folder-redirection/folder-redirection-rup-overview",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbshareaccess"
+      ]
+    },
+    {
+      "id": "gpo-session-desktop",
+      "titre": "Configurer verrouillage automatique et fond d’écran",
+      "sousRubrique": "Sécurité des postes et serveurs",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "vbNomGpo",
+          "etiquette": "GPO à configurer",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Postes-Verrouillage"
+        },
+        {
+          "id": "vbInactivite",
+          "etiquette": "Verrouillage après (minutes)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "15"
+        },
+        {
+          "id": "vbFond",
+          "etiquette": "Fond d’écran imposé (UNC, facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Les deux valeurs se retirent de la stratégie. Attention : retirer une valeur ne la remet pas à son ancien état sur les postes — elle reste écrite dans leur registre jusqu’à ce qu’une stratégie la remplace explicitement.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows/security/threat-protection/security-policy-settings/interactive-logon-machine-inactivity-limit",
+        "https://learn.microsoft.com/windows/security/threat-protection/security-policy-settings/interactive-logon-machine-inactivity-limit",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpregistryvalue",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/remove-gpregistryvalue"
+      ]
+    },
+    {
+      "id": "gpo-device-restrictions",
+      "titre": "Préparer les restrictions USB et périphériques",
+      "sousRubrique": "Sécurité des postes et serveurs",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "drNomGpo",
+          "etiquette": "GPO à configurer",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Postes-USB"
+        },
+        {
+          "id": "drNiveau",
+          "etiquette": "Niveau de restriction",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "LectureSeule"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "La restriction se lève en retirant les deux valeurs de la stratégie, puis en actualisant. Aucun redémarrage n’est nécessaire, et aucune donnée n’est perdue.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc772540(v=ws.10)",
+        "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc772540(v=ws.10)",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpregistryvalue",
+        "https://learn.microsoft.com/powershell/module/pnpdevice/get-pnpdevice"
+      ]
+    },
+    {
+      "id": "gpo-firewall-defender",
+      "titre": "Auditer et préparer Pare-feu et Microsoft Defender par GPO",
+      "sousRubrique": "Sécurité des postes et serveurs",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "préparation et diagnostic uniquement (aucune cmdlet officielle)",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "fdRegles",
+          "etiquette": "Nombre de règles entrantes détaillées",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "25"
+        },
+        {
+          "id": "fdFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Cet audit ne modifie rien : ni le pare-feu, ni Defender, ni aucune stratégie. Il n’y a rien à annuler, et il n’existe aucun mode Appliquer.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows/security/operating-system-security/network-security/windows-firewall/",
+        "https://learn.microsoft.com/windows/security/operating-system-security/network-security/windows-firewall/",
+        "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallprofile",
+        "https://learn.microsoft.com/powershell/module/defender/get-mpcomputerstatus",
+        "https://learn.microsoft.com/powershell/module/defender/get-mppreference"
+      ]
+    },
+    {
+      "id": "gpo-windows-update-services",
+      "titre": "Préparer Windows Update et les services par GPO",
+      "sousRubrique": "Sécurité des postes et serveurs",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "wuNomGpo",
+          "etiquette": "GPO à configurer",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Postes-MisesAJour"
+        },
+        {
+          "id": "wuCible",
+          "etiquette": "Périmètre",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Postes"
+        },
+        {
+          "id": "wuReport",
+          "etiquette": "Report des mises à jour qualité (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "7"
+        },
+        {
+          "id": "wuDebutActif",
+          "etiquette": "Début des heures actives",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "7"
+        },
+        {
+          "id": "wuFinActif",
+          "etiquette": "Fin des heures actives",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "19"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Les valeurs se retirent de la stratégie. Attention au sens du retour en arrière : retirer un report rend les mises à jour immédiates, ce qui est le comportement sûr — mais peut surprendre un parc habitué au décalage.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows/deployment/update/waas-manage-updates-wufb",
+        "https://learn.microsoft.com/windows/deployment/update/waas-manage-updates-wufb",
+        "https://learn.microsoft.com/windows/deployment/update/waas-wu-settings",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpregistryvalue"
+      ]
+    },
+    {
+      "id": "gpo-software-shortcuts-browser",
+      "titre": "Préparer déploiement logiciel, raccourcis et navigateur",
+      "sousRubrique": "Déploiement et maintenance",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "slNomGpo",
+          "etiquette": "GPO de déploiement",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Deploiement-Logiciels"
+        },
+        {
+          "id": "slMsi",
+          "etiquette": "Paquet MSI (UNC, facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "slRaccourci",
+          "etiquette": "Cible du raccourci (UNC, facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "slNavigateur",
+          "etiquette": "Navigateur à configurer",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Aucun"
+        },
+        {
+          "id": "slPageDemarrage",
+          "etiquette": "Page de démarrage imposée (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 8,
+      "controlesApres": 4,
+      "annulation": {
+        "resume": "Chaque partie se retire séparément. Le retrait d’un logiciel déployé par stratégie est l’opération la plus délicate : mal faite, elle désinstalle le logiciel sur tout le parc au prochain démarrage.",
+        "exceptionnelle": true
+      },
+      "sources": [
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/use-group-policy-to-install-software",
+        "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/use-group-policy-to-install-software",
+        "https://learn.microsoft.com/deployedge/microsoft-edge-policies",
+        "https://learn.microsoft.com/windows/win32/msi/installer-object",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpregistryvalue"
+      ]
+    },
+    {
+      "id": "gpo-backup-restore-compare",
+      "titre": "Sauvegarder, comparer et restaurer une GPO",
+      "sousRubrique": "Déploiement et maintenance",
+      "risque": "destructive",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "cmdlet officielle GroupPolicy",
+      "champs": [
+        {
+          "id": "gpoDomain",
+          "etiquette": "Domaine Active Directory",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "brNomGpo",
+          "etiquette": "GPO concernée",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "GPO-Postes-Verrouillage"
+        },
+        {
+          "id": "brDossier",
+          "etiquette": "Dossier des sauvegardes (UNC)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "\\\\SRV-FICHIERS\\Sauvegardes$\\GPO"
+        },
+        {
+          "id": "brAction",
+          "etiquette": "Action",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Sauvegarder"
+        },
+        {
+          "id": "brIdSauvegarde",
+          "etiquette": "Identifiant de la sauvegarde (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "brConfirmation",
+          "etiquette": "Confirmation — retaper le nom de la GPO (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 9,
+      "etapesConsole": 5,
+      "erreursExpliquees": 8,
+      "controlesApres": 4,
+      "annulation": {
+        "resume": "Le retour arrière d’une restauration est une autre restauration : celle de la copie de secours que ce script écrit juste avant d’agir. Son identifiant est affiché dans le rapport — le noter.",
+        "exceptionnelle": true
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/grouppolicy/backup-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/backup-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/restore-gpo",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport"
+      ]
+    }
+  ]
+}

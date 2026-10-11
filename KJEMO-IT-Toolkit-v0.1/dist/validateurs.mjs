@@ -841,3 +841,205 @@ export function cheminOuVersDn(segments, domaine) {
   const parties = [...segments].reverse().map((s) => `OU=${escapeLdapRdn(s)}`);
   return [...parties, domainToDn(domaine)].join(',');
 }
+
+// ---------------------------------------------------------------------------
+// LOT 4 — Stratégies de groupe
+// Validateurs des noms de GPO, des chemins SYSVOL, des requêtes WQL, des
+// durées et des quelques listes fermées propres aux GPO.
+// ---------------------------------------------------------------------------
+
+/**
+ * Nom d'une stratégie de groupe.
+ *
+ * Active Directory accepte presque tout dans le displayName d'une GPO. Presque.
+ * Les caractères refusés ci-dessous cassent soit l'affichage dans la console
+ * de gestion, soit le nom du dossier de sauvegarde produit par Backup-GPO.
+ * Mieux vaut refuser à la saisie que découvrir le problème au moment de
+ * restaurer.
+ */
+export function validerNomGpo(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le nom de la GPO ne peut pas être vide.' };
+  if (s.length > 64) return { ok: false, value: s, error: 'Le nom de la GPO ne doit pas dépasser 64 caractères.' };
+  if (/[\\/:*?"<>|]/.test(s)) {
+    return { ok: false, value: s, error: 'Le nom de la GPO ne peut pas contenir \\ / : * ? " < > ni |.' };
+  }
+  if (/[\x00-\x1f\x7f]/.test(s)) {
+    return { ok: false, value: s, error: 'Le nom de la GPO contient un caractère de contrôle non autorisé.' };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/** Les deux stratégies que ce projet ne touche jamais, quel que soit l'outil. */
+export const GPO_INTOUCHABLES = ['Default Domain Policy', 'Default Domain Controllers Policy'];
+
+/**
+ * Une GPO par défaut se modifie à la main, en sachant ce qu'on fait.
+ *
+ * Default Domain Policy porte la politique de mots de passe du domaine ;
+ * Default Domain Controllers Policy porte les droits d'ouverture de session
+ * des contrôleurs. Les abîmer se répare par une restauration d'annuaire, pas
+ * par un ctrl-Z. Aucun assistant de ce lot ne les vise.
+ */
+export function refuseGpoParDefaut(v) {
+  const s = String(v ?? '').trim();
+  const nu = s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  for (const interdite of GPO_INTOUCHABLES) {
+    if (nu === interdite.toLowerCase()) {
+      return {
+        ok: false,
+        value: s,
+        error: `« ${interdite} » ne se modifie pas depuis cet assistant : crée une GPO distincte et lie-la.`,
+      };
+    }
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/** Nom de GPO acceptable ET qui n'est pas une stratégie par défaut. */
+export function validerNomGpoModifiable(v) {
+  const nom = validerNomGpo(v);
+  if (!nom.ok) return nom;
+  return refuseGpoParDefaut(nom.value);
+}
+
+export const PORTEES_GPO = ['Ordinateur', 'Utilisateur', 'Les deux'];
+export function validerPorteeGpo(v) {
+  return validerChoix(v, PORTEES_GPO, 'La portée');
+}
+
+export const ETATS_LIEN = ['Active', 'Inactive'];
+export function validerEtatLien(v) {
+  return validerChoix(v, ETATS_LIEN, 'L’état du lien');
+}
+
+export const APPLICATIONS_LIEN = ['Oui', 'Non'];
+export function validerApplicationLien(v) {
+  return validerChoix(v, APPLICATIONS_LIEN, 'Le choix');
+}
+
+/** Ordre d'un lien GPO sur une OU : 1 est le plus prioritaire. */
+export function validerOrdreLien(v) {
+  return validerEntier(v, 1, 999, 'L’ordre du lien');
+}
+
+/**
+ * Chemin sous SYSVOL ou NETLOGON.
+ *
+ * Les scripts d'ouverture de session et les modèles ADMX vivent là, et nulle
+ * part ailleurs : un script rangé sur un partage quelconque n'est pas répliqué
+ * entre contrôleurs, et il fonctionne jusqu'au jour où le client interroge un
+ * autre contrôleur.
+ */
+export function validerCheminSysvol(v) {
+  const r = validerCheminUnc(v);
+  if (!r.ok) return r;
+  const s = r.value;
+  if (!/\\(SYSVOL|NETLOGON)(\\|$)/i.test(s)) {
+    return {
+      ok: false,
+      value: s,
+      error: 'Le chemin doit passer par le partage SYSVOL ou NETLOGON : ailleurs, rien n’est répliqué entre contrôleurs.',
+    };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+export const EXTENSIONS_SCRIPT_GPO = ['.ps1', '.cmd', '.bat', '.vbs'];
+
+/** Nom de fichier de script d'ouverture de session ou de démarrage. */
+export function validerNomScriptGpo(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Indique le nom du fichier de script.' };
+  if (/[\\/:*?"<>|]/.test(s)) {
+    return { ok: false, value: s, error: 'Le nom du script ne peut pas contenir \\ / : * ? " < > ni |.' };
+  }
+  const point = s.lastIndexOf('.');
+  const ext = point === -1 ? '' : s.slice(point).toLowerCase();
+  if (!EXTENSIONS_SCRIPT_GPO.includes(ext)) {
+    return {
+      ok: false,
+      value: s,
+      error: `Extension non autorisée : ${EXTENSIONS_SCRIPT_GPO.join(', ')} seulement. Un exécutable ne se déploie pas comme un script d’ouverture de session.`,
+    };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/**
+ * Requête WQL d'un filtre WMI.
+ *
+ * On ne valide pas le WQL comme le ferait un moteur : on refuse ce qui n'a
+ * manifestement rien à faire dans un filtre GPO. Un filtre WMI est une
+ * question posée à chaque ouverture de session ; il se lit, il ne modifie
+ * rien.
+ */
+export function validerRequeteWql(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'La requête WQL ne peut pas être vide.' };
+  if (s.length > 512) return { ok: false, value: s, error: 'La requête ne doit pas dépasser 512 caractères.' };
+  if (!/^\s*SELECT\s+/i.test(s)) {
+    return { ok: false, value: s, error: 'Un filtre WMI commence par SELECT : il interroge, il ne modifie rien.' };
+  }
+  if (!/\sFROM\s+[A-Za-z][A-Za-z0-9_]*/i.test(s)) {
+    return { ok: false, value: s, error: 'La requête doit nommer une classe WMI après FROM.' };
+  }
+  if (/\b(DELETE|UPDATE|INSERT|DROP|CREATE|EXEC|CALL)\b/i.test(s)) {
+    return { ok: false, value: s, error: 'Un filtre WMI ne contient aucun mot-clé de modification.' };
+  }
+  if (/[;\r\n]/.test(s)) {
+    return { ok: false, value: s, error: 'Une seule requête, sans point-virgule ni retour à la ligne.' };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/** Espace de noms WMI : root\CIMv2 et ses semblables. */
+export function validerEspaceNomsWmi(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'L’espace de noms ne peut pas être vide.' };
+  if (!/^[A-Za-z][A-Za-z0-9_]*(\\[A-Za-z][A-Za-z0-9_]*)*$/.test(s)) {
+    return { ok: false, value: s, error: 'Espace de noms attendu sous la forme root\\CIMv2.' };
+  }
+  return { ok: true, value: s, error: null };
+}
+
+/** Minutes, pour un délai d'inactivité ou une fenêtre de maintenance. */
+export function validerMinutes(v, { min = 1, max = 1440, label = 'La durée' } = {}) {
+  return validerEntier(v, min, max, label);
+}
+
+/** Heure de la journée, 0 à 23. */
+export function validerHeure(v, label = 'L’heure') {
+  return validerEntier(v, 0, 23, label);
+}
+
+/**
+ * Adresse de page de démarrage imposée à un navigateur.
+ *
+ * Seul https est accepté. Une page de démarrage est ouverte automatiquement,
+ * sur chaque poste, à chaque session : la servir en clair sur un réseau
+ * interne reste une mauvaise idée, et `javascript:` ou `data:` dans ce champ
+ * n'est jamais une page, c'est une tentative d'exécution.
+ */
+export function validerUrlHttps(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'L’adresse ne peut pas être vide.' };
+  if (/[\s"'<>`]/.test(s)) {
+    return { ok: false, value: s, error: 'L’adresse ne peut contenir ni espace, ni guillemet, ni chevron.' };
+  }
+  if (/^http:\/\//i.test(s)) {
+    return { ok: false, value: s, error: 'Seul https est accepté : une page imposée en clair est lisible et modifiable sur le réseau.' };
+  }
+  if (!/^https:\/\//i.test(s)) {
+    return { ok: false, value: s, error: 'L’adresse doit commencer par https://.' };
+  }
+  const reste = s.slice('https://'.length);
+  const hote = reste.split('/')[0];
+  if (!/^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:[0-9]{1,5})?$/.test(hote)) {
+    return { ok: false, value: s, error: 'Le nom d’hôte de l’adresse est invalide.' };
+  }
+  if (s.length > 2000) {
+    return { ok: false, value: s, error: 'L’adresse dépasse 2000 caractères.' };
+  }
+  return { ok: true, value: s, error: null };
+}
