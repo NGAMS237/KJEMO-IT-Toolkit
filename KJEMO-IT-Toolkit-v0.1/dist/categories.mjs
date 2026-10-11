@@ -20,10 +20,10 @@
 
 export const CATEGORIES = [
   {
-    id: 'windows-poste',
-    name: 'Windows poste de travail',
+    id: 'poste-windows',
+    name: 'Poste de travail Windows',
     icon: '▣',
-    description: 'Pannes et réglages d’un poste Windows : réseau, Wi-Fi, système.',
+    description: 'Le poste de l’utilisateur : périphériques, mises à jour, performance, comptes, sécurité, réparation et stockage.',
   },
   {
     id: 'analyse-disques',

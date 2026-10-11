@@ -1079,8 +1079,8 @@ export const tools = [
   {
     id: 'wifi-repair',
     icon: '\u2341',
-    category: 'Windows poste de travail',
-    subcategory: 'Réseau et Wi-Fi',
+    category: 'Réseau',
+    subcategory: 'Wi-Fi et sans-fil',
     title: 'Diagnostiquer et réinitialiser le Wi-Fi',
     risk: 'caution',
     summary: 'Vérifie la carte et le service WLAN, puis redémarre la carte choisie.',

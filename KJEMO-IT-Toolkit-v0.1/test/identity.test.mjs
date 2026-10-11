@@ -1225,7 +1225,7 @@ assert(!/\b(Copy|Download|Search|Settings)\b/.test(sourceLibelles),
 section('LOT 1B v2 — catégories canoniques');
 
 const CANON = [
-  'Windows poste de travail',
+  'Poste de travail Windows',
   'Analyse et nettoyage des disques',
   'Windows Server',
   'Active Directory',
@@ -1252,7 +1252,7 @@ const CLASSEMENT = {
   'ad-user':       ['Active Directory', 'Utilisateurs'],
   'shared-folder': ['Windows Server', 'Serveur de fichiers'],
   'second-dc':     ['Active Directory', 'Contrôleurs de domaine'],
-  'wifi-repair':   ['Windows poste de travail', 'Réseau et Wi-Fi'],
+  'wifi-repair':   ['Réseau', 'Wi-Fi et sans-fil'],
   'gpo-password':  ['GPO', 'Sécurité des comptes'],
   'disk-scan':     ['Analyse et nettoyage des disques', 'Occupation de l\u2019espace'],
 };
@@ -1284,14 +1284,21 @@ assert(nomsVisibles.includes('Windows Server'),
 const windowsServer = vis2.find((c) => c.name === 'Windows Server');
 assert(windowsServer.count >= 1 && tools.some((t) => t.id === 'shared-folder' && t.category === 'Windows Server'),
   `Windows Server contient ${windowsServer.count} outil(s), dont shared-folder`);
-assert(nomsVisibles.includes('Windows poste de travail')
-    && nomsVisibles.includes('Analyse et nettoyage des disques'),
-  'Windows poste de travail et Analyse des disques sont visibles');
-assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
-  `seules Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
+assert(nomsVisibles.includes('Analyse et nettoyage des disques'),
+  'Analyse et nettoyage des disques est visible : disk-scan l\u2019habite');
+
+// « Poste de travail Windows » est DÉCLARÉE mais encore VIDE : wifi-repair,
+// son unique occupant historique, a rejoint le Réseau — le Wi-Fi est du
+// réseau, même si une carte sans fil est matériellement un périphérique.
+// Une catégorie vide reste masquée : c'est la règle, et c'est ce que le LOT 6
+// viendra remplir.
+assert(!nomsVisibles.includes('Poste de travail Windows'),
+  'Poste de travail Windows est masquée tant qu\u2019aucun outil ne l\u2019habite');
+assert(attente2.map((c) => c.name).join(',') === 'Poste de travail Windows,Imprimantes,Linux',
+  `Poste de travail Windows, Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
 assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
   'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
-assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+assert(vis2.length === 5 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
   `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
@@ -3138,7 +3145,13 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
   const V = await import('../dist/validateurs.mjs');
   const C = await import('../dist/calcul-ip.mjs');
   const outilsReseau = tools.filter((t) => t.category === 'Réseau');
-  const nouveauxReseau = outilsReseau.filter((t) => t.id !== 'static-ip');
+  // Les assistants du LOT 5, et eux seuls. La catégorie Réseau héberge aussi
+  // des outils historiques — « static-ip » depuis le LOT 1, et « wifi-repair »
+  // depuis le correctif de catégories — qui ne sont pas soumis au contrat du
+  // LOT 5 et dont les scripts sont figés par la garde d'identité. Les
+  // sélectionner par catégorie ferait échouer le lot sur des outils qu'il
+  // n'a pas écrits.
+  const nouveauxReseau = outilsReseau.filter((t) => !IDS_HISTORIQUES.includes(t.id));
 
   section('LOT 5 — le catalogue Réseau');
 
@@ -3432,7 +3445,7 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     .filter((x) => !/^\s*Write-Host\b/.test(x))
     .join('\n');
 
-  for (const outil of outilsReseau) {
+  for (const outil of nouveauxReseau) {
     const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
     let diag;
     try { diag = outil.generate(valeurs); } catch { continue; }
@@ -3601,6 +3614,11 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
       'Routage et voisinage', 'Accès aux ressources', 'Sans-fil et VPN', 'Calculs réseau']) {
       assert(presentes.includes(sr), `sous-rubrique « ${sr} » proposée pour la catégorie Réseau`);
     }
+    // Les deux sous-rubriques historiques de la catégorie Réseau.
+    assert(presentes.includes('Adressage IP'),
+      'sous-rubrique « Adressage IP » conservée : static-ip l’occupe depuis le LOT 1');
+    assert(presentes.includes('Wi-Fi et sans-fil'),
+      'sous-rubrique « Wi-Fi et sans-fil » proposée : wifi-repair y a été reclassé');
   }
   for (const outil of nouveauxReseau) {
     const idDe = (r) => (r && r.tool ? r.tool.id : r.id);

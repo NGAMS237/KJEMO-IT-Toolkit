@@ -1502,7 +1502,7 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
     (els) => els.map((e) => ({ nom: e.dataset.category, texte: e.textContent })));
   const noms = cartes.map((c) => c.nom);
 
-  for (const attendue of ['Windows poste de travail', 'Analyse et nettoyage des disques',
+  for (const attendue of ['Analyse et nettoyage des disques',
                           'Windows Server', 'Active Directory', 'GPO', 'Réseau']) {
     assert(noms.includes(attendue), `catégorie canonique affichée : « ${attendue} »`);
   }
@@ -1510,11 +1510,18 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
     assert(!noms.includes(interdite),
       `catégorie abandonnée absente de l’écran : « ${interdite} »`);
   }
-  for (const vide of ['Imprimantes', 'Linux']) {
+  // « Poste de travail Windows » est déclarée mais vide tant que le LOT 6
+  // n'est pas là : elle doit rester masquée, comme Imprimantes et Linux.
+  for (const vide of ['Poste de travail Windows', 'Imprimantes', 'Linux']) {
     assert(!noms.includes(vide), `catégorie vide masquée : « ${vide} »`);
   }
-  assert(noms.length === 7,
-    `« Tout » + six catégories pourvues (${noms.length})`);
+  assert(!noms.includes('Windows poste de travail'),
+    'l’ancien libellé « Windows poste de travail » a disparu de l’écran');
+  // Cinq catégories pourvues depuis que wifi-repair a rejoint le Réseau :
+  // « Poste de travail Windows » est déclarée mais vide, donc masquée, et le
+  // LOT 6 la remplira.
+  assert(noms.length === 6,
+    `« Tout » + cinq catégories pourvues (${noms.length})`);
 
   // Windows Server réunit shared-folder et les outils du LOT 2.
   const attendusWs = tools.filter((t) => t.category === 'Windows Server').length;
