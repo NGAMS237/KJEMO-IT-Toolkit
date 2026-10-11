@@ -26,6 +26,7 @@ import { validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
 import { toolsServeur } from './outils-serveur.mjs';
 import { toolsAd } from './outils-ad.mjs';
 import { toolsGpo } from './outils-gpo.mjs';
+import { toolsReseau } from './outils-reseau.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1570,4 +1571,5 @@ for (const outil of toolsServeur) tools.push(outil);
 // ---------------------------------------------------------------------------
 for (const outil of toolsAd) tools.push(outil);
 for (const outil of toolsGpo) tools.push(outil);
+for (const outil of toolsReseau) tools.push(outil);
 

@@ -235,6 +235,70 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
+      # 11 ter. Contre-épreuves d'exécution du LOT 5 — les verrous bloquent-ils ?
+      #
+      # La revue du LOT 5 a relevé deux assistants qui CALCULAIENT une
+      # vérification sans en faire dépendre leur écriture : `dns-client-change`
+      # éprouvait les serveurs DNS, `route-manager` calculait l'appartenance de
+      # la passerelle à un préfixe directement connecté — et ni l'un ni l'autre
+      # n'en tirait de conséquence.
+      #
+      # Ces deux bancs exécutent réellement les scripts, cmdlets d'écriture
+      # remplacées par des mouchards, et comptent les appels. Chacun porte sa
+      # propre contre-épreuve : le verrou retiré, le test DOIT échouer.
+      #
+      # Comme les précédentes, elles tournent sous les DEUX moteurs, avec
+      # l'interpréteur imposé, sans continue-on-error et sans `if` permissif.
+      # -----------------------------------------------------------------------
+      - name: Contre-épreuve changement DNS bloquant — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          node test/dns-change-bloquant.test.mjs --powershell powershell
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuve DNS PS 5.1 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Contre-épreuve changement DNS bloquant — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          node test/dns-change-bloquant.test.mjs --powershell pwsh
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuve DNS PS 7 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Contre-épreuve passerelle bloquante — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          node test/route-passerelle-bloquante.test.mjs --powershell powershell
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuve route PS 5.1 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Contre-épreuve passerelle bloquante — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          node test/route-passerelle-bloquante.test.mjs --powershell pwsh
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Contre-epreuve route PS 7 en echec (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      # -----------------------------------------------------------------------
       # 12 bis. Contrôle des commandes externes — LOT 4
       #
       # Un script qui appelle une applet de commande inexistante n'echoue pas

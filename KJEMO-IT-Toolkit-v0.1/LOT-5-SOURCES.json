@@ -1,0 +1,3510 @@
+{
+  "genere": "2026-10-03T01:05:43.367Z",
+  "horsLigne": false,
+  "total": 248,
+  "verifiees": 248,
+  "echecs": 0,
+  "sources": [
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/new-netipaddress",
+      "labels": [
+        "Configurer une IP statique",
+        "New-NetIPAddress"
+      ],
+      "outils": [
+        "static-ip",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/new-netipaddress?view=windowsserver2025-ps",
+      "titre": "New-NetIPAddress (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/new-adorganizationalunit",
+      "labels": [
+        "Créer une unité d’organisation",
+        "Créer une hiérarchie d’unités d’organisation",
+        "New-ADOrganizationalUnit"
+      ],
+      "outils": [
+        "ad-ou",
+        "ad-ou-hierarchy",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/new-adorganizationalunit?view=windowsserver2025-ps",
+      "titre": "New-ADOrganizationalUnit (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/new-aduser",
+      "labels": [
+        "Créer un utilisateur AD",
+        "Importer des utilisateurs depuis un CSV",
+        "New-ADUser"
+      ],
+      "outils": [
+        "ad-user",
+        "ad-users-csv",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/new-aduser?view=windowsserver2025-ps",
+      "titre": "New-ADUser (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/new-smbshare",
+      "labels": [
+        "Créer un dossier partagé",
+        "New-SmbShare"
+      ],
+      "outils": [
+        "shared-folder",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/new-smbshare?view=windowsserver2025-ps",
+      "titre": "New-SmbShare (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/addsdeployment/install-addsdomaincontroller",
+      "labels": [
+        "Ajouter un deuxième contrôleur",
+        "Install-ADDSDomainController"
+      ],
+      "outils": [
+        "second-dc",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/addsdeployment/install-addsdomaincontroller?view=windowsserver2025-ps",
+      "titre": "Install-ADDSDomainController (ADDSDeployment) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/devtest/pnputil-command-syntax",
+      "labels": [
+        "Diagnostiquer et réinitialiser le Wi-Fi"
+      ],
+      "outils": [
+        "wifi-repair"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/pnputil-command-syntax",
+      "titre": "PnPUtil Command Syntax - Windows drivers | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-addefaultdomainpasswordpolicy",
+      "labels": [
+        "Politique de mots de passe du domaine",
+        "Set-ADDefaultDomainPasswordPolicy"
+      ],
+      "outils": [
+        "gpo-password",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/set-addefaultdomainpasswordpolicy?view=windowsserver2025-ps",
+      "titre": "Set-ADDefaultDomainPasswordPolicy (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem",
+      "labels": [
+        "Analyser et libérer de l’espace disque"
+      ],
+      "outils": [
+        "disk-scan"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.6",
+      "titre": "Get-ChildItem (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/servermanager/get-windowsfeature",
+      "labels": [
+        "Diagnostic complet Windows Server",
+        "Get-WindowsFeature"
+      ],
+      "outils": [
+        "server-health-report",
+        "rras-nat-readiness",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/servermanager/get-windowsfeature?view=windowsserver2025-ps",
+      "titre": "Get-WindowsFeature (ServerManager) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.diagnostics/get-winevent",
+      "labels": [
+        "Get-WinEvent"
+      ],
+      "outils": [
+        "server-health-report",
+        "ip-conflict-detection",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent?view=powershell-7.6",
+      "titre": "Get-WinEvent (Microsoft.PowerShell.Diagnostics) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/storage/get-volume",
+      "labels": [
+        "Get-Volume"
+      ],
+      "outils": [
+        "server-health-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/storage/get-volume?view=windowsserver2025-ps",
+      "titre": "Get-Volume (Storage) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration",
+      "labels": [
+        "Get-NetIPConfiguration",
+        "Produire un rapport réseau complet",
+        "Capturer et comparer deux états réseau"
+      ],
+      "outils": [
+        "server-health-report",
+        "internet-client-diagnostic",
+        "network-full-report",
+        "network-baseline",
+        "gateway-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netipconfiguration?view=windowsserver2025-ps",
+      "titre": "Get-NetIPConfiguration (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallprofile",
+      "labels": [
+        "Get-NetFirewallProfile"
+      ],
+      "outils": [
+        "server-health-report",
+        "gpo-firewall-defender",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallprofile?view=windowsserver2025-ps",
+      "titre": "Get-NetFirewallProfile (NetSecurity) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverindc",
+      "labels": [
+        "Installer et autoriser un serveur DHCP",
+        "Add-DhcpServerInDC"
+      ],
+      "outils": [
+        "dhcp-install-authorize",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/add-dhcpserverindc?view=windowsserver2025-ps",
+      "titre": "Add-DhcpServerInDC (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverindc",
+      "labels": [
+        "Get-DhcpServerInDC"
+      ],
+      "outils": [
+        "dhcp-install-authorize",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverindc?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerInDC (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverindc",
+      "labels": [
+        "Remove-DhcpServerInDC"
+      ],
+      "outils": [
+        "dhcp-install-authorize"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/remove-dhcpserverindc?view=windowsserver2025-ps",
+      "titre": "Remove-DhcpServerInDC (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/servermanager/install-windowsfeature",
+      "labels": [
+        "Install-WindowsFeature"
+      ],
+      "outils": [
+        "dhcp-install-authorize",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/servermanager/install-windowsfeature?view=windowsserver2025-ps",
+      "titre": "Install-WindowsFeature (ServerManager) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/technologies/dhcp/dhcp-top",
+      "labels": [
+        "DHCP — documentation Windows Server"
+      ],
+      "outils": [
+        "dhcp-install-authorize"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/networking/technologies/dhcp/dhcp-top",
+      "titre": "What is DHCP Server in Windows Server? | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4scope",
+      "labels": [
+        "Créer une étendue et configurer ses options DHCP",
+        "Add-DhcpServerv4Scope"
+      ],
+      "outils": [
+        "dhcp-scope-options",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/add-dhcpserverv4scope?view=windowsserver2025-ps",
+      "titre": "Add-DhcpServerv4Scope (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/set-dhcpserverv4optionvalue",
+      "labels": [
+        "Set-DhcpServerv4OptionValue"
+      ],
+      "outils": [
+        "dhcp-scope-options",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/set-dhcpserverv4optionvalue?view=windowsserver2025-ps",
+      "titre": "Set-DhcpServerv4OptionValue (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4exclusionrange",
+      "labels": [
+        "Add-DhcpServerv4ExclusionRange"
+      ],
+      "outils": [
+        "dhcp-scope-options",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/add-dhcpserverv4exclusionrange?view=windowsserver2025-ps",
+      "titre": "Add-DhcpServerv4ExclusionRange (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverv4scope",
+      "labels": [
+        "Remove-DhcpServerv4Scope"
+      ],
+      "outils": [
+        "dhcp-scope-options"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/remove-dhcpserverv4scope?view=windowsserver2025-ps",
+      "titre": "Remove-DhcpServerv4Scope (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4reservation",
+      "labels": [
+        "Créer une réservation DHCP",
+        "Add-DhcpServerv4Reservation"
+      ],
+      "outils": [
+        "dhcp-reservation",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/add-dhcpserverv4reservation?view=windowsserver2025-ps",
+      "titre": "Add-DhcpServerv4Reservation (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4reservation",
+      "labels": [
+        "Get-DhcpServerv4Reservation"
+      ],
+      "outils": [
+        "dhcp-reservation",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4reservation?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4Reservation (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverv4reservation",
+      "labels": [
+        "Remove-DhcpServerv4Reservation"
+      ],
+      "outils": [
+        "dhcp-reservation"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/remove-dhcpserverv4reservation?view=windowsserver2025-ps",
+      "titre": "Remove-DhcpServerv4Reservation (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4lease",
+      "labels": [
+        "Diagnostiquer les baux DHCP",
+        "Get-DhcpServerv4Lease"
+      ],
+      "outils": [
+        "dhcp-leases-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4lease?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4Lease (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4scopestatistics",
+      "labels": [
+        "Get-DhcpServerv4ScopeStatistics"
+      ],
+      "outils": [
+        "dhcp-leases-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4scopestatistics?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4ScopeStatistics (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/backup-dhcpserver",
+      "labels": [
+        "Sauvegarder la configuration DHCP",
+        "Backup-DhcpServer"
+      ],
+      "outils": [
+        "dhcp-backup",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/backup-dhcpserver?view=windowsserver2025-ps",
+      "titre": "Backup-DhcpServer (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/restore-dhcpserver",
+      "labels": [
+        "Restore-DhcpServer"
+      ],
+      "outils": [
+        "dhcp-backup"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/restore-dhcpserver?view=windowsserver2025-ps",
+      "titre": "Restore-DhcpServer (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverzone",
+      "labels": [
+        "Diagnostiquer un serveur DNS Windows",
+        "Get-DnsServerZone"
+      ],
+      "outils": [
+        "dns-diagnostic",
+        "dns-zone",
+        "ad-dns-health",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/get-dnsserverzone?view=windowsserver2025-ps",
+      "titre": "Get-DnsServerZone (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname",
+      "labels": [
+        "Resolve-DnsName",
+        "Diagnostiquer la résolution de noms côté client"
+      ],
+      "outils": [
+        "dns-diagnostic",
+        "internet-client-diagnostic",
+        "ad-dns-health",
+        "dns-client-diagnostic",
+        "ldap-ldaps-connectivity",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/resolve-dnsname?view=windowsserver2025-ps",
+      "titre": "Resolve-DnsName (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+      "labels": [
+        "Test-NetConnection",
+        "Diagnostiquer l’accès Internet d’un client",
+        "Joindre une cible et relever le chemin",
+        "Tester des ports TCP nommés"
+      ],
+      "outils": [
+        "dns-diagnostic",
+        "smb-sessions-diagnostic",
+        "internet-client-diagnostic",
+        "ping-traceroute",
+        "tcp-port-test",
+        "rpc-connectivity-test",
+        "ldap-ldaps-connectivity",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/test-netconnection?view=windowsserver2025-ps",
+      "titre": "Test-NetConnection (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/dcdiag",
+      "labels": [
+        "dcdiag",
+        "Rapport dcdiag interprété",
+        "dcdiag.exe"
+      ],
+      "outils": [
+        "dns-diagnostic",
+        "ad-dcdiag-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/dcdiag",
+      "titre": "dcdiag | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/dns/dns-top",
+      "labels": [
+        "DNS — documentation Windows Server"
+      ],
+      "outils": [
+        "dns-diagnostic"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/networking/dns/dns-overview",
+      "titre": "Domain Name System (DNS) in Windows and Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverprimaryzone",
+      "labels": [
+        "Créer une zone DNS directe ou inversée",
+        "Add-DnsServerPrimaryZone"
+      ],
+      "outils": [
+        "dns-zone",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/add-dnsserverprimaryzone?view=windowsserver2025-ps",
+      "titre": "Add-DnsServerPrimaryZone (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverresourcerecord",
+      "labels": [
+        "Get-DnsServerResourceRecord"
+      ],
+      "outils": [
+        "dns-zone",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/get-dnsserverresourcerecord?view=windowsserver2025-ps",
+      "titre": "Get-DnsServerResourceRecord (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecorda",
+      "labels": [
+        "Créer un enregistrement DNS",
+        "Add-DnsServerResourceRecordA"
+      ],
+      "outils": [
+        "dns-record",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/add-dnsserverresourcerecorda?view=windowsserver2025-ps",
+      "titre": "Add-DnsServerResourceRecordA (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordaaaa",
+      "labels": [
+        "Add-DnsServerResourceRecordAAAA"
+      ],
+      "outils": [
+        "dns-record"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/add-dnsserverresourcerecordaaaa?view=windowsserver2025-ps",
+      "titre": "Add-DnsServerResourceRecordAAAA (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordcname",
+      "labels": [
+        "Add-DnsServerResourceRecordCName"
+      ],
+      "outils": [
+        "dns-record"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/add-dnsserverresourcerecordcname?view=windowsserver2025-ps",
+      "titre": "Add-DnsServerResourceRecordCName (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordptr",
+      "labels": [
+        "Add-DnsServerResourceRecordPtr"
+      ],
+      "outils": [
+        "dns-record"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/add-dnsserverresourcerecordptr?view=windowsserver2025-ps",
+      "titre": "Add-DnsServerResourceRecordPtr (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/remove-dnsserverresourcerecord",
+      "labels": [
+        "Remove-DnsServerResourceRecord"
+      ],
+      "outils": [
+        "dns-record"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/remove-dnsserverresourcerecord?view=windowsserver2025-ps",
+      "titre": "Remove-DnsServerResourceRecord (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl",
+      "labels": [
+        "Auditer les permissions NTFS et SMB",
+        "Get-Acl"
+      ],
+      "outils": [
+        "file-permissions-audit",
+        "ad-home-profile-paths",
+        "ad-delegation-audit",
+        "gpo-logon-startup-scripts",
+        "network-share-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-acl?view=powershell-7.6",
+      "titre": "Get-Acl (Microsoft.PowerShell.Security) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbshareaccess",
+      "labels": [
+        "Get-SmbShareAccess"
+      ],
+      "outils": [
+        "file-permissions-audit",
+        "ad-home-profile-paths",
+        "gpo-drive-mapping",
+        "gpo-folder-redirection",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbshareaccess?view=windowsserver2025-ps",
+      "titre": "Get-SmbShareAccess (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbshare",
+      "labels": [
+        "Get-SmbShare"
+      ],
+      "outils": [
+        "file-permissions-audit",
+        "smb-sessions-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbshare?view=windowsserver2025-ps",
+      "titre": "Get-SmbShare (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbopenfile",
+      "labels": [
+        "Diagnostiquer les sessions et fichiers SMB ouverts",
+        "Get-SmbOpenFile"
+      ],
+      "outils": [
+        "smb-sessions-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbopenfile?view=windowsserver2025-ps",
+      "titre": "Get-SmbOpenFile (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbsession",
+      "labels": [
+        "Get-SmbSession"
+      ],
+      "outils": [
+        "smb-sessions-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbsession?view=windowsserver2025-ps",
+      "titre": "Get-SmbSession (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+      "labels": [
+        "Get-NetRoute",
+        "Diagnostiquer la passerelle par défaut",
+        "Diagnostiquer la table de routage"
+      ],
+      "outils": [
+        "internet-client-diagnostic",
+        "ics-readiness",
+        "network-full-report",
+        "gateway-diagnostic",
+        "adapter-metric-multihoming",
+        "route-table-diagnostic",
+        "route-manager",
+        "wifi-vpn-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netroute?view=windowsserver2025-ps",
+      "titre": "Get-NetRoute (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netconnection/get-netconnectionprofile",
+      "labels": [
+        "Get-NetConnectionProfile"
+      ],
+      "outils": [
+        "internet-client-diagnostic",
+        "network-full-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netconnection/get-netconnectionprofile?view=windowsserver2025-ps",
+      "titre": "Get-NetConnectionProfile (NetConnection) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/set-up-internet-connection-sharing",
+      "labels": [
+        "Préparer et vérifier un partage de connexion Internet ICS",
+        "Configurer le partage de connexion Internet"
+      ],
+      "outils": [
+        "ics-readiness"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/set-up-internet-connection-sharing",
+      "titre": "Set up Internet Connection Sharing - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netadapter/get-netadapter",
+      "labels": [
+        "Get-NetAdapter"
+      ],
+      "outils": [
+        "ics-readiness",
+        "network-full-report",
+        "adapter-metric-multihoming",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netadapter/get-netadapter?view=windowsserver2025-ps",
+      "titre": "Get-NetAdapter (NetAdapter) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipaddress",
+      "labels": [
+        "Get-NetIPAddress"
+      ],
+      "outils": [
+        "ics-readiness",
+        "network-baseline",
+        "dhcp-client-diagnostic",
+        "ipv4-subnet-calculator",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netipaddress?view=windowsserver2025-ps",
+      "titre": "Get-NetIPAddress (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/set-up-routing-remote-access-intranet",
+      "labels": [
+        "Vérifier les prérequis RRAS et NAT",
+        "Configurer le routage et l’accès distant"
+      ],
+      "outils": [
+        "rras-nat-readiness"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/set-up-routing-remote-access-intranet",
+      "titre": "How To Set Up Routing and Remote Access - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/remoteaccess/install-remoteaccess",
+      "labels": [
+        "Install-RemoteAccess"
+      ],
+      "outils": [
+        "rras-nat-readiness"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/remoteaccess/install-remoteaccess?view=windowsserver2025-ps",
+      "titre": "Install-RemoteAccess (RemoteAccess) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+      "labels": [
+        "Get-NetIPInterface",
+        "Diagnostiquer cartes multiples et métriques"
+      ],
+      "outils": [
+        "rras-nat-readiness",
+        "network-baseline",
+        "adapter-metric-multihoming",
+        "route-table-diagnostic",
+        "dhcp-client-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netipinterface?view=windowsserver2025-ps",
+      "titre": "Get-NetIPInterface (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adorganizationalunit",
+      "labels": [
+        "Get-ADOrganizationalUnit"
+      ],
+      "outils": [
+        "ad-ou-hierarchy",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adorganizationalunit?view=windowsserver2025-ps",
+      "titre": "Get-ADOrganizationalUnit (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-adorganizationalunit",
+      "labels": [
+        "Set-ADOrganizationalUnit"
+      ],
+      "outils": [
+        "ad-ou-hierarchy"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/set-adorganizationalunit?view=windowsserver2025-ps",
+      "titre": "Set-ADOrganizationalUnit (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adorganizationalunit",
+      "labels": [
+        "Remove-ADOrganizationalUnit"
+      ],
+      "outils": [
+        "ad-ou-hierarchy"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/remove-adorganizationalunit?view=windowsserver2025-ps",
+      "titre": "Remove-ADOrganizationalUnit (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-aduser",
+      "labels": [
+        "Get-ADUser",
+        "État de santé des comptes du domaine"
+      ],
+      "outils": [
+        "ad-users-csv",
+        "ad-home-profile-paths",
+        "ad-account-health",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-aduser?view=windowsserver2025-ps",
+      "titre": "Get-ADUser (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/import-csv",
+      "labels": [
+        "Import-Csv"
+      ],
+      "outils": [
+        "ad-users-csv",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/import-csv?view=powershell-7.6",
+      "titre": "Import-Csv (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/read-host",
+      "labels": [
+        "Read-Host"
+      ],
+      "outils": [
+        "ad-users-csv",
+        "ad-account-recovery",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/read-host?view=powershell-7.6",
+      "titre": "Read-Host (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/disable-adaccount",
+      "labels": [
+        "Disable-ADAccount"
+      ],
+      "outils": [
+        "ad-users-csv",
+        "ad-computer-cleanup",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/disable-adaccount?view=windowsserver2025-ps",
+      "titre": "Disable-ADAccount (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/new-adgroup",
+      "labels": [
+        "Créer et vérifier des groupes Active Directory",
+        "New-ADGroup"
+      ],
+      "outils": [
+        "ad-groups",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/new-adgroup?view=windowsserver2025-ps",
+      "titre": "New-ADGroup (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adgroup",
+      "labels": [
+        "Get-ADGroup"
+      ],
+      "outils": [
+        "ad-groups",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adgroup?view=windowsserver2025-ps",
+      "titre": "Get-ADGroup (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroup",
+      "labels": [
+        "Remove-ADGroup"
+      ],
+      "outils": [
+        "ad-groups"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/remove-adgroup?view=windowsserver2025-ps",
+      "titre": "Remove-ADGroup (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/add-adgroupmember",
+      "labels": [
+        "Importer les membres de groupes depuis un CSV",
+        "Add-ADGroupMember"
+      ],
+      "outils": [
+        "ad-group-members-csv",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/add-adgroupmember?view=windowsserver2025-ps",
+      "titre": "Add-ADGroupMember (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adgroupmember",
+      "labels": [
+        "Get-ADGroupMember"
+      ],
+      "outils": [
+        "ad-group-members-csv",
+        "ad-account-health",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adgroupmember?view=windowsserver2025-ps",
+      "titre": "Get-ADGroupMember (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroupmember",
+      "labels": [
+        "Remove-ADGroupMember"
+      ],
+      "outils": [
+        "ad-group-members-csv"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/remove-adgroupmember?view=windowsserver2025-ps",
+      "titre": "Remove-ADGroupMember (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-aduser",
+      "labels": [
+        "Dossiers personnels et profils itinérants",
+        "Set-ADUser"
+      ],
+      "outils": [
+        "ad-home-profile-paths",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/set-aduser?view=windowsserver2025-ps",
+      "titre": "Set-ADUser (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/manage/understand-security-identifiers",
+      "labels": [
+        "Identificateurs de sécurité connus (SID)"
+      ],
+      "outils": [
+        "ad-account-health"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-identifiers",
+      "titre": "Security Identifiers | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/unlock-adaccount",
+      "labels": [
+        "Débloquer et remettre en service un compte",
+        "Unlock-ADAccount"
+      ],
+      "outils": [
+        "ad-account-recovery",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/unlock-adaccount?view=windowsserver2025-ps",
+      "titre": "Unlock-ADAccount (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/enable-adaccount",
+      "labels": [
+        "Enable-ADAccount"
+      ],
+      "outils": [
+        "ad-account-recovery",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/enable-adaccount?view=windowsserver2025-ps",
+      "titre": "Enable-ADAccount (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-adaccountpassword",
+      "labels": [
+        "Set-ADAccountPassword"
+      ],
+      "outils": [
+        "ad-account-recovery",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/set-adaccountpassword?view=windowsserver2025-ps",
+      "titre": "Set-ADAccountPassword (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/clear-adaccountexpiration",
+      "labels": [
+        "Clear-ADAccountExpiration"
+      ],
+      "outils": [
+        "ad-account-recovery",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/clear-adaccountexpiration?view=windowsserver2025-ps",
+      "titre": "Clear-ADAccountExpiration (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/move-adobject",
+      "labels": [
+        "Rechercher et déplacer un objet Active Directory",
+        "Move-ADObject"
+      ],
+      "outils": [
+        "ad-object-search-move",
+        "ad-computer-cleanup",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/move-adobject?view=windowsserver2025-ps",
+      "titre": "Move-ADObject (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adobject",
+      "labels": [
+        "Get-ADObject"
+      ],
+      "outils": [
+        "ad-object-search-move",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adobject?view=windowsserver2025-ps",
+      "titre": "Get-ADObject (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/ad/object-names-and-identities",
+      "labels": [
+        "Syntaxe des noms distinctifs"
+      ],
+      "outils": [
+        "ad-object-search-move"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows/win32/ad/object-names-and-identities",
+      "titre": "Object Names and Identities - Win32 apps | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/plan/delegating-administration-of-account-ous-and-resource-ous",
+      "labels": [
+        "Audit des délégations sur les unités d’organisation",
+        "Déléguer l’administration des OU"
+      ],
+      "outils": [
+        "ad-delegation-audit"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/delegating-administration-of-account-ous-and-resource-ous",
+      "titre": "Delegating Administration of Account OUs and Resource OUs | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adrootdse",
+      "labels": [
+        "Get-ADRootDSE"
+      ],
+      "outils": [
+        "ad-delegation-audit",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adrootdse?view=windowsserver2025-ps",
+      "titre": "Get-ADRootDSE (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adcomputer",
+      "labels": [
+        "Recenser et mettre en quarantaine les ordinateurs inactifs",
+        "Get-ADComputer"
+      ],
+      "outils": [
+        "ad-computer-cleanup",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adcomputer?view=windowsserver2025-ps",
+      "titre": "Get-ADComputer (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adcomputer",
+      "labels": [
+        "Remove-ADComputer"
+      ],
+      "outils": [
+        "ad-computer-cleanup"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/remove-adcomputer?view=windowsserver2025-ps",
+      "titre": "Remove-ADComputer (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/troubleshoot-dns-event-id-4013",
+      "labels": [
+        "Santé du DNS pour Active Directory",
+        "Dépanner l’événement DNS 4013"
+      ],
+      "outils": [
+        "ad-dns-health"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/troubleshoot-dns-event-id-4013",
+      "titre": "Troubleshoot DNS Event ID 4013 - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-addomaincontroller",
+      "labels": [
+        "Get-ADDomainController"
+      ],
+      "outils": [
+        "ad-dns-health",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-addomaincontroller?view=windowsserver2025-ps",
+      "titre": "Get-ADDomainController (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems",
+      "labels": [
+        "Dépanner les problèmes de réplication Active Directory"
+      ],
+      "outils": [
+        "ad-dcdiag-report",
+        "ad-repadmin-report"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems",
+      "titre": "Troubleshooting Active Directory Replication Problems | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/get-command",
+      "labels": [
+        "Get-Command"
+      ],
+      "outils": [
+        "ad-dcdiag-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-command?view=powershell-7.6",
+      "titre": "Get-Command (Microsoft.PowerShell.Core) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc770963(v=ws.11)",
+      "labels": [
+        "État de la réplication entre contrôleurs",
+        "repadmin",
+        "repadmin.exe"
+      ],
+      "outils": [
+        "ad-repadmin-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc770963(v=ws.11)",
+      "titre": "Repadmin | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adreplicationpartnermetadata",
+      "labels": [
+        "Get-ADReplicationPartnerMetadata"
+      ],
+      "outils": [
+        "ad-repadmin-report",
+        "ad-domain-full-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adreplicationpartnermetadata?view=windowsserver2025-ps",
+      "titre": "Get-ADReplicationPartnerMetadata (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/active-directory/replication-error-1722-rpc-server-unavailable",
+      "labels": [
+        "Erreur de réplication 1722"
+      ],
+      "outils": [
+        "ad-repadmin-report"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/replication-error-1722-rpc-server-unavailable",
+      "titre": "Troubleshoot replication error 1722 - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-computersecurechannel",
+      "labels": [
+        "Vérifier et réparer le canal sécurisé du domaine",
+        "Test-ComputerSecureChannel"
+      ],
+      "outils": [
+        "ad-secure-channel",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-computersecurechannel?view=powershell-5.1",
+      "titre": "Test-ComputerSecureChannel (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/reset-computermachinepassword",
+      "labels": [
+        "Reset-ComputerMachinePassword"
+      ],
+      "outils": [
+        "ad-secure-channel"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/reset-computermachinepassword?view=powershell-5.1",
+      "titre": "Reset-ComputerMachinePassword (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings",
+      "labels": [
+        "w32tm",
+        "w32tm.exe"
+      ],
+      "outils": [
+        "ad-secure-channel",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings",
+      "titre": "Windows Time Service Tools and Settings | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-credential",
+      "labels": [
+        "Get-Credential"
+      ],
+      "outils": [
+        "ad-secure-channel",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-credential?view=powershell-7.6",
+      "titre": "Get-Credential (Microsoft.PowerShell.Security) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-addomain",
+      "labels": [
+        "Rapport complet de santé du domaine",
+        "Get-ADDomain"
+      ],
+      "outils": [
+        "ad-domain-full-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-addomain?view=windowsserver2025-ps",
+      "titre": "Get-ADDomain (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adforest",
+      "labels": [
+        "Get-ADForest"
+      ],
+      "outils": [
+        "ad-domain-full-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adforest?view=windowsserver2025-ps",
+      "titre": "Get-ADForest (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/force-authoritative-non-authoritative-synchronization",
+      "labels": [
+        "Synchronisation autoritaire et non autoritaire de SYSVOL",
+        "Synchronisation de SYSVOL répliqué par DFSR"
+      ],
+      "outils": [
+        "ad-domain-full-report",
+        "gpo-health-report"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/group-policy/force-authoritative-non-authoritative-synchronization",
+      "titre": "Force synchronization for Distributed File System Replication (DFSR) replicated sysvol replication - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/get-started/adac/introduction-to-active-directory-administrative-center-enhancements--level-100-",
+      "labels": [
+        "Corbeille Active Directory"
+      ],
+      "outils": [
+        "ad-domain-full-report"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/adac/Advanced-AD-DS-Management-Using-Active-Directory-Administrative-Center--Level-200-",
+      "titre": "Advanced AD DS Management Using Active Directory Administrative Center (Level 200) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpo",
+      "labels": [
+        "Inventorier les GPO du domaine",
+        "Get-GPO"
+      ],
+      "outils": [
+        "gpo-inventory-report",
+        "gpo-health-report",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/get-gpo?view=windowsserver2025-ps",
+      "titre": "Get-GPO (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport",
+      "labels": [
+        "Get-GPOReport"
+      ],
+      "outils": [
+        "gpo-inventory-report",
+        "gpo-logon-startup-scripts",
+        "gpo-backup-restore-compare",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/get-gporeport?view=windowsserver2025-ps",
+      "titre": "Get-GPOReport (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/",
+      "labels": [
+        "Module GroupPolicy",
+        "Module GroupPolicy — liste complète des applets de commande"
+      ],
+      "outils": [
+        "gpo-inventory-report",
+        "gpo-logon-startup-scripts"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/?view=windowsserver2025-ps",
+      "titre": "GroupPolicy Module | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance",
+      "labels": [
+        "Diagnostiquer la santé des stratégies de groupe",
+        "Diagnostiquer l’application d’une stratégie de groupe"
+      ],
+      "outils": [
+        "gpo-health-report",
+        "gpo-resultant-set",
+        "gpo-refresh-diagnostic",
+        "gpo-security-filter"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance",
+      "titre": "Applying Group Policy troubleshooting guidance - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpresultantsetofpolicy",
+      "labels": [
+        "Produire un rapport gpresult / RSoP",
+        "Get-GPResultantSetOfPolicy"
+      ],
+      "outils": [
+        "gpo-resultant-set",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/get-gpresultantsetofpolicy?view=windowsserver2025-ps",
+      "titre": "Get-GPResultantSetOfPolicy (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/gpresult",
+      "labels": [
+        "gpresult",
+        "gpresult.exe"
+      ],
+      "outils": [
+        "gpo-resultant-set",
+        "gpo-refresh-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/gpresult",
+      "titre": "gpresult | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/gpupdate",
+      "labels": [
+        "Actualiser et diagnostiquer gpupdate",
+        "gpupdate",
+        "gpupdate.exe"
+      ],
+      "outils": [
+        "gpo-refresh-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/gpupdate",
+      "titre": "gpupdate | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/new-gpo",
+      "labels": [
+        "Créer une GPO et la lier à une OU",
+        "New-GPO"
+      ],
+      "outils": [
+        "gpo-create-link",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/new-gpo?view=windowsserver2025-ps",
+      "titre": "New-GPO (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/new-gplink",
+      "labels": [
+        "New-GPLink"
+      ],
+      "outils": [
+        "gpo-create-link",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/new-gplink?view=windowsserver2025-ps",
+      "titre": "New-GPLink (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gplink",
+      "labels": [
+        "Set-GPLink"
+      ],
+      "outils": [
+        "gpo-create-link",
+        "gpo-link-audit"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gplink?view=windowsserver2025-ps",
+      "titre": "Set-GPLink (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/remove-gpo",
+      "labels": [
+        "Remove-GPO"
+      ],
+      "outils": [
+        "gpo-create-link"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/remove-gpo?view=windowsserver2025-ps",
+      "titre": "Remove-GPO (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpinheritance",
+      "labels": [
+        "Auditer l’héritage et les liens GPO",
+        "Get-GPInheritance"
+      ],
+      "outils": [
+        "gpo-link-audit",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/get-gpinheritance?view=windowsserver2025-ps",
+      "titre": "Get-GPInheritance (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpinheritance",
+      "labels": [
+        "Set-GPInheritance"
+      ],
+      "outils": [
+        "gpo-link-audit"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gpinheritance?view=windowsserver2025-ps",
+      "titre": "Set-GPInheritance (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gppermission",
+      "labels": [
+        "Vérifier le filtrage de sécurité d’une GPO",
+        "Set-GPPermission"
+      ],
+      "outils": [
+        "gpo-security-filter",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gppermission?view=windowsserver2025-ps",
+      "titre": "Set-GPPermission (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gppermission",
+      "labels": [
+        "Get-GPPermission"
+      ],
+      "outils": [
+        "gpo-security-filter",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/get-gppermission?view=windowsserver2025-ps",
+      "titre": "Get-GPPermission (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2003/cc779036(v=ws.10)",
+      "labels": [
+        "Vérifier un filtre WMI avant association",
+        "Filtres WMI pour les objets de stratégie de groupe"
+      ],
+      "outils": [
+        "gpo-wmi-filter-readiness"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc779036(v=ws.10)",
+      "titre": "WMI filtering using GPMC: Group Policy | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/cimcmdlets/get-ciminstance",
+      "labels": [
+        "Get-CimInstance"
+      ],
+      "outils": [
+        "gpo-wmi-filter-readiness",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/cimcmdlets/get-ciminstance?view=powershell-7.6",
+      "titre": "Get-CimInstance (CimCmdlets) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-operatingsystem",
+      "labels": [
+        "Classe Win32_OperatingSystem"
+      ],
+      "outils": [
+        "gpo-wmi-filter-readiness"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-operatingsystem",
+      "titre": "Win32_OperatingSystem class - Win32 apps | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+      "labels": [
+        "Préparer le mappage de lecteurs réseau",
+        "Préférences de stratégie de groupe",
+        "Préparer des scripts de connexion et de démarrage",
+        "Préférences et paramètres de stratégie de groupe"
+      ],
+      "outils": [
+        "gpo-drive-mapping",
+        "gpo-logon-startup-scripts"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+      "titre": "Using Startup, Shutdown, Logon, and Logoff Scripts in Group Policy | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc733022(v=ws.10)",
+      "labels": [
+        "Ciblage au niveau de l’élément"
+      ],
+      "outils": [
+        "gpo-drive-mapping"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc733022(v=ws.10)",
+      "titre": "Preference Item-Level Targeting | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc754699(v=ws.11)",
+      "labels": [
+        "Préparer le déploiement d’une imprimante",
+        "Déployer des imprimantes par stratégie de groupe"
+      ],
+      "outils": [
+        "gpo-printer-deployment"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc754699(v=ws.11)",
+      "titre": "Deploying Printers by Using Group Policy | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/printmanagement/get-printer",
+      "labels": [
+        "Get-Printer"
+      ],
+      "outils": [
+        "gpo-printer-deployment",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/get-printer?view=windowsserver2025-ps",
+      "titre": "Get-Printer (PrintManagement) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/printing/event-ids-associated-point-print-restrictions",
+      "labels": [
+        "Journaux liés aux restrictions Point and Print"
+      ],
+      "outils": [
+        "gpo-printer-deployment"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/printing/event-ids-associated-point-print-restrictions",
+      "titre": "Event ID&#39;s with point and print restrictions - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/storage/folder-redirection/deploy-folder-redirection",
+      "labels": [
+        "Préparer une redirection de dossiers",
+        "Déployer la redirection de dossiers"
+      ],
+      "outils": [
+        "gpo-folder-redirection"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/storage/folder-redirection/deploy-folder-redirection",
+      "titre": "Deploy Folder Redirection with Offline Files | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/storage/folder-redirection/folder-redirection-rup-overview",
+      "labels": [
+        "Redirection de dossiers et fichiers hors connexion"
+      ],
+      "outils": [
+        "gpo-folder-redirection"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/storage/folder-redirection/folder-redirection-rup-overview",
+      "titre": "Folder Redirection and Roaming User Profiles in Windows and Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/threat-protection/security-policy-settings/interactive-logon-machine-inactivity-limit",
+      "labels": [
+        "Configurer verrouillage automatique et fond d’écran",
+        "Limite d’inactivité de la machine"
+      ],
+      "outils": [
+        "gpo-session-desktop"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/interactive-logon-machine-inactivity-limit",
+      "titre": "Interactive logon Machine inactivity limit - Windows 10 | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpregistryvalue",
+      "labels": [
+        "Set-GPRegistryValue"
+      ],
+      "outils": [
+        "gpo-session-desktop",
+        "gpo-device-restrictions",
+        "gpo-windows-update-services",
+        "gpo-software-shortcuts-browser",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/set-gpregistryvalue?view=windowsserver2025-ps",
+      "titre": "Set-GPRegistryValue (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/remove-gpregistryvalue",
+      "labels": [
+        "Remove-GPRegistryValue"
+      ],
+      "outils": [
+        "gpo-session-desktop"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/remove-gpregistryvalue?view=windowsserver2025-ps",
+      "titre": "Remove-GPRegistryValue (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc772540(v=ws.10)",
+      "labels": [
+        "Préparer les restrictions USB et périphériques",
+        "Accès au stockage amovible par stratégie de groupe"
+      ],
+      "outils": [
+        "gpo-device-restrictions"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc772540(v=ws.10)",
+      "titre": "Deny All Access to Removable Devices or Media | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/pnpdevice/get-pnpdevice",
+      "labels": [
+        "Get-PnpDevice"
+      ],
+      "outils": [
+        "gpo-device-restrictions",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/pnpdevice/get-pnpdevice?view=windowsserver2025-ps",
+      "titre": "Get-PnpDevice (PnpDevice) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/operating-system-security/network-security/windows-firewall/",
+      "labels": [
+        "Auditer et préparer Pare-feu et Microsoft Defender par GPO",
+        "Pare-feu Windows Defender"
+      ],
+      "outils": [
+        "gpo-firewall-defender"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows/security/operating-system-security/network-security/windows-firewall/",
+      "titre": "Windows Firewall Overview | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/defender/get-mpcomputerstatus",
+      "labels": [
+        "Get-MpComputerStatus"
+      ],
+      "outils": [
+        "gpo-firewall-defender",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/defender/get-mpcomputerstatus?view=windowsserver2025-ps",
+      "titre": "Get-MpComputerStatus (Defender) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/defender/get-mppreference",
+      "labels": [
+        "Get-MpPreference"
+      ],
+      "outils": [
+        "gpo-firewall-defender",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/defender/get-mppreference?view=windowsserver2025-ps",
+      "titre": "Get-MpPreference (Defender) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/deployment/update/waas-manage-updates-wufb",
+      "labels": [
+        "Préparer Windows Update et les services par GPO",
+        "Gérer les mises à jour avec Windows Update for Business"
+      ],
+      "outils": [
+        "gpo-windows-update-services"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows/deployment/update/windows-update-client-policies",
+      "titre": "Windows Update client policies | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/deployment/update/waas-wu-settings",
+      "labels": [
+        "Paramètres de stratégie Windows Update"
+      ],
+      "outils": [
+        "gpo-windows-update-services"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows/deployment/update/waas-wu-settings",
+      "titre": "Manage additional Windows Update settings | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/use-group-policy-to-install-software",
+      "labels": [
+        "Préparer déploiement logiciel, raccourcis et navigateur",
+        "Utiliser une stratégie de groupe pour installer un logiciel"
+      ],
+      "outils": [
+        "gpo-software-shortcuts-browser"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/group-policy/use-group-policy-to-install-software",
+      "titre": "Use Group Policy to remotely install software - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/deployedge/microsoft-edge-policies",
+      "labels": [
+        "Documentation des stratégies Microsoft Edge"
+      ],
+      "outils": [
+        "gpo-software-shortcuts-browser"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies",
+      "titre": "Microsoft Edge Browser Policy Documentation | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/msi/installer-object",
+      "labels": [
+        "Objet Installer de Windows Installer (lecture d’un MSI)"
+      ],
+      "outils": [
+        "gpo-software-shortcuts-browser"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows/win32/msi/installer-object",
+      "titre": "Installer object - Win32 apps | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/backup-gpo",
+      "labels": [
+        "Sauvegarder, comparer et restaurer une GPO",
+        "Backup-GPO"
+      ],
+      "outils": [
+        "gpo-backup-restore-compare",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/backup-gpo?view=windowsserver2025-ps",
+      "titre": "Backup-GPO (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/restore-gpo",
+      "labels": [
+        "Restore-GPO"
+      ],
+      "outils": [
+        "gpo-backup-restore-compare",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/restore-gpo?view=windowsserver2025-ps",
+      "titre": "Restore-GPO (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientserveraddress",
+      "labels": [
+        "Get-DnsClientServerAddress"
+      ],
+      "outils": [
+        "network-baseline",
+        "dns-client-diagnostic",
+        "dns-client-change",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/get-dnsclientserveraddress?view=windowsserver2025-ps",
+      "titre": "Get-DnsClientServerAddress (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-connection",
+      "labels": [
+        "Test-Connection",
+        "Mesurer latence, gigue et perte de paquets"
+      ],
+      "outils": [
+        "ping-traceroute",
+        "latency-packet-loss",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-connection?view=powershell-7.6",
+      "titre": "Test-Connection (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/tracert",
+      "labels": [
+        "tracert"
+      ],
+      "outils": [
+        "ping-traceroute",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tracert",
+      "titre": "tracert | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/pathping",
+      "labels": [
+        "pathping"
+      ],
+      "outils": [
+        "latency-packet-loss",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/pathping",
+      "titre": "pathping | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ping",
+      "labels": [
+        "ping"
+      ],
+      "outils": [
+        "latency-packet-loss",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ping",
+      "titre": "ping | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+      "labels": [
+        "Get-NetNeighbor",
+        "Chercher un conflit d’adresse IPv4",
+        "Diagnostiquer le voisinage ARP et IPv6"
+      ],
+      "outils": [
+        "gateway-diagnostic",
+        "ip-conflict-detection",
+        "arp-neighbor-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netneighbor?view=windowsserver2025-ps",
+      "titre": "Get-NetNeighbor (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/arp",
+      "labels": [
+        "arp"
+      ],
+      "outils": [
+        "ip-conflict-detection",
+        "arp-neighbor-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/arp",
+      "titre": "arp | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientcache",
+      "labels": [
+        "Get-DnsClientCache"
+      ],
+      "outils": [
+        "dns-client-diagnostic",
+        "dns-cache-reset",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/get-dnsclientcache?view=windowsserver2025-ps",
+      "titre": "Get-DnsClientCache (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclient",
+      "labels": [
+        "Get-DnsClient"
+      ],
+      "outils": [
+        "dns-client-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/get-dnsclient?view=windowsserver2025-ps",
+      "titre": "Get-DnsClient (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/clear-dnsclientcache",
+      "labels": [
+        "Afficher puis vider le cache DNS",
+        "Clear-DnsClientCache"
+      ],
+      "outils": [
+        "dns-cache-reset",
+        "dns-client-change",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/clear-dnsclientcache?view=windowsserver2025-ps",
+      "titre": "Clear-DnsClientCache (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig",
+      "labels": [
+        "ipconfig",
+        "Diagnostiquer le bail DHCP du poste"
+      ],
+      "outils": [
+        "dns-cache-reset",
+        "dhcp-client-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig",
+      "titre": "ipconfig | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/set-dnsclientserveraddress",
+      "labels": [
+        "Changer les serveurs DNS d’une carte",
+        "Set-DnsClientServerAddress"
+      ],
+      "outils": [
+        "dns-client-change",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/set-dnsclientserveraddress?view=windowsserver2025-ps",
+      "titre": "Set-DnsClientServerAddress (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpconnection",
+      "labels": [
+        "Get-NetTCPConnection"
+      ],
+      "outils": [
+        "tcp-port-test",
+        "rpc-connectivity-test",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-nettcpconnection?view=windowsserver2025-ps",
+      "titre": "Get-NetTCPConnection (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/netstat",
+      "labels": [
+        "netstat"
+      ],
+      "outils": [
+        "tcp-port-test",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netstat",
+      "titre": "netstat | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements",
+      "labels": [
+        "Tester la connectivité RPC",
+        "Ports réseau requis par les services Windows"
+      ],
+      "outils": [
+        "rpc-connectivity-test"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements",
+      "titre": "Service overview and network port requirements - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/active-directory/config-firewall-for-ad-domains-and-trusts",
+      "labels": [
+        "Tester la connectivité LDAP et LDAPS",
+        "Ports à ouvrir pour les domaines et approbations AD"
+      ],
+      "outils": [
+        "ldap-ldaps-connectivity"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/config-firewall-for-ad-domains-and-trusts",
+      "titre": "Configure firewall for AD domain and trusts - Windows Server | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbconnection",
+      "labels": [
+        "Tester la connectivité SMB",
+        "Get-SmbConnection",
+        "Diagnostiquer un partage inaccessible"
+      ],
+      "outils": [
+        "smb-connectivity-test",
+        "network-share-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbconnection?view=windowsserver2025-ps",
+      "titre": "Get-SmbConnection (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbmapping",
+      "labels": [
+        "Get-SmbMapping"
+      ],
+      "outils": [
+        "smb-connectivity-test",
+        "network-share-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbmapping?view=windowsserver2025-ps",
+      "titre": "Get-SmbMapping (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbclientconfiguration",
+      "labels": [
+        "Get-SmbClientConfiguration"
+      ],
+      "outils": [
+        "smb-connectivity-test",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbclientconfiguration?view=windowsserver2025-ps",
+      "titre": "Get-SmbClientConfiguration (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/invoke-webrequest",
+      "labels": [
+        "Tester HTTP, HTTPS et le certificat TLS",
+        "Invoke-WebRequest"
+      ],
+      "outils": [
+        "http-https-tls-test",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-webrequest?view=powershell-7.6",
+      "titre": "Invoke-WebRequest (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.security.cryptography.x509certificates.x509certificate2",
+      "labels": [
+        "X509Certificate2"
+      ],
+      "outils": [
+        "http-https-tls-test"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2?view=net-10.0",
+      "titre": "X509Certificate2 Class (System.Security.Cryptography.X509Certificates) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.net.security.sslstream",
+      "labels": [
+        "SslStream"
+      ],
+      "outils": [
+        "http-https-tls-test"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/dotnet/api/system.net.security.sslstream?view=net-10.0",
+      "titre": "SslStream Class (System.Net.Security) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/route_ws2008",
+      "labels": [
+        "route"
+      ],
+      "outils": [
+        "route-table-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/route_ws2008",
+      "titre": "route | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/new-netroute",
+      "labels": [
+        "Préparer et poser une route statique",
+        "New-NetRoute"
+      ],
+      "outils": [
+        "route-manager",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/new-netroute?view=windowsserver2025-ps",
+      "titre": "New-NetRoute (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/remove-netroute",
+      "labels": [
+        "Remove-NetRoute"
+      ],
+      "outils": [
+        "route-manager",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/remove-netroute?view=windowsserver2025-ps",
+      "titre": "Remove-NetRoute (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/remove-netneighbor",
+      "labels": [
+        "Remove-NetNeighbor"
+      ],
+      "outils": [
+        "arp-neighbor-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/remove-netneighbor?view=windowsserver2025-ps",
+      "titre": "Remove-NetNeighbor (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/netsh-wlan",
+      "labels": [
+        "Diagnostiquer le Wi-Fi ou le VPN",
+        "netsh wlan"
+      ],
+      "outils": [
+        "wifi-vpn-diagnostic"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netsh-wlan",
+      "titre": "netsh wlan | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/vpnclient/get-vpnconnection",
+      "labels": [
+        "Get-VpnConnection"
+      ],
+      "outils": [
+        "wifi-vpn-diagnostic",
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/vpnclient/get-vpnconnection?view=windowsserver2025-ps",
+      "titre": "Get-VpnConnection (VpnClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/core-network-guide/core-network-guide",
+      "labels": [
+        "Calculer un sous-réseau IPv4",
+        "Composants du réseau de base, côté Windows Server"
+      ],
+      "outils": [
+        "ipv4-subnet-calculator"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/networking/core-network-guide/core-network-guide",
+      "titre": "Core network components | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.net.ipaddress",
+      "labels": [
+        "Classe IPAddress (System.Net)"
+      ],
+      "outils": [
+        "ipv4-subnet-calculator"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/dotnet/api/system.net.ipaddress?view=net-10.0",
+      "titre": "IPAddress Class (System.Net) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/foreach-object",
+      "labels": [
+        "ForEach-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/foreach-object?view=powershell-7.6",
+      "titre": "ForEach-Object (Microsoft.PowerShell.Core) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/import-module",
+      "labels": [
+        "Import-Module"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/import-module?view=powershell-7.6",
+      "titre": "Import-Module (Microsoft.PowerShell.Core) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/out-null",
+      "labels": [
+        "Out-Null"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/out-null?view=powershell-7.6",
+      "titre": "Out-Null (Microsoft.PowerShell.Core) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/where-object",
+      "labels": [
+        "Where-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/where-object?view=powershell-7.6",
+      "titre": "Where-Object (Microsoft.PowerShell.Core) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/add-type",
+      "labels": [
+        "Add-Type"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/add-type?view=powershell-7.6",
+      "titre": "Add-Type (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/compare-object",
+      "labels": [
+        "Compare-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/compare-object?view=powershell-7.6",
+      "titre": "Compare-Object (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/convertfrom-json",
+      "labels": [
+        "ConvertFrom-Json"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/convertfrom-json?view=powershell-7.6",
+      "titre": "ConvertFrom-Json (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/convertto-html",
+      "labels": [
+        "ConvertTo-Html"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/convertto-html?view=powershell-7.6",
+      "titre": "ConvertTo-Html (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/convertto-json",
+      "labels": [
+        "ConvertTo-Json"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/convertto-json?view=powershell-7.6",
+      "titre": "ConvertTo-Json (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/export-csv",
+      "labels": [
+        "Export-Csv"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/export-csv?view=powershell-7.6",
+      "titre": "Export-Csv (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/format-list",
+      "labels": [
+        "Format-List"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/format-list?view=powershell-7.6",
+      "titre": "Format-List (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/format-table",
+      "labels": [
+        "Format-Table"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/format-table?view=powershell-7.6",
+      "titre": "Format-Table (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-date",
+      "labels": [
+        "Get-Date"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-date?view=powershell-7.6",
+      "titre": "Get-Date (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-random",
+      "labels": [
+        "Get-Random"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-random?view=powershell-7.6",
+      "titre": "Get-Random (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/group-object",
+      "labels": [
+        "Group-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/group-object?view=powershell-7.6",
+      "titre": "Group-Object (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/measure-command",
+      "labels": [
+        "Measure-Command"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/measure-command?view=powershell-7.6",
+      "titre": "Measure-Command (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/measure-object",
+      "labels": [
+        "Measure-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/measure-object?view=powershell-7.6",
+      "titre": "Measure-Object (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/new-object",
+      "labels": [
+        "New-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/new-object?view=powershell-7.6",
+      "titre": "New-Object (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/new-timespan",
+      "labels": [
+        "New-TimeSpan"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/new-timespan?view=powershell-7.6",
+      "titre": "New-TimeSpan (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/out-file",
+      "labels": [
+        "Out-File"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/out-file?view=powershell-7.6",
+      "titre": "Out-File (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/out-string",
+      "labels": [
+        "Out-String"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/out-string?view=powershell-7.6",
+      "titre": "Out-String (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/select-object",
+      "labels": [
+        "Select-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/select-object?view=powershell-7.6",
+      "titre": "Select-Object (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/select-string",
+      "labels": [
+        "Select-String"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/select-string?view=powershell-7.6",
+      "titre": "Select-String (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/sort-object",
+      "labels": [
+        "Sort-Object"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/sort-object?view=powershell-7.6",
+      "titre": "Sort-Object (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/start-sleep",
+      "labels": [
+        "Start-Sleep"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/start-sleep?view=powershell-7.6",
+      "titre": "Start-Sleep (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-host",
+      "labels": [
+        "Write-Host"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/write-host?view=powershell-7.6",
+      "titre": "Write-Host (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-output",
+      "labels": [
+        "Write-Output"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/write-output?view=powershell-7.6",
+      "titre": "Write-Output (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-verbose",
+      "labels": [
+        "Write-Verbose"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/write-verbose?view=powershell-7.6",
+      "titre": "Write-Verbose (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-warning",
+      "labels": [
+        "Write-Warning"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/write-warning?view=powershell-7.6",
+      "titre": "Write-Warning (Microsoft.PowerShell.Utility) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/convert-path",
+      "labels": [
+        "Convert-Path"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/convert-path?view=powershell-7.6",
+      "titre": "Convert-Path (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-childitem",
+      "labels": [
+        "Get-ChildItem"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem?view=powershell-7.6",
+      "titre": "Get-ChildItem (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-content",
+      "labels": [
+        "Get-Content"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-content?view=powershell-7.6",
+      "titre": "Get-Content (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-item",
+      "labels": [
+        "Get-Item"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-item?view=powershell-7.6",
+      "titre": "Get-Item (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-itemproperty",
+      "labels": [
+        "Get-ItemProperty"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-itemproperty?view=powershell-7.6",
+      "titre": "Get-ItemProperty (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-psdrive",
+      "labels": [
+        "Get-PSDrive"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-psdrive?view=powershell-7.6",
+      "titre": "Get-PSDrive (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-service",
+      "labels": [
+        "Get-Service"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-service?view=powershell-7.6",
+      "titre": "Get-Service (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/join-path",
+      "labels": [
+        "Join-Path"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/join-path?view=powershell-7.6",
+      "titre": "Join-Path (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/new-item",
+      "labels": [
+        "New-Item"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-item?view=powershell-7.6",
+      "titre": "New-Item (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/resolve-path",
+      "labels": [
+        "Resolve-Path"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/resolve-path?view=powershell-7.6",
+      "titre": "Resolve-Path (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/restart-service",
+      "labels": [
+        "Restart-Service"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/restart-service?view=powershell-7.6",
+      "titre": "Restart-Service (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/set-content",
+      "labels": [
+        "Set-Content"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-7.6",
+      "titre": "Set-Content (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/split-path",
+      "labels": [
+        "Split-Path"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/split-path?view=powershell-7.6",
+      "titre": "Split-Path (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/start-service",
+      "labels": [
+        "Start-Service"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-service?view=powershell-7.6",
+      "titre": "Start-Service (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-path",
+      "labels": [
+        "Test-Path"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/test-path?view=powershell-7.6",
+      "titre": "Test-Path (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/set-acl",
+      "labels": [
+        "Set-Acl"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-acl?view=powershell-7.6",
+      "titre": "Set-Acl (Microsoft.PowerShell.Security) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/cimcmdlets/get-cimclass",
+      "labels": [
+        "Get-CimClass"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/cimcmdlets/get-cimclass?view=powershell-7.6",
+      "titre": "Get-CimClass (CimCmdlets) - PowerShell | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-addefaultdomainpasswordpolicy",
+      "labels": [
+        "Get-ADDefaultDomainPasswordPolicy"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-addefaultdomainpasswordpolicy?view=windowsserver2025-ps",
+      "titre": "Get-ADDefaultDomainPasswordPolicy (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adoptionalfeature",
+      "labels": [
+        "Get-ADOptionalFeature"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adoptionalfeature?view=windowsserver2025-ps",
+      "titre": "Get-ADOptionalFeature (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adreplicationsite",
+      "labels": [
+        "Get-ADReplicationSite"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adreplicationsite?view=windowsserver2025-ps",
+      "titre": "Get-ADReplicationSite (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adreplicationsubnet",
+      "labels": [
+        "Get-ADReplicationSubnet"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-adreplicationsubnet?view=windowsserver2025-ps",
+      "titre": "Get-ADReplicationSubnet (ActiveDirectory) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpregistryvalue",
+      "labels": [
+        "Get-GPRegistryValue"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/grouppolicy/get-gpregistryvalue?view=windowsserver2025-ps",
+      "titre": "Get-GPRegistryValue (GroupPolicy) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverauditlog",
+      "labels": [
+        "Get-DhcpServerAuditLog"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverauditlog?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerAuditLog (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverversion",
+      "labels": [
+        "Get-DhcpServerVersion"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverversion?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerVersion (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4exclusionrange",
+      "labels": [
+        "Get-DhcpServerv4ExclusionRange"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4exclusionrange?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4ExclusionRange (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4freeipaddress",
+      "labels": [
+        "Get-DhcpServerv4FreeIPAddress"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4freeipaddress?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4FreeIPAddress (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4optionvalue",
+      "labels": [
+        "Get-DhcpServerv4OptionValue"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4optionvalue?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4OptionValue (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4scope",
+      "labels": [
+        "Get-DhcpServerv4Scope"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dhcpserver/get-dhcpserverv4scope?view=windowsserver2025-ps",
+      "titre": "Get-DhcpServerv4Scope (DhcpServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsservercache",
+      "labels": [
+        "Get-DnsServerCache"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/get-dnsservercache?view=windowsserver2025-ps",
+      "titre": "Get-DnsServerCache (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverforwarder",
+      "labels": [
+        "Get-DnsServerForwarder"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/get-dnsserverforwarder?view=windowsserver2025-ps",
+      "titre": "Get-DnsServerForwarder (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverrecursion",
+      "labels": [
+        "Get-DnsServerRecursion"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsserver/get-dnsserverrecursion?view=windowsserver2025-ps",
+      "titre": "Get-DnsServerRecursion (DnsServer) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientglobalsetting",
+      "labels": [
+        "Get-DnsClientGlobalSetting"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/get-dnsclientglobalsetting?view=windowsserver2025-ps",
+      "titre": "Get-DnsClientGlobalSetting (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientnrptpolicy",
+      "labels": [
+        "Get-DnsClientNrptPolicy"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/get-dnsclientnrptpolicy?view=windowsserver2025-ps",
+      "titre": "Get-DnsClientNrptPolicy (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/register-dnsclient",
+      "labels": [
+        "Register-DnsClient"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/dnsclient/register-dnsclient?view=windowsserver2025-ps",
+      "titre": "Register-DnsClient (DnsClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipv4protocol",
+      "labels": [
+        "Get-NetIPv4Protocol"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netipv4protocol?view=windowsserver2025-ps",
+      "titre": "Get-NetIPv4Protocol (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipv6protocol",
+      "labels": [
+        "Get-NetIPv6Protocol"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netipv6protocol?view=windowsserver2025-ps",
+      "titre": "Get-NetIPv6Protocol (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpsetting",
+      "labels": [
+        "Get-NetTCPSetting"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-nettcpsetting?view=windowsserver2025-ps",
+      "titre": "Get-NetTCPSetting (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netudpendpoint",
+      "labels": [
+        "Get-NetUDPEndpoint"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/get-netudpendpoint?view=windowsserver2025-ps",
+      "titre": "Get-NetUDPEndpoint (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/set-netipinterface",
+      "labels": [
+        "Set-NetIPInterface"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/nettcpip/set-netipinterface?view=windowsserver2025-ps",
+      "titre": "Set-NetIPInterface (NetTCPIP) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netadapter/disable-netadapter",
+      "labels": [
+        "Disable-NetAdapter"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netadapter/disable-netadapter?view=windowsserver2025-ps",
+      "titre": "Disable-NetAdapter (NetAdapter) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netadapter/enable-netadapter",
+      "labels": [
+        "Enable-NetAdapter"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netadapter/enable-netadapter?view=windowsserver2025-ps",
+      "titre": "Enable-NetAdapter (NetAdapter) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netadapter/get-netadapteradvancedproperty",
+      "labels": [
+        "Get-NetAdapterAdvancedProperty"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netadapter/get-netadapteradvancedproperty?view=windowsserver2025-ps",
+      "titre": "Get-NetAdapterAdvancedProperty (NetAdapter) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netadapter/get-netadapterstatistics",
+      "labels": [
+        "Get-NetAdapterStatistics"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netadapter/get-netadapterstatistics?view=windowsserver2025-ps",
+      "titre": "Get-NetAdapterStatistics (NetAdapter) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallportfilter",
+      "labels": [
+        "Get-NetFirewallPortFilter"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallportfilter?view=windowsserver2025-ps",
+      "titre": "Get-NetFirewallPortFilter (NetSecurity) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallrule",
+      "labels": [
+        "Get-NetFirewallRule"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallrule?view=windowsserver2025-ps",
+      "titre": "Get-NetFirewallRule (NetSecurity) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbclientnetworkinterface",
+      "labels": [
+        "Get-SmbClientNetworkInterface"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/get-smbclientnetworkinterface?view=windowsserver2025-ps",
+      "titre": "Get-SmbClientNetworkInterface (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/grant-smbshareaccess",
+      "labels": [
+        "Grant-SmbShareAccess"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/smbshare/grant-smbshareaccess?view=windowsserver2025-ps",
+      "titre": "Grant-SmbShareAccess (SmbShare) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/vpnclient/get-vpnconnectiontrigger",
+      "labels": [
+        "Get-VpnConnectionTrigger"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/vpnclient/get-vpnconnectiontrigger?view=windowsserver2025-ps",
+      "titre": "Get-VpnConnectionTrigger (VpnClient) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/icacls",
+      "labels": [
+        "icacls"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls",
+      "titre": "icacls | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/klist",
+      "labels": [
+        "klist.exe"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/klist",
+      "titre": "klist | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/nbtstat",
+      "labels": [
+        "nbtstat"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nbtstat",
+      "titre": "nbtstat | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/technologies/netsh/netsh",
+      "labels": [
+        "netsh"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netsh",
+      "titre": "Network shell (netsh) | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/nslookup",
+      "labels": [
+        "nslookup"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/nslookup",
+      "titre": "nslookup | Microsoft Learn"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/devtest/pnputil",
+      "labels": [
+        "pnputil"
+      ],
+      "outils": [
+        "(inventaire des commandes)"
+      ],
+      "statut": "VÉRIFIÉE",
+      "code": 200,
+      "urlFinale": "https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/pnputil",
+      "titre": "PnPUtil Command Line Tool for Driver Packages - Windows drivers | Microsoft Learn"
+    }
+  ],
+  "contreEpreuve": {
+    "url": "https://learn.microsoft.com/powershell/module/grouppolicy/kjemo-cmdlet-qui-n-existe-pas",
+    "code": 404,
+    "titre": "404 - Content not found",
+    "rejetee": true
+  }
+}

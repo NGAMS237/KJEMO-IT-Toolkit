@@ -1043,3 +1043,252 @@ export function validerUrlHttps(v) {
   }
   return { ok: true, value: s, error: null };
 }
+
+// ===========================================================================
+// LOT 5 — réseau
+//
+// Les validateurs d'adresses, de masques et de plages du LOT 2 restent la
+// base ; ceux-ci portent ce que le réseau ajoute : ports, délais, cibles,
+// plages de découverte, et les garde-fous qui empêchent cet outil de devenir
+// un scanner.
+// ===========================================================================
+
+/** Port TCP ou UDP : entier 1 à 65535, sans zéro de tête. */
+export function validerPort(v, label = 'Le port') {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: `${label} ne peut pas être vide.` };
+  if (!/^\d+$/.test(s)) return { ok: false, value: s, error: `${label} doit être un entier (ex. : 445).` };
+  const n = Number(s);
+  if (String(n) !== s) return { ok: false, value: s, error: `${label} ne doit pas comporter de zéro de tête.` };
+  if (n < 1 || n > 65535) return { ok: false, value: s, error: `${label} doit être compris entre 1 et 65535.` };
+  return { ok: true, value: n, error: null };
+}
+
+/** Nombre maximal de ports qu'une liste peut porter. Au-delà, c'est un balayage. */
+export const PORTS_MAX_PAR_LISTE = 20;
+
+/**
+ * Liste de ports explicites, séparés par des virgules.
+ *
+ * Vingt au maximum, et c'est un plafond de conception, pas une préférence :
+ * un outil d'administration teste les ports qu'on lui nomme ; au-delà, on
+ * balaye, et ce projet ne balaye pas.
+ */
+export function validerListePorts(v, { max = PORTS_MAX_PAR_LISTE } = {}) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Indique au moins un port (ex. : 445,139).' };
+  const bruts = s.split(',').map((x) => x.trim()).filter((x) => x !== '');
+  if (bruts.length === 0) return { ok: false, value: s, error: 'Indique au moins un port (ex. : 445,139).' };
+  if (bruts.length > max) {
+    return { ok: false, value: s, error: `Pas plus de ${max} ports à la fois : au-delà, ce n’est plus un test ciblé mais un balayage, et cet assistant ne balaye pas.` };
+  }
+  const vus = new Set();
+  const ports = [];
+  for (const b of bruts) {
+    if (b.includes('-')) {
+      return { ok: false, value: s, error: `« ${b} » : les intervalles ne sont pas acceptés. Nomme chaque port, séparé par une virgule.` };
+    }
+    const r = validerPort(b, `Le port « ${b} »`);
+    if (!r.ok) return { ok: false, value: s, error: r.error };
+    if (vus.has(r.value)) return { ok: false, value: s, error: `Le port ${r.value} est indiqué deux fois.` };
+    vus.add(r.value);
+    ports.push(r.value);
+  }
+  return { ok: true, value: ports, error: null };
+}
+
+/** Délai d'attente en millisecondes, borné : ni zéro, ni une attente infinie. */
+export function validerDelaiMs(v, { min = 100, max = 30000, label = 'Le délai' } = {}) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: `${label} ne peut pas être vide.` };
+  if (!/^\d+$/.test(s)) return { ok: false, value: s, error: `${label} doit être un entier, en millisecondes.` };
+  const n = Number(s);
+  if (String(n) !== s) return { ok: false, value: s, error: `${label} ne doit pas comporter de zéro de tête.` };
+  if (n < min || n > max) {
+    return { ok: false, value: s, error: `${label} doit être compris entre ${min} et ${max} millisecondes.` };
+  }
+  return { ok: true, value: n, error: null };
+}
+
+/**
+ * Nombre d'essais d'une mesure. Borné des deux côtés : un ping sans fin n'est
+ * pas un diagnostic, c'est une charge.
+ */
+export function validerNombreEssais(v, { min = 1, max = 100, label = 'Le nombre d’essais' } = {}) {
+  return validerEntier(v, min, max, label);
+}
+
+/**
+ * Cible d'un test réseau : adresse IPv4, nom complet, ou nom d'hôte court.
+ *
+ * On refuse ce qui n'est ni l'un ni l'autre plutôt que de laisser passer une
+ * chaîne quelconque jusqu'à la ligne de commande.
+ */
+export function validerCibleReseau(v, label = 'La cible') {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: `${label} ne peut pas être vide.` };
+  if (/[\s"'`$;|&<>(){}\\]/.test(s)) {
+    return { ok: false, value: s, error: `${label} ne peut contenir ni espace, ni guillemet, ni caractère de commande.` };
+  }
+  if (validateIPv4(s).ok) return { ok: true, value: s, error: null, forme: 'ipv4' };
+  // Quatre groupes de chiffres separes par des points : c'est une tentative
+  // d'adresse IPv4, pas un nom d'hote. « 256.1.1.1 » doit etre refuse comme
+  // adresse invalide, et non accepte comme FQDN parce qu'il contient des
+  // points.
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(s)) {
+    return { ok: false, value: s, error: validateIPv4(s).error };
+  }
+  if (s.includes(':')) {
+    const v6 = validerIPv6(s);
+    if (v6.ok) return { ok: true, value: s, error: null, forme: 'ipv6' };
+    return { ok: false, value: s, error: v6.error };
+  }
+  if (s.includes('.')) {
+    const f = validerFqdn(s);
+    if (f.ok) return { ok: true, value: f.value, error: null, forme: 'fqdn' };
+    return { ok: false, value: s, error: f.error };
+  }
+  const h = validerNomHote(s);
+  if (h.ok) return { ok: true, value: h.value, error: null, forme: 'hote' };
+  return { ok: false, value: s, error: h.error };
+}
+
+/** Adresse HTTP ou HTTPS. Le test TLS a besoin de pouvoir viser http pour comparer. */
+export function validerUrlHttpOuHttps(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'L’adresse ne peut pas être vide.' };
+  if (/[\s"'<>`]/.test(s)) {
+    return { ok: false, value: s, error: 'L’adresse ne peut contenir ni espace, ni guillemet, ni chevron.' };
+  }
+  if (!/^https?:\/\//i.test(s)) {
+    return { ok: false, value: s, error: 'L’adresse doit commencer par http:// ou https://.' };
+  }
+  const reste = s.replace(/^https?:\/\//i, '');
+  const hote = reste.split('/')[0];
+  if (!/^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:[0-9]{1,5})?$/.test(hote)) {
+    return { ok: false, value: s, error: 'Le nom d’hôte de l’adresse est invalide.' };
+  }
+  if (s.length > 2000) return { ok: false, value: s, error: 'L’adresse dépasse 2000 caractères.' };
+  return { ok: true, value: s, error: null };
+}
+
+// ---------------------------------------------------------------------------
+// Garde-fous de découverte réseau
+//
+// Ce projet est un outil d'administration défensive. Il ne balaye pas des
+// réseaux qui ne sont pas les siens, et il ne se tait pas quand on le lui
+// demande : il refuse, et il dit pourquoi.
+// ---------------------------------------------------------------------------
+
+/** Préfixe le plus court accepté pour une découverte. /24 = 254 hôtes. */
+export const PREFIXE_DECOUVERTE_MIN = 24;
+/** Nombre maximal d'hôtes qu'une découverte peut viser. */
+export const HOTES_DECOUVERTE_MAX = 254;
+
+/**
+ * Plage de découverte : notation CIDR, strictement privée, /24 au plus large.
+ *
+ * Les trois refus sont distincts et portent chacun leur message, parce qu'ils
+ * n'ont pas la même cause et n'appellent pas la même correction.
+ */
+export function validerPlageDecouverte(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Indique la plage à examiner, en notation CIDR (ex. : 192.168.30.0/24).' };
+  const parts = s.split('/');
+  if (parts.length !== 2) {
+    return { ok: false, value: s, error: 'La plage s’écrit en notation CIDR (ex. : 192.168.30.0/24).' };
+  }
+  const ip = validateIPv4(parts[0]);
+  if (!ip.ok) return { ok: false, value: s, error: ip.error };
+  const pre = validerPrefixe(parts[1]);
+  if (!pre.ok) return { ok: false, value: s, error: pre.error };
+
+  if (pre.value < PREFIXE_DECOUVERTE_MIN) {
+    const hotes = Math.pow(2, 32 - pre.value) - 2;
+    return {
+      ok: false,
+      value: s,
+      error: `/${pre.value} vise ${hotes.toLocaleString('fr-CA')} hôtes. Cet assistant s’arrête à /${PREFIXE_DECOUVERTE_MIN}, soit ${HOTES_DECOUVERTE_MAX} hôtes : au-delà, ce n’est plus un diagnostic de sous-réseau mais un balayage.`,
+    };
+  }
+
+  const reseau = adresseReseau(ip.value, pre.value);
+  if (reseau !== ip.value) {
+    return { ok: false, value: s, error: `${ip.value}/${pre.value} n’est pas une adresse de réseau. Voulais-tu écrire ${reseau}/${pre.value} ?` };
+  }
+
+  // Privé seulement. On teste les deux bornes : une plage « privée » dont la
+  // diffusion sort de la plage RFC 1918 n'est pas privée.
+  const diffusion = adresseDiffusion(reseau, pre.value);
+  if (!estPlagePrivee(reseau) || !estPlagePrivee(diffusion)) {
+    return {
+      ok: false,
+      value: s,
+      error: `${reseau}/${pre.value} n’est pas une plage privée. Cet assistant n’examine que les réseaux privés (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) : examiner une plage publique sans y être autorisé est une intrusion, pas un diagnostic.`,
+    };
+  }
+
+  const total = Math.pow(2, 32 - pre.value);
+  const hotes = pre.value >= 31 ? total : total - 2;
+  if (hotes > HOTES_DECOUVERTE_MAX) {
+    return { ok: false, value: s, error: `${hotes} hôtes dépassent le plafond de ${HOTES_DECOUVERTE_MAX}.` };
+  }
+
+  return {
+    ok: true,
+    value: { reseau, prefixe: pre.value, masque: prefixeVersMasque(pre.value), hotes },
+    error: null,
+  };
+}
+
+/**
+ * Vrai si l'adresse est dans 10/8, 172.16/12 ou 192.168/16.
+ *
+ * La comparaison se fait par BORNES ENTIÈRES, pas par masque binaire : les
+ * opérateurs `&` et `~` de JavaScript travaillent sur des entiers 32 bits
+ * signés, et 192.168.0.0 masqué devient négatif dès qu'on oublie un `>>> 0`.
+ * Deux comparaisons d'entiers n'ont pas ce défaut.
+ */
+const BORNES_PRIVEES = [
+  ['10.0.0.0', '10.255.255.255'],
+  ['172.16.0.0', '172.31.255.255'],
+  ['192.168.0.0', '192.168.255.255'],
+];
+
+export function estPlagePrivee(ip) {
+  const r = validateIPv4(ip);
+  if (!r.ok) return false;
+  const n = ipVersEntier(r.value);
+  return BORNES_PRIVEES.some(([a, b]) => n >= ipVersEntier(a) && n <= ipVersEntier(b));
+}
+
+/** Concurrence d'une découverte : bornée, parce qu'un parallélisme libre est une inondation. */
+export function validerConcurrence(v, { min = 1, max = 32 } = {}) {
+  return validerEntier(v, min, max, 'La concurrence');
+}
+
+/** Nom d'un profil Wi-Fi. Jamais une clé : seulement un nom. */
+export function validerNomProfilWifi(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le nom du profil ne peut pas être vide.' };
+  if (/["`$;|&<>]/.test(s)) {
+    return { ok: false, value: s, error: 'Le nom du profil ne peut contenir ni guillemet ni caractère de commande.' };
+  }
+  if (s.length > 64) return { ok: false, value: s, error: 'Le nom du profil dépasse 64 caractères.' };
+  return { ok: true, value: s, error: null };
+}
+
+/** Index d'interface réseau, tel que Get-NetAdapter le rend. */
+export function validerIndexInterface(v) {
+  return validerEntier(v, 1, 99999, 'L’index d’interface');
+}
+
+/** Suffixe DNS : un nom de domaine, sans point de tête ni de fin. */
+export function validerSuffixeDns(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return { ok: false, value: s, error: 'Le suffixe DNS ne peut pas être vide.' };
+  if (s.startsWith('.') || s.endsWith('.')) {
+    return { ok: false, value: s, error: 'Le suffixe DNS s’écrit sans point de tête ni point final.' };
+  }
+  return validerFqdn(s);
+}

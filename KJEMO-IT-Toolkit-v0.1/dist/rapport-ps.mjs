@@ -18,7 +18,18 @@
  * Aucune dépendance : ce module n'importe rien.
  */
 
-/** Version du catalogue d'outils, reportée dans chaque rapport généré. */
+/**
+ * Version par défaut du catalogue d'outils, reportée dans chaque rapport
+ * généré qui n'en demande pas d'autre.
+ *
+ * Elle reste à « LOT 2 — 2.0.0 » pour une raison précise : les 440 scripts
+ * déjà figés dans test/scripts-baseline.json la portent, et la garde
+ * d'identité existe pour interdire qu'on les modifie au passage. Un lot qui
+ * veut sa propre version la passe explicitement, par le paramètre `version`
+ * d'`enteteScript` et d'`assembler`. Changer cette constante migrerait tout
+ * le catalogue d'un coup : cela se fera, mais dans une migration globale
+ * explicitement autorisée, pas en marge d'un correctif.
+ */
 export const VERSION_OUTILS = 'LOT 2 — 2.0.0';
 
 /**
@@ -28,12 +39,12 @@ export const VERSION_OUTILS = 'LOT 2 — 2.0.0';
  * `#Requires -Version 5.1` documente le plancher réellement visé plutôt que de
  * laisser croire que n'importe quelle console fera l'affaire.
  */
-export function enteteScript({ titre, outil, diagnostic = true, admin = true }) {
+export function enteteScript({ titre, outil, diagnostic = true, admin = true, version = VERSION_OUTILS }) {
   const lignes = [
     '#Requires -Version 5.1',
     '',
     `# ${titre}`,
-    `# Outil KJEMO : ${outil} — ${VERSION_OUTILS}`,
+    `# Outil KJEMO : ${outil} — ${version}`,
     '#',
     diagnostic
       ? '# Ce script OBSERVE. Dans son mode par défaut il ne modifie rien.'
@@ -47,7 +58,7 @@ export function enteteScript({ titre, outil, diagnostic = true, admin = true }) 
     '',
     '$ErrorActionPreference = \'Continue\'',
     `$KjemoOutil = '${outil}'`,
-    `$KjemoVersion = '${VERSION_OUTILS}'`,
+    `$KjemoVersion = '${version}'`,
     '$KjemoDebut = Get-Date',
     '$KjemoResultats = New-Object System.Collections.ArrayList',
     '$KjemoAvertissements = New-Object System.Collections.ArrayList',

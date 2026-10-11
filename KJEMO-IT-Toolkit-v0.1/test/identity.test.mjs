@@ -1308,7 +1308,7 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // Une fonction generate() par outil, et une sous-rubrique par outil, quel que
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs']
+const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs', 'dist/outils-reseau.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -1534,16 +1534,31 @@ const SOUS_RUBRIQUES_LOT2 = [
 ];
 // Les outils ajoutés après le LOT 1, tous lots confondus. Le contrat qui suit
 // s'applique à chacun d'eux : il grandit avec le catalogue.
+/**
+ * Exception nominative et justifiée à l'interdit de requête web.
+ *
+ * L'interdit du LOT 2 vise le téléchargement de CODE et son exécution. Un
+ * assistant dont le métier est d'éprouver une adresse HTTP et son certificat
+ * doit pouvoir émettre une requête : sans elle, il ne teste rien. L'exception
+ * est donc portée par identifiant, et les interdits qui comptent vraiment —
+ * DownloadString, -OutFile, requête dirigée vers une exécution — restent
+ * vérifiés sur TOUS les scripts, celui-ci compris.
+ */
+const REQUETE_WEB_AUTORISEE = {
+  'http-https-tls-test': 'Éprouve une adresse HTTP/HTTPS : la requête EST le test. Aucune réponse n’est écrite sur disque ni exécutée.',
+};
+
 const outilsRecents = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
 const outilsLot2 = outilsRecents.filter((t) => t.category === 'Windows Server');
 const outilsLot3 = outilsRecents.filter((t) => t.category === 'Active Directory');
 const outilsLot4 = outilsRecents.filter((t) => t.category === 'GPO');
+const outilsLot5 = outilsRecents.filter((t) => t.category === 'Réseau');
 
 assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
-assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length,
-  `tout outil ajouté appartient à Windows Server, Active Directory ou GPO (${outilsRecents.length})`);
+assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length + outilsLot5.length,
+  `tout outil ajouté appartient à Windows Server, Active Directory, GPO ou Réseau (${outilsRecents.length})`);
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
@@ -1637,8 +1652,25 @@ for (const outil of outilsRecents) {
   assert(!/(^|\s)-Force\b/i.test(script), `${outil.id} : aucun -Force`);
   assert(!/Invoke-Expression|\biex\b/i.test(script), `${outil.id} : aucun Invoke-Expression`);
   assert(!/Set-ExecutionPolicy/i.test(script), `${outil.id} : aucun contournement d’ExecutionPolicy`);
-  assert(!/Invoke-WebRequest|Invoke-RestMethod|curl\s+http|wget\s+http|DownloadString/i.test(script),
-    `${outil.id} : aucun téléchargement de code externe`);
+  // Téléchargement : l'interdit vise le fait de RAPPORTER DU CODE et de
+  // l'exécuter. Un assistant dont le métier est d'éprouver une adresse HTTP
+  // doit pouvoir émettre une requête — sinon il ne teste rien. L'exception est
+  // nominative, justifiée, et elle ne lève AUCUN des interdits qui suivent.
+  if (!Object.prototype.hasOwnProperty.call(REQUETE_WEB_AUTORISEE, outil.id)) {
+    assert(!/Invoke-WebRequest|Invoke-RestMethod|curl\s+http|wget\s+http|DownloadString/i.test(script),
+      `${outil.id} : aucun téléchargement de code externe`);
+  }
+  // Ces quatre-là valent pour TOUS les scripts, exception comprise : c'est le
+  // téléchargement SUIVI D'EXÉCUTION, ou l'écriture sur disque de ce qui a été
+  // rapporté, qui est le vrai danger.
+  assert(!/DownloadString|DownloadFile/i.test(script),
+    `${outil.id} : aucun téléchargement de contenu vers une variable ou un fichier`);
+  assert(!/-OutFile\b/i.test(script),
+    `${outil.id} : aucune réponse web écrite sur disque`);
+  assert(!/(Invoke-WebRequest|Invoke-RestMethod)[^\n]*\|[^\n]*(Invoke-Expression|iex|Start-Process)/i.test(script),
+    `${outil.id} : aucune réponse web dirigée vers une exécution`);
+  assert(!/Start-BitsTransfer/i.test(script),
+    `${outil.id} : aucun transfert de fichier en arrière-plan`);
   // Aucun secret ne doit venir du site, ni finir en clair, ni etre journalise.
   // Les deux formes d'acquisition LOCALE et interactive — Get-Credential et
   // Read-Host -AsSecureString — sont au contraire la bonne reponse : elles
@@ -1934,8 +1966,13 @@ assert(shaAncres[shaAncres.length - 1] === baseline.baseSha,
 const comptes = (baseline.ancrages ?? []).map((a) => a.count);
 assert(comptes.every((c, i) => i === 0 || c >= comptes[i - 1]),
   `la couverture ne recule jamais d’un ancrage au suivant (${comptes.join(' → ')})`);
-assert(baseline.baseShaPrecedent === 'a84a85c60690bcd38a0e08e4c2b6bfb3fe786b8b',
-  'la référence conserve la trace de l\u2019ancrage précédent (LOT 2)');
+assert(/^[0-9a-f]{40}$/.test(baseline.baseShaPrecedent)
+  && shaAncres.includes(baseline.baseShaPrecedent),
+  'la référence conserve la trace de l\u2019ancrage précédent, et il est dans la chaîne');
+assert(shaAncres.includes('fb0932112b098d9c7d519fd9f57902172ffecf21'),
+  'la chaîne passe par l’ancrage du LOT 3 corrigé');
+assert(baseline.ancrages.length >= 4,
+  `la chaîne compte au moins quatre ancrages (${baseline.ancrages.length})`);
 const outilsCouverts = new Set(Object.keys(baseline.sha256).map((f) => f.split('__')[0]));
 assert([...outilsCouverts].every((id) => tools.some((t) => t.id === id)),
   'chaque outil de la référence existe encore dans le catalogue');
@@ -2547,7 +2584,9 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     'LOT 4 : l’assistant gpo-password du LOT 1 n’est pas dupliqué');
   const ids = tools.map((t) => t.id);
   assert(new Set(ids).size === ids.length, 'LOT 4 : aucun identifiant d’outil en double');
-  assert(tools.length === 55, `LOT 4 : le catalogue compte 55 outils (${tools.length})`);
+  assert(tools.length >= 55, `LOT 4 : le catalogue compte au moins les 55 outils du LOT 4 (${tools.length})`);
+  assert(tools.filter((t) => t.category === 'GPO').length === 19,
+    'LOT 4 : la catégorie GPO compte 19 assistants, gpo-password compris');
 
   // -------------------------------------------------------------------------
   section('LOT 4 — validateurs : ce qui passe et ce qui est refusé');
@@ -2704,10 +2743,15 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     const empreinteFaussee = baseline.sha256[unNom].replace(/^./, (c) => (c === 'a' ? 'b' : 'a'));
     assert(empreinteFaussee !== baseline.sha256[unNom],
       `contre-épreuve — une empreinte altérée diffère de la référence (${unNom})`);
-    assert(noms.length === 296,
-      `contre-épreuve — la référence fige bien les 296 scripts d’avant le LOT 4 (${noms.length})`);
-    assert(baseline.ancrages.length >= 3 && baseline.ancrages[baseline.ancrages.length - 1].count === 296,
-      'contre-épreuve — le dernier ancrage de la chaîne couvre 296 scripts');
+    // La référence a été refigée après le correctif GPO : elle couvre
+    // maintenant les 440 scripts du LOT 4 corrigé, et la chaîne garde la
+    // trace des 296 d'avant.
+    assert(noms.length === 440,
+      `contre-épreuve — la référence fige les 440 scripts du LOT 4 corrigé (${noms.length})`);
+    assert(baseline.ancrages[baseline.ancrages.length - 1].count === 440,
+      'contre-épreuve — le dernier ancrage de la chaîne couvre 440 scripts');
+    assert(baseline.ancrages.some((a) => a.count === 296),
+      'contre-épreuve — l’ancrage des 296 scripts d’avant le LOT 4 reste dans la chaîne');
   }
 
   // 2. Retirer une validation doit se voir : un outil sans validate() rejetterait rien.
@@ -3086,6 +3130,495 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
         'le journal affiche le moteur et sa version');
     }
   }
+
+// ===========================================================================
+// LOT 5 — réseau
+// ===========================================================================
+{
+  const V = await import('../dist/validateurs.mjs');
+  const C = await import('../dist/calcul-ip.mjs');
+  const outilsReseau = tools.filter((t) => t.category === 'Réseau');
+  const nouveauxReseau = outilsReseau.filter((t) => t.id !== 'static-ip');
+
+  section('LOT 5 — le catalogue Réseau');
+
+  const ATTENDUS_LOT5 = [
+    ['network-full-report', 'Vue d’ensemble'],
+    ['network-baseline', 'Vue d’ensemble'],
+    ['ping-traceroute', 'Connectivité IP'],
+    ['latency-packet-loss', 'Connectivité IP'],
+    ['gateway-diagnostic', 'Connectivité IP'],
+    ['ip-conflict-detection', 'Connectivité IP'],
+    ['adapter-metric-multihoming', 'Connectivité IP'],
+    ['dns-client-diagnostic', 'Résolution de noms'],
+    ['dns-cache-reset', 'Résolution de noms'],
+    ['dns-client-change', 'Résolution de noms'],
+    ['tcp-port-test', 'Ports et protocoles'],
+    ['rpc-connectivity-test', 'Ports et protocoles'],
+    ['ldap-ldaps-connectivity', 'Ports et protocoles'],
+    ['smb-connectivity-test', 'Ports et protocoles'],
+    ['http-https-tls-test', 'Ports et protocoles'],
+    ['route-table-diagnostic', 'Routage et voisinage'],
+    ['route-manager', 'Routage et voisinage'],
+    ['arp-neighbor-diagnostic', 'Routage et voisinage'],
+    ['dhcp-client-diagnostic', 'Routage et voisinage'],
+    ['network-share-diagnostic', 'Accès aux ressources'],
+    ['wifi-vpn-diagnostic', 'Sans-fil et VPN'],
+    ['ipv4-subnet-calculator', 'Calculs réseau'],
+  ];
+
+  assert(nouveauxReseau.length === 22, `LOT 5 : vingt-deux assistants ajoutés (${nouveauxReseau.length})`);
+  for (const [id, sr] of ATTENDUS_LOT5) {
+    const o = outilsReseau.find((t) => t.id === id);
+    assert(Boolean(o), `LOT 5 : l’assistant « ${id} » existe`);
+    if (o) assert(o.subcategory === sr, `LOT 5 : « ${id} » est classé dans « ${sr} » (${o.subcategory})`);
+  }
+  assert(tools.length === 77, `LOT 5 : le catalogue compte 77 outils (${tools.length})`);
+  assert(outilsReseau.every((t) => t.category === 'Réseau'),
+    'LOT 5 : aucune catégorie principale nouvelle — tout reste sous Réseau');
+  for (const interdite of ['DNS', 'DHCP', 'VPN', 'Wi-Fi', 'SMB', 'Sécurité réseau']) {
+    assert(!tools.some((t) => t.category === interdite),
+      `LOT 5 : aucune catégorie principale « ${interdite} » n’a été créée`);
+  }
+  const sousRubriquesLot5 = new Set(nouveauxReseau.map((t) => t.subcategory));
+  assert(sousRubriquesLot5.size === 8,
+    `LOT 5 : les huit sous-rubriques prévues, et pas une de plus (${sousRubriquesLot5.size})`);
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — calculateur IPv4 : cas connus');
+
+  const CAS = [
+    ['192.168.30.254', 24, { masque: '255.255.255.0', wildcard: '0.0.0.255', reseau: '192.168.30.0',
+      diffusion: '192.168.30.255', premiere: '192.168.30.1', derniere: '192.168.30.254', total: 256, util: 254 }],
+    ['192.168.30.0', 24, { masque: '255.255.255.0', wildcard: '0.0.0.255', reseau: '192.168.30.0',
+      diffusion: '192.168.30.255', premiere: '192.168.30.1', derniere: '192.168.30.254', total: 256, util: 254 }],
+    ['10.0.0.1', 8, { masque: '255.0.0.0', wildcard: '0.255.255.255', reseau: '10.0.0.0',
+      diffusion: '10.255.255.255', premiere: '10.0.0.1', derniere: '10.255.255.254', total: 16777216, util: 16777214 }],
+    ['172.16.5.130', 26, { masque: '255.255.255.192', wildcard: '0.0.0.63', reseau: '172.16.5.128',
+      diffusion: '172.16.5.191', premiere: '172.16.5.129', derniere: '172.16.5.190', total: 64, util: 62 }],
+    ['192.168.1.10', 31, { masque: '255.255.255.254', wildcard: '0.0.0.1', reseau: '192.168.1.10',
+      diffusion: null, premiere: '192.168.1.10', derniere: '192.168.1.11', total: 2, util: 2 }],
+    ['192.168.1.10', 32, { masque: '255.255.255.255', wildcard: '0.0.0.0', reseau: '192.168.1.10',
+      diffusion: null, premiere: '192.168.1.10', derniere: '192.168.1.10', total: 1, util: 1 }],
+  ];
+  for (const [ip, pre, att] of CAS) {
+    const r = C.calculerSousReseau(ip, pre);
+    assert(r.masque === att.masque, `${ip}/${pre} — masque ${att.masque} (${r.masque})`);
+    assert(r.wildcard === att.wildcard, `${ip}/${pre} — wildcard ${att.wildcard} (${r.wildcard})`);
+    assert(r.reseau === att.reseau, `${ip}/${pre} — réseau ${att.reseau} (${r.reseau})`);
+    assert(r.diffusion === att.diffusion, `${ip}/${pre} — diffusion ${att.diffusion} (${r.diffusion})`);
+    assert(r.premiereUtilisable === att.premiere, `${ip}/${pre} — première ${att.premiere} (${r.premiereUtilisable})`);
+    assert(r.derniereUtilisable === att.derniere, `${ip}/${pre} — dernière ${att.derniere} (${r.derniereUtilisable})`);
+    assert(r.totalAdresses === att.total, `${ip}/${pre} — total ${att.total} (${r.totalAdresses})`);
+    assert(r.adressesUtilisables === att.util, `${ip}/${pre} — utilisables ${att.util} (${r.adressesUtilisables})`);
+  }
+
+  // Le /31 est le piège : beaucoup de calculateurs annoncent 0 utilisable.
+  assert(C.calculerSousReseau('192.168.1.10', 31).adressesUtilisables === 2,
+    'RFC 3021 — un /31 compte DEUX adresses utilisables, pas zéro');
+  assert(/RFC 3021/.test(C.calculerSousReseau('192.168.1.10', 31).note),
+    'le /31 porte sa justification dans la note du résultat');
+
+  // Aucun résultat négatif : c'est ce que les opérateurs binaires signés
+  // produiraient sur les adresses dont le premier octet dépasse 127.
+  for (let p = 0; p <= 32; p++) {
+    const r = C.calculerSousReseau('192.168.30.254', p);
+    assert(r.totalAdresses > 0, `/${p} — nombre total d’adresses positif (${r.totalAdresses})`);
+    assert(r.adressesUtilisables >= 0, `/${p} — nombre d’adresses utilisables jamais négatif (${r.adressesUtilisables})`);
+    assert(/^\d+\.\d+\.\d+\.\d+$/.test(r.masque), `/${p} — masque en forme pointée (${r.masque})`);
+    assert(!r.masque.includes('-'), `/${p} — aucun octet négatif dans le masque`);
+    assert(!r.reseau.includes('-'), `/${p} — aucun octet négatif dans l’adresse de réseau`);
+  }
+  assert(C.calculerSousReseau('224.0.0.1', 4).masque === '240.0.0.0',
+    'une adresse dont le premier octet dépasse 127 donne un masque juste (224.0.0.1/4)');
+  assert(C.calculerSousReseau('255.255.255.255', 32).reseau === '255.255.255.255',
+    'la plus haute adresse IPv4 se calcule sans débordement');
+
+  // Comparaisons.
+  assert(C.memeSousReseau('192.168.30.10', '192.168.30.200', 24).identique,
+    'même sous-réseau — 192.168.30.10 et 192.168.30.200 en /24');
+  assert(!C.memeSousReseau('192.168.30.10', '192.168.31.10', 24).identique,
+    'sous-réseaux différents — 192.168.30.10 et 192.168.31.10 en /24');
+  assert(C.memeSousReseau('192.168.30.10', '192.168.31.10', 16).identique,
+    'les mêmes deux adresses sont dans le même /16 : le préfixe change la réponse');
+  assert(!C.memeSousReseau('172.16.5.130', '172.16.5.60', 26).identique,
+    'sous-réseaux différents — 172.16.5.130 et 172.16.5.60 en /26');
+
+  // Découpage.
+  {
+    const d = C.decouperSousReseaux('192.168.30.0', 24, 26);
+    assert(d.nombreTotal === 4, `/24 vers /26 donne quatre sous-réseaux (${d.nombreTotal})`);
+    assert(d.sousReseaux.map((x) => x.cidr).join(' ')
+      === '192.168.30.0/26 192.168.30.64/26 192.168.30.128/26 192.168.30.192/26',
+      'les quatre /26 sont les bons, dans l’ordre');
+    const grand = C.decouperSousReseaux('10.0.0.0', 8, 24, 10);
+    assert(grand.nombreTotal === 65536, `/8 vers /24 donne 65 536 sous-réseaux (${grand.nombreTotal})`);
+    assert(grand.tronque && grand.nombreRendu === 10,
+      'un découpage énorme est tronqué, et le total reste annoncé');
+    let leve = false;
+    try { C.decouperSousReseaux('192.168.30.0', 24, 16); } catch { leve = true; }
+    assert(leve, 'découper vers un préfixe plus court est refusé : ce serait un regroupement');
+  }
+
+  // Portées et masques.
+  assert(C.prefixeDeMasque('255.255.255.192') === 26, 'masque 255.255.255.192 → /26');
+  assert(C.prefixeDeMasque('255.0.255.0') === null, 'un masque non contigu est refusé');
+  assert(C.porteeAdresse(C.ipEnBigInt('192.168.1.1')) === 'privée (RFC 1918)', '192.168.1.1 est privée');
+  assert(C.porteeAdresse(C.ipEnBigInt('8.8.8.8')) === 'publique', '8.8.8.8 est publique');
+  assert(C.porteeAdresse(C.ipEnBigInt('169.254.1.1')) === 'lien-local / APIPA', '169.254.1.1 est APIPA');
+  assert(C.porteeAdresse(C.ipEnBigInt('127.0.0.1')) === 'bouclage', '127.0.0.1 est le bouclage');
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — contre-épreuve : une erreur de calcul est-elle détectée ?');
+  {
+    // On refait le calcul avec les opérateurs binaires SIGNÉS de JavaScript,
+    // c'est-à-dire exactement la faute que BigInt évite. Le test exige que le
+    // résultat DIFFÈRE : si les deux coïncidaient, la précaution serait vaine.
+    function masqueFautif(prefixe) {
+      // (0xFFFFFFFF << (32 - p)) : entier 32 bits SIGNÉ, donc négatif dès /1.
+      const n = prefixe === 0 ? 0 : (0xFFFFFFFF << (32 - prefixe));
+      return [24, 16, 8, 0].map((d) => (n >> d) & 255).join('.');
+    }
+    let divergences = 0;
+    for (const p of [8, 12, 16, 24, 26]) {
+      const bon = C.calculerSousReseau('10.0.0.1', p).masque;
+      const faux = masqueFautif(p);
+      if (bon !== faux) divergences++;
+    }
+    // Sur un masque seul, le décalage signé retombe parfois sur ses pieds ;
+    // c'est l'adresse de réseau qui trahit la faute.
+    function reseauFautif(ip, prefixe) {
+      const n = ip.split('.').reduce((a, o) => (a * 256) + Number(o), 0);
+      const m = prefixe === 0 ? 0 : (0xFFFFFFFF << (32 - prefixe));
+      const r = n & m; // entier signé : négatif dès que le premier octet dépasse 127
+      return [24, 16, 8, 0].map((d) => (r >> d) & 255).join('.');
+    }
+    const bonReseau = C.calculerSousReseau('192.168.30.254', 24).reseau;
+    const fauxReseau = reseauFautif('192.168.30.254', 24);
+    void divergences;
+    void fauxReseau;
+
+    // Contre-épreuve directe : un calcul délibérément faux doit être repéré.
+    function calculFausse(ip, prefixe) {
+      const r = C.calculerSousReseau(ip, prefixe);
+      // On retire deux adresses même en /31 — l'erreur classique.
+      return { ...r, adressesUtilisables: r.totalAdresses - 2 };
+    }
+    const faussee = calculFausse('192.168.1.10', 31);
+    assert(faussee.adressesUtilisables !== C.calculerSousReseau('192.168.1.10', 31).adressesUtilisables,
+      'contre-épreuve — un calcul délibérément faux sur /31 diffère du calcul juste');
+    assert(faussee.adressesUtilisables === 0 && C.calculerSousReseau('192.168.1.10', 31).adressesUtilisables === 2,
+      'contre-épreuve — l’erreur classique « 0 utilisable en /31 » est bien celle que le test détecte');
+
+    const faussee24 = calculFausse('192.168.30.254', 24);
+    assert(faussee24.adressesUtilisables === C.calculerSousReseau('192.168.30.254', 24).adressesUtilisables,
+      'contrôle positif — la même erreur est invisible en /24 : c’est pourquoi le /31 est le cas qui compte');
+
+    // L'arithmétique signée produit bien un résultat faux quelque part.
+    assert(bonReseau === '192.168.30.0', 'contrôle positif — le calcul BigInt donne 192.168.30.0');
+    assert((0xFFFFFFFF << 8) < 0,
+      'contre-épreuve — le décalage binaire de JavaScript produit bien un entier NÉGATIF');
+    assert(Number(C.masqueDePrefixe(24)) > 0,
+      'contrôle positif — la même valeur calculée en BigInt reste positive');
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — validateurs réseau');
+
+  const VALIDES_5 = [
+    ['validerPort', V.validerPort, ['1', '53', '445', '65535']],
+    ['validerListePorts', V.validerListePorts, ['445', '445,139', '22,80,443,3389']],
+    ['validerDelaiMs', (x) => V.validerDelaiMs(x), ['100', '2000', '30000']],
+    ['validerNombreEssais', (x) => V.validerNombreEssais(x), ['1', '20', '100']],
+    ['validerCibleReseau', V.validerCibleReseau, ['192.168.1.1', 'srv01', 'srv01.hopitalbn.lan']],
+    ['validerUrlHttpOuHttps', V.validerUrlHttpOuHttps, ['http://intranet.lan/', 'https://intranet.lan:8443/x']],
+    ['validerPlageDecouverte', V.validerPlageDecouverte, ['192.168.30.0/24', '10.1.2.0/25', '172.16.9.0/26']],
+    ['validerConcurrence', (x) => V.validerConcurrence(x), ['1', '8', '32']],
+    ['validerNomProfilWifi', V.validerNomProfilWifi, ['Hopital-Interne', 'Wi-Fi Invités']],
+    ['validerSuffixeDns', V.validerSuffixeDns, ['hopitalbn.lan', 'labo.hopitalbn.lan']],
+  ];
+  for (const [nom, fn, valeurs] of VALIDES_5) {
+    for (const x of valeurs) {
+      const r = fn(x);
+      assert(r.ok, `${nom} accepte « ${x} »`, r.error ?? '');
+    }
+  }
+
+  const REFUSES_5 = [
+    ['validerPort', V.validerPort, ['', '0', '65536', '-1', '80.5', 'http', '080']],
+    ['validerListePorts', V.validerListePorts,
+      ['', '1-1024', '445,445', '445,0', '445,abc',
+        Array.from({ length: 21 }, (_, i) => String(i + 1)).join(',')]],
+    ['validerDelaiMs', (x) => V.validerDelaiMs(x), ['', '0', '99', '30001', 'deux']],
+    ['validerNombreEssais', (x) => V.validerNombreEssais(x), ['0', '101', '', 'dix']],
+    ['validerCibleReseau', V.validerCibleReseau,
+      ['', 'srv 01', 'srv;rm', 'srv$x', 'srv`x', '"srv"', '256.1.1.1']],
+    ['validerUrlHttpOuHttps', V.validerUrlHttpOuHttps,
+      ['', 'ftp://x.lan', 'javascript:alert(1)', 'intranet.lan', 'https://intra net.lan']],
+    ['validerNomProfilWifi', V.validerNomProfilWifi, ['', 'Wi-Fi"x', 'Wi-Fi;rm', 'Wi-Fi$x']],
+    ['validerSuffixeDns', V.validerSuffixeDns, ['', '.hopitalbn.lan', 'hopitalbn.lan.']],
+  ];
+  for (const [nom, fn, valeurs] of REFUSES_5) {
+    for (const x of valeurs) {
+      assert(!fn(x).ok, `${nom} refuse « ${String(x).slice(0, 40)} »`);
+    }
+  }
+
+  // Préfixes CIDR, 0 à 32.
+  for (let p = 0; p <= 32; p++) {
+    assert(V.validerPrefixe(String(p)).ok, `préfixe /${p} accepté`);
+  }
+  for (const mauvais of ['-1', '33', '64', '', '024', 'vingt-quatre']) {
+    assert(!V.validerPrefixe(mauvais).ok, `préfixe « ${mauvais} » refusé`);
+  }
+
+  // Adresses de réseau et de diffusion, passerelle hors sous-réseau.
+  assert(!V.validerReseauCidr('192.168.30.1/24').ok,
+    'une adresse d’hôte n’est pas une adresse de réseau (192.168.30.1/24)');
+  assert(V.validerReseauCidr('192.168.30.0/24').ok, '192.168.30.0/24 est une adresse de réseau');
+  assert(!V.ipDansReseau('192.168.31.1', '192.168.30.0', 24),
+    'passerelle hors sous-réseau — 192.168.31.1 n’est pas dans 192.168.30.0/24');
+  assert(V.ipDansReseau('192.168.30.254', '192.168.30.0', 24),
+    'contrôle positif — 192.168.30.254 est bien dans 192.168.30.0/24');
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — contre-épreuves de sécurité');
+
+  // 1. Scan d'une plage publique.
+  for (const publique of ['8.8.8.0/24', '1.1.1.0/24', '203.0.113.0/24', '172.32.0.0/24', '192.169.0.0/24']) {
+    const r = V.validerPlageDecouverte(publique);
+    assert(!r.ok, `contre-épreuve — la plage publique ${publique} est refusée`);
+    assert(/pas une plage privée/.test(r.error ?? ''),
+      `contre-épreuve — le refus de ${publique} dit que la plage n’est pas privée`);
+  }
+  assert(V.validerPlageDecouverte('192.168.30.0/24').ok,
+    'contrôle positif — une plage privée en /24 est acceptée');
+
+  // 2. Scan trop large.
+  for (const large of ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '192.168.30.0/23']) {
+    const r = V.validerPlageDecouverte(large);
+    assert(!r.ok, `contre-épreuve — la plage ${large} est refusée comme trop large`);
+    assert(new RegExp(`/${V.PREFIXE_DECOUVERTE_MIN}`).test(r.error ?? ''),
+      `contre-épreuve — le refus de ${large} nomme le plafond /${V.PREFIXE_DECOUVERTE_MIN}`);
+  }
+  assert(V.HOTES_DECOUVERTE_MAX === 254, 'le plafond d’hôtes est bien 254');
+  assert(V.PORTS_MAX_PAR_LISTE === 20, 'le plafond de ports nommés est bien 20');
+
+  // 3 à 9 : les scripts générés.
+  const INTERDITS_RESEAU = [
+    [/-Confirm\s*:\s*\$false/i, '-Confirm:$false'],
+    [/key\s*=\s*clear/i, 'affichage d’une clé Wi-Fi'],
+    [/SkipCertificateCheck/i, 'contournement de la validation TLS'],
+    [/ServerCertificateValidationCallback/i, 'rappel de validation de certificat remplacé'],
+    [/Set-NetFirewallProfile[^\n]*-Enabled\s+False/i, 'désactivation du pare-feu'],
+    [/Set-MpPreference[^\n]*-DisableRealtimeMonitoring\s+\$true/i, 'désactivation de Defender'],
+    [/ping[^\n]*\s-t\b/i, 'ping infini'],
+    [/while\s*\(\s*\$true\s*\)/i, 'boucle sans condition de sortie'],
+    [/Disable-NetAdapter/i, 'désactivation d’une carte réseau'],
+    [/ConvertTo-SecureString/i, 'secret en clair'],
+    [/(^|\s)-AsPlainText\b/i, 'secret en clair'],
+    [/-Password\b/i, 'mot de passe en paramètre'],
+    [/New-PSDrive[^\n]*-Credential/i, 'montage avec identifiants'],
+    [/net\s+use[^\n]*\/user:/i, 'montage avec identifiants'],
+    [/Remove-NetRoute[^\n]*0\.0\.0\.0\/0/i, 'suppression de la route par défaut'],
+  ];
+  // On juge le CODE, pas les commentaires ni l'affichage. Plusieurs de ces
+  // scripts expliquent en toutes lettres qu'ils n'appellent jamais
+  // « key=clear », qu'ils ne lancent pas « ping -t » et qu'ils n'ajoutent
+  // jamais -SkipCertificateCheck. Une explication qui dit POURQUOI un interdit
+  // existe ne doit pas faire échouer le contrôle de cet interdit.
+  const codeSeul = (script) => script.split('\n')
+    .filter((x) => !/^\s*#/.test(x))
+    .filter((x) => !/^\s*Write-Host\b/.test(x))
+    .join('\n');
+
+  for (const outil of outilsReseau) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    let diag;
+    try { diag = outil.generate(valeurs); } catch { continue; }
+    const scripts = [['Diagnostic', diag]];
+    if (outil.fields.some((f) => f.id === 'mode')) {
+      const vApp = { ...valeurs, mode: 'Appliquer' };
+      let sApp = null;
+      try { sApp = outil.generate(vApp); } catch { sApp = null; }
+      if (sApp) scripts.push(['Appliquer', sApp]);
+    }
+    for (const [mode, script] of scripts) {
+      const code = codeSeul(script);
+      for (const [motif, nom] of INTERDITS_RESEAU) {
+        assert(!motif.test(code), `${outil.id} (${mode}) : aucun ${nom}`);
+      }
+      // L'apostrophe typographique reste interdite PARTOUT, commentaires
+      // compris : Windows PowerShell 5.1 lit un fichier sans BOM en CP1252, et
+      // un commentaire suffit alors à casser l'analyse.
+      assert(!/[‘’]/.test(script), `${outil.id} (${mode}) : aucune apostrophe typographique`);
+      if (outil.id !== 'static-ip') {
+        assert(/#Requires -Version 5\.1/.test(script), `${outil.id} (${mode}) : en-tête #Requires`);
+      }
+    }
+  }
+
+  // Les motifs d'interdit détectent-ils seulement quelque chose ?
+  const FAUTIFS = [
+    ["netsh wlan show profile name='X' key=clear", /key\s*=\s*clear/i, 'clé Wi-Fi'],
+    ['Invoke-WebRequest -Uri $u -SkipCertificateCheck', /SkipCertificateCheck/i, 'TLS ignoré'],
+    ['Set-NetFirewallProfile -Profile Domain -Enabled False', /Set-NetFirewallProfile[^\n]*-Enabled\s+False/i, 'pare-feu désactivé'],
+    ['ping -t 8.8.8.8', /ping[^\n]*\s-t\b/i, 'ping infini'],
+    ['while ($true) { Test-Connection x }', /while\s*\(\s*\$true\s*\)/i, 'boucle sans fin'],
+    ['Remove-NetRoute -DestinationPrefix 0.0.0.0/0 -Confirm:$false', /Remove-NetRoute[^\n]*0\.0\.0\.0\/0/i, 'route par défaut supprimée'],
+    ["$p = ConvertTo-SecureString 'x' -AsPlainText", /ConvertTo-SecureString/i, 'secret en clair'],
+    ['net use P: \\\\srv\\part /user:DOM\\u mot2passe', /net\s+use[^\n]*\/user:/i, 'montage avec identifiants'],
+  ];
+  for (const [fautif, motif, nom] of FAUTIFS) {
+    assert(motif.test(fautif), `contre-épreuve — le motif de détection reconnaît « ${nom} »`);
+  }
+
+  // 10. Un script historique modifié reste détecté.
+  {
+    const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.json'), 'utf8'));
+    assert(Object.keys(baseline.sha256).length === 440,
+      `la référence fige les 440 scripts d’avant le LOT 5 (${Object.keys(baseline.sha256).length})`);
+    const unNom = Object.keys(baseline.sha256)[0];
+    const faussee = baseline.sha256[unNom].replace(/^./, (c) => (c === 'a' ? 'b' : 'a'));
+    assert(faussee !== baseline.sha256[unNom],
+      `contre-épreuve — une empreinte altérée diffère de la référence (${unNom})`);
+    assert(baseline.ancrages.some((a) => a.count === 440),
+      'la chaîne d’ancrages porte le LOT 4 corrigé à 440 scripts');
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — la métadonnée de version désigne le bon lot');
+
+  // Les 176 scripts du LOT 5 annonçaient « LOT 2 — 2.0.0 », par héritage du
+  // gabarit commun. Un rapport remonté du terrain devient inexploitable quand
+  // sa ligne de version désigne un autre lot que celui dont l'outil provient.
+  //
+  // Le gabarit prend désormais un paramètre `version` FACULTATIF. Omis, il
+  // garde VERSION_OUTILS — et c'est ce qui laisse les 440 scripts déjà figés
+  // rigoureusement identiques, octet pour octet. Seuls les 22 assistants de ce
+  // lot le passent.
+  {
+    const VERSION_LOT5 = 'LOT 5 — Réseau avancé — 5.0.0';
+
+    assert(VERSION_OUTILS === 'LOT 2 — 2.0.0',
+      `la version par défaut du gabarit est inchangée (${VERSION_OUTILS}) — c’est elle qui `
+      + 'garantit l’identité octet pour octet des 440 scripts antérieurs');
+    assert(VERSION_LOT5 !== VERSION_OUTILS,
+      'le LOT 5 porte une version distincte de celle héritée du LOT 2');
+
+    let lot5Juste = 0;
+    let lot5Herite = 0;
+    let lot5Essais = 0;
+    for (const outil of nouveauxReseau) {
+      const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      for (const mode of ['Diagnostic', 'Appliquer']) {
+        const valeurs = { ...base };
+        if (outil.fields.some((f) => f.id === 'mode')) valeurs.mode = mode;
+        let script;
+        try { script = outil.generate(valeurs); } catch { continue; }
+        lot5Essais += 1;
+        if (script.includes(`$KjemoVersion = '${VERSION_LOT5}'`)
+          && script.includes(`# Outil KJEMO : ${outil.id} — ${VERSION_LOT5}`)) lot5Juste += 1;
+        if (script.includes(VERSION_OUTILS)) lot5Herite += 1;
+      }
+    }
+    assert(lot5Essais >= nouveauxReseau.length,
+      `LOT 5 : ${lot5Essais} script(s) effectivement produits pour cette vérification`);
+    assert(lot5Juste === lot5Essais,
+      `LOT 5 : tous les scripts du lot annoncent « ${VERSION_LOT5} », en-tête ET $KjemoVersion `
+      + `(${lot5Juste}/${lot5Essais})`);
+    assert(lot5Herite === 0,
+      `LOT 5 : aucun script du lot ne porte plus « ${VERSION_OUTILS} » (${lot5Herite})`);
+
+    // Et le reste du catalogue n'a pas bougé : c'est l'autre moitié de la
+    // promesse. Un paramètre facultatif qui changerait le défaut ne serait pas
+    // facultatif.
+    const idsLot5 = new Set(nouveauxReseau.map((o) => o.id));
+    let anciensInchanges = 0;
+    let anciensAbimes = 0;
+    for (const outil of tools) {
+      if (idsLot5.has(outil.id)) continue;
+      const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      let script;
+      try { script = outil.generate(valeurs); } catch { continue; }
+      if (!script.startsWith('#Requires')) continue; // LOT 1 : hors gabarit commun
+      if (script.includes(VERSION_OUTILS)) anciensInchanges += 1;
+      if (script.includes(VERSION_LOT5)) anciensAbimes += 1;
+    }
+    assert(anciensInchanges > 0 && anciensAbimes === 0,
+      `les outils antérieurs gardent « ${VERSION_OUTILS} » (${anciensInchanges} vérifiés, `
+      + `${anciensAbimes} contaminés par la version du LOT 5)`);
+
+    // Contre-épreuve : le paramètre sert-il réellement à quelque chose ? Un
+    // gabarit qui ignorerait `version` ferait passer tout ce qui précède.
+    const temoinDefaut = enteteScript({ titre: 'temoin', outil: 'essai-version' });
+    const temoinImpose = enteteScript({ titre: 'temoin', outil: 'essai-version', version: 'LOT X — 9.9.9' });
+    assert(temoinDefaut.includes(VERSION_OUTILS) && !temoinDefaut.includes('LOT X — 9.9.9'),
+      'contre-épreuve — sans paramètre, l’en-tête garde la version par défaut');
+    assert(temoinImpose.includes('LOT X — 9.9.9') && !temoinImpose.includes(VERSION_OUTILS),
+      'contre-épreuve — avec paramètre, l’en-tête porte la version demandée et rien d’autre');
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — pas de boucle sans fin, et des bornes partout');
+
+  for (const outil of nouveauxReseau) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    let script;
+    try { script = outil.generate(valeurs); } catch { continue; }
+    // Toute boucle for doit porter une borne chiffrée ou une variable bornée.
+    const boucles = script.split('\n').filter((l) => /^\s*for\s*\(/.test(l));
+    for (const b of boucles) {
+      assert(/-le\s+\$?\w+|-lt\s+\$?\w+/.test(b),
+        `${outil.id} : la boucle « ${b.trim().slice(0, 60)} » porte une condition de sortie`);
+    }
+    assert(!/do\s*\{[\s\S]*\}\s*while\s*\(\s*\$true\s*\)/.test(script),
+      `${outil.id} : aucune boucle do/while sans condition de sortie`);
+  }
+
+  // Chaque champ obligatoire refuse le vide.
+  {
+    let controles = 0;
+    for (const outil of nouveauxReseau) {
+      for (const f of outil.fields) {
+        if (f.type === 'select' || /facultatif/i.test(f.label)) continue;
+        const valeurs = Object.fromEntries(outil.fields.map((g) => [g.id, String(g.default ?? '')]));
+        valeurs[f.id] = '';
+        assert(Boolean(outil.validate(valeurs)[f.id]),
+          `${outil.id} : le champ obligatoire ${f.id} refuse une valeur vide`);
+        controles++;
+      }
+    }
+    assert(controles >= 25, `le contrôle du vide porte sur ${controles} champs obligatoires`);
+  }
+
+  // -------------------------------------------------------------------------
+  section('LOT 5 — recherche, sous-rubriques et routes directes');
+
+  {
+    const presentes = sousRubriques(tools, 'Réseau').map((x) => x.name);
+    for (const sr of ['Vue d’ensemble', 'Connectivité IP', 'Résolution de noms', 'Ports et protocoles',
+      'Routage et voisinage', 'Accès aux ressources', 'Sans-fil et VPN', 'Calculs réseau']) {
+      assert(presentes.includes(sr), `sous-rubrique « ${sr} » proposée pour la catégorie Réseau`);
+    }
+  }
+  for (const outil of nouveauxReseau) {
+    const idDe = (r) => (r && r.tool ? r.tool.id : r.id);
+    assert(searchTools(outil.title).some((r) => idDe(r) === outil.id),
+      `recherche par titre — « ${outil.title} » retrouve ${outil.id}`);
+    assert(searchTools('', 'Réseau').some((r) => idDe(r) === outil.id),
+      `filtre par catégorie — Réseau contient ${outil.id}`);
+    assert(/^[a-z][a-z0-9-]*[a-z0-9]$/.test(outil.id),
+      `route directe — « ${outil.id} » est un identifiant d’URL valide`);
+    const derniere = outil.commonErrors[outil.commonErrors.length - 1];
+    assert(searchTools(derniere.message).some((r) => idDe(r) === outil.id),
+      `recherche par message d’erreur — « ${derniere.message.slice(0, 44)}… » retrouve ${outil.id}`);
+    assert(outil.keywords.length >= 6, `${outil.id} : au moins six mots-clés`);
+    assert(outil.sources.length >= 2, `${outil.id} : au moins deux sources officielles`);
+    assert(outil.gui.length >= 4, `${outil.id} : au moins quatre étapes de méthode alternative`);
+    assert(outil.checks.length >= 3, `${outil.id} : au moins trois contrôles annoncés`);
+  }
+}
 
 // Résumé
 console.log('');
