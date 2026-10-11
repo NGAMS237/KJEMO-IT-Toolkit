@@ -1647,7 +1647,14 @@ for (const outil of outilsRecents) {
   assert(!/ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
     `${outil.id} : aucun secret fabriqué ni converti en clair`);
   const lignes = script.split('\n');
-  const acquisitions = lignes.filter((l) => /Get-Credential|Read-Host[^\n]*-AsSecureString/i.test(l));
+  // Une ligne qui se contente d'AFFICHER le nom d'une commande — un commentaire,
+  // ou un Write-Host qui montre à la personne ce que le mode Appliquer
+  // exécuterait — n'acquiert aucun secret. Elle reste soumise à la règle
+  // suivante : aucune variable porteuse de secret ne doit y figurer.
+  const acquisitions = lignes.filter((l) =>
+    /Get-Credential|Read-Host[^\n]*-AsSecureString/i.test(l)
+    && !/^\s*#/.test(l)
+    && !/Write-Host/.test(l));
   for (const ligne of acquisitions) {
     assert(!/-UserName\s+['"]/i.test(ligne),
       `${outil.id} : l’acquisition d’identifiants ne préremplit aucun compte`);
@@ -2260,6 +2267,218 @@ for (const outil of outilsAd) {
     assert(/Le rapport ne contient aucun mot de passe/.test(script),
       `${outil.id} (${mode ?? 'lecture'}) : le bloc de rapport porte l’engagement écrit`);
   }
+}
+
+
+// ===========================================================================
+// LOT 3 — correctifs Codex
+// ===========================================================================
+
+section('Correctif 1 — ad-home-profile-paths : la sauvegarde conditionne l’écriture');
+
+{
+  const outil = tools.find((t) => t.id === 'ad-home-profile-paths');
+  assert(Boolean(outil), 'ad-home-profile-paths est présent dans le catalogue');
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+
+  for (const mode of ['Diagnostic', 'Appliquer']) {
+    const script = outil.generate({ ...base, mode });
+
+    assert(/\$sauvegardeOk = \$false/.test(script),
+      `${mode} : l’indicateur de sauvegarde part de $false`);
+    assert(/Export-Csv[^\n]*-ErrorAction Stop/.test(script),
+      `${mode} : l’export de sauvegarde échoue bruyamment (-ErrorAction Stop)`);
+
+    // L'export est entouré d'un try/catch, et $sauvegardeOk n'est mis à $true
+    // qu'APRÈS lui — pas avant, ce qui ne prouverait rien.
+    const iTry = script.indexOf('  try {\n    $ancien | Export-Csv');
+    assert(iTry !== -1, `${mode} : l’export de sauvegarde est encadré par un try`);
+    const iExport = script.indexOf('$ancien | Export-Csv');
+    const iVrai = script.indexOf('$sauvegardeOk = $true', iExport);
+    const iCatch = script.indexOf('} catch {', iExport);
+    assert(iVrai !== -1 && iCatch !== -1 && iVrai < iCatch,
+      `${mode} : la sauvegarde n’est déclarée réussie qu’après un export réussi`);
+
+    // La garde du bloc Appliquer exige les trois conditions.
+    assert(script.includes("if ($Mode -eq 'Appliquer' -and $moduleOk -and $sauvegardeOk) {"),
+      `${mode} : le bloc Appliquer exige $sauvegardeOk`);
+
+    // Les trois commandes de modification n'existent que sous cette garde.
+    const lignes = script.split('\n');
+    const iGarde = lignes.findIndex((l) => l.includes("if ($Mode -eq 'Appliquer' -and $moduleOk -and $sauvegardeOk) {"));
+    for (const cmd of ['New-Item', 'Set-Acl -LiteralPath', 'Set-ADUser -Identity $cible.Dn -HomeDirectory']) {
+      const lignesCmd = lignes
+        .map((l, i) => [l, i])
+        .filter(([l]) => l.includes(cmd) && !/^\s*#/.test(l));
+      assert(lignesCmd.length > 0, `${mode} : « ${cmd} » figure bien dans le script`);
+      for (const [l, i] of lignesCmd) {
+        assert(i > iGarde || /-WhatIf\b/.test(l),
+          `${mode} : « ${cmd} » n’apparaît qu’après la garde de sauvegarde, ou en simulation`,
+          l.trim().slice(0, 100));
+      }
+    }
+
+    // Et le script le dit, plutôt que d'échouer en silence.
+    assert(/bloquees par l''echec de la sauvegarde/.test(script),
+      `${mode} : l’échec de sauvegarde produit un résultat explicite`);
+    assert(/AUCUNE modification ne sera executee/.test(script),
+      `${mode} : le rapport annonce qu’aucune modification ne sera exécutée`);
+
+    // Aucune suppression de dossier personnel, dans aucun mode.
+    assert(!/Remove-Item[^\n]*\$cible\.Chemin/.test(script),
+      `${mode} : aucun dossier personnel n’est supprimé`);
+  }
+
+  // L'idempotence reste vraie : un compte déjà conforme n'est pas réécrit.
+  const scriptAppliquer = outil.generate({ ...base, mode: 'Appliquer' });
+  assert(/dejaConforme/.test(scriptAppliquer) && /Deja conforme : aucune ecriture/.test(scriptAppliquer),
+    'l’idempotence est conservée : un compte déjà conforme n’est pas réécrit');
+}
+
+section('Correctif 2 — ad-secure-channel : -Server désigne un contrôleur, pas le domaine');
+
+{
+  const outil = tools.find((t) => t.id === 'ad-secure-channel');
+  assert(Boolean(outil), 'ad-secure-channel est présent dans le catalogue');
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+
+  // Les huit jeux de valeurs du projet, pas seulement celui par défaut : la
+  // règle doit tenir quelles que soient les entrées.
+  const variantes = [
+    { ...base },
+    { ...base, mode: 'Appliquer' },
+    { ...base, adDomain: 'hopitalbn.lan', canPorts: 'Non' },
+    { ...base, adDomain: 'labo.interne.lan', canDerive: '600', mode: 'Appliquer' },
+  ];
+
+  for (const valeurs of variantes) {
+    const etiquette = `${valeurs.adDomain} / ${valeurs.mode}`;
+    const script = outil.generate(valeurs);
+
+    // La règle centrale : jamais le domaine derrière -Server.
+    assert(!/Test-ComputerSecureChannel[^\n]*-Server \$Domaine/.test(script),
+      `${etiquette} : aucun appel ne passe $Domaine à -Server`);
+    assert(!/-Server \$Domaine\b/.test(script),
+      `${etiquette} : $Domaine n’est passé à -Server nulle part dans le script`);
+
+    // Les trois appels, un par un.
+    const appels = script.split('\n').filter((l) =>
+      /Test-ComputerSecureChannel/.test(l) && !/^\s*#/.test(l) && !/Write-Host/.test(l));
+    assert(appels.length >= 3,
+      `${etiquette} : le script porte ses trois appels (${appels.length})`);
+    for (const ligne of appels) {
+      assert(!/-Server/.test(ligne) || /-Server \$cible\b/.test(ligne),
+        `${etiquette} : tout -Server reçoit $cible`, ligne.trim().slice(0, 100));
+    }
+
+    const diagnostic = appels.find((l) => /\$canalOk = Test-ComputerSecureChannel -Server/.test(l));
+    assert(Boolean(diagnostic) && /-Server \$cible\b/.test(diagnostic),
+      `${etiquette} : le diagnostic initial vise le contrôleur retenu`);
+    const reparation = appels.find((l) => /-Repair/.test(l));
+    assert(Boolean(reparation) && /-Server \$cible\b/.test(reparation),
+      `${etiquette} : la réparation vise le contrôleur retenu`);
+    const verification = appels.find((l) => /\$apres = Test-ComputerSecureChannel/.test(l));
+    assert(Boolean(verification) && /-Server \$cible\b/.test(verification),
+      `${etiquette} : la vérification après réparation vise le contrôleur retenu`);
+
+    // Le nom issu d'un enregistrement SRV est absolu : le point final doit tomber.
+    assert(/NameTarget\.TrimEnd\('\.'\)/.test(script),
+      `${etiquette} : le point final du NameTarget SRV est retiré`);
+
+    // Sans contrôleur, aucune réparation — et un message qui le dit.
+    assert(script.includes("if ($Mode -eq 'Appliquer' -and $estMembre -and $canalOk -eq $false -and -not $cible) {"),
+      `${etiquette} : l’absence de contrôleur est traitée avant la réparation`);
+    assert(/aucun controleur de domaine identifie/.test(script),
+      `${etiquette} : le rapport nomme la cause quand aucun contrôleur n’est trouvé`);
+    assert(/Corrige d''abord le DNS/.test(script),
+      `${etiquette} : le rapport dit quoi corriger`);
+
+    // Ce qui ne devait pas bouger n'a pas bougé.
+    assert(/refusee sur un controleur de domaine/.test(script),
+      `${etiquette} : la réparation reste refusée sur un contrôleur de domaine`);
+    assert(/Get-Credential -Message/.test(script),
+      `${etiquette} : les identifiants sont toujours demandés localement`);
+    assert(/\$identifiants = \$null/.test(script),
+      `${etiquette} : la variable d’identifiants est toujours effacée après usage`);
+  }
+
+  // La fiche ne doit plus montrer -Server '<domaine>' dans sa procédure.
+  const proc = [outil.rollback.diagnostic, outil.rollback.command, outil.rollback.exceptional ?? ''].join('\n');
+  assert(!/-Server '<domaine>'/.test(proc),
+    'la procédure affichée dans la fiche ne montre plus -Server ‹domaine›');
+  assert(/NameTarget\.TrimEnd/.test(outil.rollback.command),
+    'la procédure de la fiche résout elle-même un contrôleur, point final retiré');
+}
+
+
+section('Correctif 3 — la contre-épreuve est branchée dans la CI Windows');
+
+// Un test qui existe mais que personne ne lance ne protège rien. Le branchement
+// dans le workflow fait donc partie du correctif, et se vérifie comme le reste.
+{
+  const CHEMIN_WORKFLOW = resolve(ROOT, '../.github/workflows/validate.yml');
+  const present = existsSync(CHEMIN_WORKFLOW);
+  assert(present, 'le workflow .github/workflows/validate.yml existe');
+
+  if (present) {
+    const yml = readFileSync(CHEMIN_WORKFLOW, 'utf8');
+
+    assert(/runs-on:\s*windows-latest/.test(yml),
+      'le workflow tourne sur windows-latest — seul endroit où PowerShell 5.1 existe');
+
+    // Les étapes, dans l'ordre où le fichier les déclare.
+    const etapes = [...yml.matchAll(/^\s*-\s*name:\s*(.+)$/gm)].map((m) => m[1].trim());
+    const i51  = etapes.findIndex((n) => /Contre-épreuve sauvegarde bloquante — Windows PowerShell 5\.1/.test(n));
+    const i7   = etapes.findIndex((n) => /Contre-épreuve sauvegarde bloquante — PowerShell 7/.test(n));
+    const iNav = etapes.findIndex((n) => /Tests navigateur/i.test(n));
+
+    assert(i51 !== -1, 'une étape exécute la contre-épreuve sous Windows PowerShell 5.1');
+    assert(i7 !== -1, 'une étape exécute la contre-épreuve sous PowerShell 7');
+    assert(iNav !== -1, 'l’étape des tests navigateur est toujours là');
+    assert(i51 < iNav && i7 < iNav,
+      `les deux contre-épreuves précèdent les tests navigateur (5.1 en ${i51}, 7 en ${i7}, navigateur en ${iNav})`);
+
+    // Chaque étape doit IMPOSER son moteur — sinon la ligne « PS 5.1 » du
+    // journal de CI pourrait avoir été produite par PowerShell 7.
+    assert(/node test\/sauvegarde-bloquante\.test\.mjs --powershell powershell\b/.test(yml),
+      'l’étape 5.1 impose --powershell powershell');
+    assert(/node test\/sauvegarde-bloquante\.test\.mjs --powershell pwsh\b/.test(yml),
+      'l’étape 7 impose --powershell pwsh');
+    assert(!/sauvegarde-bloquante\.test\.mjs\s*$/m.test(yml),
+      'aucune invocation de la contre-épreuve ne laisse le moteur au hasard');
+
+    // Rien ne doit rendre ces étapes facultatives.
+    const bloc51 = yml.slice(yml.indexOf('Contre-épreuve sauvegarde bloquante — Windows PowerShell 5.1'),
+                             yml.indexOf('Installer les navigateurs Playwright'));
+    assert(!/continue-on-error/.test(bloc51),
+      'aucune des deux contre-épreuves ne porte continue-on-error');
+    assert(!/if:\s*(always|success\(\)\s*\|\||failure)/.test(bloc51),
+      'aucune des deux contre-épreuves n’est rendue conditionnelle');
+    assert(/shell:\s*powershell/.test(bloc51) && /shell:\s*pwsh/.test(bloc51),
+      'les deux étapes déclarent chacune leur interpréteur d’hôte');
+  }
+}
+
+section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
+
+// Le contrat de l'option est vérifié à l'exécution dans
+// test/sauvegarde-bloquante.test.mjs (passe D). Ici, on vérifie que le
+// fichier existe, qu'il est branché dans npm test, et qu'il ne contient
+// aucun repli silencieux.
+{
+  const CHEMIN_TEST = resolve(ROOT, 'test/sauvegarde-bloquante.test.mjs');
+  assert(existsSync(CHEMIN_TEST), 'la contre-épreuve d’exécution est présente dans le dépôt');
+  const source = readFileSync(CHEMIN_TEST, 'utf8');
+
+  assert(/--powershell/.test(source), 'la contre-épreuve accepte l’option --powershell');
+  assert(/process\.exit\(1\)/.test(source),
+    'un interpréteur demandé mais absent fait sortir en erreur');
+  assert(/ne se rabat pas sur un autre moteur/.test(source),
+    'le refus de repli est écrit dans le message, pas seulement dans le code');
+
+  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
+  assert(/sauvegarde-bloquante/.test(pkg.scripts.test ?? ''),
+    'npm test lance la contre-épreuve d’exécution');
 }
 
 // Résumé
