@@ -45,7 +45,7 @@
  * passe toujours l'option.
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve, join } from 'node:path';
@@ -156,18 +156,72 @@ function ecrirePs1(chemin, contenu) {
 const cheminScript = ecrirePs1(join(travail, 'ad-home-profile-paths.ps1'), script);
 
 /**
+ * Chemin -> littéral PowerShell entre apostrophes.
+ *
+ * Un chemin ne s'insère PAS dans un script PowerShell par JSON.stringify.
+ * JSON échappe l'antislash en le doublant ; une chaîne PowerShell entre
+ * guillemets, elle, ne traite pas l'antislash comme un caractère
+ * d'échappement. Sous Windows, « C:\Users\x\banc.ps1 » arrivait donc
+ * dans le banc avec des antislashs doublés — et un $ éventuel aurait en plus
+ * été interprété comme une variable. Sous Linux, où les chemins n'ont pas
+ * d'antislash, le défaut restait invisible.
+ *
+ * Entre apostrophes, une chaîne PowerShell est littérale : seule
+ * l'apostrophe elle-même se double. C'est la seule forme sûre.
+ */
+function psLitteral(texte) {
+  return `'${String(texte).replace(/'/g, "''")}'`;
+}
+
+/**
+ * Exécute un banc et rend TOUT ce qu'il a produit. execFileSync jetait la
+ * sortie d'erreur des exécutions réussies : un banc qui échouait avant même
+ * d'atteindre le script sous test ne laissait alors aucune trace lisible
+ * dans le journal de la CI.
+ */
+function executerBanc(chemin) {
+  const r = spawnSync(pwsh, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', chemin],
+    { encoding: 'utf8', timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
+  return {
+    code: r.status,
+    erreurLancement: r.error ? String(r.error.message) : '',
+    stdout: String(r.stdout ?? ''),
+    stderr: String(r.stderr ?? ''),
+  };
+}
+
+/**
+ * Le script sous test termine TOUJOURS par l'en-tête de son rapport. S'il est
+ * absent de la sortie, le script n'a pas tourné jusqu'au bout — ou pas du
+ * tout — et un journal vide ne prouve alors plus rien.
+ */
+const MARQUEUR_EXECUTION = /=== ad-home-profile-paths -/;
+
+/** En cas d'échec, montre ce que PowerShell a réellement dit. */
+function diagnostic(nomPasse, resultat) {
+  console.log(`\n  ---- Diagnostic ${nomPasse} : ${pwsh} (PowerShell ${versionPs}), code ${resultat.code} ----`);
+  if (resultat.erreurLancement) console.log(`  lancement : ${resultat.erreurLancement}`);
+  const extrait = (t) => t.split(/\r?\n/).filter((l) => l.trim()).slice(-40).map((l) => `  | ${l}`).join('\n');
+  console.log('  sortie d\u2019erreur :');
+  console.log(extrait(resultat.stderr) || '  | (vide)');
+  console.log('  sortie standard (40 dernières lignes) :');
+  console.log(extrait(resultat.stdout) || '  | (vide)');
+  console.log('  ---- fin du diagnostic ----\n');
+}
+
+/**
  * Le banc d'essai. Les fonctions définies ici masquent les cmdlets du même nom :
  * en PowerShell, une fonction l'emporte sur une applet de commande dans la
  * résolution de nom. Le script dot-sourcé s'exécute donc sans toucher à rien.
  */
-function banc({ journal, exportEchoue }) {
+function banc({ journal, exportEchoue, scriptSousTest = cheminScript }) {
   // Le banc est volontairement en ASCII pur. Il porte un BOM UTF-8 comme tout
   // .ps1 de ce projet, mais un banc sans caractere accentue ne peut pas, lui,
   // faire echouer la contre-epreuve pour une raison d'encodage : ce qui est
   // mesure reste la sauvegarde, jamais la facon dont l'hote lit un fichier.
   return `
 $ErrorActionPreference = 'Continue'
-$global:KjemoJournal = ${JSON.stringify(journal)}
+$global:KjemoJournal = ${psLitteral(journal)}
 if (Test-Path -LiteralPath $global:KjemoJournal) { Remove-Item -LiteralPath $global:KjemoJournal }
 
 function Write-KjemoAppel { param([string]$Nom)
@@ -204,7 +258,7 @@ function Join-Path {
   if (-not $Path) { return [string]$ChildPath }
   # -replace plutot que TrimEnd(char[]) : la conversion d'une liste de chaines
   # d'un caractere vers char[] ne se fait pas de la meme facon en 5.1 et en 7.
-  return ((([string]$Path) -replace '[\\/]+$', '') + '\\' + [string]$ChildPath)
+  return ((([string]$Path) -replace '[\\\\/]+$', '') + '\\' + [string]$ChildPath)
 }
 function Import-Module   { return $null }
 function Get-ADDomain    {
@@ -244,7 +298,7 @@ function Get-Acl {
 }
 function Get-CimInstance { [CmdletBinding()] param($ClassName, $Namespace) return $null }
 
-. ${JSON.stringify(cheminScript)}
+. ${psLitteral(scriptSousTest)}
 `;
 }
 
@@ -257,13 +311,14 @@ const journalA = join(travail, 'journal-a.txt');
 const bancA = join(travail, 'banc-a.ps1');
 ecrirePs1(bancA, banc({ journal: journalA, exportEchoue: true }));
 
-let sortieA = '';
-try {
-  sortieA = execFileSync(pwsh, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', bancA],
-    { encoding: 'utf8', timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
-} catch (e) {
-  sortieA = String(e.stdout ?? '') + String(e.stderr ?? '');
-}
+const resultatA = executerBanc(bancA);
+const sortieA = resultatA.stdout + resultatA.stderr;
+const echecsAvantA = failed;
+
+// Sans cette vérification, un script qui ne se lance pas du tout donnerait un
+// journal vide — et la passe A « réussirait » pour une mauvaise raison.
+assert(MARQUEUR_EXECUTION.test(resultatA.stdout),
+  'sauvegarde en échec : le script sous test s’est réellement exécuté jusqu’au rapport');
 
 const appelsA = existsSync(journalA)
   ? readFileSync(journalA, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
@@ -283,6 +338,7 @@ assert(appelsA.length === 0,
   appelsA.join(', '));
 assert(/bloqu/i.test(sortieA) || /sauvegarde/i.test(sortieA),
   'sauvegarde en échec : le script le dit à l’écran plutôt que de se taire');
+if (failed > echecsAvantA) diagnostic('passe A', resultatA);
 
 // ---------------------------------------------------------------------------
 // PASSE B — contrôle positif : la sauvegarde réussit, les mouchards parlent
@@ -293,13 +349,11 @@ const journalB = join(travail, 'journal-b.txt');
 const bancB = join(travail, 'banc-b.ps1');
 ecrirePs1(bancB, banc({ journal: journalB, exportEchoue: false }));
 
-let sortieB = '';
-try {
-  sortieB = execFileSync(pwsh, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', bancB],
-    { encoding: 'utf8', timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
-} catch (e) {
-  sortieB = String(e.stdout ?? '') + String(e.stderr ?? '');
-}
+const resultatB = executerBanc(bancB);
+const echecsAvantB = failed;
+
+assert(MARQUEUR_EXECUTION.test(resultatB.stdout),
+  'contrôle positif : le script sous test s’est réellement exécuté jusqu’au rapport');
 
 const appelsB = existsSync(journalB)
   ? readFileSync(journalB, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
@@ -318,6 +372,7 @@ assert(appelsB.includes('New-Item'),
 // changement entre elles est le sort de Export-Csv.
 assert(appelsB.length > appelsA.length,
   `les deux passes diffèrent : ${appelsA.length} appel(s) sans sauvegarde, ${appelsB.length} avec`);
+if (failed > echecsAvantB) diagnostic('passe B', resultatB);
 
 // ---------------------------------------------------------------------------
 // PASSE C — le test se vérifie lui-même
@@ -341,14 +396,13 @@ ecrirePs1(cheminAbime, scriptAbime);
 
 const journalC = join(travail, 'journal-c.txt');
 const bancC = join(travail, 'banc-c.ps1');
-ecrirePs1(bancC,
-  banc({ journal: journalC, exportEchoue: true }).replace(
-    JSON.stringify(cheminScript), JSON.stringify(cheminAbime)));
+ecrirePs1(bancC, banc({ journal: journalC, exportEchoue: true, scriptSousTest: cheminAbime }));
 
-try {
-  execFileSync(pwsh, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', bancC],
-    { encoding: 'utf8', timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
-} catch { /* la sauvegarde lève : c'est prévu */ }
+const resultatC = executerBanc(bancC);
+const echecsAvantC = failed;
+
+assert(MARQUEUR_EXECUTION.test(resultatC.stdout),
+  'défaut réintroduit : le script abîmé s’est réellement exécuté jusqu’au rapport');
 
 const appelsC = existsSync(journalC)
   ? readFileSync(journalC, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
@@ -359,6 +413,7 @@ assert(appelsC.length > 0,
   appelsC.join(', ') || '(vide)');
 assert(appelsC.includes('Set-ADUser'),
   'sans la garde, Set-ADUser s’exécute malgré l’échec de la sauvegarde — c’est bien ce défaut que la garde corrige');
+if (failed > echecsAvantC) diagnostic('passe C', resultatC);
 
 // ---------------------------------------------------------------------------
 // PASSE D — le contrat de l'option --powershell

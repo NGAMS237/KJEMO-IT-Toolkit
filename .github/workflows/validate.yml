@@ -215,7 +215,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Moteur impose : powershell.exe"
-          powershell.exe -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
           node test/sauvegarde-bloquante.test.mjs --powershell powershell
           if ($LASTEXITCODE -ne 0) {
               Write-Error "Contre-epreuve PS 5.1 en echec (code $LASTEXITCODE)."
@@ -227,7 +227,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Moteur impose : pwsh"
-          pwsh -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
           node test/sauvegarde-bloquante.test.mjs --powershell pwsh
           if ($LASTEXITCODE -ne 0) {
               Write-Error "Contre-epreuve PS 7 en echec (code $LASTEXITCODE)."
