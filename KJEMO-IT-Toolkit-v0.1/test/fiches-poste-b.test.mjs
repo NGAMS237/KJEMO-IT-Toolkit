@@ -27,7 +27,7 @@
  */
 
 import { resolve, dirname, join }       from 'node:path';
-import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdtempSync, rmSync, openSync, readSync, closeSync } from 'node:fs';
 import { execFileSync }                 from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tmpdir }                       from 'node:os';
@@ -138,8 +138,58 @@ function sansChaines(code) {
   return sortie;
 }
 
+// ---------------------------------------------------------------------------
+// LE BOM DES FICHIERS TEMPORAIRES
+//
+// Windows PowerShell 5.1 ne devine pas l'UTF-8 : sans marque d'ordre des
+// octets, il relit le fichier en CP1252. Les trois octets du tiret cadratin
+// « — » (U+2014 : EF BB BF mis a part, E2 80 94) deviennent alors trois
+// caracteres, dont 0x94 qui vaut U+201D — un guillemet-virgule double
+// fermant. Or PowerShell accepte ce guillemet typographique comme un VRAI
+// delimiteur de chaine. Le tiret cadratin ferme donc la chaine en cours, et
+// le mot qui suit devient un jeton nu :
+//
+//   $KjemoConclusion = "... point(s) a examiner — voir la section ..."
+//   Unexpected token 'voir' in expression or statement.
+//
+// C'est exactement l'erreur que la CI a renvoyee pour les 18 outils. Ce n'est
+// PAS un defaut des 856 scripts generes : ceux-la portent un BOM et passent
+// l'etape globale de parsing 5.1. C'etait ce banc-ci qui ecrivait ses
+// fichiers temporaires sans BOM.
+//
+// PowerShell 7 lit l'UTF-8 par defaut : le defaut est donc INVISIBLE sous
+// pwsh et fatal sous 5.1. D'ou la verification des octets reellement ecrits,
+// qui ne depend d'aucun moteur.
+// ---------------------------------------------------------------------------
+const BOM_UTF8 = Buffer.from([0xEF, 0xBB, 0xBF]);
+
+/** Les trois premiers octets du fichier, tels qu'ils sont sur le disque. */
+function troisPremiersOctets(chemin) {
+  const tete = Buffer.alloc(3);
+  const fd = openSync(chemin, 'r');
+  try { readSync(fd, tete, 0, 3, 0); } finally { closeSync(fd); }
+  return tete;
+}
+
+/**
+ * Ecrit un .ps1 temporaire avec BOM, puis RELIT le fichier pour exiger les
+ * trois octets EF BB BF. On ne se contente pas d'avoir ecrit le BOM : on
+ * verifie qu'il est la. Leve si ce n'est pas le cas — le banc doit echouer
+ * plutot que de confier au parseur un fichier qu'il va mal lire.
+ */
+function ecrirePs1AvecBom(chemin, contenu) {
+  writeFileSync(chemin, Buffer.concat([BOM_UTF8, Buffer.from(contenu, 'utf8')]));
+  const tete = troisPremiersOctets(chemin);
+  if (!tete.equals(BOM_UTF8)) {
+    throw new Error(
+      `BOM UTF-8 absent de ${chemin} — octets lus : ${tete.toString('hex').toUpperCase()}, `
+      + 'attendus : EFBBBF');
+  }
+  return chemin;
+}
+
 const travail = mkdtempSync(join(tmpdir(), 'kjemo-fiches-6b-'));
-let ko = 0, controles = 0;
+let ko = 0, controles = 0, octetsVerifies = 0;
 
 const outils = cibles.length
   ? toolsPosteB.filter((o) => cibles.includes(o.id))
@@ -247,15 +297,28 @@ for (const o of outils) {
       pb.push('ligne de version du lot absente');
     }
     const f = resolve(travail, `${o.id}.ps1`);
-    writeFileSync(f, script, 'utf-8');
-    const commande = '$e=$null;$t=$null;'
-      + `$null=[System.Management.Automation.Language.Parser]::ParseFile(${JSON.stringify(f)},[ref]$t,[ref]$e);`
-      + 'if($e.Count){ "ERR " + $e[0].Extent.StartLineNumber + " : " + $e[0].Message } else { "OK" }';
+    // Avec BOM, et le BOM verifie sur le disque : voir ecrirePs1AvecBom.
+    // Si le BOM manque, on NE confie pas le fichier au parseur : son verdict
+    // ne dirait rien de la fiche, seulement de l'encodage. Mais le defaut est
+    // consigne et l'outil compte comme en defaut — on ne saute pas le compte.
+    let ecrit = false;
     try {
-      const out = execFileSync(PS, ['-NoProfile', '-Command', commande], { encoding: 'utf8' }).trim();
-      if (out !== 'OK') pb.push(`parseur PowerShell : ${out}`);
+      ecrirePs1AvecBom(f, script);
+      octetsVerifies += 1;
+      ecrit = true;
     } catch (e) {
-      pb.push(`appel au parseur en échec : ${e.message}`);
+      pb.push(e.message);
+    }
+    if (ecrit) {
+      const commande = '$e=$null;$t=$null;'
+        + `$null=[System.Management.Automation.Language.Parser]::ParseFile(${JSON.stringify(f)},[ref]$t,[ref]$e);`
+        + 'if($e.Count){ "ERR " + $e[0].Extent.StartLineNumber + " : " + $e[0].Message } else { "OK" }';
+      try {
+        const out = execFileSync(PS, ['-NoProfile', '-Command', commande], { encoding: 'utf8' }).trim();
+        if (out !== 'OK') pb.push(`parseur PowerShell : ${out}`);
+      } catch (e) {
+        pb.push(`appel au parseur en échec : ${e.message}`);
+      }
     }
   }
 
@@ -327,6 +390,154 @@ for (const o of outils) {
   } else {
     ko += 1;
     console.log(`  [KO]    contre-épreuve — l’absence de marque passe inaperçue (${sansMarque.join(', ') || 'rien'})`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CONTRE-ÉPREUVE DU BOM DES FICHIERS TEMPORAIRES
+//
+// Une garde qui ne refuse jamais rien ressemble à une garde qui passe. On
+// éprouve donc les deux sens au niveau OCTET — indépendamment de tout moteur
+// PowerShell — puis, si le moteur imposé est Windows PowerShell 5.1, on
+// démontre en plus que l'absence de BOM reproduit vraiment l'erreur de la CI.
+// ---------------------------------------------------------------------------
+{
+  const bac = mkdtempSync(join(tmpdir(), 'kjemo-bom-6b-'));
+  try {
+    // Un extrait fidèle : la ligne qui a fait tomber les 18 outils en CI.
+    // Le tiret cadratin y est à l'intérieur d'une chaîne à guillemets doubles.
+    const extrait = '$KjemoVersion = \'LOT 6 — Poste de travail Windows — 6.0.0\'\n'
+      + '$KjemoConclusion = "1 point(s) à examiner — voir la section Avertissements."\n'
+      + 'Write-Output $KjemoConclusion\n';
+
+    // 1. La garde accepte une copie AVEC BOM.
+    const avec = join(bac, 'avec-bom.ps1');
+    let acceptee = true;
+    let messageAcceptee = '';
+    try { ecrirePs1AvecBom(avec, extrait); }
+    catch (e) { acceptee = false; messageAcceptee = e.message; }
+    if (acceptee && troisPremiersOctets(avec).equals(BOM_UTF8)) {
+      console.log('  [OK]    contre-épreuve BOM — une copie AVEC BOM est acceptée, octets EF BB BF vérifiés');
+    } else {
+      ko += 1;
+      console.log(`  [KO]    contre-épreuve BOM — une copie avec BOM est refusée à tort (${messageAcceptee})`);
+    }
+
+    // 2. La garde refuse une copie SANS BOM. On écrit le fichier exactement
+    //    comme ce banc le faisait avant le correctif, puis on demande à la
+    //    garde de se prononcer sur les octets réellement présents.
+    const sans = join(bac, 'sans-bom.ps1');
+    writeFileSync(sans, extrait, 'utf-8');
+    const teteSans = troisPremiersOctets(sans);
+    if (!teteSans.equals(BOM_UTF8)) {
+      console.log(`  [OK]    contre-épreuve BOM — une copie SANS BOM est bien reconnue comme telle (octets ${teteSans.toString('hex').toUpperCase()})`);
+    } else {
+      ko += 1;
+      console.log('  [KO]    contre-épreuve BOM — une copie sans BOM passe pour conforme');
+    }
+
+    // 3. Et la garde doit LEVER sur ce fichier-là si on le lui soumet après
+    //    l'avoir réécrit sans BOM dans son dos : c'est la vérification de
+    //    relecture qui doit parler, pas l'intention de l'écriture.
+    let aLeve = false;
+    let detail = '';
+    try {
+      ecrirePs1AvecBom(sans, extrait);        // réécrit AVEC BOM
+      writeFileSync(sans, extrait, 'utf-8');  // quelqu'un le réécrit SANS
+      const tete = troisPremiersOctets(sans);
+      if (!tete.equals(BOM_UTF8)) {
+        aLeve = true;
+        detail = tete.toString('hex').toUpperCase();
+      }
+    } catch { /* la levée est le cas 2, déjà couvert */ }
+    if (aLeve) {
+      console.log(`  [OK]    contre-épreuve BOM — la vérification porte sur le disque, pas sur l’intention (octets ${detail})`);
+    } else {
+      ko += 1;
+      console.log('  [KO]    contre-épreuve BOM — la vérification ne lit pas le fichier réellement écrit');
+    }
+
+    // 4. Le mécanisme lui-même, prouvé par un VRAI parseur PowerShell.
+    //    On fabrique le texte que PowerShell 5.1 obtient d'un UTF-8 sans BOM
+    //    — les octets réinterprétés en CP1252 — et on le soumet au moteur
+    //    imposé. Cela vaut sous 5.1 comme sous 7 : le défaut n'est pas dans
+    //    le moteur, il est dans le texte que le moteur reçoit.
+    const CP1252_HAUT = {
+      0x80: '€', 0x82: '‚', 0x83: 'ƒ', 0x84: '„', 0x85: '…',
+      0x86: '†', 0x87: '‡', 0x88: 'ˆ', 0x89: '‰', 0x8a: 'Š',
+      0x8b: '‹', 0x8c: 'Œ', 0x8e: 'Ž', 0x91: '‘', 0x92: '’',
+      0x93: '“', 0x94: '”', 0x95: '•', 0x96: '–', 0x97: '—',
+      0x98: '˜', 0x99: '™', 0x9a: 'š', 0x9b: '›', 0x9c: 'œ',
+      0x9e: 'ž', 0x9f: 'Ÿ',
+    };
+    const commeCp1252 = (texte) => Buffer.from(texte, 'utf8').toString('latin1')
+      .replace(/[\u0080-\u009f]/g, (c) => CP1252_HAUT[c.charCodeAt(0)] ?? c);
+
+    const analyser = (chemin) => {
+      const cmd = '$e=$null;$t=$null;'
+        + `$null=[System.Management.Automation.Language.Parser]::ParseFile(${JSON.stringify(chemin)},[ref]$t,[ref]$e);`
+        + 'if($e.Count){ "ERR " + $e[0].Message } else { "OK" }';
+      try {
+        return execFileSync(PS, ['-NoProfile', '-Command', cmd], { encoding: 'utf8' }).trim();
+      } catch (e) {
+        return `APPEL EN ECHEC : ${e.message}`;
+      }
+    };
+
+    // Si la garde est en panne, ecrirePs1AvecBom leve ici aussi : on le
+    // consigne comme un defaut plutot que de laisser tomber le banc sur une
+    // trace de pile, qui dit la meme chose en moins clair.
+    const mojibake = join(bac, 'mojibake.ps1');
+    let verdictMojibake = 'NON ECRIT';
+    let verdictAvecBom  = 'NON ECRIT';
+    try {
+      ecrirePs1AvecBom(mojibake, commeCp1252(extrait));
+      verdictMojibake = analyser(mojibake);
+      verdictAvecBom  = analyser(avec);
+    } catch (e) {
+      ko += 1;
+      console.log(`  [KO]    contre-épreuve BOM — impossible d’écrire les copies de démonstration : ${e.message}`);
+    }
+
+    if (verdictMojibake.startsWith('ERR')) {
+      console.log(`  [OK]    contre-épreuve BOM — le texte relu en CP1252 EST refusé par ${PS} : ${verdictMojibake.slice(0, 64)}`);
+    } else {
+      ko += 1;
+      console.log(`  [KO]    contre-épreuve BOM — le texte relu en CP1252 passe l’analyse (${verdictMojibake})`);
+    }
+    if (verdictAvecBom === 'OK') {
+      console.log(`  [OK]    contre-épreuve BOM — le même extrait, lu en UTF-8, est accepté par ${PS}`);
+    } else {
+      ko += 1;
+      console.log(`  [KO]    contre-épreuve BOM — l’extrait correct est refusé (${verdictAvecBom})`);
+    }
+
+    // 5. Sous Windows PowerShell 5.1 seulement, la démonstration complète :
+    //    le MÊME contenu, sans BOM, relu par le moteur lui-même. Sous
+    //    PowerShell 7 c'est impossible — pwsh lit l'UTF-8 par défaut et
+    //    accepterait le fichier : on ne prétend donc rien dans ce cas.
+    const est51 = /^5\./.test(String(versionPs ?? ''));
+    if (est51) {
+      const verdictSans = analyser(sans);   // le fichier est sans BOM (cas 3)
+      if (verdictSans.startsWith('ERR')) {
+        console.log(`  [OK]    contre-épreuve BOM — sous PowerShell 5.1, le fichier SANS BOM est refusé : ${verdictSans.slice(0, 64)}`);
+      } else {
+        ko += 1;
+        console.log(`  [KO]    contre-épreuve BOM — sous PowerShell 5.1, un fichier sans BOM passe (${verdictSans})`);
+      }
+    } else {
+      console.log(`  [INFO]  contre-épreuve BOM — relecture réelle d’un fichier sans BOM NON EXÉCUTÉE : ${PS} (${versionPs}) lit l’UTF-8 par défaut, seul Windows PowerShell 5.1 reproduit le défaut`);
+    }
+
+    // 6. Et le compte : chaque outil contrôlé a bien eu ses octets vérifiés.
+    if (octetsVerifies === controles) {
+      console.log(`  [OK]    BOM vérifié sur le disque pour les ${octetsVerifies} fichier(s) temporaire(s) soumis au parseur`);
+    } else {
+      ko += 1;
+      console.log(`  [KO]    BOM vérifié pour ${octetsVerifies} fichier(s) seulement, sur ${controles} contrôlé(s)`);
+    }
+  } finally {
+    rmSync(bac, { recursive: true, force: true });
   }
 }
 
