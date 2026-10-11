@@ -92,6 +92,120 @@ autoritaire ou non autoritaire reste une procédure manuelle, documentée dans l
 bloc d’annulation du rapport complet, avec avertissement critique et renvoi à la
 procédure Microsoft.
 
+## Poste de travail Windows
+
+Le catalogue **Poste de travail Windows** couvre 30 assistants en huit
+sous-rubriques. Les mêmes trois règles que pour Active Directory s'appliquent,
+et quatre s'y ajoutent, propres au poste de travail :
+
+4. **Aucun redémarrage, aucun arrêt, aucune fermeture de console.** Aucun
+   script de ce catalogue ne redémarre le poste, ne l'arrête, ne ferme
+   PowerShell ni ne contient un `exit` susceptible de fermer la fenêtre de la
+   personne. Quand un redémarrage est nécessaire, le script le DIT et laisse
+   la personne le décider.
+5. **Aucune désactivation d'une protection.** Ni le pare-feu, ni Microsoft
+   Defender, ni une exclusion d'analyse ne sont modifiés. Les assistants
+   d'audit sont en lecture seule, et les exclusions existantes sont affichées
+   comme une information potentiellement sensible.
+6. **Aucun contournement d'identité.** Pas de modification de la base SAM,
+   pas de remplacement d'`utilman.exe`, pas de compte administrateur
+   clandestin, pas de contournement de BitLocker, pas d'outil de cassage.
+   L'assistant de récupération d'accès est documentaire : si l'identité ou
+   l'autorisation n'est pas établie, il ne propose aucune méthode intrusive.
+7. **Aucun chemin de nettoyage libre.** Le seul assistant qui supprime des
+   fichiers travaille sur une **liste blanche interne** d'emplacements
+   temporaires, jamais sur un chemin saisi par la personne. Il refuse les
+   racines de volume, les chemins UNC, les chemins relatifs, les dossiers
+   personnels, `.git`, `.env`, les bases et les sauvegardes, et il ne
+   traverse jamais un lien symbolique, une jonction ou un point de réanalyse.
+   Il ne « nettoie » jamais `C:`.
+
+### Diagnostic général
+- **Diagnostic complet du poste Windows** — `workstation-health-report`
+- **Inventaire matériel et logiciel du poste** — `workstation-inventory`
+
+### Périphériques
+- **Diagnostiquer le son du poste** — `audio-diagnostic`
+- **Diagnostiquer le microphone** — `microphone-diagnostic`
+- **Diagnostiquer la webcam** — `webcam-diagnostic`
+- **Diagnostiquer le Bluetooth** — `bluetooth-diagnostic`
+- **Diagnostiquer les écrans et la résolution** — `display-diagnostic`
+- **Auditer les pilotes du poste** — `driver-audit`
+
+### Mises à jour et applications
+- **Diagnostiquer Windows Update** — `windows-update-diagnostic`
+- **Réparation encadrée de Windows Update** — `windows-update-repair`
+- **Diagnostiquer une application qui ne démarre pas** — `application-wont-start`
+- **Diagnostiquer un processus bloqué** — `process-hung`
+
+### Performance et incidents
+- **Diagnostic du démarrage lent** — `slow-boot-diagnostic` : dernier
+  démarrage, services automatiques non démarrés, tâches planifiées, éléments
+  de démarrage, événements, espace disque, charge. Ne désactive rien.
+- **Diagnostic des écrans bleus** — `bluescreen-diagnostic` : événements
+  BugCheck, codes connus, présence et dates des minidumps. Le contenu des
+  dumps n'est ni lu ni téléversé, et le rapport ne prétend pas analyser un
+  vidage mémoire sans moteur de débogage.
+- **Diagnostic d'un profil utilisateur** — `user-profile-diagnostic` :
+  profil temporaire, correspondance SID/profil, ruche chargée, événements du
+  service de profils. Aucune suppression dans `ProfileList`, aucun renommage.
+- **Rapport de performance du poste** — `workstation-performance-report` :
+  la température n'est relevée que si une source Windows fiable la fournit, et
+  une mesure absente est annoncée absente, jamais présentée comme normale.
+
+### Comptes et services
+- **Audit des comptes locaux** — `local-accounts-audit` : lecture seule.
+  Aucun secret révélé, aucun mot de passe testé.
+- **Récupération d'accès Windows** — `windows-access-recovery` :
+  documentaire, et explicite sur ce qu'il refuse de proposer.
+- **Diagnostic et contrôle d'un service Windows** — `windows-service-control` :
+  un service nommé, jamais de joker ; refus des services critiques ; état
+  initial mémorisé, identité et état relus juste avant l'action, résultat relu
+  après, retour à l'état initial proposé, journal écrit avant toute action.
+
+### Sécurité
+- **Audit du pare-feu Windows** — `firewall-audit` : lecture seule. Aucun
+  profil désactivé, aucune règle créée ni supprimée.
+- **Audit de Microsoft Defender** — `defender-audit` : lecture seule. Les
+  exclusions sont affichées comme une information sensible, jamais modifiées.
+- **Analyse Microsoft Defender encadrée** — `defender-scan` : `Start-MpScan`
+  seul. Chemin local strictement validé, confirmation écrite pour une analyse
+  complète, aucun arrêt forcé de Defender.
+
+### Réparation Windows
+- **Vérification et réparation avec SFC** — `sfc-repair` : diagnostic,
+  `/verifyonly` et `/scannow` nettement séparés. DISM n'est jamais enchaîné
+  automatiquement, et le code de sortie n'est pas présenté comme suffisant.
+- **Vérification et réparation avec DISM** — `dism-repair` : `/CheckHealth`,
+  `/ScanHealth` et `/RestoreHealth` séparés. Aucune source arbitraire
+  téléchargée, source locale strictement validée, SFC non enchaîné.
+- **Création d'un point de restauration** — `restore-point-create` : création
+  seulement si la protection système est disponible et le lecteur protégé.
+  Aucune restauration n'est jamais déclenchée, et l'existence réelle du point
+  est vérifiée après création.
+- **Préparation au mode sans échec** — `safe-mode-preparation` : préparation
+  et procédure graphique. Le BCD n'est jamais modifié ; les commandes `bcdedit`
+  n'apparaissent qu'en aperçu documentaire marqué « NON EXECUTE », toujours
+  accompagnées de leur annulation.
+
+### Stockage et nettoyage
+- **Diagnostic du stockage du poste** — `workstation-storage-diagnostic` :
+  volumes, espace libre, temporaires, corbeille, caches, estimation du
+  récupérable. Aucune suppression, et renvoi vers `disk-scan` pour l'analyse
+  récursive avancée, qu'il ne duplique pas.
+- **Nettoyage sécurisé des fichiers temporaires** — `temp-cleanup` : le seul
+  assistant destructif du catalogue. Liste blanche interne, seuil d'âge
+  explicite, aperçu et manifeste obligatoires, confirmation textuelle exacte,
+  suppression fichier par fichier sans `-Recurse` ni `-Force`, et
+  revérification du chemin canonique juste avant chaque suppression.
+- **Nettoyage encadré de la corbeille** — `recycle-bin-cleanup` : diagnostic
+  seul, sans bouton Appliquer. La décision et son motif sont écrits dans le
+  script généré, avec la procédure graphique.
+- **Diagnostic des caches de navigateurs** — `browser-cache-diagnostic` :
+  diagnostic seul. Aucun navigateur fermé, aucune suppression, et le rapport
+  nomme explicitement ce qu'il ne lit pas — mots de passe, cookies, jetons,
+  sessions, favoris, historique, extensions, données synchronisées.
+
 ## Première version
 
 - Configuration IPv4 statique et DNS
@@ -134,16 +248,32 @@ Le projet est volontairement sans dépendance d’exécution. Ouvrir
 
 ### Tests
 
-    npm run generate        # régénère les scripts et compare aux empreintes de référence
-    npm run test:identity   # contrat des fiches, validateurs et contre-épreuves
-    npm run test:browser    # parcours réel dans Chromium, responsive compris
-    npm run test:bom        # BOM UTF-8 des scripts PowerShell livrés
-    node scripts/verifier-sources.mjs   # chaque source officielle répond, et porte le bon titre
+    npm run generate                 # régénère les scripts et compare aux empreintes de référence
+    npm run test:identity            # contrat des fiches, validateurs et contre-épreuves
+    npm run test:poste-verrous       # EXÉCUTE les scripts sensibles, cmdlets remplacées par des mouchards
+    npm run test:fiches-poste-b      # contrat fiche par fiche des 18 assistants du LOT 6B
+    npm run test:browser             # parcours réel dans Chromium des 107 outils, responsive compris
+    npm run test:browser:poste-b     # parcours réel des 18 fiches du LOT 6B
+    npm run test:bom                 # BOM UTF-8 des scripts PowerShell livrés
+    npm run test:sources:6b          # chaque source officielle répond, et porte le bon titre
+    npm run test:sources:horsligne   # contrôle de forme seul, sans appel réseau
+
+`npm run test:poste-verrous` et `npm run test:fiches-poste-b` acceptent
+`--powershell <exe>`. L'interpréteur est alors **imposé** : si l'exécutable
+demandé est absent, le banc échoue au lieu de se rabattre sur l'autre moteur.
+Un résultat obtenu sous PowerShell 7 ne dit rien de Windows PowerShell 5.1.
 
 `npm run generate` produit un script par outil et par jeu de valeurs, puis
 compare chaque empreinte SHA-256 à `test/scripts-baseline.json`. Les scripts des
 lots précédents doivent rester **identiques octet par octet** : toute
 modification involontaire fait échouer la commande.
+
+## Feuille de route
+
+Les lots livrés et les lots prévus — sans les développer — sont consignés dans
+[`docs/FEUILLE-DE-ROUTE.md`](docs/FEUILLE-DE-ROUTE.md). Ce document définit
+aussi les six états à ne jamais confondre : développé localement, testé
+localement, testé en CI, fusionné, déployé, testé sur une vraie machine.
 
 ## Publication
 

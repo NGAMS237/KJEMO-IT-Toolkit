@@ -73,7 +73,27 @@ export const CMDLETS_EXTERNES = {
   'Stop-Process': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/stop-process' },
   'Stop-Service': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/stop-service' },
   'Get-AuthenticodeSignature': { module: 'Microsoft.PowerShell.Security', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-authenticodesignature' },
+  'Add-Content': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/add-content' },
+  // Remove-Item est declaree ICI, et un seul assistant du catalogue l'appelle :
+  // temp-cleanup. Son appel est unitaire — un LiteralPath, pas de -Recurse, pas
+  // de -Force, pas de joker — et il est garde par une liste blanche, un seuil
+  // d'age, un manifeste, une confirmation ecrite et une reverification du
+  // chemin canonique juste avant chaque suppression. La declarer n'autorise
+  // rien : l'inventaire dit quelles commandes EXISTENT, les verrous disent ce
+  // qui est permis, et test/poste-verrous.test.mjs les eprouve a l'execution.
+  'Remove-Item': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/remove-item' },
+  'Get-BitLockerVolume': { module: 'BitLocker', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/bitlocker/get-bitlockervolume' },
+  'Get-LocalGroup': { module: 'Microsoft.PowerShell.LocalAccounts', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.localaccounts/get-localgroup' },
+  'Get-LocalGroupMember': { module: 'Microsoft.PowerShell.LocalAccounts', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.localaccounts/get-localgroupmember' },
+  'Get-LocalUser': { module: 'Microsoft.PowerShell.LocalAccounts', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.localaccounts/get-localuser' },
+  'Get-MpThreat': { module: 'Defender', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/defender/get-mpthreat' },
+  'Get-MpThreatDetection': { module: 'Defender', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/defender/get-mpthreatdetection' },
+  'Get-NetFirewallAddressFilter': { module: 'NetSecurity', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewalladdressfilter' },
+  'Get-NetFirewallApplicationFilter': { module: 'NetSecurity', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallapplicationfilter' },
+  'Start-MpScan': { module: 'Defender', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/defender/start-mpscan' },
+  'Checkpoint-Computer': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7 (editions client ; absent des editions Serveur)', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/checkpoint-computer' },
   'Get-PhysicalDisk': { module: 'Storage', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/storage/get-physicaldisk' },
+  'Get-ScheduledTask': { module: 'ScheduledTasks', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/scheduledtasks/get-scheduledtask' },
   'Restart-Service': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/restart-service' },
   'Set-Content': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/set-content' },
   'Split-Path': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/split-path' },
@@ -236,6 +256,11 @@ export const BINAIRES_EXTERNES = {
   'dcdiag.exe': { fourniPar: 'Outils AD DS (dcdiag.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/dcdiag' },
   'gpresult.exe': { fourniPar: 'Windows (gpresult.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/gpresult' },
   'gpupdate.exe': { fourniPar: 'Windows (gpupdate.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/gpupdate' },
+  'net': { fourniPar: 'Windows (net.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/troubleshoot/windows-server/networking/net-commands-on-operating-systems' },
+  'dsregcmd.exe': { fourniPar: 'Windows (dsregcmd.exe)', os: 'Windows 10, Windows 11', doc: 'https://learn.microsoft.com/entra/identity/devices/troubleshoot-device-dsregcmd' },
+  'bcdedit.exe': { fourniPar: 'Windows (bcdedit.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-hardware/manufacture/desktop/bcdedit-command-line-options' },
+  'dism.exe': { fourniPar: 'Windows (dism.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-image-management-command-line-options-s14' },
+  'reagentc.exe': { fourniPar: 'Windows (reagentc.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-hardware/manufacture/desktop/reagentc-command-line-options' },
   'icacls': { fourniPar: 'Windows (icacls.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/icacls' },
   'ipconfig': { fourniPar: 'Windows (ipconfig.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig' },
   'klist.exe': { fourniPar: 'Windows (klist.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/klist' },

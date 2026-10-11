@@ -340,6 +340,70 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
+      # 11 quinquies. Fiches du LOT 6B — le contrat, outil par outil
+      #
+      # Ce banc est petit et cible les 18 assistants du LOT 6B : fiche
+      # complete, risque coherent avec requiresAdmin, validation qui accepte
+      # ses propres valeurs par defaut, generate() qui ne leve pas, aucun
+      # motif interdit dans le CODE execute, et script accepte par le parseur
+      # du moteur IMPOSE.
+      #
+      # Il porte quatre contre-epreuves internes : la regle sur le BCD est
+      # eprouvee sur une copie fautive, pour qu'une regle devenue aveugle ne
+      # puisse pas passer pour une regle respectee.
+      # -----------------------------------------------------------------------
+      - name: Fiches du LOT 6B — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          if ($PSVersionTable.PSEdition -eq 'Core') {
+              Write-Error "Repli silencieux detecte : cette etape doit tourner sous Windows PowerShell, pas sous PowerShell 7."
+              exit 1
+          }
+          node test/fiches-poste-b.test.mjs --powershell powershell
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Fiches LOT 6B en echec sous PS 5.1 (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Fiches du LOT 6B — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          if ($PSVersionTable.PSEdition -ne 'Core') {
+              Write-Error "Repli silencieux detecte : cette etape doit tourner sous PowerShell 7."
+              exit 1
+          }
+          node test/fiches-poste-b.test.mjs --powershell pwsh
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Fiches LOT 6B en echec sous PS 7 (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      # -----------------------------------------------------------------------
+      # 11 sexies. Sources citees — controle de FORME, hors ligne
+      #
+      # La verification EN LIGNE (code HTTP reel, titre reel, detection des
+      # pages « contenu introuvable » qui repondent 200) est faite hors CI et
+      # son rapport est versionne : LOT-6B-SOURCES.json. Elle n'est pas jouee
+      # ici parce qu'elle depend d'un service tiers : une coupure reseau chez
+      # Microsoft ferait echouer un workflow qui ne doit echouer que sur un
+      # defaut du depot, et « continue-on-error » est interdit.
+      #
+      # Ce qui est joue ici est le controle de forme : toute source doit etre
+      # une URL Microsoft bien formee et citee par une fiche. Le rapport dit
+      # alors explicitement NON VERIFIE EN LIGNE.
+      # -----------------------------------------------------------------------
+      - name: Sources citées — contrôle de forme (hors ligne)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sources-microsoft.mjs --hors-ligne
+        shell: bash
+
+      # -----------------------------------------------------------------------
       # 12 bis. Contrôle des commandes externes — LOT 4
       #
       # Un script qui appelle une applet de commande inexistante n'echoue pas
@@ -406,6 +470,26 @@ jobs:
         shell: bash
         env:
           PLAYWRIGHT_CHROMIUM_PATH: ''   # utilise le Chromium installé par playwright install
+
+      # -----------------------------------------------------------------------
+      # 13 bis. Tests navigateur du LOT 6B
+      #
+      # browser-identity.test.mjs parcourt les 107 outils et eprouve, pour
+      # chacun, Copier, Telecharger, le BOM UTF-8 du fichier telecharge et
+      # l'identite octet par octet avec generate(). Ce banc-ci couvre ce qui
+      # est propre au LOT 6B : les 18 fiches dans la grille, les cinq
+      # sous-rubriques, les routes directes, la desactivation des boutons
+      # apres modification d'un champ, les erreurs par champ, les phrases de
+      # confirmation tapees a la main, la recherche par symptome et par
+      # message d'erreur, les favoris, les deux modes, les trois themes, le
+      # 390 px sans debordement et la navigation au clavier.
+      # -----------------------------------------------------------------------
+      - name: Tests navigateur LOT 6B (18 assistants)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-poste-b.test.mjs
+        shell: bash
+        env:
+          PLAYWRIGHT_CHROMIUM_PATH: ''
 
       # -----------------------------------------------------------------------
       # 14. Rapport d'artefact (toujours, même en cas d'échec)

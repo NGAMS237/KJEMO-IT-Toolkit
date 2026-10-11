@@ -28,6 +28,7 @@ import { toolsAd } from './outils-ad.mjs';
 import { toolsGpo } from './outils-gpo.mjs';
 import { toolsReseau } from './outils-reseau.mjs';
 import { toolsPoste } from './outils-poste.mjs';
+import { toolsPosteB } from './outils-poste-b.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1574,4 +1575,5 @@ for (const outil of toolsAd) tools.push(outil);
 for (const outil of toolsGpo) tools.push(outil);
 for (const outil of toolsReseau) tools.push(outil);
 for (const outil of toolsPoste) tools.push(outil);
+for (const outil of toolsPosteB) tools.push(outil);
 

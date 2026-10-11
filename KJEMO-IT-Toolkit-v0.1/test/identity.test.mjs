@@ -868,10 +868,24 @@ for (const t of tools) {
 //                   non sauvegardees sont perdues, sans recuperation. Le
 //                   pretendre reversible serait un mensonge, et la fiche
 //                   fait reposer sa confirmation ecrite exactement la-dessus.
+//   temp-cleanup  : les fichiers supprimes NE PASSENT PAS par la corbeille.
+//                   Rien ne les ramene, et c'est pourquoi le mode apercu est
+//                   obligatoire, le manifeste ecrit au journal avant la
+//                   premiere suppression, et la confirmation ecrite portee
+//                   exactement sur ce point. Le declarer reversible serait un
+//                   mensonge. Ajoute par le LOT 6B, justifie dans son rapport.
+//   defender-scan : une analyse lancee ne se « rannule » pas. Elle continue en
+//                   arriere-plan apres la fin du script, et Defender peut avoir
+//                   mis un fichier en quarantaine selon SA configuration, sans
+//                   que ce script l'ait demande. Declarer l'assistant
+//                   reversible laisserait croire qu'un bouton defait tout :
+//                   c'est faux, et la fiche renvoie a l'Historique de la
+//                   protection, seul endroit ou une action sur un fichier se
+//                   defait. Ajoute par le LOT 6B, justifie dans son rapport.
 //
 // Aucun autre outil n'y a droit : toute addition a cette liste doit etre
 // justifiee dans le rapport du lot qui l'introduit.
-const IRREVERSIBLES_ADMIS = ['disk-scan', 'process-hung'];
+const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'process-hung', 'temp-cleanup'];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
   `les seuls outils declares irreversibles sont ${IRREVERSIBLES_ADMIS.join(' et ')} (${lectureSeule.join(', ') || 'aucun'})`);
@@ -1328,7 +1342,7 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
 const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs',
-  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs']
+  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs', 'dist/outils-poste-b.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
