@@ -235,6 +235,59 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
+      # 12 bis. Contrôle des commandes externes — LOT 4
+      #
+      # Un script qui appelle une applet de commande inexistante n'echoue pas
+      # quand on l'ecrit : il echoue chez la personne, en production. Le LOT 4
+      # en portait un exemple, un appel a « Get-GPOBackup » qui n'a jamais fait
+      # partie du module GroupPolicy.
+      #
+      # Le banc lit la GRAMMAIRE de chaque script genere et refuse toute
+      # commande absente de dist/cmdlets.mjs. Il tourne sous les DEUX moteurs,
+      # et sous Windows PowerShell 5.1 il interroge en plus Get-Command pour
+      # les modules reellement presents sur l'agent.
+      #
+      # Aucune continue-on-error, aucun repli : si le banc echoue, le workflow
+      # echoue.
+      # -----------------------------------------------------------------------
+      - name: Exporter l'inventaire des commandes externes
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cmdlets-export.mjs
+        shell: bash
+
+      - name: Contrôle des commandes GPO — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          if ($PSVersionTable.PSEdition -eq 'Core') {
+              Write-Error "Repli silencieux detecte : cette etape doit tourner sous Windows PowerShell, pas sous PowerShell 7."
+              exit 1
+          }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-KjemoCmdlets.ps1 -VerifierPresence
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Controle des commandes en echec sous PS 5.1 (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Contrôle des commandes GPO — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          if ($PSVersionTable.PSEdition -ne 'Core') {
+              Write-Error "Repli silencieux detecte : cette etape doit tourner sous PowerShell 7."
+              exit 1
+          }
+          pwsh -NoProfile -File ./scripts/Test-KjemoCmdlets.ps1 -VerifierPresence
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Controle des commandes en echec sous PS 7 (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      # -----------------------------------------------------------------------
       # 13. Installer Playwright/Chromium et exécuter les tests navigateur
       # -----------------------------------------------------------------------
       - name: Installer les navigateurs Playwright

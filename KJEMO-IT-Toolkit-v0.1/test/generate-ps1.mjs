@@ -612,7 +612,7 @@ const VALEURS_GPO = {
     "brNomGpo": "GPO-O'Brien-Sauvegarde",
     "brDossier": "\\\\srv-fichiers\\Sauvegardes$\\O'Brien",
     "brAction": "Restaurer",
-    "brIdSauvegarde": "",
+    "brIdSauvegarde": "{4F2B9C10-7A3D-4E58-9B61-0C8D2E7A1F33}",
     "brConfirmation": ""
   }
 };

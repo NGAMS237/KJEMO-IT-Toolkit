@@ -2471,7 +2471,11 @@ section('Correctif 3 — la contre-épreuve est branchée dans la CI Windows');
     // Rien ne doit rendre ces étapes facultatives.
     const bloc51 = yml.slice(yml.indexOf('Contre-épreuve sauvegarde bloquante — Windows PowerShell 5.1'),
                              yml.indexOf('Installer les navigateurs Playwright'));
-    assert(!/continue-on-error/.test(bloc51),
+    // On juge les étapes, pas les commentaires : un commentaire qui PROMET
+    // qu'il n'y a pas de continue-on-error ne doit pas faire échouer le
+    // contrôle qui le vérifie.
+    const bloc51Utile = bloc51.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+    assert(!/continue-on-error/.test(bloc51Utile),
       'aucune des deux contre-épreuves ne porte continue-on-error');
     assert(!/if:\s*(always|success\(\)\s*\|\||failure)/.test(bloc51),
       'aucune des deux contre-épreuves n’est rendue conditionnelle');
@@ -2774,6 +2778,10 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
       'contre-épreuve — restaurer en mode Appliquer sans confirmation écrite est refusé');
 
     valeurs.brConfirmation = valeurs.brNomGpo;
+    // Depuis le correctif, l'identifiant de sauvegarde est lui aussi exigé.
+    assert(Boolean(restauration.validate(valeurs).brIdSauvegarde),
+      'contre-épreuve — restaurer sans identifiant de sauvegarde est refusé');
+    valeurs.brIdSauvegarde = '{2B6B1C4E-1F4D-4C2A-9A1E-7C0A55D1F001}';
     const script = restauration.generate(valeurs);
     assert(/\$sauvegardeOk\s*=\s*\$false/.test(script),
       'le script part du principe qu’aucune sauvegarde n’a réussi');
@@ -2785,8 +2793,16 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
       'contre-épreuve — le blocage est évalué AVANT l’appel à Restore-GPO');
     assert(/Backup-GPO/.test(script.slice(0, iRestore)),
       'contre-épreuve — une sauvegarde est tentée avant toute restauration');
-    assert(!/Restore-GPO/.test(restauration.generate({ ...valeurs, mode: 'Diagnostic' }).split('--- 5.')[0]),
-      'contre-épreuve — aucune restauration n’apparaît avant la section qui la garde');
+    // Avant la section 5, « Restore-GPO » ne doit apparaître que dans un
+    // commentaire (le script explique quelles applets existent vraiment),
+    // jamais comme un appel.
+    const avantSection5 = restauration.generate({ ...valeurs, mode: 'Diagnostic' })
+      .split('--- 5.')[0]
+      .split('\n')
+      .filter((l) => !/^\s*#/.test(l))
+      .join('\n');
+    assert(!/Restore-GPO/.test(avantSection5),
+      'contre-épreuve — aucun appel à Restore-GPO avant la section qui le garde');
   }
 
   // 7. Un faux mode Diagnostic qui écrirait doit être détecté.
@@ -2904,6 +2920,172 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     assert(outil.rollback.summary.length > 40, `${outil.id} : l’annulation est expliquée, pas résumée en trois mots`);
   }
 }
+
+// ===========================================================================
+// LOT 4 — correctif : inventaire déclaratif des commandes externes
+// ===========================================================================
+{
+  const C = await import('../dist/cmdlets.mjs');
+
+  section('LOT 4 — commandes externes : inventaire déclaratif');
+
+  assert(Object.keys(C.CMDLETS_EXTERNES).length >= 120,
+    `inventaire : ${Object.keys(C.CMDLETS_EXTERNES).length} applets de commande déclarées`);
+  for (const [nom, d] of Object.entries(C.CMDLETS_EXTERNES)) {
+    assert(typeof d.module === 'string' && d.module.length > 0, `${nom} : module déclaré`);
+    assert(typeof d.os === 'string' && d.os.length > 0, `${nom} : système compatible déclaré`);
+    assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(d.doc), `${nom} : page Microsoft déclarée`);
+  }
+  for (const [nom, d] of Object.entries(C.BINAIRES_EXTERNES)) {
+    assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(d.doc), `binaire ${nom} : page Microsoft déclarée`);
+  }
+
+  // Get-GPOBackup est le cas qui a motivé tout ceci : une applet qui n'a
+  // jamais existé, appelée dans un try/catch — ce qui ne la fait pas exister.
+  assert(Object.prototype.hasOwnProperty.call(C.CMDLETS_INTERDITES, 'Get-GPOBackup'),
+    'Get-GPOBackup figure explicitement parmi les commandes bannies');
+  assert(!C.commandeAutorisee('Get-GPOBackup'),
+    'contre-épreuve — Get-GPOBackup est refusée');
+  assert(/n.existe pas/i.test(C.raisonRefus('Get-GPOBackup')),
+    'le refus de Get-GPOBackup dit qu’elle n’existe pas, pas qu’elle est « non déclarée »');
+  assert(C.commandeAutorisee('Backup-GPO') && C.commandeAutorisee('Restore-GPO'),
+    'contrôle positif — Backup-GPO et Restore-GPO restent autorisées');
+  assert(!C.commandeAutorisee('Get-KjemoCommandeInventee'),
+    'contre-épreuve — une commande inventée est refusée');
+
+  // Aucun script généré ne doit contenir une commande bannie. Ce contrôle est
+  // textuel et grossier ; le banc PowerShell lit la grammaire et fait foi.
+  section('LOT 4 — aucune commande bannie dans les scripts générés');
+  for (const outil of tools) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    let script;
+    try { script = outil.generate(valeurs); } catch { continue; }
+    for (const nom of Object.keys(C.CMDLETS_INTERDITES)) {
+      assert(!new RegExp(`\\b${nom}\\b`).test(script),
+        `${outil.id} : aucun appel à ${nom}`);
+    }
+  }
+
+  // Le banc PowerShell existe, il lit la grammaire, et il porte sa propre
+  // contre-épreuve.
+  const BANC = resolve(ROOT, 'scripts/Test-KjemoCmdlets.ps1');
+  assert(existsSync(BANC), 'le banc de contrôle des commandes est présent dans le dépôt');
+  if (existsSync(BANC)) {
+    const source = readFileSync(BANC, 'utf8');
+    assert(/Language\.Parser\]::ParseFile/.test(source),
+      'le banc lit la grammaire PowerShell, pas une expression régulière');
+    assert(/Get-GPOBackup/.test(source),
+      'le banc embarque sa propre contre-épreuve avec une commande bannie');
+    assert(/VerifierPresence/.test(source),
+      'le banc sait interroger Get-Command sur une machine Windows');
+    assert(/FilterScript/.test(source),
+      'le banc ignore les blocs -Filter, où un nom de propriété n’est pas une commande');
+  }
+
+  section('LOT 4 — correctif : sauvegarde et restauration de GPO');
+  {
+    const outil = tools.find((t) => t.id === 'gpo-backup-restore-compare');
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    const script = outil.generate(valeurs);
+
+    assert(!/Get-GPOBackup/.test(script), 'le script n’appelle plus Get-GPOBackup');
+    assert(/Aucune applet de commande Microsoft ne liste les sauvegardes/.test(script),
+      'le script dit explicitement qu’aucune applet n’existe pour cet inventaire');
+    assert(/lecture du format de dossier produit par GPMC/.test(script),
+      'l’inventaire est présenté comme une inspection de fichiers, pas comme une API');
+    assert(/bkupInfo\.xml/.test(script) && /manifest\.xml/.test(script),
+      'le script nomme les deux fichiers qu’il lit');
+
+    // Une restauration demande un identifiant, dans les deux modes.
+    for (const mode of ['Diagnostic', 'Appliquer']) {
+      const v = { ...valeurs, brAction: 'Restaurer', mode, brConfirmation: valeurs.brNomGpo };
+      assert(Boolean(outil.validate(v).brIdSauvegarde),
+        `contre-épreuve — restaurer en mode ${mode} sans identifiant est refusé`);
+    }
+    const vOk = {
+      ...valeurs, brAction: 'Restaurer', mode: 'Appliquer',
+      brConfirmation: valeurs.brNomGpo,
+      brIdSauvegarde: '{2B6B1C4E-1F4D-4C2A-9A1E-7C0A55D1F001}',
+    };
+    assert(Object.keys(outil.validate(vOk)).length === 0,
+      'une restauration complètement renseignée est acceptée');
+    const scriptR = outil.generate(vOk);
+    assert(/\$copieChoisie/.test(scriptR),
+      'la restauration passe par la copie identifiée, pas par « la plus récente »');
+    assert(/Restore-GPO -BackupId \$idNormalise -Path \$Dossier -Domain \$Domaine/.test(scriptR),
+      'Restore-GPO est appelée avec BackupId, dossier et domaine explicites');
+    for (const attendu of ['Strategie cible', 'Domaine', 'Dossier', 'BackupId restaure', 'Copie de secours']) {
+      assert(new RegExp(attendu).test(scriptR),
+        `le bloc d’identification nomme « ${attendu} » avant d’agir`);
+    }
+    const iIdent = scriptR.indexOf('--- Restauration : ce qui va etre fait ---');
+    const iRestore = scriptR.indexOf('Restore-GPO -BackupId');
+    assert(iIdent > -1 && iRestore > -1 && iIdent < iRestore,
+      'contre-épreuve — l’identification complète précède l’appel à Restore-GPO');
+
+    // Les verrous du LOT 4 tiennent toujours.
+    assert(/\$sauvegardeOk\s*=\s*\$false/.test(scriptR), 'le script part d’une sauvegarde non réussie');
+    assert(/elseif \(-not \$sauvegardeOk\)/.test(scriptR), 'la restauration reste bloquée sans sauvegarde fraîche');
+    assert(!/-Confirm\s*:\s*\$false/.test(scriptR), 'aucun -Confirm:$false');
+    assert(/Backup-GPO/.test(scriptR.slice(0, iRestore)), 'une sauvegarde est tentée avant toute restauration');
+    assert(/bkupInfo\.xml.*gpreport\.xml|gpreport\.xml/.test(scriptR),
+      'la copie fraîche est relue fichier par fichier');
+  }
+
+  section('LOT 4 — correctif : le marqueur laissé dans gpo-link-audit');
+  {
+    // Le contrôle des commandes a trouvé, dans gpo-link-audit, un appel à
+    // « domainToDnMarqueur » : un reste de gabarit JavaScript, parti dans le
+    // script généré comme s'il s'agissait d'une commande. Il n'aurait jamais
+    // été vu par un contrôle textuel.
+    const outil = tools.find((t) => t.id === 'gpo-link-audit');
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    const script = outil.generate(valeurs);
+    assert(!/domainToDnMarqueur/.test(script), 'le marqueur de gabarit a disparu du script');
+    assert(/\$DomaineDn = /.test(script), 'le DN du domaine est maintenant une variable encodée');
+    assert(/\$cibles\.Add\(\$DomaineDn\)/.test(script), 'la racine du domaine est ajoutée aux cibles');
+  }
+
+  // Aucun script généré, quel qu'il soit, ne doit appeler une commande dont le
+  // nom ressemble à du JavaScript resté en place.
+  section('LOT 4 — aucun reste de gabarit JavaScript dans les scripts');
+  for (const outil of tools) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    let script;
+    try { script = outil.generate(valeurs); } catch { continue; }
+    assert(!/\$\{[A-Za-z_]/.test(script), `${outil.id} : aucun \${...} non substitué`);
+    assert(!/Marqueur\b/.test(script), `${outil.id} : aucun identifiant « Marqueur » résiduel`);
+  }
+}
+
+  section('LOT 4 — la CI Windows branche le contrôle des commandes');
+  {
+    const WF = resolve(ROOT, '../.github/workflows/validate.yml');
+    assert(existsSync(WF), 'le workflow de validation est présent');
+    if (existsSync(WF)) {
+      const wf = readFileSync(WF, 'utf8');
+      assert(/Contrôle des commandes GPO — Windows PowerShell 5\.1/.test(wf),
+        'la CI lance le contrôle des commandes sous Windows PowerShell 5.1');
+      assert(/Contrôle des commandes GPO — PowerShell 7/.test(wf),
+        'la CI lance le contrôle des commandes sous PowerShell 7');
+      assert(/powershell\.exe -NoProfile -ExecutionPolicy Bypass -File \.\\scripts\\Test-KjemoCmdlets\.ps1 -VerifierPresence/.test(wf),
+        'l’étape 5.1 appelle powershell.exe nommément, avec -VerifierPresence');
+      assert(/pwsh -NoProfile -File \.\/scripts\/Test-KjemoCmdlets\.ps1 -VerifierPresence/.test(wf),
+        'l’étape 7 appelle pwsh nommément, avec -VerifierPresence');
+      assert(/Repli silencieux detecte/.test(wf),
+        'chaque étape refuse de tourner sous le mauvais moteur plutôt que de se replier');
+      assert((wf.match(/Repli silencieux detecte/g) ?? []).length >= 2,
+        'les deux étapes portent ce refus, pas seulement une');
+      assert(/node test\/cmdlets-export\.mjs/.test(wf),
+        'la CI exporte l’inventaire avant de le contrôler');
+      // Aucune étape ne porte continue-on-error : on le vérifie hors commentaires.
+      const lignesUtiles = wf.split('\n').filter((l) => !/^\s*#/.test(l));
+      assert(!lignesUtiles.some((l) => /continue-on-error/.test(l)),
+        'aucune étape du workflow ne porte continue-on-error');
+      assert(/Version du moteur : \$\(\$PSVersionTable\.PSVersion\)/.test(wf),
+        'le journal affiche le moteur et sa version');
+    }
+  }
 
 // Résumé
 console.log('');

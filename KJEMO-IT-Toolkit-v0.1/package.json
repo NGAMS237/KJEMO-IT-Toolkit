@@ -13,7 +13,9 @@
     "test:roundtrip:verify": "node test/roundtrip.mjs verify test/generated/roundtrip",
     "test:bom": "node test/check-ps1-bom.mjs",
     "test:sources": "node test/sources-microsoft.mjs --json LOT-4-SOURCES.json",
-    "test:sources:horsligne": "node test/sources-microsoft.mjs --hors-ligne"
+    "test:sources:horsligne": "node test/sources-microsoft.mjs --hors-ligne",
+    "test:cmdlets:export": "node test/cmdlets-export.mjs",
+    "test:cmdlets": "node test/cmdlets-export.mjs && pwsh -File ./scripts/Test-KjemoCmdlets.ps1"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1"

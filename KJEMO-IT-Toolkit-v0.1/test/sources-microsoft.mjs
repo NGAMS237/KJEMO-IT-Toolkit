@@ -34,6 +34,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const { tools } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { CMDLETS_EXTERNES, BINAIRES_EXTERNES } =
+  await import(pathToFileURL(resolve(ROOT, 'dist', 'cmdlets.mjs')).href);
 
 const args = process.argv.slice(2);
 const horsLigne = args.includes('--hors-ligne');
@@ -132,6 +134,19 @@ for (const outil of tools) {
   };
   if (outil.source) ajoute(outil.source, outil.title);
   for (const s of outil.sources ?? []) ajoute(s.url, s.label);
+}
+
+// LOT 4 — les pages de documentation de l'inventaire de commandes entrent dans
+// le même contrôle. Déclarer une applet avec un lien mort ne vaut pas mieux que
+// de ne pas la déclarer.
+if (!args.includes('--sans-cmdlets')) {
+  const ajoute = (url, label) => {
+    if (!sources.has(url)) sources.set(url, { labels: new Set(), outils: new Set() });
+    sources.get(url).labels.add(label);
+    sources.get(url).outils.add('(inventaire des commandes)');
+  };
+  for (const [nom, d] of Object.entries(CMDLETS_EXTERNES)) ajoute(d.doc, nom);
+  for (const [nom, d] of Object.entries(BINAIRES_EXTERNES)) ajoute(d.doc, nom);
 }
 
 console.log(`--- Sources Microsoft : ${sources.size} URL distinctes, ${tools.length} outils ---`);

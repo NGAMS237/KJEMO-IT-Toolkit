@@ -1,5 +1,5 @@
 {
-  "genere": "2026-10-02T19:38:45.899Z",
+  "genere": "2026-10-03T00:13:45.067Z",
   "lot": "LOT 4 — stratégies de groupe avancées",
   "shaBase": "fb0932112b098d9c7d519fd9f57902172ffecf21",
   "catalogue": {
@@ -651,7 +651,8 @@
         "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
         "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
         "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl",
-        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport"
+        "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport",
+        "https://learn.microsoft.com/powershell/module/grouppolicy/"
       ]
     },
     {
@@ -1069,7 +1070,7 @@
         },
         {
           "id": "brIdSauvegarde",
-          "etiquette": "Identifiant de la sauvegarde (facultatif)",
+          "etiquette": "Identifiant de la sauvegarde (facultatif pour comparer)",
           "type": "text",
           "facultatif": true,
           "valeurParDefaut": ""
@@ -1089,9 +1090,9 @@
           "valeurParDefaut": "Diagnostic"
         }
       ],
-      "prerequis": 9,
+      "prerequis": 10,
       "etapesConsole": 5,
-      "erreursExpliquees": 8,
+      "erreursExpliquees": 10,
       "controlesApres": 4,
       "annulation": {
         "resume": "Le retour arrière d’une restauration est une autre restauration : celle de la copie de secours que ce script écrit juste avant d’agir. Son identifiant est affiché dans le rapport — le noter.",
