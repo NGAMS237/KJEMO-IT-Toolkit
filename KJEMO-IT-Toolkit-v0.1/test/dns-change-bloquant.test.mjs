@@ -52,10 +52,12 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { tools } = await import(resolve(ROOT, 'dist/generators.mjs'));
+const { tools } = await import(
+  pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href
+);
 
 let passed = 0;
 let failed = 0;

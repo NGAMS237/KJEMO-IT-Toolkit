@@ -45,7 +45,7 @@ import {
   domainToDn,
 } from '../dist/generators.mjs';
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import {
   CATEGORIES,
   CATEGORIE_TOUT,
@@ -4055,6 +4055,218 @@ function codeSeulLot6(script) {
     assert(searchTools(derniere.message).some((r) => idDe(r) === outil.id),
       `recherche par message d’erreur — « ${derniere.message.slice(0, 40)}… » retrouve ${outil.id}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+section('CI Windows — imports dynamiques compatibles ESM');
+
+// Pourquoi cette garde existe, et pourquoi elle est statique.
+//
+// Sous Windows, resolve() rend « D:\a\KJEMO\dist\generators.mjs ». Passe tel
+// quel a un appel dynamique, Node ESM le refuse :
+//   ERR_UNSUPPORTED_ESM_URL_SCHEME — Received protocol 'd:'
+// Node ESM n'accepte qu'une URL « file:///D:/... ». Sous Linux le meme code
+// passe, parce que le chemin commence par « / » et ressemble assez a une URL
+// pour etre tolere. Le defaut est donc INVISIBLE sur cette machine et FATAL
+// en CI Windows : aucune execution locale ne peut le rattraper, seule une
+// analyse du texte des fichiers le peut. D'ou cette garde.
+//
+// Le mot-cle cherche n'est jamais ecrit en clair ici : il est reconstruit a
+// partir de fragments. Sinon la garde se detecterait elle-meme, et il
+// faudrait exclure ce fichier du balayage — ce qui lui ferait un trou juste a
+// l'endroit ou elle est censee veiller.
+const MOT_IMPORT = ['im', 'port'].join('');
+
+// Premier passage : masquer ce qui n'est pas du code.
+//
+// Ce masque n'est pas une coquetterie : sans lui, la garde accuse ses propres
+// commentaires et ses propres libelles de test. Une phrase qui MENTIONNE un
+// appel dynamique n'est pas un appel dynamique, et un libelle de test non
+// plus.
+//
+//   - contenu des commentaires  → espaces
+//   - contenu des chaines       → « x », guillemets conserves
+//
+// Les positions et les retours a la ligne sont preserves caractere pour
+// caractere, afin que les numeros de ligne rapportes soient ceux du fichier
+// reel et que l'argument brut reste extractible aux memes offsets.
+function masquerJs(source) {
+  const out = new Array(source.length);
+  let i = 0;
+  const copier = (n) => { for (let k = 0; k < n && i < source.length; k++, i++) out[i] = source[i]; };
+  const effacer = (n, par) => {
+    for (let k = 0; k < n && i < source.length; k++, i++) {
+      out[i] = source[i] === '\n' ? '\n' : par;
+    }
+  };
+  while (i < source.length) {
+    const c = source[i];
+    const d = source[i + 1];
+    if (c === '/' && d === '/') {
+      const fin = source.indexOf('\n', i);
+      effacer((fin === -1 ? source.length : fin) - i, ' ');
+      continue;
+    }
+    if (c === '/' && d === '*') {
+      const fin = source.indexOf('*/', i + 2);
+      effacer((fin === -1 ? source.length : fin + 2) - i, ' ');
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      copier(1);                                 // le guillemet ouvrant
+      while (i < source.length) {
+        if (source[i] === '\\') { effacer(2, 'x'); continue; }
+        if (source[i] === c) { copier(1); break; }  // le guillemet fermant
+        effacer(1, 'x');
+      }
+      continue;
+    }
+    copier(1);
+  }
+  return out.join('');
+}
+
+// Extrait l'argument de chaque appel dynamique, parentheses equilibrees.
+// Un balayage caractere par caractere, parce qu'une expression reguliere ne
+// sait pas compter les parentheses : pathToFileURL(resolve(a, b)).href en
+// contient trois niveaux.
+function appelsDynamiques(sourceBrute) {
+  const source = masquerJs(sourceBrute);
+  const trouves = [];
+  for (let i = 0; i < source.length; i++) {
+    if (source.slice(i, i + MOT_IMPORT.length) !== MOT_IMPORT) continue;
+    // Ni « .xxx », ni un identifiant plus long, ni « xxx.meta ».
+    if (i > 0 && /[\w$.]/.test(source[i - 1])) continue;
+    let j = i + MOT_IMPORT.length;
+    while (j < source.length && /\s/.test(source[j])) j++;
+    if (source[j] !== '(') continue;             // forme statique, pas un appel
+    let profondeur = 0;
+    let k = j;
+    for (; k < source.length; k++) {
+      if (source[k] === '(') profondeur++;
+      else if (source[k] === ')') { profondeur--; if (profondeur === 0) break; }
+    }
+    if (profondeur !== 0) continue;              // parenthese non fermee
+    trouves.push({
+      index: i,
+      ligne: source.slice(0, i).split('\n').length,
+      argument: source.slice(j + 1, k).trim(),         // masque : sur a analyser
+      argumentBrut: sourceBrute.slice(j + 1, k).trim(), // reel : pour le rapport
+    });
+    i = k;
+  }
+  return trouves;
+}
+
+const estLitteralSeul = (arg) => /^(['"`])x*\1$/.test(arg) || /^(['"`])\1$/.test(arg);
+const estConverti = (arg) => arg.includes('pathToFileURL(') && /\.href\b/.test(arg);
+
+// Une seule regle, appliquee a chaque appel dynamique :
+//   - un litteral de chaine est accepte : chemin relatif ('../dist/x.mjs') ou
+//     module interne ('node:fs'), tous deux valides sous Windows comme sous
+//     Linux ;
+//   - toute AUTRE expression doit passer par pathToFileURL(...).href.
+// Ce qui tombe sous le coup de la regle : resolve(...), join(...), une
+// concatenation, une variable de chemin absolu — exactement ce que la CI
+// Windows refuse.
+function appelsFautifs(nom, sourceBrute) {
+  const fautes = [];
+  for (const a of appelsDynamiques(sourceBrute)) {
+    if (estLitteralSeul(a.argument)) continue;
+    if (estConverti(a.argument)) continue;
+    fautes.push(`${nom}:${a.ligne} — ${a.argumentBrut.replace(/\s+/g, ' ').slice(0, 80)}`);
+  }
+  return fautes;
+}
+
+{
+  // Contre-epreuve d'abord : une garde qui ne detecte rien passe toujours.
+  const fautif = [
+    'const { tools } = await ' + MOT_IMPORT + "(resolve(ROOT, 'dist/generators.mjs'));",
+    'const x = await ' + MOT_IMPORT + "(join(ROOT, 'dist', 'a.mjs'));",
+    'const y = await ' + MOT_IMPORT + "(ROOT + '/dist/b.mjs');",
+    'const z = await ' + MOT_IMPORT + '(cheminAbsolu);',
+  ].join('\n');
+  const detectees = appelsFautifs('contre-epreuve.mjs', fautif);
+  assert(detectees.length === 4,
+    'contre-epreuve — les quatre motifs fautifs sont tous detectes',
+    `detectees : ${detectees.length} — ${detectees.join(' / ')}`);
+  assert(detectees[0].startsWith('contre-epreuve.mjs:1'),
+    'contre-epreuve — le numero de ligne rapporte est juste',
+    detectees[0]);
+
+  const sain = [
+    'const a = await ' + MOT_IMPORT + "('../dist/generators.mjs');",
+    'const b = await ' + MOT_IMPORT + "('node:fs');",
+    'const c = await ' + MOT_IMPORT + "(pathToFileURL(resolve(ROOT, 'dist', 'x.mjs')).href);",
+  ].join('\n');
+  assert(appelsFautifs('sain.mjs', sain).length === 0,
+    'contre-epreuve — les trois formes valides ne sont PAS accusees',
+    appelsFautifs('sain.mjs', sain).join(' / '));
+
+  // Le masque doit neutraliser prose et libelles, sans rien laisser passer
+  // de ce qui est vraiment du code.
+  const prose = [
+    '// un commentaire qui cite ' + MOT_IMPORT + "(resolve(ROOT, 'x.mjs'))",
+    "const libelle = 'texte citant " + MOT_IMPORT + "(join(A, B)) dans une chaine';",
+  ].join('\n');
+  assert(appelsDynamiques(prose).length === 0,
+    'contre-epreuve — un appel cite en commentaire ou en chaine n’est PAS compte');
+  const proseEtCode = prose + '\nconst v = await ' + MOT_IMPORT + '(resolve(ROOT, "z.mjs"));';
+  assert(appelsFautifs('mixte.mjs', proseEtCode).length === 1,
+    'contre-epreuve — le masque n’empeche pas de voir le vrai appel fautif a cote',
+    appelsFautifs('mixte.mjs', proseEtCode).join(' / '));
+
+  // Et la garde doit reconnaitre les trois niveaux de parentheses.
+  const troisNiveaux = 'await ' + MOT_IMPORT + "(\n  pathToFileURL(resolve(ROOT, 'dist', 'x.mjs')).href\n);";
+  assert(appelsDynamiques(troisNiveaux).length === 1,
+    'contre-epreuve — un appel sur plusieurs lignes est bien lu en entier');
+  assert(estConverti(appelsDynamiques(troisNiveaux)[0].argument),
+    'contre-epreuve — cet appel est bien reconnu comme converti');
+
+  // Puis le depot reel : tous les .mjs de test/ et de scripts/.
+  const balayes = [];
+  for (const dossier of ['test', 'scripts']) {
+    const base = resolve(ROOT, dossier);
+    if (!existsSync(base)) continue;
+    for (const nom of readdirSync(base)) {
+      if (!nom.endsWith('.mjs')) continue;
+      balayes.push([`${dossier}/${nom}`, readFileSync(resolve(base, nom), 'utf8')]);
+    }
+  }
+  assert(balayes.length >= 15,
+    `balayage — ${balayes.length} fichiers .mjs analyses sous test/ et scripts/`);
+  assert(balayes.some(([nom]) => nom === 'test/identity.test.mjs'),
+    'balayage — ce fichier-ci est inclus dans le balayage, sans exception');
+
+  const toutes = [];
+  for (const [nom, source] of balayes) toutes.push(...appelsFautifs(nom, source));
+  assert(toutes.length === 0,
+    'aucun appel dynamique ne recoit un chemin du systeme de fichiers sans pathToFileURL(...).href',
+    toutes.join(' | '));
+
+  // Les cinq appels corriges doivent vraiment porter la conversion : une garde
+  // qui passerait parce que les appels ont DISPARU ne vaudrait rien.
+  const attendus = [
+    ['test/sauvegarde-bloquante.test.mjs', 1],
+    ['test/dns-change-bloquant.test.mjs', 1],
+    ['test/route-passerelle-bloquante.test.mjs', 1],
+    ['test/poste-verrous.test.mjs', 2],
+  ];
+  let totalConvertis = 0;
+  for (const [nom, combien] of attendus) {
+    const source = readFileSync(resolve(ROOT, nom), 'utf8');
+    const convertis = appelsDynamiques(source).filter((a) => estConverti(a.argument));
+    totalConvertis += convertis.length;
+    assert(convertis.length === combien,
+      `${nom} — ${combien} appel(s) dynamique(s) converti(s) en URL file://`,
+      `trouves : ${convertis.length}`);
+    assert(/\bpathToFileURL\b/.test(source) && /from 'node:url'/.test(source),
+      `${nom} — pathToFileURL est bien importe depuis node:url`);
+  }
+  assert(totalConvertis === 5,
+    'les cinq appels dynamiques signales par la revue sont tous convertis',
+    `total : ${totalConvertis}`);
 }
 
 // Résumé
