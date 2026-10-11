@@ -110,6 +110,18 @@ import {
   TYPES_ENREGISTREMENT,
   FORMATS_RAPPORT,
   MODES_EXECUTION,
+  validerDn,
+  validerCheminOu,
+  validerListeOu,
+  validerUpn,
+  validerPorteeGroupe,
+  validerCategorieGroupe,
+  validerCheminUnc,
+  validerLettreLecteur,
+  validerNomOrdinateur,
+  validerJours,
+  validerColonnesCsv,
+  cheminOuVersDn,
 } from '../dist/validateurs.mjs';
 
 import {
@@ -1284,8 +1296,10 @@ assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.leng
 
 // Sous-rubriques agrégées
 const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
-assert(sousAD.join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
-  `Active Directory expose ses trois sous-rubriques (${sousAD.join(', ')})`);
+// Les trois sous-rubriques historiques restent en tête ; les lots suivants en
+// ajoutent — le test vérifie la présence et l'ordre, pas un nombre figé.
+assert(sousAD.slice(0, 3).join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
+  `Active Directory conserve ses trois sous-rubriques historiques en tête (${sousAD.slice(0, 3).join(', ')})`);
 assert(sousRubriques(tools, 'Imprimantes').length === 0,
   'une catégorie vide n\u2019expose aucune sous-rubrique');
 assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
@@ -1294,10 +1308,9 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // Une fonction generate() par outil, et une sous-rubrique par outil, quel que
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
-const sourceServeur = existsSync(resolve(ROOT, 'dist/outils-serveur.mjs'))
-  ? readFileSync(resolve(ROOT, 'dist/outils-serveur.mjs'), 'utf8')
-  : '';
-const sourcesCatalogue = sourceGen + '\n' + sourceServeur;
+const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs']
+  .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
+const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
   'les huit generate() historiques sont toujours dans generators.mjs');
 assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === tools.length,
@@ -1519,19 +1532,23 @@ section('LOT 2 — contrat des outils Windows Server');
 const SOUS_RUBRIQUES_LOT2 = [
   'Diagnostic serveur', 'DHCP', 'DNS', 'Serveur de fichiers', 'Routage et accès Internet',
 ];
-const outilsLot2 = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+// Les outils ajoutés après le LOT 1, tous lots confondus. Le contrat qui suit
+// s'applique à chacun d'eux : il grandit avec le catalogue.
+const outilsRecents = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+const outilsLot2 = outilsRecents.filter((t) => t.category === 'Windows Server');
+const outilsLot3 = outilsRecents.filter((t) => t.category === 'Active Directory');
 
-assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) du LOT 2`);
-assert(outilsLot2.every((t) => t.category === 'Windows Server'),
-  'tous les outils du LOT 2 appartiennent à la catégorie Windows Server');
+assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
-  'chaque outil du LOT 2 porte une des cinq sous-rubriques prévues');
+  'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
+assert(outilsRecents.length === outilsLot2.length + outilsLot3.length,
+  `tout outil ajouté appartient à Windows Server ou à Active Directory (${outilsRecents.length})`);
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
   'commonErrors', 'reversible', 'verifyAfter', 'rollback', 'checks', 'source', 'sources'];
 
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   for (const champ of CHAMPS_FICHE) {
     assert(outil[champ] !== undefined && outil[champ] !== null,
       `${outil.id} : le champ « ${champ} » de la fiche est renseigné`);
@@ -1573,17 +1590,36 @@ for (const outil of outilsLot2) {
 
   // Aucun champ ne demande de secret.
   for (const f of outil.fields) {
-    // On juge ce que le champ DEMANDE — son identifiant et son étiquette — et
-    // non son texte d'aide, qui peut légitimement dire « aucun mot de passe ».
-    assert(!/mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i.test(`${f.id} ${f.label}`),
-      `${outil.id} : le champ « ${f.id} » ne demande aucun secret`);
+    // On juge ce que le champ DEMANDE. Un champ libre dont l'étiquette parle de
+    // mot de passe en réclamerait un ; une liste fermée qui choisit une
+    // POLITIQUE de mot de passe n'en transporte aucun, par construction.
+    const champLibre = f.type !== 'select' && f.type !== 'checkbox';
+    if (champLibre) {
+      const evoqueSecret = /mot de passe|password|secret|jeton|token|credential|identifiant de connexion/i
+        .test(`${f.id} ${f.label}`);
+      if (evoqueSecret) {
+        // Un champ peut légitimement PARLER de mot de passe — « âge maximal du
+        // mot de passe », en jours — sans jamais pouvoir en transporter un. On
+        // ne se contente pas de l'étiquette : on soumet au champ un mot de
+        // passe plausible, et la validation doit le refuser. C'est une preuve
+        // de comportement, plus forte qu'une interdiction de vocabulaire.
+        const defauts = Object.fromEntries(outil.fields.map((x) => [x.id, String(x.default ?? '')]));
+        const errs = outil.validate({ ...defauts, [f.id]: 'Hopital!2026Secret' });
+        assert(Boolean(errs[f.id]),
+          `${outil.id} : le champ « ${f.id} » évoque un secret mais refuse toute valeur qui en serait un`);
+      }
+    } else {
+      const valeursPossibles = (f.options ?? []).map((o) => (Array.isArray(o) ? o[0] : o)).join(' ');
+      assert(!/^(motdepasse|password|secret|token)$/i.test(valeursPossibles.trim()),
+        `${outil.id} : la liste « ${f.id} » ne propose aucune valeur secrète`);
+    }
     assert(f.type !== 'password', `${outil.id} : aucun champ de type password`);
   }
 }
 
-section('LOT 2 — scripts générés : sécurité et forme');
+section('LOT 2 et 3 — scripts générés : sécurité et forme');
 
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
   let script = '';
   let erreur = null;
@@ -1602,8 +1638,39 @@ for (const outil of outilsLot2) {
   assert(!/Set-ExecutionPolicy/i.test(script), `${outil.id} : aucun contournement d’ExecutionPolicy`);
   assert(!/Invoke-WebRequest|Invoke-RestMethod|curl\s+http|wget\s+http|DownloadString/i.test(script),
     `${outil.id} : aucun téléchargement de code externe`);
-  assert(!/Get-Credential|ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
-    `${outil.id} : aucune manipulation d’identifiants`);
+  // Aucun secret ne doit venir du site, ni finir en clair, ni etre journalise.
+  // Les deux formes d'acquisition LOCALE et interactive — Get-Credential et
+  // Read-Host -AsSecureString — sont au contraire la bonne reponse : elles
+  // demandent le secret a la console, au moment de l'execution. Ce qui reste
+  // interdit sans exception, c'est de le fabriquer, de le convertir en clair,
+  // ou de le laisser trainer.
+  assert(!/ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
+    `${outil.id} : aucun secret fabriqué ni converti en clair`);
+  const lignes = script.split('\n');
+  const acquisitions = lignes.filter((l) => /Get-Credential|Read-Host[^\n]*-AsSecureString/i.test(l));
+  for (const ligne of acquisitions) {
+    assert(!/-UserName\s+['"]/i.test(ligne),
+      `${outil.id} : l’acquisition d’identifiants ne préremplit aucun compte`);
+  }
+  if (acquisitions.length > 0) {
+    // La variable qui recoit le secret est identifiee, puis suivie a la trace :
+    // elle ne doit apparaitre ni dans un resultat de rapport, ni dans un fichier.
+    const variables = acquisitions
+      .map((l) => (l.match(/\$([A-Za-z][A-Za-z0-9_]*)\s*=\s*(?:Get-Credential|Read-Host)/i) ?? [])[1])
+      .filter(Boolean);
+    assert(variables.length === acquisitions.length,
+      `${outil.id} : chaque acquisition d’identifiants est affectée à une variable nommée`);
+    for (const nom of variables) {
+      const motif = new RegExp('\\$' + nom + '\\b');
+      for (const ligne of lignes) {
+        if (!motif.test(ligne)) continue;
+        assert(!/Add-KjemoResultat|Out-File|Set-Content|Export-Csv|ConvertTo-Json|Write-Host/i.test(ligne),
+          `${outil.id} : la variable $${nom} n’est ni journalisée ni écrite dans un fichier`);
+      }
+      assert(new RegExp('\\$' + nom + '\\s*=\\s*\\$null').test(script),
+        `${outil.id} : la variable $${nom} est remise à $null après usage`);
+    }
+  }
   assert(!/\bTODO\b|\bFIXME\b|\bXXX\b/.test(script), `${outil.id} : aucun marqueur TODO`);
   assert(!/http:\/\//.test(script), `${outil.id} : aucune URL non chiffrée`);
 
@@ -1634,9 +1701,9 @@ for (const outil of outilsLot2) {
   }
 }
 
-section('LOT 2 — validation : les données invalides sont refusées');
+section('LOT 2 et 3 — validation : les données invalides sont refusées');
 
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   // Champ vide sur un champ obligatoire : le script ne doit pas être produit.
   const obligatoires = outil.fields.filter((f) => !/facultatif/i.test(f.label));
   for (const champ of obligatoires.slice(0, 3)) {
@@ -1807,7 +1874,7 @@ assert(/ConvertTo-SecureString|PlainText/i.test(scriptSecret),
   'contre-épreuve — le motif de détection de secrets reconnaît un script fautif');
 
 // Aucun script réel ne contient ces motifs.
-for (const outil of outilsLot2) {
+for (const outil of outilsRecents) {
   const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
   const script = outil.generate(valeurs);
   assert(!/(^|\s)-Force\b/i.test(script) && !/-Confirm\s*:\s*\$false/i.test(script)
@@ -1830,10 +1897,20 @@ section('LOT 2 — contre-épreuve : la garde d\u2019identité des scripts histo
 // était absente ou fausse, la garde devrait le voir : on le vérifie ici sur une
 // copie modifiée du fichier, sans toucher au vrai.
 const baseline = JSON.parse(readFileSync(resolve(ROOT, 'test/scripts-baseline.json'), 'utf8'));
-assert(baseline.count === 64 && Object.keys(baseline.sha256).length === 64,
-  'la référence couvre exactement les 64 scripts historiques');
-assert(baseline.baseSha === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
-  'la référence est bien ancrée au SHA de base du LOT 1B');
+// La référence s'étend à chaque lot : au LOT 3 elle couvre les 176 scripts
+// produits au SHA a84a85c, dont les 64 du LOT 0/1 restés inchangés depuis
+// 22b4ead. Le compte doit suivre le catalogue, jamais un nombre figé à la main.
+assert(baseline.count === Object.keys(baseline.sha256).length,
+  `la référence est cohérente : ${baseline.count} empreintes annoncées et présentes`);
+assert(baseline.count >= 176,
+  `la référence couvre au moins les 176 scripts existants (${baseline.count})`);
+assert(/^[0-9a-f]{40}$/.test(baseline.baseSha),
+  'la référence est ancrée à un SHA de commit complet');
+assert(baseline.baseShaPrecedent === '22b4eadbaf0771d13e5d8f5d66d72881e4a4d8c6',
+  'la référence conserve la trace de l\u2019ancrage précédent (LOT 1B)');
+const outilsCouverts = new Set(Object.keys(baseline.sha256).map((f) => f.split('__')[0]));
+assert([...outilsCouverts].every((id) => tools.some((t) => t.id === id)),
+  'chaque outil de la référence existe encore dans le catalogue');
 const empreinteFausse = { ...baseline.sha256 };
 const premierFichier = Object.keys(empreinteFausse)[0];
 empreinteFausse[premierFichier] = '0'.repeat(64);
@@ -1841,6 +1918,349 @@ assert(empreinteFausse[premierFichier] !== baseline.sha256[premierFichier],
   `contre-épreuve — une empreinte modifiée diffère de la référence (${premierFichier})`);
 assert(Object.keys(baseline.sha256).every((f) => /^[a-z0-9-]+__[a-z0-9-]+\.ps1$/.test(f)),
   'chaque entrée de la référence nomme un script <outil>__<jeu>.ps1');
+
+
+// ===========================================================================
+// LOT 3 — contre-épreuves de l'annuaire
+//
+// Chaque règle du lot est éprouvée par une valeur qui DOIT être refusée, puis
+// par la valeur de laboratoire qui doit passer. Une garde qu'on n'a jamais vue
+// refuser quoi que ce soit n'est pas une garde.
+// ===========================================================================
+
+section('LOT 3 — échappement LDAP et composition des noms distinctifs');
+
+// RFC 4514 : ces caractères changent le sens d'un nom distinctif s'ils ne sont
+// pas échappés. Le test vérifie l'échappement, puis qu'il est bien LE SEUL
+// endroit où un antislash apparaît.
+for (const [brut, attendu, pourquoi] of [
+  ['Medecin',            'Medecin',              'un nom simple traverse sans modification'],
+  ['Médecin',            'Médecin',              'les accents ne sont pas échappés : ils sont légitimes'],
+  ["Cardio, Pneumo",     'Cardio\\, Pneumo',     'la virgule sépare les composants : elle doit être échappée'],
+  ['a+b',                'a\\+b',                'le plus sépare les valeurs multiples d’un même RDN'],
+  ['a=b',                'a\\=b',                'le signe égal sépare le type de la valeur'],
+  ['a"b',                'a\\"b',                'le guillemet délimite une valeur'],
+  ['a\\b',               'a\\\\b',               'l’antislash s’échappe lui-même'],
+  ['<x>',                '\\<x\\>',              'les chevrons sont réservés'],
+  [';x',                 '\\;x',                 'le point-virgule est réservé'],
+  ['#debut',             '\\#debut',             'le dièse en tête déclencherait une valeur hexadécimale'],
+  [' espace',            '\\ espace',            'une espace en tête doit être échappée'],
+  ['espace ',            'espace\\ ',            'une espace en fin doit être échappée'],
+]) {
+  assert(escapeLdapRdn(brut) === attendu,
+    `échappement LDAP — ${pourquoi} (« ${brut} » → « ${escapeLdapRdn(brut)} »)`);
+}
+assert(escapeLdapRdn("L'Hôpital") === "L'Hôpital",
+  'échappement LDAP — l’apostrophe n’est pas un caractère réservé de RFC 4514');
+
+assert(domainToDn('hopitalbn.lan') === 'DC=hopitalbn,DC=lan',
+  'un nom de domaine devient une suite de composants DC');
+assert(cheminOuVersDn(['Médecin', 'Spécialiste'], 'hopitalbn.lan')
+       === 'OU=Spécialiste,OU=Médecin,DC=hopitalbn,DC=lan',
+  'un chemin parent/enfant se compose du plus profond au plus général');
+assert(cheminOuVersDn(['Cardio, Pneumo'], 'hopitalbn.lan')
+       === 'OU=Cardio\\, Pneumo,DC=hopitalbn,DC=lan',
+  'la composition d’un DN échappe la virgule contenue dans un nom d’OU');
+
+section('LOT 3 — contre-épreuves : noms distinctifs refusés');
+
+for (const [nom, valeur] of [
+  ['chaîne vide',                     ''],
+  ['aucun signe égal',                'Medecin'],
+  ['composant sans type',             '=Medecin,DC=hopitalbn,DC=lan'],
+  ['composant sans valeur',           'OU=,DC=hopitalbn,DC=lan'],
+  ['aucun composant DC',              'OU=Medecin,OU=Sante'],
+  ['DC placé avant une OU',           'DC=hopitalbn,OU=Medecin,DC=lan'],
+  ['type non alphanumérique',         'O U=Medecin,DC=hopitalbn,DC=lan'],
+]) {
+  assert(!validerDn(valeur).ok, `contre-épreuve DN — ${nom} est refusé (« ${valeur} »)`);
+}
+assert(validerDn('OU=Spécialiste,OU=Médecin,DC=hopitalbn,DC=lan').ok,
+  'contrôle positif : le DN de laboratoire est accepté');
+assert(validerDn('OU=Cardio\\, Pneumo,DC=hopitalbn,DC=lan').ok,
+  'contrôle positif : une virgule échappée ne casse pas la lecture du DN');
+
+section('LOT 3 — contre-épreuves : chemins et listes d’OU');
+
+for (const [nom, valeur] of [
+  ['chemin vide',                 ''],
+  ['segment vide entre deux barres', 'Medecin//Specialiste'],
+  ['barre en tête',               '/Medecin'],
+  ['barre en fin',                'Medecin/'],
+  ['plus de dix niveaux',         'a/b/c/d/e/f/g/h/i/j/k'],
+  ['caractère de contrôle',       'Medecin\u0007Specialiste'],
+]) {
+  assert(!validerCheminOu(valeur).ok, `contre-épreuve chemin d’OU — ${nom} est refusé`);
+}
+assert(validerCheminOu('Médecin/Spécialiste').ok,
+  'contrôle positif : le chemin accentué du laboratoire est accepté');
+
+// La liste d'OU du laboratoire : huit lignes, dont quatre parents.
+const listeLabo = [
+  'Médecin', 'Médecin/Généraliste', 'Médecin/Spécialiste',
+  'Infirmière', 'Infirmière/Principale', 'Infirmière/Auxiliaire',
+  'Patient', 'Administration',
+].join('\n');
+const resListe = validerListeOu(listeLabo);
+assert(resListe.ok, 'contrôle positif : la liste d’OU du laboratoire est acceptée');
+assert(resListe.value.length === 8, `la liste du laboratoire donne 8 unités (${resListe.value.length})`);
+assert(resListe.value.slice(0, 4).every((x) => x.profondeur === 1),
+  'les parents sont triés avant les enfants : les quatre premiers sont de profondeur 1');
+assert(resListe.value.slice(4).every((x) => x.profondeur === 2),
+  'les quatre suivants sont de profondeur 2');
+
+// Un enfant seul doit amener son parent : sans quoi la création échouerait.
+const resImplicite = validerListeOu('Médecin/Spécialiste');
+assert(resImplicite.ok && resImplicite.value.length === 2,
+  `un enfant seul ajoute son parent implicite (${resImplicite.value.length} unité(s))`);
+assert(resImplicite.value[0].chemin === 'Médecin' && resImplicite.value[0].implicite === true,
+  'le parent ajouté est signalé comme implicite');
+
+for (const [nom, valeur] of [
+  ['liste vide',            ''],
+  ['doublon exact',         'Medecin\nMedecin'],
+  ['doublon avec espaces',  'Medecin\n  Medecin  '],
+  ['segment invalide',      'Medecin\nMedecin/\u0007x'],
+]) {
+  assert(!validerListeOu(valeur).ok, `contre-épreuve liste d’OU — ${nom} est refusé`);
+}
+
+section('LOT 3 — contre-épreuves : comptes, groupes et chemins');
+
+for (const [nom, valeur] of [
+  ['aucun arobase',        'm.tremblay'],
+  ['deux arobases',        'm@t@hopitalbn.lan'],
+  ['domaine non qualifié', 'm.tremblay@hopitalbn'],
+  ['partie locale vide',   '@hopitalbn.lan'],
+]) {
+  assert(!validerUpn(valeur).ok, `contre-épreuve UPN — ${nom} est refusé (« ${valeur} »)`);
+}
+assert(validerUpn('m.tremblay@hopitalbn.lan').ok, 'contrôle positif : l’UPN du laboratoire est accepté');
+
+assert(!validerPorteeGroupe('Locale').ok, 'contre-épreuve — une portée inventée est refusée');
+assert(validerPorteeGroupe('DomainLocal').ok, 'contrôle positif : DomainLocal est une portée valide');
+assert(!validerCategorieGroupe('Securite').ok, 'contre-épreuve — la catégorie s’écrit Security, pas Securite');
+assert(validerCategorieGroupe('Security').ok, 'contrôle positif : Security est une catégorie valide');
+
+for (const [nom, valeur] of [
+  ['chemin local et non UNC', 'D:\\Profils'],
+  ['une seule barre en tête', '\\serveur\\partage'],
+  ['serveur sans partage',    '\\\\serveur'],
+  ['chaîne vide',             ''],
+]) {
+  assert(!validerCheminUnc(valeur).ok, `contre-épreuve UNC — ${nom} est refusé (« ${valeur} »)`);
+}
+assert(validerCheminUnc('\\\\SRV-FICHIERS\\Profils$').ok,
+  'contrôle positif : un partage masqué reste un chemin UNC valide');
+
+assert(!validerLettreLecteur('C:').ok, 'contre-épreuve — C: est réservé au disque système');
+assert(!validerLettreLecteur('H').ok, 'contre-épreuve — la lettre doit être suivie de deux points');
+assert(validerLettreLecteur('H:').ok, 'contrôle positif : H: est une lettre de lecteur réseau valide');
+
+assert(!validerNomOrdinateur('PC-CONSULTATION-CARDIOLOGIE').ok,
+  'contre-épreuve — un nom d’ordinateur de plus de 15 caractères est refusé');
+assert(validerNomOrdinateur('PC-CARDIO-01$').ok,
+  'contrôle positif : le dollar final d’un compte machine est toléré');
+
+for (const [nom, valeur, bornes] of [
+  ['texte au lieu d’un nombre', 'quatre-vingt-dix', {}],
+  ['nombre décimal',            '90,5',             {}],
+  ['zéro',                      '0',                { min: 1 }],
+  ['au-delà de la borne haute', '99999',            { max: 3650 }],
+  ['un mot de passe glissé dans un champ de seuil', 'Hopital!2026Secret', {}],
+]) {
+  assert(!validerJours(valeur, bornes).ok, `contre-épreuve jours — ${nom} est refusé (« ${valeur} »)`);
+}
+assert(validerJours('90').ok, 'contrôle positif : 90 jours est un seuil accepté');
+
+section('LOT 3 — contre-épreuves : schéma de fichier CSV');
+
+for (const [nom, valeur, obligatoires] of [
+  ['liste vide',            '',                                   []],
+  ['colonne obligatoire absente', 'Prenom,Nom',                    ['SamAccountName']],
+  ['doublon de colonne',    'SamAccountName,Nom,SamAccountName',   ['SamAccountName']],
+  ['colonne sans nom',      'SamAccountName,,Nom',                 ['SamAccountName']],
+]) {
+  assert(!validerColonnesCsv(valeur, { obligatoires }).ok,
+    `contre-épreuve CSV — ${nom} est refusé (« ${valeur} »)`);
+}
+assert(validerColonnesCsv('SamAccountName,Prenom,Nom,Ou', { obligatoires: ['SamAccountName'] }).ok,
+  'contrôle positif : un schéma complet est accepté');
+
+section('LOT 3 — contre-épreuves : les outils refusent les données fautives');
+
+// Chaque outil du lot est éprouvé sur SON champ le plus structurant. Le test
+// exige que l'erreur porte sur le bon champ, et qu'aucun script ne soit produit.
+const casOutilsAd = [
+  ['ad-ou-hierarchy',        { ouList: 'Medecin\nMedecin' },            'ouList'],
+  ['ad-ou-hierarchy',        { adDomain: 'hopitalbn' },                 'adDomain'],
+  ['ad-groups',              { grpList: 'GG-Medecins\nGG-Medecins' },   'grpList'],
+  ['ad-groups',              { grpScope: 'Locale' },                    'grpScope'],
+  ['ad-groups',              { grpOu: 'Administration/' },              'grpOu'],
+  ['ad-account-health',      { sanInactif: 'beaucoup' },                'sanInactif'],
+  ['ad-account-health',      { sanAgeMotDePasse: 'Hopital!2026' },      'sanAgeMotDePasse'],
+  ['ad-account-recovery',    { recCompte: 'm@t@hopitalbn.lan' },        'recCompte'],
+  ['ad-account-recovery',    { recAction: 'Supprimer' },                'recAction'],
+  ['ad-object-search-move',  { objRecherche: 'm.tremb*' },              'objRecherche'],
+  ['ad-object-search-move',  { objRecherche: 'OU=Medecin' },            'objRecherche'],
+  ['ad-object-search-move',  { objOuCible: '/Medecin' },                'objOuCible'],
+  ['ad-computer-cleanup',    { ordInactif: '5' },                       'ordInactif'],
+  ['ad-computer-cleanup',    { ordAction: 'Supprimer' },                'ordAction'],
+  ['ad-delegation-audit',    { delPortee: 'Certaines' },                'delPortee'],
+  ['ad-dns-health',          { dnsAdJours: '0' },                       'dnsAdJours'],
+  ['ad-dcdiag-report',       { dcdEtendue: 'Rapide' },                  'dcdEtendue'],
+  ['ad-repadmin-report',     { repLatence: 'longtemps' },               'repLatence'],
+  ['ad-secure-channel',      { canDerive: '5' },                        'canDerive'],
+  ['ad-domain-full-report',  { cplInactif: '2' },                       'cplInactif'],
+  ['ad-home-profile-paths',  { adDomain: 'hopitalbn .lan' },            'adDomain'],
+  ['ad-group-members-csv',   { adDomain: '' },                          'adDomain'],
+  ['ad-users-csv',           { adDomain: 'hopitalbn' },                 'adDomain'],
+];
+for (const [id, mutation, champAttendu] of casOutilsAd) {
+  const outil = tools.find((t) => t.id === id);
+  assert(Boolean(outil), `l’outil ${id} existe dans le catalogue`);
+  if (!outil) continue;
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const valeurs = { ...base, ...mutation };
+  const errors = outil.validate(valeurs);
+  assert(Boolean(errors[champAttendu]),
+    `contre-épreuve ${id} — l’erreur porte sur « ${champAttendu} » (${Object.keys(errors).join(', ') || 'aucune'})`);
+  let leve = false;
+  try { outil.generate(valeurs); } catch { leve = true; }
+  assert(leve, `contre-épreuve ${id} — aucun script n’est produit à partir de « ${champAttendu} » fautif`);
+}
+
+// Contrôle POSITIF : les valeurs de laboratoire de chaque outil AD passent.
+// Les identifiants du lot, nommes un par un : le test ne doit pas se laisser
+// elargir par un simple prefixe, qui ramasserait aussi ad-ou et ad-user, deux
+// outils du LOT 1 qui ne suivent pas ce contrat.
+const IDS_LOT3 = [
+  'ad-ou-hierarchy', 'ad-users-csv', 'ad-groups', 'ad-group-members-csv',
+  'ad-home-profile-paths', 'ad-account-health', 'ad-account-recovery',
+  'ad-object-search-move', 'ad-delegation-audit', 'ad-computer-cleanup',
+  'ad-dns-health', 'ad-dcdiag-report', 'ad-repadmin-report',
+  'ad-secure-channel', 'ad-domain-full-report',
+];
+const outilsAd = tools.filter((t) => IDS_LOT3.includes(t.id));
+assert(outilsAd.length === 15, `le LOT 3 ajoute 15 outils Active Directory (${outilsAd.length})`);
+assert(outilsAd.every((t) => t.category === 'Active Directory'),
+  'les quinze outils du LOT 3 sont tous classes dans Active Directory');
+const SOUS_RUBRIQUES_LOT3 = ['Structure et OU', 'Utilisateurs et groupes',
+  'Cycle de vie des comptes', 'Maintenance des objets', 'Santé du domaine'];
+assert(outilsAd.every((t) => SOUS_RUBRIQUES_LOT3.includes(t.subcategory)),
+  `chaque outil du LOT 3 porte une des cinq sous-rubriques prevues (${[...new Set(outilsAd.map((t) => t.subcategory))].join(', ')})`);
+for (const outil of outilsAd) {
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const errors = outil.validate(base);
+  assert(Object.keys(errors).length === 0,
+    `contrôle positif : les valeurs de laboratoire de ${outil.id} sont acceptées (${Object.keys(errors).join(', ')})`);
+}
+
+section('LOT 3 — contre-épreuves : commande dangereuse injectée dans un script');
+
+// La garde qui interdit les motifs dangereux doit réagir sur un script
+// fabriqué. Sans cette contre-épreuve, un contrôle qui ne détecte plus rien
+// passerait pour un succès.
+const injections = [
+  ['suppression forcée',        'Remove-ADUser -Identity m.tremblay -Confirm:$false'],
+  ['suppression avec -Force',   'Remove-ADOrganizationalUnit -Identity "OU=x,DC=y" -Recursive -Force'],
+  ['exécution dynamique',       '$c = "Remove-ADGroup x" ; Invoke-Expression $c'],
+  ['contournement de stratégie','Set-ExecutionPolicy Bypass -Scope Process'],
+  ['téléchargement de code',    'Invoke-WebRequest https://exemple/x.ps1 -OutFile x.ps1'],
+  ['secret fabriqué',           "$p = ConvertTo-SecureString 'Hopital!2026' -AsPlainText -Force"],
+  ['reconstruction de SYSVOL',  'ntdsutil "authoritative restore" "restore subtree" q q'],
+];
+const motifsInterdits = [
+  /-Confirm\s*:\s*\$false/i, /(^|\s)-Force\b/i, /Invoke-Expression/i,
+  /Set-ExecutionPolicy/i, /Invoke-WebRequest/i, /ConvertTo-SecureString|PlainText/i,
+  /ntdsutil/i,
+];
+for (const [nom, ligne] of injections) {
+  assert(motifsInterdits.some((m) => m.test(ligne)),
+    `contre-épreuve — le jeu de motifs reconnaît une ${nom} injectée`);
+}
+
+// Contrôle POSITIF : aucun script réel du lot ne contient ces motifs, et
+// aucun ne reconstruit SYSVOL, dans aucun de ses jeux de valeurs.
+for (const outil of outilsAd) {
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const modes = outil.fields.some((f) => f.id === 'mode') ? ['Diagnostic', 'Appliquer'] : [null];
+  for (const mode of modes) {
+    const valeurs = mode ? { ...base, mode } : base;
+    const script = outil.generate(valeurs);
+    for (const m of motifsInterdits) {
+      assert(!m.test(script),
+        `contrôle positif : ${outil.id} (${mode ?? 'lecture'}) ne contient pas ${m}`);
+    }
+    assert(!/Remove-AD(User|Group|Computer|Object|OrganizationalUnit)\b/i.test(script),
+      `contrôle positif : ${outil.id} (${mode ?? 'lecture'}) ne supprime aucun objet d’annuaire`);
+    assert(!/Uninstall-WindowsFeature|Uninstall-ADDSDomainController/i.test(script),
+      `contrôle positif : ${outil.id} (${mode ?? 'lecture'}) ne désinstalle aucun rôle`);
+    assert(!/Set-Acl\s+-Path\s+["']?AD:/i.test(script),
+      `contrôle positif : ${outil.id} (${mode ?? 'lecture'}) ne remplace aucune ACL d’annuaire`);
+  }
+}
+
+section('LOT 3 — le mode Diagnostic n’écrit rien');
+
+// Un outil modifiant doit produire, en mode Diagnostic, un script dont aucune
+// écriture n'est atteignable : toutes sont gardées par le test sur $Mode.
+const outilsModifiantsAd = outilsAd.filter((t) => t.fields.some((f) => f.id === 'mode'));
+assert(outilsModifiantsAd.length >= 6,
+  `le lot compte ${outilsModifiantsAd.length} outils modifiants soumis à cette règle`);
+const ECRITURES = /\b(New|Set|Move|Remove|Add|Enable|Disable|Unlock|Clear|Rename)-AD\w+/g;
+for (const outil of outilsModifiantsAd) {
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const script = outil.generate({ ...base, mode: 'Diagnostic' });
+
+  assert(/\$Mode = /.test(script), `${outil.id} : le script porte la variable de mode`);
+  assert(/MODE DIAGNOSTIC/.test(script),
+    `${outil.id} : le script annonce explicitement qu’il n’a rien modifié`);
+
+  // Chaque ligne qui écrit doit être soit sous la garde $Mode, soit en -WhatIf.
+  const lignes = script.split('\n');
+  let sousGarde = false;
+  let profondeurGarde = 0;
+  for (const ligne of lignes) {
+    if (/if \(\$Mode -eq 'Appliquer'/.test(ligne)) { sousGarde = true; profondeurGarde = 0; }
+    if (sousGarde) {
+      profondeurGarde += (ligne.match(/\{/g) ?? []).length;
+      profondeurGarde -= (ligne.match(/\}/g) ?? []).length;
+      if (profondeurGarde <= 0 && !/if \(\$Mode -eq 'Appliquer'/.test(ligne)) sousGarde = false;
+    }
+    const ecritures = [...ligne.matchAll(ECRITURES)].map((m) => m[0])
+      .filter((c) => !/^(Get|Test|Search)-/.test(c));
+    if (ecritures.length === 0) continue;
+    const toleree = sousGarde
+      || /-WhatIf\b/.test(ligne)
+      || /^\s*#/.test(ligne)
+      || /Write-Host/.test(ligne)
+      || /Add-KjemoResultat/.test(ligne);
+    assert(toleree,
+      `${outil.id} : « ${ecritures[0]} » n’écrit qu’en mode Appliquer ou en simulation`,
+      ligne.trim().slice(0, 110));
+  }
+}
+
+section('LOT 3 — aucun secret, nulle part');
+
+// Le lot manipule des comptes : la règle est absolue et vérifiée deux fois,
+// sur les champs du formulaire et sur le script produit.
+for (const outil of outilsAd) {
+  for (const f of outil.fields) {
+    assert(!/^(pwd|pass|password|motdepasse|secret|token)$/i.test(f.id),
+      `${outil.id} : aucun champ ne s’appelle « ${f.id} »`);
+    assert(!/type:\s*['"]password['"]/.test(JSON.stringify(f)),
+      `${outil.id} : le champ « ${f.id} » n’est pas un champ de mot de passe`);
+  }
+  const base = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+  const modes = outil.fields.some((f) => f.id === 'mode') ? ['Diagnostic', 'Appliquer'] : [null];
+  for (const mode of modes) {
+    const script = outil.generate(mode ? { ...base, mode } : base);
+    assert(/Le rapport ne contient aucun mot de passe/.test(script),
+      `${outil.id} (${mode ?? 'lecture'}) : le bloc de rapport porte l’engagement écrit`);
+  }
+}
 
 // Résumé
 console.log('');
