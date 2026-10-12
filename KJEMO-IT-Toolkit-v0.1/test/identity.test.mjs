@@ -1103,11 +1103,22 @@ assert(new Set(CATEGORIES.map((c) => c.name)).size === CATEGORIES.length,
   'les noms de catégorie sont uniques');
 assert(enAttente.length > 0 && enAttente.every((c) => c.count === 0),
   `catégories prévues mais masquées tant qu\u2019elles sont vides : ${enAttente.length}`);
-for (const prevue of ['Imprimantes', 'Linux']) {
+// Imprimantes reste déclarée et vide : c'est le LOT 9. « Linux et services
+// réseau » était dans le même état jusqu'au LOT 7, qui l'a peuplée — elle
+// change donc de côté, et la règle la suit au lieu d'être assouplie : une
+// catégorie déclarée est soit vide et masquée, soit peuplée et visible, jamais
+// déclarée-et-oubliée.
+for (const prevue of ['Imprimantes']) {
   assert(CATEGORIES.some((c) => c.name === prevue),
     `la feuille de route est préparée : « ${prevue} » est déclarée`);
   assert(!visibles.some((c) => c.name === prevue),
     `« ${prevue} » n\u2019est pas affichée puisqu\u2019elle est vide`);
+}
+for (const peuplee of ['Linux et services réseau']) {
+  assert(CATEGORIES.some((c) => c.name === peuplee),
+    `« ${peuplee} » est déclarée au catalogue`);
+  assert(visibles.some((c) => c.name === peuplee),
+    `« ${peuplee} » est affichée : le LOT 7 l\u2019habite`);
 }
 assert(categorieParNom('Réseau') !== null && categorieParNom('Inexistante') === null,
   'categorieParNom() retrouve une catégorie connue et rejette l\u2019inconnue');
@@ -1259,7 +1270,7 @@ const CANON = [
   'GPO',
   'Réseau',
   'Imprimantes',
-  'Linux',
+  'Linux et services réseau',
 ];
 
 assert(CATEGORIES.map((c) => c.name).join(' | ') === CANON.join(' | '),
@@ -1320,11 +1331,13 @@ assert(nomsVisibles.includes('Analyse et nettoyage des disques'),
 // carte sans fil est matériellement un périphérique.
 assert(nomsVisibles.includes('Poste de travail Windows'),
   'Poste de travail Windows est visible : les assistants du LOT 6 l\u2019habitent');
-assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
-  `seules Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
-assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
-  'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
-assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+assert(attente2.map((c) => c.name).join(',') === 'Imprimantes',
+  `seule Imprimantes reste en attente (${attente2.map((c) => c.name).join(',')})`);
+assert(!nomsVisibles.includes('Imprimantes'),
+  'Imprimantes est masquée puisqu\u2019elle est vide');
+assert(nomsVisibles.includes('Linux et services réseau'),
+  'Linux et services réseau est visible depuis le LOT 7');
+assert(vis2.length === 7 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
   `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées

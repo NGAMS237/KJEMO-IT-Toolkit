@@ -3,6 +3,9 @@
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
 import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
+import { plateformeDe, sortieDe, estBash, estDocumentationSeule, estLectureSeule,
+         extensionDe, nomFichierDe, etiquetteSortie, commandesExecution } from './plateforme.mjs';
+import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
          creerPreference } from './preferences.mjs';
 
@@ -462,13 +465,50 @@ function rollbackMarkup(tool) {
  */
 function compatMarkup(tool) {
   const li = (x) => `<li>${textToCode(x)}</li>`;
-  const admin = tool.requiresAdmin
-    ? `<p class="admin-flag admin-required">Console PowerShell <strong>en tant qu’administrateur</strong> obligatoire.</p>`
-    : `<p class="admin-flag admin-optional">Aucune élévation <strong>administrateur locale</strong> n’est nécessaire. Les droits listés ci-dessous restent obligatoires.</p>`;
+  const bash = estBash(tool);
+
+  // L'élévation ne se dit pas de la même façon des deux côtés : « console en
+  // tant qu'administrateur » ne veut rien dire sous Linux, et « sudo » ne veut
+  // rien dire sous Windows. Un texte générique aurait été faux des deux côtés.
+  let admin;
+  if (bash) {
+    admin = tool.requiresAdmin
+      ? `<p class="admin-flag admin-required">Privilèges <strong>root</strong> nécessaires (<code>sudo</code>).</p>`
+      : `<p class="admin-flag admin-optional">Aucun privilège <strong>root</strong> n’est nécessaire : ce script lit seulement. Les droits de lecture listés ci-dessous restent requis.</p>`;
+  } else {
+    admin = tool.requiresAdmin
+      ? `<p class="admin-flag admin-required">Console PowerShell <strong>en tant qu’administrateur</strong> obligatoire.</p>`
+      : `<p class="admin-flag admin-optional">Aucune élévation <strong>administrateur locale</strong> n’est nécessaire. Les droits listés ci-dessous restent obligatoires.</p>`;
+  }
+
+  // Bandeau de plateforme : la première chose à savoir devant une fiche, c'est
+  // sur quelle machine elle s'applique et ce qu'elle produit.
+  const lecture = estLectureSeule(tool)
+    ? `<span class="badge badge-lecture">Lecture seule</span>`
+    : `<span class="badge badge-modif">Modifie le système</span>`;
+  const bandeau = `<p class="plateforme-bandeau" id="plateformeBandeau">`
+    + `<span class="badge badge-plateforme badge-${plateformeDe(tool).toLowerCase()}">${textToCode(plateformeDe(tool))}</span>`
+    + `<span class="badge badge-sortie">${textToCode(etiquetteSortie(tool))}</span>`
+    + lecture
+    + `</p>`;
+
+  // Les blocs suivants n'existent que si l'outil les déclare : un titre suivi
+  // d'une liste vide est une promesse non tenue, et le catalogue Windows ne
+  // déclare pas ces champs.
+  const bloc = (titre, valeurs) => (Array.isArray(valeurs) && valeurs.length
+    ? `<h3>${titre}</h3><ul>${valeurs.map(li).join('')}</ul>` : '');
+  const ligne = (titre, valeur) => (valeur
+    ? `<h3>${titre}</h3><p>${textToCode(String(valeur))}</p>` : '');
 
   return `<div class="details prereqs" id="prereqBlock">`
+    + bandeau
     + `<h3>Systèmes compatibles</h3><ul>${tool.os.map(li).join('')}</ul>`
+    + bloc('Distributions visées', tool.distros)
+    + bloc('Paquets nécessaires', tool.packages)
+    + ligne('Privilèges', tool.privileges)
+    + ligne('Service concerné', tool.service)
     + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
+    + bloc('Limites connues', tool.limites)
     + `</div>`;
 }
 
@@ -478,26 +518,56 @@ function compatMarkup(tool) {
  * n'est pas masquer, le titre reste explicite et la section s'ouvre d'un clic
  * ou d'une touche Entrée.
  */
-function execNotesMarkup() {
-  const n = EXECUTION_NOTES;
+function execNotesMarkup(tool) {
+  // Deux blocs, parce que les obstacles n'ont rien en commun. Windows bloque un
+  // script non signé venant d'Internet, d'où la table des stratégies
+  // d'exécution. Linux ne connaît pas cela : ce qui bloque, c'est le bit
+  // d'exécution, un montage noexec, des fins de ligne CRLF, les privilèges.
+  // Afficher la table PowerShell sur une fiche Bash serait une fausse piste,
+  // et quelqu'un la suivrait.
+  const bash = estBash(tool);
+  const n = bash ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
 
   const steps = n.steps.map((st) =>
     `<li><strong>${textToCode(st.label)}</strong><br />${textToCode(st.detail)}`
     + (st.command ? `<pre class="cmd">${textToCode(st.command)}</pre>` : '')
     + `</li>`).join('');
 
-  const policies = n.policies.map((po) =>
-    `<tr><td><code>${textToCode(po.name)}</code></td><td>${textToCode(po.local)}</td><td>${textToCode(po.internet)}</td></tr>`).join('');
+  // Côté Windows : la table des stratégies. Côté Linux : la table des
+  // obstacles, avec le message d'erreur exact de chacun — on arrive ici avec
+  // un message sous les yeux, pas avec une question théorique.
+  let tableau;
+  if (bash) {
+    const lignes = n.obstacles.map((ob) =>
+      `<tr><td>${textToCode(ob.name)}</td><td><code>${textToCode(ob.message)}</code></td>`
+      + `<td>${textToCode(ob.fix)}</td></tr>`).join('');
+    tableau = `<h4>Ce qui empêche un script Bash de démarrer</h4>`
+      + `<table class="policy-table"><thead><tr><th>Obstacle</th><th>Message</th>`
+      + `<th>Solution</th></tr></thead><tbody>${lignes}</tbody></table>`;
+  } else {
+    const lignes = n.policies.map((po) =>
+      `<tr><td><code>${textToCode(po.name)}</code></td><td>${textToCode(po.local)}</td>`
+      + `<td>${textToCode(po.internet)}</td></tr>`).join('');
+    tableau = `<h4>Stratégies d’exécution PowerShell</h4>`
+      + `<table class="policy-table"><thead><tr><th>Stratégie</th><th>Script local</th>`
+      + `<th>Script téléchargé</th></tr></thead><tbody>${lignes}</tbody></table>`;
+  }
 
   const sources = n.sources.map((so) =>
     `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`).join(' · ');
 
+  // Les commandes d'exécution propres à CET outil, extension et sudo compris.
+  const cmds = commandesExecution(tool).map((c) =>
+    `<li><strong>${textToCode(c.label)}</strong>`
+    + (c.detail ? `<br />${textToCode(c.detail)}` : '')
+    + `<pre class="cmd">${textToCode(c.command)}</pre></li>`).join('');
+
   return `<details class="details exec-notes" id="execNotes">`
     + `<summary>${textToCode(n.title)}</summary>`
     + `<p>${textToCode(n.intro)}</p>`
+    + (cmds ? `<h4>Pour cet outil</h4><ol class="exec-steps" id="execCommandes">${cmds}</ol>` : '')
     + `<ol class="exec-steps">${steps}</ol>`
-    + `<h4>Stratégies d’exécution PowerShell</h4>`
-    + `<table class="policy-table"><thead><tr><th>Stratégie</th><th>Script local</th><th>Script téléchargé</th></tr></thead><tbody>${policies}</tbody></table>`
+    + tableau
     + `<p class="exec-warning">${textToCode(n.warning)}</p>`
     + `<p class="exec-sources">${sources}</p>`
     + `</details>`;
@@ -505,7 +575,7 @@ function execNotesMarkup() {
 
 /** Erreurs fréquentes — section 8, repliée par défaut. */
 function commonErrorsMarkup(tool) {
-  const n = EXECUTION_NOTES;
+  const n = estBash(tool) ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
   return `<details class="details common-errors" id="commonErrors">`
     + `<summary>Erreurs fréquentes</summary>`
     + `<h4>Propres à cet outil</h4>${tool.commonErrors.map(errorEntryMarkup).join('')}`
@@ -523,7 +593,9 @@ function guiMarkup(tool) {
 
 /** Sources officielles — section 9. */
 function sourcesMarkup(tool) {
-  const n = EXECUTION_NOTES;
+  // Les sources communes suivent la plateforme : renvoyer une fiche Bash vers
+  // la documentation PowerShell n'aiderait personne.
+  const n = estBash(tool) ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
   const liens = [`<a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">Documentation de l’outil</a>`]
     .concat(n.sources.map((so) =>
       `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`));
@@ -596,14 +668,30 @@ function modeBlockMarkup(tool) {
       'Génère le script, puis relis l\u2019aperçu.',
       'Copie ou télécharge le fichier, puis exécute-le.',
     ];
-    const modeEmploi = [
-      'Ouvre PowerShell en suivant les prérequis de la section 2. Certains outils exigent une console administrateur.',
-      'Colle le script, ou lance le fichier .ps1 téléchargé. Le fichier porte déjà le BOM UTF-8 attendu par PowerShell 5.1.',
-      'Lis les messages affichés par le script : ils disent ce qui a été modifié.',
-      'Fais les contrôles de la section 5 pour confirmer que le problème est réglé.',
-      'Si le résultat ne convient pas, la section 6 explique comment revenir en arrière.',
-      'Si tu préfères éviter les scripts, la section 7 donne la méthode à la souris.',
-    ];
+    // Le mode d'emploi suit la plateforme. En mode Débutant surtout : dire
+    // « ouvre PowerShell » à quelqu'un qui tient un script Bash, c'est le
+    // laisser devant une console qui refusera le fichier sans expliquer
+    // pourquoi. Aucune information de sécurité n'est retirée ni allégée d'un
+    // côté ou de l'autre — seul le chemin pratique change.
+    const modeEmploi = estBash(tool)
+      ? [
+        'Ouvre un terminal sur la machine Linux concernée, en suivant les prérequis de la section 2.',
+        'Rends le script exécutable avec « chmod +x », puis lance-le. Si le dossier refuse l’exécution, lance « bash nom-du-script.sh » : cela marche aussi.',
+        'Le fichier téléchargé est déjà en fins de ligne LF et sans BOM, comme Linux l’attend. Tu n’as rien à convertir.',
+        'Ajoute « sudo » seulement si la section 2 le demande. Un outil en lecture seule n’en a pas besoin.',
+        'Lis les messages affichés par le script : ils disent ce qui a été lu ou modifié.',
+        'Fais les contrôles de la section 5 pour confirmer que le problème est réglé.',
+        'Si le résultat ne convient pas, la section 6 explique comment revenir en arrière.',
+        'Si tu préfères éviter les scripts, la section 7 donne la méthode manuelle.',
+      ]
+      : [
+        'Ouvre PowerShell en suivant les prérequis de la section 2. Certains outils exigent une console administrateur.',
+        'Colle le script, ou lance le fichier .ps1 téléchargé. Le fichier porte déjà le BOM UTF-8 attendu par PowerShell 5.1.',
+        'Lis les messages affichés par le script : ils disent ce qui a été modifié.',
+        'Fais les contrôles de la section 5 pour confirmer que le problème est réglé.',
+        'Si le résultat ne convient pas, la section 6 explique comment revenir en arrière.',
+        'Si tu préfères éviter les scripts, la section 7 donne la méthode à la souris.',
+      ];
     return `<section class="mode-block mode-debutant" id="modeBlock" aria-labelledby="modeBlockTitle">`
       + `<h2 id="modeBlockTitle" class="mode-block-title">En clair</h2>`
       + `<p class="plain-summary" id="plainSummary">${textToCode(tool.summary)}</p>`
@@ -707,7 +795,7 @@ function renderTool() {
       + `<p class="fiche-risk fiche-risk-${tool.risk}" id="ficheRisque">`
       + `<strong>Niveau de risque :</strong> ${textToCode(riskLabels[tool.risk])}</p>`
       + compatMarkup(tool)
-      + execNotesMarkup()
+      + execNotesMarkup(tool)
     + `</section>`
     + `<div class="tool-content">`
       + `<section class="panel fiche-section" data-section="3" id="sectionFormulaire" aria-labelledby="titreFormulaire">`
@@ -716,10 +804,10 @@ function renderTool() {
         + `<button class="primary-button" type="submit">Générer le script</button></form>`
       + `</section>`
       + `<section class="panel fiche-section" data-section="4" id="sectionScript" aria-labelledby="titreScript">`
-        + titreSection(4, 'Script généré', 'titreScript')
-        + `<div class="code-wrap"><pre id="scriptOutput" class="code" tabindex="0" role="region" aria-label="Aperçu du script PowerShell">${textToCode(script)}</pre></div>`
+        + titreSection(4, `${etiquetteSortie(tool)} généré`, 'titreScript')
+        + `<div class="code-wrap"><pre id="scriptOutput" class="code" tabindex="0" role="region" aria-label="Aperçu du ${textToCode(etiquetteSortie(tool))}">${textToCode(script)}</pre></div>`
         + `<div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button>`
-        + `<button id="downloadButton" class="secondary-button">Télécharger .ps1</button></div>`
+        + `<button id="downloadButton" class="secondary-button">Télécharger ${textToCode(extensionDe(tool) ?? '')}</button></div>`
         + `<span id="copyFeedback" class="copy-feedback" aria-live="polite"></span>`
       + `</section>`
     + `</div>`
@@ -796,7 +884,19 @@ function renderTool() {
     }
     let output;
     try {
-      output = normalizeScript(tool.generate(values));
+      // AIGUILLAGE — et il n'est pas cosmétique. normalizeScript() remplace
+      // « antislash + saut de ligne » par « backtick + saut de ligne », parce
+      // que la continuation de ligne de PowerShell est le backtick. En Bash la
+      // continuation EST l'antislash : appliquer le normaliseur PowerShell à un
+      // script Bash y remplacerait des continuations valides par des
+      // substitutions de commande. L'outil injecterait lui-même du code.
+      // UN SEUL appel à generate(), puis l'aiguillage. Écrire l'appel dans
+      // les deux branches du ternaire aurait produit le même résultat mais
+      // deux sites d'appel, ce que la garde d'identité compte — à juste titre :
+      // un générateur appelé depuis plusieurs endroits finit par être appelé
+      // différemment selon l'endroit.
+      const brut = tool.generate(values);
+      output = estBash(tool) ? normalizeScriptSh(brut) : normalizeScript(brut);
     } catch (err) {
       feedbackEl.textContent = `Erreur de génération : ${err.message}`;
       return;
@@ -810,7 +910,10 @@ function renderTool() {
 
   copyBtn.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(preEl.textContent);
+      // Même garantie qu'au téléchargement : un script Bash collé dans un
+      // éditeur ne doit pas emporter de CR.
+      await navigator.clipboard.writeText(
+        estBash(tool) ? normalizeScriptSh(preEl.textContent) : preEl.textContent);
       feedbackEl.textContent = 'Script copié dans le presse-papiers.';
     } catch {
       feedbackEl.textContent = 'Copie impossible : sélectionne le texte manuellement.';
@@ -818,13 +921,33 @@ function renderTool() {
   });
 
   dlBtn.addEventListener('click', () => {
-    // BOM UTF-8 (EF BB BF) requis pour PowerShell 5.1
-    const bom  = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const text = new TextEncoder().encode(preEl.textContent);
-    const blob = new Blob([bom, text], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
+    // ------------------------------------------------------------------------
+    // DEUX PLATEFORMES, DEUX RÈGLES D'ENCODAGE EXACTEMENT OPPOSÉES
+    //
+    // .ps1 : BOM UTF-8 (EF BB BF) OBLIGATOIRE. Sans lui, Windows PowerShell
+    //        5.1 relit le fichier en CP1252 ; un tiret cadratin y devient un
+    //        guillemet typographique, donc un vrai délimiteur de chaîne, et
+    //        l'analyse déraille. Le LOT 6 l'a payé pour de bon.
+    //
+    // .sh  : BOM INTERDIT. Les trois octets du BOM se placeraient AVANT « #! »,
+    //        le noyau ne reconnaîtrait plus le shebang, et le script échouerait
+    //        sur « bad interpreter » — ou pire, tournerait sous un autre shell.
+    //
+    // Et pour .sh, LF strictement : un CRLF casse le shebang de la même façon
+    // (« /usr/bin/env bash\r » n'existe pas) et colle un \r invisible à la fin
+    // de chaque valeur lue. Le texte vient d'un <pre> du DOM, où le navigateur
+    // peut avoir normalisé les sauts de ligne : on ne suppose pas, on force.
+    // ------------------------------------------------------------------------
+    const ext    = extensionDe(tool);
+    if (!ext) return;                       // outil documentaire : rien à livrer
+    const bash   = estBash(tool);
+    const texte  = bash ? normalizeScriptSh(preEl.textContent) : preEl.textContent;
+    const octets = new TextEncoder().encode(texte);
+    const parts  = bash ? [octets] : [new Uint8Array([0xEF, 0xBB, 0xBF]), octets];
+    const blob   = new Blob(parts, { type: 'text/plain;charset=utf-8' });
+    const link   = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${tool.id}.ps1`;
+    link.download = nomFichierDe(tool);
     link.click();
     URL.revokeObjectURL(link.href);
   });
