@@ -1,0 +1,1172 @@
+{
+  "genere": "2026-10-03T01:06:54.666Z",
+  "lot": "LOT 5 — réseau avancé",
+  "shaBase": "4c37ce2b91874d02d21c91eee7d73a6673854c8f",
+  "catalogue": {
+    "outilsTotal": 77,
+    "outilsReseauAjoutes": 22
+  },
+  "outils": [
+    {
+      "id": "network-full-report",
+      "titre": "Produire un rapport réseau complet",
+      "sousRubrique": "Vue d’ensemble",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "nfrCible",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "www.microsoft.com"
+        },
+        {
+          "id": "nfrPort",
+          "etiquette": "Port à éprouver",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "443"
+        },
+        {
+          "id": "nfrDetail",
+          "etiquette": "Niveau de détail",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Complet"
+        },
+        {
+          "id": "nfrFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script ne modifie rien : il n’y a rien à annuler. Le rapport exporté peut être supprimé comme n’importe quel fichier.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration",
+        "https://learn.microsoft.com/powershell/module/netadapter/get-netadapter",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+        "https://learn.microsoft.com/powershell/module/netconnection/get-netconnectionprofile"
+      ]
+    },
+    {
+      "id": "network-baseline",
+      "titre": "Capturer et comparer deux états réseau",
+      "sousRubrique": "Vue d’ensemble",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "nbAction",
+          "etiquette": "Action",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Capturer"
+        },
+        {
+          "id": "nbDossier",
+          "etiquette": "Dossier des captures",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "C:\\Kjemo\\Reseau"
+        },
+        {
+          "id": "nbReference",
+          "etiquette": "Capture de référence (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "nbFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Ce script ne modifie que son propre dossier de captures. Il n’y a rien à annuler côté réseau.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipaddress",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+        "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientserveraddress"
+      ]
+    },
+    {
+      "id": "ping-traceroute",
+      "titre": "Joindre une cible et relever le chemin",
+      "sousRubrique": "Connectivité IP",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "ptCible",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "srv-fichiers.hopitalbn.lan"
+        },
+        {
+          "id": "ptPort",
+          "etiquette": "Port à éprouver",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "445"
+        },
+        {
+          "id": "ptEssais",
+          "etiquette": "Nombre d’échos",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "4"
+        },
+        {
+          "id": "ptSauts",
+          "etiquette": "Sauts maximum pour le chemin",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "20"
+        },
+        {
+          "id": "ptFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit et mesure. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+        "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-connection",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/tracert"
+      ]
+    },
+    {
+      "id": "latency-packet-loss",
+      "titre": "Mesurer latence, gigue et perte de paquets",
+      "sousRubrique": "Connectivité IP",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "lpCible",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "192.168.30.1"
+        },
+        {
+          "id": "lpEssais",
+          "etiquette": "Nombre de mesures",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "20"
+        },
+        {
+          "id": "lpPause",
+          "etiquette": "Pause entre deux mesures (ms)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "200"
+        },
+        {
+          "id": "lpSeuil",
+          "etiquette": "Seuil d’alerte de latence (ms)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "100"
+        },
+        {
+          "id": "lpFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant mesure. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-connection",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-connection",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/pathping",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/ping"
+      ]
+    },
+    {
+      "id": "gateway-diagnostic",
+      "titre": "Diagnostiquer la passerelle par défaut",
+      "sousRubrique": "Connectivité IP",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "gdCarte",
+          "etiquette": "Carte à examiner (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "gdCibleExterne",
+          "etiquette": "Cible au-delà de la passerelle",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "www.microsoft.com"
+        },
+        {
+          "id": "gdFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit la configuration et mesure. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration"
+      ]
+    },
+    {
+      "id": "ip-conflict-detection",
+      "titre": "Chercher un conflit d’adresse IPv4",
+      "sousRubrique": "Connectivité IP",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "cfAdresse",
+          "etiquette": "Adresse à examiner",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "192.168.30.50"
+        },
+        {
+          "id": "cfJours",
+          "etiquette": "Profondeur des journaux (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "7"
+        },
+        {
+          "id": "cfLocale",
+          "etiquette": "Cette adresse est-elle celle de ce poste ?",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Non"
+        },
+        {
+          "id": "cfFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit le voisinage et les journaux. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/arp",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.diagnostics/get-winevent"
+      ]
+    },
+    {
+      "id": "adapter-metric-multihoming",
+      "titre": "Diagnostiquer cartes multiples et métriques",
+      "sousRubrique": "Connectivité IP",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "amCibleTest",
+          "etiquette": "Cible pour l’épreuve de sortie",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "www.microsoft.com"
+        },
+        {
+          "id": "amFamille",
+          "etiquette": "Famille d’adresses",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "IPv4"
+        },
+        {
+          "id": "amFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit et calcule. Si une métrique a été changée à la main par ailleurs, la remettre en automatique suffit.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+        "https://learn.microsoft.com/powershell/module/netadapter/get-netadapter"
+      ]
+    },
+    {
+      "id": "dns-client-diagnostic",
+      "titre": "Diagnostiquer la résolution de noms côté client",
+      "sousRubrique": "Résolution de noms",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "dcNom",
+          "etiquette": "Nom à résoudre",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "srv-fichiers.hopitalbn.lan"
+        },
+        {
+          "id": "dcInverse",
+          "etiquette": "Adresse pour la résolution inverse (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "dcType",
+          "etiquette": "Type d’enregistrement",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "A"
+        },
+        {
+          "id": "dcFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant interroge et lit. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname",
+        "https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname",
+        "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientserveraddress",
+        "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientcache",
+        "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclient"
+      ]
+    },
+    {
+      "id": "dns-cache-reset",
+      "titre": "Afficher puis vider le cache DNS",
+      "sousRubrique": "Résolution de noms",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "écrit réellement (cmdlet officielle)",
+      "champs": [
+        {
+          "id": "dcrFiltre",
+          "etiquette": "Filtrer sur un nom (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "dcrAussiNetbios",
+          "etiquette": "Relever aussi le cache NetBIOS",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Non"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 6,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Un cache vidé se remplit tout seul à la prochaine résolution. Il n’y a rien à restaurer — mais ce qu’il contenait est perdu, d’où l’affichage systématique avant.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/dnsclient/clear-dnsclientcache",
+        "https://learn.microsoft.com/powershell/module/dnsclient/clear-dnsclientcache",
+        "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientcache",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig"
+      ]
+    },
+    {
+      "id": "dns-client-change",
+      "titre": "Changer les serveurs DNS d’une carte",
+      "sousRubrique": "Résolution de noms",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "écrit réellement (cmdlet officielle)",
+      "champs": [
+        {
+          "id": "dchCarte",
+          "etiquette": "Carte à modifier",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "Ethernet"
+        },
+        {
+          "id": "dchServeurs",
+          "etiquette": "Nouveaux serveurs DNS",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "192.168.30.10,192.168.30.11"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 6,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 4,
+      "annulation": {
+        "resume": "L’annulation est écrite par le script lui-même, avec les valeurs relevées avant l’action. C’est elle qu’il faut garder, pas un modèle générique.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/dnsclient/set-dnsclientserveraddress",
+        "https://learn.microsoft.com/powershell/module/dnsclient/set-dnsclientserveraddress",
+        "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientserveraddress",
+        "https://learn.microsoft.com/powershell/module/dnsclient/clear-dnsclientcache"
+      ]
+    },
+    {
+      "id": "tcp-port-test",
+      "titre": "Tester des ports TCP nommés",
+      "sousRubrique": "Ports et protocoles",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "tpCible",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "srv-fichiers.hopitalbn.lan"
+        },
+        {
+          "id": "tpPorts",
+          "etiquette": "Ports à tester",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "445,139,3389"
+        },
+        {
+          "id": "tpDelai",
+          "etiquette": "Délai par port (ms)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "2000"
+        },
+        {
+          "id": "tpFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant ouvre des connexions TCP qui se referment seules. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+        "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpconnection",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/netstat"
+      ]
+    },
+    {
+      "id": "rpc-connectivity-test",
+      "titre": "Tester la connectivité RPC",
+      "sousRubrique": "Ports et protocoles",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "rpcCible",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "dc01.hopitalbn.lan"
+        },
+        {
+          "id": "rpcEchantillon",
+          "etiquette": "Ports dynamiques à éprouver",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "5"
+        },
+        {
+          "id": "rpcDelai",
+          "etiquette": "Délai par port (ms)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "1500"
+        },
+        {
+          "id": "rpcFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant ouvre des connexions TCP qui se referment seules.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements",
+        "https://learn.microsoft.com/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements",
+        "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpconnection"
+      ]
+    },
+    {
+      "id": "ldap-ldaps-connectivity",
+      "titre": "Tester la connectivité LDAP et LDAPS",
+      "sousRubrique": "Ports et protocoles",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "llCible",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "dc01.hopitalbn.lan"
+        },
+        {
+          "id": "llDomaine",
+          "etiquette": "Domaine à vérifier (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": "hopitalbn.lan"
+        },
+        {
+          "id": "llAlerteJours",
+          "etiquette": "Alerter si le certificat expire dans (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "30"
+        },
+        {
+          "id": "llFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant ouvre des connexions qui se referment seules et lit un certificat.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/troubleshoot/windows-server/active-directory/config-firewall-for-ad-domains-and-trusts",
+        "https://learn.microsoft.com/troubleshoot/windows-server/active-directory/config-firewall-for-ad-domains-and-trusts",
+        "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+        "https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname"
+      ]
+    },
+    {
+      "id": "smb-connectivity-test",
+      "titre": "Tester la connectivité SMB",
+      "sousRubrique": "Ports et protocoles",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "smbServeur",
+          "etiquette": "Cible (nom ou adresse)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "srv-fichiers.hopitalbn.lan"
+        },
+        {
+          "id": "smbPartage",
+          "etiquette": "Nom du partage",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "Donnees"
+        },
+        {
+          "id": "smbSousDossier",
+          "etiquette": "Sous-dossier à vérifier (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "smbcFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit. Aucune session n’est montée, aucun lecteur mappé.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbconnection",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbconnection",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbmapping",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbclientconfiguration"
+      ]
+    },
+    {
+      "id": "http-https-tls-test",
+      "titre": "Tester HTTP, HTTPS et le certificat TLS",
+      "sousRubrique": "Ports et protocoles",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "htUrl",
+          "etiquette": "Adresse à tester",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "https://intranet.hopitalbn.lan/"
+        },
+        {
+          "id": "htRedirections",
+          "etiquette": "Suivre les redirections",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Oui"
+        },
+        {
+          "id": "htDelai",
+          "etiquette": "Délai de la requête (ms)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "10000"
+        },
+        {
+          "id": "htAlerteJours",
+          "etiquette": "Alerter si le certificat expire dans (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "30"
+        },
+        {
+          "id": "htFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant ouvre des connexions sortantes qui se referment seules.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/invoke-webrequest",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/invoke-webrequest",
+        "https://learn.microsoft.com/dotnet/api/system.security.cryptography.x509certificates.x509certificate2",
+        "https://learn.microsoft.com/dotnet/api/system.net.security.sslstream"
+      ]
+    },
+    {
+      "id": "route-table-diagnostic",
+      "titre": "Diagnostiquer la table de routage",
+      "sousRubrique": "Routage et voisinage",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "rtDestination",
+          "etiquette": "Destination à expliquer",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "8.8.8.8"
+        },
+        {
+          "id": "rtFamille",
+          "etiquette": "Famille d’adresses",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "IPv4"
+        },
+        {
+          "id": "rtFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 6,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit la table et calcule. Il n’y a rien à annuler.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/route_ws2008"
+      ]
+    },
+    {
+      "id": "route-manager",
+      "titre": "Préparer et poser une route statique",
+      "sousRubrique": "Routage et voisinage",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "écrit réellement (cmdlet officielle)",
+      "champs": [
+        {
+          "id": "rmDestination",
+          "etiquette": "Réseau de destination (CIDR)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "10.20.30.0/24"
+        },
+        {
+          "id": "rmPasserelle",
+          "etiquette": "Passerelle (saut suivant)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "192.168.30.254"
+        },
+        {
+          "id": "rmCarte",
+          "etiquette": "Carte à utiliser",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "Ethernet"
+        },
+        {
+          "id": "rmMetrique",
+          "etiquette": "Métrique de la route",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "1"
+        },
+        {
+          "id": "rmPersistante",
+          "etiquette": "Survivre au redémarrage",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Non"
+        },
+        {
+          "id": "rmConfirmationDefaut",
+          "etiquette": "Confirmation pour la route par défaut (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 6,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 4,
+      "annulation": {
+        "resume": "L’annulation est écrite par le script, et elle ne vise que la route exacte qu’il a créée. La table complète d’avant est également sur disque, en CSV.",
+        "exceptionnelle": true
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/new-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/new-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/remove-netroute",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute"
+      ]
+    },
+    {
+      "id": "arp-neighbor-diagnostic",
+      "titre": "Diagnostiquer le voisinage ARP et IPv6",
+      "sousRubrique": "Routage et voisinage",
+      "risque": "caution",
+      "modeParDefaut": "Diagnostic",
+      "appliquerDisponible": true,
+      "automatisationReelle": "écrit réellement (cmdlet officielle)",
+      "champs": [
+        {
+          "id": "arpAdresse",
+          "etiquette": "Adresse à examiner (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "arpFamille",
+          "etiquette": "Famille d’adresses",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "IPv4"
+        },
+        {
+          "id": "mode",
+          "etiquette": "Mode d’exécution",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Diagnostic"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Une entrée de voisinage retirée se reconstruit toute seule au prochain échange. Il n’y a rien à restaurer — c’est pour cela que le renouvellement ciblé est sûr, là où vider toute la table ne l’est pas.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+        "https://learn.microsoft.com/powershell/module/nettcpip/remove-netneighbor",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/arp"
+      ]
+    },
+    {
+      "id": "dhcp-client-diagnostic",
+      "titre": "Diagnostiquer le bail DHCP du poste",
+      "sousRubrique": "Routage et voisinage",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "dhcCarte",
+          "etiquette": "Carte à examiner (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "dhcJours",
+          "etiquette": "Profondeur des journaux (jours)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "7"
+        },
+        {
+          "id": "dhcFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit la configuration et les journaux. Il ne renouvelle ni ne libère aucun bail.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipaddress"
+      ]
+    },
+    {
+      "id": "network-share-diagnostic",
+      "titre": "Diagnostiquer un partage inaccessible",
+      "sousRubrique": "Accès aux ressources",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "nsdChemin",
+          "etiquette": "Chemin UNC du partage",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "\\\\srv-fichiers.hopitalbn.lan\\Donnees"
+        },
+        {
+          "id": "nsdLettre",
+          "etiquette": "Lettre du lecteur concerné (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "nsdFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit. Aucun lecteur n’est monté, aucune session ouverte avec des identifiants.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbconnection",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbconnection",
+        "https://learn.microsoft.com/powershell/module/smbshare/get-smbmapping",
+        "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl"
+      ]
+    },
+    {
+      "id": "wifi-vpn-diagnostic",
+      "titre": "Diagnostiquer le Wi-Fi ou le VPN",
+      "sousRubrique": "Sans-fil et VPN",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "wvParcours",
+          "etiquette": "Parcours",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Wi-Fi"
+        },
+        {
+          "id": "wvProfil",
+          "etiquette": "Profil à examiner (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "wvCibleInterne",
+          "etiquette": "Ressource interne à joindre",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "srv-fichiers.hopitalbn.lan"
+        },
+        {
+          "id": "wvFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : cet assistant lit l’état des cartes, des profils et des routes.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/netsh-wlan",
+        "https://learn.microsoft.com/windows-server/administration/windows-commands/netsh-wlan",
+        "https://learn.microsoft.com/powershell/module/vpnclient/get-vpnconnection",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute"
+      ]
+    },
+    {
+      "id": "ipv4-subnet-calculator",
+      "titre": "Calculer un sous-réseau IPv4",
+      "sousRubrique": "Calculs réseau",
+      "risque": "diagnostic",
+      "modeParDefaut": "aucun (diagnostic seul)",
+      "appliquerDisponible": false,
+      "automatisationReelle": "diagnostic seul : aucune écriture",
+      "champs": [
+        {
+          "id": "calcAdresse",
+          "etiquette": "Adresse IPv4",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "192.168.30.254"
+        },
+        {
+          "id": "calcPrefixe",
+          "etiquette": "Préfixe (CIDR)",
+          "type": "text",
+          "facultatif": false,
+          "valeurParDefaut": "24"
+        },
+        {
+          "id": "calcComparer",
+          "etiquette": "Seconde adresse à comparer (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": "192.168.30.10"
+        },
+        {
+          "id": "calcDecoupe",
+          "etiquette": "Découper en /x (facultatif)",
+          "type": "text",
+          "facultatif": true,
+          "valeurParDefaut": ""
+        },
+        {
+          "id": "calcFormat",
+          "etiquette": "Format du rapport",
+          "type": "select",
+          "facultatif": false,
+          "valeurParDefaut": "Console"
+        }
+      ],
+      "prerequis": 5,
+      "etapesConsole": 5,
+      "erreursExpliquees": 7,
+      "controlesApres": 3,
+      "annulation": {
+        "resume": "Aucune modification : c’est de l’arithmétique. Le script ne lit ni n’écrit quoi que ce soit sur la machine.",
+        "exceptionnelle": false
+      },
+      "sources": [
+        "https://learn.microsoft.com/windows-server/networking/core-network-guide/core-network-guide",
+        "https://learn.microsoft.com/windows-server/networking/core-network-guide/core-network-guide",
+        "https://learn.microsoft.com/powershell/module/nettcpip/get-netipaddress",
+        "https://learn.microsoft.com/dotnet/api/system.net.ipaddress"
+      ]
+    }
+  ]
+}

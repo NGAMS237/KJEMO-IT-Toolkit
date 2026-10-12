@@ -7,10 +7,21 @@
     "generate": "node test/generate-ps1.mjs",
     "test:identity": "node test/identity.test.mjs",
     "test:browser": "node test/browser-identity.test.mjs",
-    "test": "node test/identity.test.mjs && node test/browser-identity.test.mjs",
+    "test": "node test/identity.test.mjs && node test/sauvegarde-bloquante.test.mjs && node test/dns-change-bloquant.test.mjs && node test/route-passerelle-bloquante.test.mjs && node test/poste-verrous.test.mjs && node test/fiches-poste-b.test.mjs && node test/browser-identity.test.mjs && node test/browser-poste-b.test.mjs",
+    "test:sauvegarde": "node test/sauvegarde-bloquante.test.mjs",
+    "test:dns-bloquant": "node test/dns-change-bloquant.test.mjs",
+    "test:route-bloquant": "node test/route-passerelle-bloquante.test.mjs",
+    "test:poste-verrous": "node test/poste-verrous.test.mjs",
     "test:roundtrip:emit": "node test/roundtrip.mjs emit test/generated/roundtrip",
     "test:roundtrip:verify": "node test/roundtrip.mjs verify test/generated/roundtrip",
-    "test:bom": "node test/check-ps1-bom.mjs"
+    "test:bom": "node test/check-ps1-bom.mjs",
+    "test:sources": "node test/sources-microsoft.mjs --json LOT-4-SOURCES.json",
+    "test:sources:horsligne": "node test/sources-microsoft.mjs --hors-ligne",
+    "test:cmdlets:export": "node test/cmdlets-export.mjs",
+    "test:cmdlets": "node test/cmdlets-export.mjs && pwsh -File ./scripts/Test-KjemoCmdlets.ps1",
+    "test:fiches-poste-b": "node test/fiches-poste-b.test.mjs --powershell pwsh",
+    "test:browser:poste-b": "node test/browser-poste-b.test.mjs",
+    "test:sources:6b": "node test/sources-microsoft.mjs --json LOT-6B-SOURCES.json"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1"

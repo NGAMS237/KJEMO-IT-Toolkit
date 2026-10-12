@@ -1,0 +1,4412 @@
+{
+  "genere": "2026-10-03T00:13:45.127Z",
+  "shaBase": "fb0932112b098d9c7d519fd9f57902172ffecf21",
+  "total": 440,
+  "avantLot4": 296,
+  "ajoutesParLot4": 144,
+  "tousAvecBom": true,
+  "anciensTousIdentiques": true,
+  "empreintesDistinctesParmiLesNouveaux": 144,
+  "scripts": [
+    {
+      "fichier": "ad-account-health__apostrophe-ascii.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__apostrophe-typographique.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__chemin-avec-apostrophe.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__chemin-racine-c.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__default.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "default",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__dollar-backtick-guillemets.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__espaces-et-accents.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-health__virgule-et-point-virgule.ps1",
+      "outil": "ad-account-health",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15945,
+      "sha256": "3dbe9dddc2660b15ea42d9bba6c8c98afbb6467d4522c55a2c788f77326cf286",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__apostrophe-ascii.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__apostrophe-typographique.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__chemin-avec-apostrophe.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__chemin-racine-c.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__default.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "default",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__dollar-backtick-guillemets.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__espaces-et-accents.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-account-recovery__virgule-et-point-virgule.ps1",
+      "outil": "ad-account-recovery",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 16341,
+      "sha256": "7caae1c875f7853786d2f7f0411617f7e74a7ff202b26bea65c3b5af4312c7f2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__apostrophe-ascii.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__apostrophe-typographique.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__chemin-avec-apostrophe.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__chemin-racine-c.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__default.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "default",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__dollar-backtick-guillemets.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__espaces-et-accents.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-computer-cleanup__virgule-et-point-virgule.ps1",
+      "outil": "ad-computer-cleanup",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15855,
+      "sha256": "259d361e16a2053dcd45c128b718acb456244238733eb451ac1c3866d3d7c191",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__apostrophe-ascii.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__apostrophe-typographique.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__chemin-avec-apostrophe.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__chemin-racine-c.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__default.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "default",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__dollar-backtick-guillemets.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__espaces-et-accents.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dcdiag-report__virgule-et-point-virgule.ps1",
+      "outil": "ad-dcdiag-report",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14768,
+      "sha256": "dd99619ef23725e5bdb371d296f41812bf134cb19105de6632f1b20643056621",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__apostrophe-ascii.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__apostrophe-typographique.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__chemin-avec-apostrophe.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__chemin-racine-c.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__default.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "default",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__dollar-backtick-guillemets.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__espaces-et-accents.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-delegation-audit__virgule-et-point-virgule.ps1",
+      "outil": "ad-delegation-audit",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 13412,
+      "sha256": "6e5037b5cc0a034228a06f42e7cad9034d7106577ef7d4b295b869c574fc2e83",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__apostrophe-ascii.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__apostrophe-typographique.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__chemin-avec-apostrophe.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__chemin-racine-c.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__default.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "default",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__dollar-backtick-guillemets.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__espaces-et-accents.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-dns-health__virgule-et-point-virgule.ps1",
+      "outil": "ad-dns-health",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20554,
+      "sha256": "fb0342d5da8362116ab84df82f41b1b794e4ec4774e2fb4d7a81c04b5be300e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__apostrophe-ascii.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__apostrophe-typographique.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__chemin-avec-apostrophe.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__chemin-racine-c.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__default.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "default",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__dollar-backtick-guillemets.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__espaces-et-accents.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-domain-full-report__virgule-et-point-virgule.ps1",
+      "outil": "ad-domain-full-report",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 29673,
+      "sha256": "34485f78efab49b4d7f7c9f1cca85c319000a7bc391f0c612a2a9158139fe14f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__apostrophe-ascii.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__apostrophe-typographique.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__chemin-avec-apostrophe.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__chemin-racine-c.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__default.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "default",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__dollar-backtick-guillemets.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__espaces-et-accents.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-group-members-csv__virgule-et-point-virgule.ps1",
+      "outil": "ad-group-members-csv",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14976,
+      "sha256": "ffd4c6d604b67a703e9f94bb10797c13b7ec45753761fce08f3ef70e84e2115a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__apostrophe-ascii.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__apostrophe-typographique.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__chemin-avec-apostrophe.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__chemin-racine-c.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__default.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "default",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__dollar-backtick-guillemets.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__espaces-et-accents.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-groups__virgule-et-point-virgule.ps1",
+      "outil": "ad-groups",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 13815,
+      "sha256": "f98cedb60f0f05bfcfdc37861147d8ed92778c4ee0dba6ddc88680f42b1868cf",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__apostrophe-ascii.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__apostrophe-typographique.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__chemin-avec-apostrophe.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__chemin-racine-c.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__default.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "default",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__dollar-backtick-guillemets.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__espaces-et-accents.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-home-profile-paths__virgule-et-point-virgule.ps1",
+      "outil": "ad-home-profile-paths",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 18365,
+      "sha256": "89a99969931de0fe59382edfb409171004433b296be8a709189c99c157aede28",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__apostrophe-ascii.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__apostrophe-typographique.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__chemin-avec-apostrophe.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__chemin-racine-c.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__default.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "default",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__dollar-backtick-guillemets.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__espaces-et-accents.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-object-search-move__virgule-et-point-virgule.ps1",
+      "outil": "ad-object-search-move",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 13732,
+      "sha256": "f29bf2896002e4dd7685a0c52f813f94bf17095c182558850464339b559bd43a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__apostrophe-ascii.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__apostrophe-typographique.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__chemin-avec-apostrophe.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__chemin-racine-c.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__default.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "default",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__dollar-backtick-guillemets.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__espaces-et-accents.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou-hierarchy__virgule-et-point-virgule.ps1",
+      "outil": "ad-ou-hierarchy",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15123,
+      "sha256": "2128e7dcb0dcc2b7e6cb926ca804634e1c03b624b055ffd1cb35b8d8e149a456",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__apostrophe-ascii.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 645,
+      "sha256": "b788bce93943c1ed2eb0faf70602ac5cb56a6248acec57e2a6a3224d8f4c0f86",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__apostrophe-typographique.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 649,
+      "sha256": "65186205675f213c0637abc53f922453dce959697486407019dd0dd8ee2b708a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__chemin-avec-apostrophe.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 625,
+      "sha256": "eb3221ce5547f0b8799113c345822f5c17409e8d679b036c1c4ec5b06640e8fb",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__chemin-racine-c.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 625,
+      "sha256": "eb3221ce5547f0b8799113c345822f5c17409e8d679b036c1c4ec5b06640e8fb",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__default.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "default",
+      "octets": 625,
+      "sha256": "eb3221ce5547f0b8799113c345822f5c17409e8d679b036c1c4ec5b06640e8fb",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__dollar-backtick-guillemets.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 633,
+      "sha256": "65e9883cd6fa4fcfc9f9eaa1ac13853da8d1a5c3522bf700ad9bc3e419fe16d7",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__espaces-et-accents.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 649,
+      "sha256": "ccdf2d63d625ef77acb44fd0622a6ec3b4d7f8a0345ecf23f01d25d409b7ea96",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-ou__virgule-et-point-virgule.ps1",
+      "outil": "ad-ou",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 625,
+      "sha256": "d62e7f92ec4facc1175a17c398cc3c2b2657374f5924ea320409c5cebf9209cb",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__apostrophe-ascii.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__apostrophe-typographique.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__chemin-avec-apostrophe.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__chemin-racine-c.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__default.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "default",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__dollar-backtick-guillemets.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__espaces-et-accents.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-repadmin-report__virgule-et-point-virgule.ps1",
+      "outil": "ad-repadmin-report",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14328,
+      "sha256": "ac052426d26b302c3c9108478c06694ac7235ea43e671acebb9b96c632dce9ae",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__apostrophe-ascii.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__apostrophe-typographique.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__chemin-avec-apostrophe.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__chemin-racine-c.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__default.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "default",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__dollar-backtick-guillemets.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__espaces-et-accents.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-secure-channel__virgule-et-point-virgule.ps1",
+      "outil": "ad-secure-channel",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19024,
+      "sha256": "47c3e388f96d3fe3429a11f9ca145a796415bca9bdb638afc60815fc2e8c6da4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__apostrophe-ascii.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 1145,
+      "sha256": "d47b044e63b6993cc29407d73c25bc88c04aa6af7149bf48c1caa6fe4ab9b195",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__apostrophe-typographique.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 1153,
+      "sha256": "f81152d2f180781fb82c576a600586f3b9b2a37281593a85cab48234a74ae660",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__chemin-avec-apostrophe.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 1137,
+      "sha256": "c8c463d9faa9dcd8afe43359b9dcb649e6c3e093dbac906372655586a6a95f1e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__chemin-racine-c.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 1137,
+      "sha256": "6b31aac60bb5a9a89a28bd936bc2d597be085ae368a5d6472be8329405bcc21d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__default.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "default",
+      "octets": 1137,
+      "sha256": "6b31aac60bb5a9a89a28bd936bc2d597be085ae368a5d6472be8329405bcc21d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__dollar-backtick-guillemets.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 1161,
+      "sha256": "13a0fa868d66bfa5bf28e1c7915805193c1e70972fa51a959fa34b76e2214d09",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__espaces-et-accents.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 1173,
+      "sha256": "76f739ffc6a946aa4558989cb76df25d46bd977bc9a9373a03f241f953b727cb",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-user__virgule-et-point-virgule.ps1",
+      "outil": "ad-user",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 1145,
+      "sha256": "11feda41923f1df1bbbc4d9474709f2687336df03fd1c2890fcb63fa4c8fd9e2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__apostrophe-ascii.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__apostrophe-typographique.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__chemin-avec-apostrophe.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__chemin-racine-c.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__default.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "default",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__dollar-backtick-guillemets.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__espaces-et-accents.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ad-users-csv__virgule-et-point-virgule.ps1",
+      "outil": "ad-users-csv",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19321,
+      "sha256": "d33e798a9821c026979d410822bf05d8824969bdf6b85273ed4e7d326e573c72",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__apostrophe-ascii.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 11955,
+      "sha256": "069839cbbda9f9365d69fa0fcf6312f2550dd7d43b6964fdaa19144c74d41fe8",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__apostrophe-typographique.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 11959,
+      "sha256": "69c2383e3a5275f6ffd6c1c4e66c65dca5d35fe7b2bd600ed04583ef8ff89518",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__chemin-avec-apostrophe.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 11971,
+      "sha256": "d183e6008fd3ff81bdc4b78b56d3d7034bf4f6b442b42bc3f115c365714b6d14",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__chemin-racine-c.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 11915,
+      "sha256": "d2cc240c7c3650afa2722c6b7c40e774a1bd328fabfd81591058e501e0167086",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__default.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "default",
+      "octets": 11955,
+      "sha256": "2a57dcc00277a99991137bfd0234b9c311132e0d7d62b4ac7034f100f1997235",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__dollar-backtick-guillemets.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 11955,
+      "sha256": "3a6dffb7da7156b2c818380f14dfbd4926cb6348cd2d3ca6112a25ad5a5f3997",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__espaces-et-accents.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 11987,
+      "sha256": "57d5ad7365697b1b375d0b1c8d24ce1c9449e054ce0470ce99223c110b5de6df",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-backup__virgule-et-point-virgule.ps1",
+      "outil": "dhcp-backup",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 11959,
+      "sha256": "f94a9ad40f57eebd72cd51fc8fbc4f611d43dfabf6aebe92c9ff7e2e6d3e4d34",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__apostrophe-ascii.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12798,
+      "sha256": "a16d62a0e29fbaa12f795532465afb1a21823eebbf651332783cd9a095329214",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__apostrophe-typographique.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12798,
+      "sha256": "af870fab55b7113002705883932bfab2c4dc0dd7443cb086db78d311c1d2ef48",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__chemin-avec-apostrophe.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12798,
+      "sha256": "c0e477bb9f2176479e17ffdf3d8d6ae102a483ccf9e631f83d8fda28c567f200",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__chemin-racine-c.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12798,
+      "sha256": "642b51518e9af4cc38da9ec96e49d8d64b2e8fd4a56211c3c5914abbe423945d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__default.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "default",
+      "octets": 12798,
+      "sha256": "588667af72bdaffafb7c42d6201b8e8bc98026bbb68126c8a4e27a43ec7a86dd",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__dollar-backtick-guillemets.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12798,
+      "sha256": "c5fd3151ba9af6e6fe6a768d78356264177ab5b287c3fd1ae2523c981d910d0b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__espaces-et-accents.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12814,
+      "sha256": "36ff2a066bac0e7b5b4708cde7c359b9bbca1cf3b0eacff5087e736d40b08584",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-install-authorize__virgule-et-point-virgule.ps1",
+      "outil": "dhcp-install-authorize",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12798,
+      "sha256": "36b700fa3996a07041021cd4279cabe28d858ede93d90c3c21bdaf37711c1565",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__apostrophe-ascii.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 11684,
+      "sha256": "23057d6fa6208ba5e9ba2fc89fdf3a911e180c06298cda20d47e0298eecdad3f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__apostrophe-typographique.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 11684,
+      "sha256": "4bc58bf5b55f6b57fee621965909c1fbf10094e4dfac9c6deaa18c3e3359be59",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__chemin-avec-apostrophe.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 11672,
+      "sha256": "70be5f2eb053fe9cc093da67e7a9137f51b97518812509d52ecc57b5b8ad0413",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__chemin-racine-c.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 11543,
+      "sha256": "b4cc2a6e60d9f3287b98cafad491005f3c017c146c302a029de9ff22b230449c",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__default.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "default",
+      "octets": 11547,
+      "sha256": "f06adc420a7c5c33de406c35a112d135860a30b98decf18657e6c61b2751aa98",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__dollar-backtick-guillemets.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 11672,
+      "sha256": "7a3e3421dd22b66a0a89c8992322c7b08d04e3c07a2db661bb6c230d3bf35427",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__espaces-et-accents.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 11692,
+      "sha256": "9bc00d06a080bda5e40fcc9639f7f484eb3c817a21a307dd1b6673092e9eb87d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-leases-diagnostic__virgule-et-point-virgule.ps1",
+      "outil": "dhcp-leases-diagnostic",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 11696,
+      "sha256": "ea311abd8d268036c1191730e227506c2e13530981e4eeb49d89b64880a290e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__apostrophe-ascii.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12098,
+      "sha256": "ac82ceabe5b2fd85dc7abbeaa36be5abc7d3854bc1561e467e10adf7ff7303ec",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__apostrophe-typographique.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12118,
+      "sha256": "d7999800534de2bfd72cd0980109aafe06a82cca9c19738c2d023cdffb0a6bd3",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__chemin-avec-apostrophe.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12102,
+      "sha256": "251ea0f1f6328409b7189877dcf851b5bfa382d49246a226ac7dfa8db2ac2c30",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__chemin-racine-c.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12098,
+      "sha256": "ca44168f0179d059c295de97cde9a2a020cb1b685c577e17e60ae3891b75c49a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__default.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "default",
+      "octets": 12142,
+      "sha256": "277d4311f29ba8700eb3da8b3ede135c4ab9d9a4ea687d5db09f9cd4ed0b692e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__dollar-backtick-guillemets.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12110,
+      "sha256": "2ea3218ac6b75f42f4591d94b050a36da72a01e47c7be9408df54edc33720e64",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__espaces-et-accents.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12122,
+      "sha256": "a769c702bd3452448264f08b5a9e549f2a68cb2f3b6a65808101cf91cb99d43b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-reservation__virgule-et-point-virgule.ps1",
+      "outil": "dhcp-reservation",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12114,
+      "sha256": "2ff453cd5c23bb951fa9677bd34355d229c9aa3964357985aaacfcf0fe6660ce",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__apostrophe-ascii.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 13692,
+      "sha256": "64763944808f23d607f534ab28eeebe2346b1b484925c9479dcb04c7b365f8fc",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__apostrophe-typographique.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 13692,
+      "sha256": "4fcdd636856f683622685e11bcbd68a6b601392261bf2a0e2ef7f91e66f35632",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__chemin-avec-apostrophe.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 13692,
+      "sha256": "9661b53f95066a452fe4aa2adf575441a0c74bbcaf664711dffde239b2e0ca8d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__chemin-racine-c.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 13692,
+      "sha256": "233db9e53b6bbbb10fad0c7ab4d7f54c7bd3b21f25e9cf4340b997a0615408d1",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__default.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "default",
+      "octets": 13700,
+      "sha256": "ea84f7e9ce93a8ff34915ec757cc6dadc32f07b24de781bb9b5493bca1ae2742",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__dollar-backtick-guillemets.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 13692,
+      "sha256": "f29e8ccfff346f4c2e7e263cc9db0a76ca5edf1dda98654818164c5796e7e447",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__espaces-et-accents.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 13708,
+      "sha256": "39d20775d5ab935cf340045fde8dced1ec881be915e56ef81c2234d915b2ad5a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dhcp-scope-options__virgule-et-point-virgule.ps1",
+      "outil": "dhcp-scope-options",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 13692,
+      "sha256": "bb79da6776da7fae7f017c66b89af510866d5c43dc766de4b7336387d159ed3d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__apostrophe-ascii.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 9735,
+      "sha256": "842dcb2f6bfe71ac77ddaeb64062c019718839fdcf353d73b9022a29b680066d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__apostrophe-typographique.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 9739,
+      "sha256": "443206c5954fe9e5d83088f49deba69fbc415a5f9d7872ea5f2fa1a09395339b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__chemin-avec-apostrophe.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 9751,
+      "sha256": "d05971ef5bc7542d267d1f13db73885fe261ce35b561073a659014ebeec77b5f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__chemin-racine-c.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 9719,
+      "sha256": "26a5c850de2d6bcbe802bc847feaf6d03e48608d8f8380a77929eacf3a48a569",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__default.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "default",
+      "octets": 9719,
+      "sha256": "26a5c850de2d6bcbe802bc847feaf6d03e48608d8f8380a77929eacf3a48a569",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__dollar-backtick-guillemets.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 9739,
+      "sha256": "57ae176273a014dad98f619cda44429d7459ed4ce4cdc547a2f4bbc877c46b0d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__espaces-et-accents.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 9755,
+      "sha256": "466a24bc2ae7d0244cc1771de64fd1b77ce1751f43c911797d7047da86aa222f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "disk-scan__virgule-et-point-virgule.ps1",
+      "outil": "disk-scan",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 9739,
+      "sha256": "c99b629270b96224050ece0499aef8946df43f146b52de5ebba18ee467fef474",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__apostrophe-ascii.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15384,
+      "sha256": "5f8dd6f163e66a1ed6df962603f0273833909d616dd2c48ddf6fdeb1c20b9d80",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__apostrophe-typographique.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15384,
+      "sha256": "723235cc2f240f3ec063375dedd4f18e8873bb4d431bd4308dcae14ccdd3d706",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__chemin-avec-apostrophe.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15380,
+      "sha256": "82afb054194bb07f59067c7c7ca3d1f3551e01ca0c882cde9cd27cb6d331f930",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__chemin-racine-c.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15360,
+      "sha256": "2d0d96a9c5fd93f2c853cb3cb3bc1b983f38c4c9ea45b2cbc12cab981eeee49d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__default.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "default",
+      "octets": 15380,
+      "sha256": "7a7886b6380bcdcba77c3452ee0f979bbb1af4c1595c5da98051a55eb2f2dd3b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__dollar-backtick-guillemets.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15388,
+      "sha256": "e94c8c4280968841d2e85c16d9052a48f49a5d29b5f6f7c334f6eb4dec4d1a1c",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__espaces-et-accents.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15400,
+      "sha256": "a2ae823e9f1d45576186081bd7a5f28993c2e0a7d1839fbd65103725c9a9c8d6",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-diagnostic__virgule-et-point-virgule.ps1",
+      "outil": "dns-diagnostic",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15396,
+      "sha256": "51f9d2d4cfe5399814ef6aa21a778e20def1aaac0a692c5c3fbdc9723b386b47",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__apostrophe-ascii.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 10500,
+      "sha256": "fbc1a053ab6e86a625d22d0a630253a742dd6827241fdc4b58e9153c62489eea",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__apostrophe-typographique.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 10500,
+      "sha256": "958b2fcb627be39049e637813d0fa06e441ecf5a1bdf755d19d8fd75ee5e7c5a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__chemin-avec-apostrophe.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 10508,
+      "sha256": "542771fe82afb7cc2b9ac8283d13da439f0475979d71344413615abf0e89e8ff",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__chemin-racine-c.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 10484,
+      "sha256": "3b34d6564031240e222ca399d860e75c84072b37a09749abc8087374c2ead732",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__default.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "default",
+      "octets": 10508,
+      "sha256": "6f95bf0c4a22485adaeccab503a73b883815b05f1d475e1f20982cb8c2f12d8c",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__dollar-backtick-guillemets.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 10508,
+      "sha256": "cd785fafe983e985c4af4c6a2c25cf408bc089f05d1663b9d903edc735cca0c6",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__espaces-et-accents.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 10524,
+      "sha256": "e6b2d828ef46703dfaa08d6127454265253251a9136a367b374a457e13b14652",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-record__virgule-et-point-virgule.ps1",
+      "outil": "dns-record",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 10508,
+      "sha256": "249a0f2905447d8780214010becaf7b80f00a884e64eb5795c4bee6c593fe2c8",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__apostrophe-ascii.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 10044,
+      "sha256": "c6f3979e787dcc077037ce6afae7cc6f8511a7b2db0ea72c4150624ebc5a440b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__apostrophe-typographique.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 10044,
+      "sha256": "e6c1dfa3420525b006bac2679fbd8308e79bd2f9125f521794ba4aab4a560522",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__chemin-avec-apostrophe.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 10044,
+      "sha256": "77bbae0cabcf36bfa5b376e79020596517eae43d265675170aad7576119cb1dc",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__chemin-racine-c.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 10044,
+      "sha256": "8271665d92b78b99aeaa32600d53467552a94646b113110789a41190e352b7f5",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__default.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "default",
+      "octets": 10028,
+      "sha256": "c0adf3b098a382abe86ca9423645e5496700d28973457a97e8a76d0cd4f0d049",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__dollar-backtick-guillemets.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 10044,
+      "sha256": "b6eb324ae5a3e1ba527ae69f774f83a7b9c65240004570aeea448be85661462b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__espaces-et-accents.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 10060,
+      "sha256": "2718971e09dcd5ce081968707e54de2a4f2485f43a9ae3bb36f3c84b3fdcf4a8",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "dns-zone__virgule-et-point-virgule.ps1",
+      "outil": "dns-zone",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 10044,
+      "sha256": "cb338d79eb57387959bac52db8eddea0480cbc201cbe08832cd293c8d7437fb3",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__apostrophe-ascii.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12175,
+      "sha256": "308080694767fc070fc21ff95f433e68d832390e53ffd255535621492c074a92",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__apostrophe-typographique.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12191,
+      "sha256": "a288e0ccbcdcfe0c639b6dc4029333de2038c2ca551761bd099239387ef40873",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__chemin-avec-apostrophe.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12175,
+      "sha256": "8d7e3af3b140463f1abb77ac11770f5fc4e956711e31573b39cfc3100860f742",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__chemin-racine-c.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12143,
+      "sha256": "5381b94e82c720dad6b0ea8bbda35a5375d53e63e1d45f4b1c845ff8b469bda1",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__default.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "default",
+      "octets": 12167,
+      "sha256": "4d3b07df5753dbbb70012de9b475893f5218c99ca612eaf57bee9afbbde9206e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__dollar-backtick-guillemets.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12175,
+      "sha256": "3871b6240fea947195b1e7e989dce458a9cd342f57e0331b6ee41e97fc15411c",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__espaces-et-accents.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12215,
+      "sha256": "891133c4ee2e88d171e00c4e184baf0d9049193d25d7a7122a50fce2e470d1dd",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "file-permissions-audit__virgule-et-point-virgule.ps1",
+      "outil": "file-permissions-audit",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12183,
+      "sha256": "05d87544d53a37f90fa2911081f4f84eefe588fe649fc31d375d1ff9f14972e4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__apostrophe-ascii.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 27228,
+      "sha256": "7a0ca00e32566bb014eaaa11bdeecaa1d97cf96ab3fb93ee456376a84c69abc7",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__apostrophe-typographique.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 27236,
+      "sha256": "4f892666d884696c1f86c27f5f59e307a9d1c4d8542c152ca230186a26694cb1",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 27296,
+      "sha256": "c28a6bb672349e5a4a295e2213254afaeed6f94056bea32d168e367150442372",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__chemin-racine-c.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 27172,
+      "sha256": "4a08202d9ccea00e09bfc3f464ebc88440c2eb116d94c0246cd71a875a6ca1fa",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__default.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "default",
+      "octets": 27228,
+      "sha256": "556aef0030fea13ab86b1474e18d967d1371fa838668461782ed686bfda08112",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 27236,
+      "sha256": "fb2d067ac6a7814a63c5fcf5875380ec780cf1afffc8236b37d99848bbeba4ec",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__espaces-et-accents.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 27292,
+      "sha256": "388acf35b0e2d001ba354d641b6886805281a35d496202bf2add7ad015bcc593",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-backup-restore-compare__virgule-et-point-virgule.ps1",
+      "outil": "gpo-backup-restore-compare",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 27212,
+      "sha256": "ebdf0e0bea5a89eec46915794f48afc6e5ccbf93f9008ddd1227a57f496a9080",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__apostrophe-ascii.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 16055,
+      "sha256": "277a19bf573db12954e626fc2c84ad7bb86c510b8733e95b9d92bbb48a2f72f3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__apostrophe-typographique.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 16047,
+      "sha256": "99e3b0b3d3c4b9fb6d1714f00496aa4fce375328b3115dcf2bcd0082bb00b2b4",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 16055,
+      "sha256": "e8e1ffdc9c7e82387dea8801b69d8960a1a0f39a99f4dc000f40a0f4add9b59d",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__chemin-racine-c.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 16023,
+      "sha256": "2acadcb046c0744ede9fe78634556ea4d851a3974687272cdfd52d502d313c56",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__default.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "default",
+      "octets": 16023,
+      "sha256": "951601dd6478dc53a8775ae9539ba060bda8eaae8c35a46005bf9db543fa288e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 16063,
+      "sha256": "72e552039c5200f44d549ee9f640b370266d8873d868c04287797a2e0e755b95",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__espaces-et-accents.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 16111,
+      "sha256": "feddbe57e24df49329d2e639278c9248a5670c838a3843eccfde19b9a5336042",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-create-link__virgule-et-point-virgule.ps1",
+      "outil": "gpo-create-link",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 16047,
+      "sha256": "7b5800190a78f6ae7e63f5def3da76fcdafbd79540e413b36827782048310080",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__apostrophe-ascii.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15495,
+      "sha256": "bbb0dc46b0d5061b0f77746c29db3076659bc8e277665d62c31c0589084fc90c",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__apostrophe-typographique.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15495,
+      "sha256": "92f08422413c13f27c3ca75545c13e167265491126ef9cece082502cf3ee74fd",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15495,
+      "sha256": "514e00b0ff06917f56a2c77466588e51cd64f2e1d51bf03c96147c27ec6cf04f",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__chemin-racine-c.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15463,
+      "sha256": "1a4b090344a2be3830653fe1e4c86293926c6b0502fbb57c68b49da0dfffe59e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__default.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "default",
+      "octets": 15471,
+      "sha256": "e3f8f38e16b7b2f674185e7f9677dead9dea3eae66623eb40898f8521b98d04e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15503,
+      "sha256": "58b46288697d18a6c8401ba4a4914f19e3123744382dd2aaaee21f84259fc6c9",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__espaces-et-accents.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15551,
+      "sha256": "b9afb2b1658b3eaad62be783db5c55bc16cad0d4ba6309b03b4855e4f218fc7b",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-device-restrictions__virgule-et-point-virgule.ps1",
+      "outil": "gpo-device-restrictions",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15487,
+      "sha256": "5de8b6cca326009a1e2b35849d55f75835a0d4ba57b298760d8c19087c49cea0",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__apostrophe-ascii.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12420,
+      "sha256": "ee383f73e94f3dd2b80baf06f1dd5fdc56d13e97b037b9a48dfd9ef4555b7510",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__apostrophe-typographique.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12420,
+      "sha256": "f48e710b92e254e52f2d5ea05b87e11d851c355ae27f49d5decd27106a365b82",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12440,
+      "sha256": "c862be85b3e8d51f48972feb39a77444219e25b8819f3433523e8eeadd00a625",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__chemin-racine-c.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12396,
+      "sha256": "8bb007ffa89287716ef14da8543023a5db6693e8a378d2f33d0234b69bc92462",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__default.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "default",
+      "octets": 12400,
+      "sha256": "ce4ed0c5db6a479fc6b71f0342b98afef7eb0b659f0e942a4ae57eebe0e54a86",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12440,
+      "sha256": "d9d47dce93251f79f12cdb9d1552ef0b5a867a8274f9a693863cd7d9e38e3c73",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__espaces-et-accents.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12472,
+      "sha256": "2df2f9c8a9f4ee444011ab86469f854d835ffc3433d93e49af61c8e05630ffd4",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-drive-mapping__virgule-et-point-virgule.ps1",
+      "outil": "gpo-drive-mapping",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12408,
+      "sha256": "538322ff503f4610da98b4389f640ef20242a861af5e756a3e800828db38e0a4",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__apostrophe-ascii.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12957,
+      "sha256": "78571a431627f4a8f9dfd09a1125c9eb760728e441c7447c24d9093eab8fc5b1",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__apostrophe-typographique.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12949,
+      "sha256": "8aa6188955b97621840a48d21115bb72603b659dc4e4b58392c55a1d9a920f18",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12949,
+      "sha256": "73780c0abefbe1ed03ff1ab92cde92a26e34ade69e3aaac7150050333d740d43",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__chemin-racine-c.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12956,
+      "sha256": "82e3ddc6e204e82dd83ceec363bd528ab023126fb1775f0c11fc3bd64a92862a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__default.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "default",
+      "octets": 12949,
+      "sha256": "3cbee32916ee672ba69e6c73ec0053abee94a9a72073a8c7fa20ff749ddd0510",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12949,
+      "sha256": "502f839a1383a6174c0cf372025aec9b4a3060c64b946ea0ed369e0802a4dc48",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__espaces-et-accents.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12981,
+      "sha256": "3dc86254860c13b3443afeeb8000902fd937b9e5dab8852385cebf6a5c3e9f80",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-firewall-defender__virgule-et-point-virgule.ps1",
+      "outil": "gpo-firewall-defender",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12957,
+      "sha256": "8604a3fe5fc37dfb87c4720733415e4d159b7563b171fcc858173ed8ec10442a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__apostrophe-ascii.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14207,
+      "sha256": "96696f5c53148b957850c21018363288413b88a7947f18f993b826fcb94a7167",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__apostrophe-typographique.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14211,
+      "sha256": "242b51ede31e8c5e01d2500978621d75feb86d6660b5d3749c1a5e2473b60c0e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14227,
+      "sha256": "465c37df6739e2dfed713dd50918a3c297628153504e80a617242aa67f4e6bdb",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__chemin-racine-c.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14191,
+      "sha256": "f1c2ddceb616a6bc9659b4d65497d3adbb64613085b68250a1321df58467c143",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__default.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "default",
+      "octets": 14199,
+      "sha256": "38065c226f5498085d0b7cb7fe35bd004376ad7abf4f754e2b7476a58d0c3620",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14207,
+      "sha256": "2fb271e4183370152718d57518cd88b1739edb7381e736df9152404c1b5f2b35",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__espaces-et-accents.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14251,
+      "sha256": "9f7dbe33ad89aa5d1378a56bf9c289c8c8bc927f4fd71b5b502c4892d574b921",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-folder-redirection__virgule-et-point-virgule.ps1",
+      "outil": "gpo-folder-redirection",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14199,
+      "sha256": "8890512e20a91c7efb2cd895548703e1161fdd29e0b7e8b1e629d1dd6ebdfb25",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__apostrophe-ascii.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 11992,
+      "sha256": "49d13243e3b6841f769661804f4833fcb5ec1c7c7fba55937631f53525457585",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__apostrophe-typographique.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 11984,
+      "sha256": "4b19da7332d463a5704d918458d264598f20fdaf74cefb0110c6b3c4610f3c76",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 11985,
+      "sha256": "02d2c32971a165ffbc03a7b02453d2221ee32ca9c28cc95d6189b93f67257d0c",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__chemin-racine-c.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 11992,
+      "sha256": "241437debdf31e7778629da84503773fe40bba5273839e409da3a61c0acc7bf6",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__default.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "default",
+      "octets": 11984,
+      "sha256": "e98191049c6f8b9441c263a236a34bd40ed2994b3cef6fff37649d98f643e2d5",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 11985,
+      "sha256": "f558af67dd701fa75a6c3b6a6d24161aa095d999bc79e1df0ec9ac3a42ed9da5",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__espaces-et-accents.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12017,
+      "sha256": "f75f347024c2b8d997ba3183ffedf65a91ccf29902e097b8936da410a34ef45a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-health-report__virgule-et-point-virgule.ps1",
+      "outil": "gpo-health-report",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 11993,
+      "sha256": "5e65c3a951c0eac57d861ce54c8d541f14d891d45e4cee7d0ca373f07c87dc2d",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__apostrophe-ascii.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 11258,
+      "sha256": "c588e56dfe924d540ac86cc211a8e43e65021141a1075baee3fcb78ef016fa7a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__apostrophe-typographique.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 11251,
+      "sha256": "c3021405586a94d3b3312de571de71a1766fc63b5a1daf0ab0dcd0088c3dbe06",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 11252,
+      "sha256": "1fc38a655a14789de80e6132e211d61e00305dd3384adc496874b89ae2268e53",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__chemin-racine-c.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 11258,
+      "sha256": "b052ef2293fb612ed1c977389cde1d299eb35b40f5f9514160084bb7f98865c0",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__default.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "default",
+      "octets": 11251,
+      "sha256": "d6c2342100862dea6e21eddd8790cbc4f47389b47b78f570d2ee089a574c6d42",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 11251,
+      "sha256": "d976801fa3556eae23fdcdc5530eb7211d43c7d38e3f084e30c6b4967d990a7c",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__espaces-et-accents.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 11283,
+      "sha256": "0270037e440a0a2b33b065358a8f3e4e680e3b6777a501d92bd2337bd6a3c02a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-inventory-report__virgule-et-point-virgule.ps1",
+      "outil": "gpo-inventory-report",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 11259,
+      "sha256": "b573a2e4ccf17f3cb7632ce41deff28c8838ee15b930f965871d2a24bcc758c3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__apostrophe-ascii.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 11980,
+      "sha256": "60a3c314c85affef40f808bfec8b800949107ac2e7ef2e03b5fdeebcf0962d95",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__apostrophe-typographique.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 11960,
+      "sha256": "2dc4dae7f9139c4e9b549ff4dd2042987e2872c741391658ccf137de2bcda2ca",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 11972,
+      "sha256": "904d29af5ed2a29ef1d44718a542a222ddda95405eb6e4bbd4131330194ef0df",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__chemin-racine-c.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 11980,
+      "sha256": "aa976a5ddcd22cdeba635cc05e507d134b0efbaa8906b59ae6c980a6dc14dcf8",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__default.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "default",
+      "octets": 11936,
+      "sha256": "adaa5e8eb49d6db85d8c347d92c5ecdd859da9c20fd754f355dee75561791308",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 11972,
+      "sha256": "7eed47d8a20b3513f1cc32ad0669276370a22ed064a37f294843d32b6b70bfc9",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__espaces-et-accents.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12028,
+      "sha256": "dc2e5fde744f881c81089336fab80771e19001aa6d50d3ae68f86feb7193ae69",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-link-audit__virgule-et-point-virgule.ps1",
+      "outil": "gpo-link-audit",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 11980,
+      "sha256": "77d0548d79028808f442591c20a940871f2cde0c61c95e0bfa7c0a2b8295af76",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__apostrophe-ascii.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14636,
+      "sha256": "6abd62c9d419822f22000315bcb7a1fadd70bbfba52e22844e1eb376070d3c48",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__apostrophe-typographique.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14612,
+      "sha256": "019953667763d1800d3b6800bc51a4e9dd5948a503a41ad348e58f687ac39041",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14644,
+      "sha256": "ebb990ab04556f7eb5a945c9a58589f23b335c89963aa3c7923168031b2a56b8",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__chemin-racine-c.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14572,
+      "sha256": "1c21738b7880a34edf3901887417e34eb117cd11c53669e43734cdbd7dd9465b",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__default.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "default",
+      "octets": 14548,
+      "sha256": "d44a42f907b6a9aa7022e83da600e12480cdf40dea02fa74d9915b2bb1f48da3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14644,
+      "sha256": "0d78760e4fbde48cfb435c3547740ffa49ecf13156da589cb212ef6c3d993fda",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__espaces-et-accents.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14708,
+      "sha256": "3d1bbe7ee6e93317120ba053ca4bba5333cca68916a43879b00bf89c6dd998ec",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-logon-startup-scripts__virgule-et-point-virgule.ps1",
+      "outil": "gpo-logon-startup-scripts",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14644,
+      "sha256": "2b9de072ad3b0be660c5a004c2fb46b48a6b1029ec5c9e234bd6f70349aa90ee",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-password__apostrophe-ascii.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__apostrophe-typographique.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__chemin-racine-c.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__default.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "default",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__espaces-et-accents.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-password__virgule-et-point-virgule.ps1",
+      "outil": "gpo-password",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 581,
+      "sha256": "22ba7003533018e979f5dddac0f40daa3d2313ed8a8bf242bbdf312dbd233c6d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "gpo-printer-deployment__apostrophe-ascii.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14270,
+      "sha256": "ba047731bfecbd8d2c028d6b568a6e3b96c45f894ea04ea71bc0aaa3fb4d4698",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__apostrophe-typographique.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14266,
+      "sha256": "b30f68753e8e0ee8208cfbee8ae93bbab19023ef188dc612453076f9715ae8a7",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14274,
+      "sha256": "15745a2229b0ac16cdf5766ea710d29c961d75f711c3cb3c1ce3aa3c02f304e9",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__chemin-racine-c.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14254,
+      "sha256": "b29336de40e046cd1b95e54ed6c00380deb6efc10b44619467df8d1e4ff936dc",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__default.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "default",
+      "octets": 14278,
+      "sha256": "41987686a160c1957d784ee12514ac27b77b75f0295294bfdff702f066f49a1b",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14278,
+      "sha256": "21a11f6228933f5e854e0d0d67f35cd30db15cc5e36ea7041d671dcd36b23867",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__espaces-et-accents.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14314,
+      "sha256": "aa513056fb3d8a234d5fc500924eb9d63f9e6353b950a6b2ddf325685a09ce6d",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-printer-deployment__virgule-et-point-virgule.ps1",
+      "outil": "gpo-printer-deployment",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14278,
+      "sha256": "c88eb89005b418267d930aef9acf1268be98e4db183e41ad6c985bb69272f64e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__apostrophe-ascii.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12706,
+      "sha256": "9dd804d20e707c5fbe7b3b59a63e05fa3daa27467f46d8b042d6cf692b44f42a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__apostrophe-typographique.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12698,
+      "sha256": "eae16728fa194e94cc935d3a746eee18afb767506dd3a85c9696627bb7799a1c",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12706,
+      "sha256": "c0221703777b696f41ed46420777dfde53fc57c7632ae90de4675039ee5e6828",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__chemin-racine-c.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12698,
+      "sha256": "68481683f3eda0beaa96983004aeb3ca404612b2cd781e1c12f9685789a50967",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__default.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "default",
+      "octets": 12682,
+      "sha256": "b7cb8e2c12936f8270a730fe2b463eca3fd1e5185198a80e2ee945c5ef27f71f",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12698,
+      "sha256": "b7e61c293862c3b96278fe6959f438c0e7f5ea0eaf18370bcd961a5de5a05bf0",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__espaces-et-accents.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12722,
+      "sha256": "a3bde10bfc51ef5e9a9480eb41a9492ea448a165449f1b3bf5e6b6e05a2eddc6",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-refresh-diagnostic__virgule-et-point-virgule.ps1",
+      "outil": "gpo-refresh-diagnostic",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12706,
+      "sha256": "4c03b79e54251785767732ac1bed5fb2692664ed33a541d0743d088dd5044f78",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__apostrophe-ascii.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12899,
+      "sha256": "527f9728b41d142da73c1fccc2a0ea4da2d582419f9c2465ab41ebdae8f81025",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__apostrophe-typographique.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12899,
+      "sha256": "c60af314063538064a1db5f5066fe16ca26dd7c081f3e41d8ba747945bb8a75e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12899,
+      "sha256": "a7a1c3da2e621efe350804797087753807bbc429a333123312b68ccfb3ed3f10",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__chemin-racine-c.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12911,
+      "sha256": "ec07a56d71c1b1a07072d9881433a60a6e7229233a55d7815e8af6533513188d",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__default.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "default",
+      "octets": 12899,
+      "sha256": "f6b252353afc338edda53036643a4de8aefbfdcafaa66948ee040ee25b002146",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12919,
+      "sha256": "e1cf7caeca5784af53dacb75bbc4cdc91b7ad9597232dfaabb1d741d577fe8e3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__espaces-et-accents.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12931,
+      "sha256": "d2127f5c09eb3ff41fc7fd622b6f046807a7bdf7737541f3b2e3be2cc9abd28c",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-resultant-set__virgule-et-point-virgule.ps1",
+      "outil": "gpo-resultant-set",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12919,
+      "sha256": "282bb16889abfe15c94febafae94fd290ead49150491c68f0334b9cc003e6f52",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__apostrophe-ascii.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14673,
+      "sha256": "17ed1429f5927a2b7c39baf5de0912959595370452be8d4afd1e421d5f19f83e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__apostrophe-typographique.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14681,
+      "sha256": "720d0c3fd352d8f16b563f78f338ea6af06c4d33f47f8011322524f171aac3d0",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14681,
+      "sha256": "d19fd0c60dfa4d9585e070c5ee7f1ccfebb81c20426b73a127466d04b35e8bb1",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__chemin-racine-c.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14641,
+      "sha256": "ef86c7ebce8e0ab97c6b5fbba89859bcc84a20b8c9c0e4faac4f0c9ff9a56a16",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__default.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "default",
+      "octets": 14665,
+      "sha256": "271f1f2a3cd34b1eb4c618187dd02319deb708017b49383d6185b4575b6f1b62",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14681,
+      "sha256": "7297c6c242c645ce8285698a5972530bfaa17e855ebfa7490f0d1f8b8d819208",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__espaces-et-accents.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14737,
+      "sha256": "a674263d381cee1cd4fe95bd986a423a8719171570e18828e9c5b8d7059400a3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-security-filter__virgule-et-point-virgule.ps1",
+      "outil": "gpo-security-filter",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14665,
+      "sha256": "84d9f1d8e02a53b34d56b8aad325ad9e27686d6bfb95c4f6f47ee3c10694d9d7",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__apostrophe-ascii.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 14249,
+      "sha256": "fe428c939b71c0314de9e66ba0f041682f80f4b5fb82a1e3e8cd5eec758d2d4a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__apostrophe-typographique.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 14249,
+      "sha256": "445019e7cc3894d3292c489c25829df4648c126a923996adf9c84ec8ffb92e1b",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 14249,
+      "sha256": "ba1141d4d955f25bf8d159490038ec004d48e1e8dcb05eb8fdec333edc7b779e",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__chemin-racine-c.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 14163,
+      "sha256": "a8b869538aea9766d5b896beb50afe67e25885103fce45ce36b82401ee1305c3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__default.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "default",
+      "octets": 14181,
+      "sha256": "c3964671a9b0bc217fb423400368366cbe25ebddb2f8f2c99fdc1c2d46794e86",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 14253,
+      "sha256": "146c280f18c1a036ce8fcfc199c5bb3ccbc2cb7b4995b84cac3089c78a944624",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__espaces-et-accents.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 14293,
+      "sha256": "76691fff2c7d827726a57f14a2e8509a667a931d4dd24d00fac78e69a44523bc",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-session-desktop__virgule-et-point-virgule.ps1",
+      "outil": "gpo-session-desktop",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 14237,
+      "sha256": "e6319cb0078a0951e796102169749a2abc50efd81ab4a21eb1e3b321fd5ae0ae",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__apostrophe-ascii.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20152,
+      "sha256": "bd6da911993b592b8be49af1ff3b6c4f6ee4ebe22ccf1d56e92c972b93c189b4",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__apostrophe-typographique.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20160,
+      "sha256": "530d7c46d96506db248a273fdabec79bf1c783042a2463fa7609bc0d552d92a4",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20172,
+      "sha256": "77040c6e7bb9577ff8dd6562941028da92ba9c89399c88b2f9a236658ccc6071",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__chemin-racine-c.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20004,
+      "sha256": "027235ea529b96adaf37e1526bd9216f6640808679f04d90eb9ba81e4329b642",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__default.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "default",
+      "octets": 20000,
+      "sha256": "46ea52341663e4073896b15d87c06a0b06a34cc6969671dc14fc4bf221de9b92",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20160,
+      "sha256": "3daa1fd0156c14de86ae9b2b6e6de642454170fc94c4081c0bb50015652ba649",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__espaces-et-accents.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20212,
+      "sha256": "afef403cf059a915410a95b5b04312aae1f177ed40b0c53f108ea627742816c5",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-software-shortcuts-browser__virgule-et-point-virgule.ps1",
+      "outil": "gpo-software-shortcuts-browser",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20140,
+      "sha256": "ef2e252a62b324a3c1087060319c119abf15f76c2d45325d80a6162d6d307e0a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__apostrophe-ascii.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15870,
+      "sha256": "19a92a590ff2b787dda833150a31bd5a318d9835db1b8f0ac5f7032aa943ae7d",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__apostrophe-typographique.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15870,
+      "sha256": "a53029dddb844790a78854065f9d9a23abf949e5968f32e1701966486ccaeb48",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15870,
+      "sha256": "79d14dd432d098712b75624694a25d441c7186c3bcb18d8177f6302f6f138415",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__chemin-racine-c.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15837,
+      "sha256": "963de352f547a846ee3cae46b6c7afbf11712041839e41a7253d9d8399bc7366",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__default.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "default",
+      "octets": 15837,
+      "sha256": "c632edf2f20e65ce848b0824c0e8762f3f1a59c85e2d81b95cc25f4c6781969a",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15878,
+      "sha256": "9a6a4d427841e2ce250df4b69ce3d19dd9b7ee39e96a28d2a41f2892f2c8a4b2",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__espaces-et-accents.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15910,
+      "sha256": "2ed1d851d8a34b3b0a881f2f495025883325eaf67ec09af746af43dc906784c7",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-windows-update-services__virgule-et-point-virgule.ps1",
+      "outil": "gpo-windows-update-services",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15862,
+      "sha256": "7d7de5b758bb17f2ba7a78f5f95a4dbf9a44a3d30ac57509c1f397f05717e829",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__apostrophe-ascii.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 12803,
+      "sha256": "551ef2a58bcce242bd1d0af66ff95864321779ef721ad17308a863820d7b1418",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__apostrophe-typographique.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 12795,
+      "sha256": "1303133d0c37b6c479870cd2651c23f924153bd63cf235b4d0da9b6018189dd0",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__chemin-avec-apostrophe.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 12811,
+      "sha256": "7ff03d3b91cf2b0a44cf05c09572ce657bddc75aa7bbe20263393460ab801351",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__chemin-racine-c.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 12811,
+      "sha256": "f9c4c8ab12fbbb638c8cc7bab7d2131b5c69d33c0f3c4966def2a09ae0db9f27",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__default.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "default",
+      "octets": 12803,
+      "sha256": "ce975ed4f5d345df2e81f97c9e03644062e179b65a7b5ac809a0772d744a525b",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__dollar-backtick-guillemets.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 12787,
+      "sha256": "0de9a007a92338cc41ee2259ff3af8109a422cf326f0c482eb3cb37700d87894",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__espaces-et-accents.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 12843,
+      "sha256": "73984b7512c62e77b58af30903a1ad4906433fd902b256d672b2938f8af0caa4",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "gpo-wmi-filter-readiness__virgule-et-point-virgule.ps1",
+      "outil": "gpo-wmi-filter-readiness",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 12771,
+      "sha256": "66fa69edba75411cc591c1df8855d197c409417b1e3c431ee099680d0b6006e3",
+      "bom": true,
+      "origine": "LOT 4",
+      "identiqueALaReference": null
+    },
+    {
+      "fichier": "ics-readiness__apostrophe-ascii.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 16818,
+      "sha256": "697f0f015fe39e4303dc2b7f83a4bddb56d21482336b8319acc0262b45d536d5",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__apostrophe-typographique.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 16826,
+      "sha256": "612f50eea95def823195844206dd2c30938fc5d516116d3a49566d207abbeef2",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__chemin-avec-apostrophe.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 16826,
+      "sha256": "f7d5db2e572ba65f316afd7088e61ce38b66d10b2e5700d1d8b33812a566a114",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__chemin-racine-c.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 16802,
+      "sha256": "3a5d083dba146e4c2ecbcd6761cd61f93f88c753624bb458fe618987d3384058",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__default.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "default",
+      "octets": 16802,
+      "sha256": "3a5d083dba146e4c2ecbcd6761cd61f93f88c753624bb458fe618987d3384058",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__dollar-backtick-guillemets.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 16826,
+      "sha256": "45e5d3a9b3816cfe2bb64e40b3dee1df556de78855112a39f245c085a11b9c6e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__espaces-et-accents.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 16850,
+      "sha256": "7d1296b8502239ab00c8b1f4cd17d031fa4e34286c8984be6f8e6928c2f2e6b5",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "ics-readiness__virgule-et-point-virgule.ps1",
+      "outil": "ics-readiness",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 16810,
+      "sha256": "68f3b6623d7b6a4b7e92e6ff8d8ec06e4f54bd881c36b904811c9ca565f8547b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__apostrophe-ascii.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 16666,
+      "sha256": "9ce9ae89e53fb5cb9e14eb8918a19ac58a850b34b85085cc21ccdfcbbc726b31",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__apostrophe-typographique.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 16674,
+      "sha256": "b7ed795573edad885b3c92bf1baf279b264976d1fb377155a8d2191043b07b1a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__chemin-avec-apostrophe.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 16674,
+      "sha256": "2d96c33b139f4ac8f1f067b8a40186948b96382ab5f517ce3eea1c7258c72f38",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__chemin-racine-c.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 16666,
+      "sha256": "9ce9ae89e53fb5cb9e14eb8918a19ac58a850b34b85085cc21ccdfcbbc726b31",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__default.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "default",
+      "octets": 16666,
+      "sha256": "9ce9ae89e53fb5cb9e14eb8918a19ac58a850b34b85085cc21ccdfcbbc726b31",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__dollar-backtick-guillemets.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 16666,
+      "sha256": "db6cef4c35d455a5f7749dea8d608e18d9a99a597aae516eae1d8d7d4535b71e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__espaces-et-accents.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 16666,
+      "sha256": "9ce9ae89e53fb5cb9e14eb8918a19ac58a850b34b85085cc21ccdfcbbc726b31",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "internet-client-diagnostic__virgule-et-point-virgule.ps1",
+      "outil": "internet-client-diagnostic",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 16674,
+      "sha256": "8aaf6406e6b115e80e24eb3e96755a1761212bdba57c2a3fe6394651fa569d37",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__apostrophe-ascii.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 15648,
+      "sha256": "fe004615087229eb32a2efbe94c081b97ea602e965c8dd7bdb1d868dadfc5896",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__apostrophe-typographique.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 15656,
+      "sha256": "da0cabd4f9ab09e81038f83a23ab98bb47c1658fa795be37c3d7c130131704ef",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__chemin-avec-apostrophe.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 15656,
+      "sha256": "bcc61c66c5ea50bdafbdebbe8ae78d1b4facd7c4febadf1f47c033fee1ce5eb5",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__chemin-racine-c.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 15632,
+      "sha256": "fbdcc9c33db9259856d67e88713cd8a3bc2f5938ca83f7b701f9711de7e123e6",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__default.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "default",
+      "octets": 15632,
+      "sha256": "fbdcc9c33db9259856d67e88713cd8a3bc2f5938ca83f7b701f9711de7e123e6",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__dollar-backtick-guillemets.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 15656,
+      "sha256": "b1e802784cf3d90789f18c66d5625c02b348e6de946b150bd575c54c186918ec",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__espaces-et-accents.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 15680,
+      "sha256": "f69b52819335eefee477af00feb696003680eef4e87042857296f9740e659106",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "rras-nat-readiness__virgule-et-point-virgule.ps1",
+      "outil": "rras-nat-readiness",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 15640,
+      "sha256": "961e71bba129cdc995e378ad5943e5f67a7ae3cb67148ad75b382473fded262b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__apostrophe-ascii.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__apostrophe-typographique.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__chemin-avec-apostrophe.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__chemin-racine-c.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__default.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "default",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__dollar-backtick-guillemets.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__espaces-et-accents.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "second-dc__virgule-et-point-virgule.ps1",
+      "outil": "second-dc",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 928,
+      "sha256": "24819803d8abc9a933617bbb1dd7711d901ea45a64b5cd1cbea73a268fc1b01b",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__apostrophe-ascii.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 16400,
+      "sha256": "9d52a27c5d8cd3ac9adc7a30fdee3e8706b39d76df1b981c350ad784a57fdcc0",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__apostrophe-typographique.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 16400,
+      "sha256": "0fafbd2a230c78c6f0a0f8f87a0fda72efd81bf47f243ad5322989dc10c8f2a7",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__chemin-avec-apostrophe.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 16392,
+      "sha256": "2613947bdfbf5bed3de73e103d0678fbc0b9de6bd207bdd337df60242c945297",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__chemin-racine-c.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 16400,
+      "sha256": "9309b7c3b6659249fabe26be8f0f113ff3d643eef6d333511d2036a9c57910cc",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__default.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "default",
+      "octets": 16408,
+      "sha256": "d9e512b30034cc29d5afbc9332e0192b433fadc25beba141f609f20c436bdf69",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__dollar-backtick-guillemets.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 16392,
+      "sha256": "e5750b775e7a2aac941d702b669bdf7bd685f7e64a96069926696ee110a7324e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__espaces-et-accents.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 16400,
+      "sha256": "41554002af08235a0799de74b7d3ddf94633e2d58b1105206c2914cc2b2ea465",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "server-health-report__virgule-et-point-virgule.ps1",
+      "outil": "server-health-report",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 16408,
+      "sha256": "a6067f84c57e33b7110b0dec57353ebae8f532775c79fe8d2c2171e04175de34",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__apostrophe-ascii.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 930,
+      "sha256": "05b48ad3d4863cde10313442ccd95a00d09a6c19c96d2d9ab38ffc28bd9ac88a",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__apostrophe-typographique.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 942,
+      "sha256": "b303f5d26738d7770a53ceaf65a5512afdf6030931822280bc3be85744a609ef",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__chemin-avec-apostrophe.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 934,
+      "sha256": "dd86e7f84fb83199031022e7568929534264871488bcf04b058a66406e952a99",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__chemin-racine-c.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 906,
+      "sha256": "ac8e05a55222898bc5173c3ba0e6fc187cb659e3971354695175d2d99e7cb431",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__default.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "default",
+      "octets": 946,
+      "sha256": "dce6d20836db378a0036fa8aa8911f70400165f84b0e1ceb34b7edb76302cf7f",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__dollar-backtick-guillemets.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 930,
+      "sha256": "89ad6dc97db32441a363ce258f4f3b73053de79b8e404c85d50f8545a6640ce1",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__espaces-et-accents.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 970,
+      "sha256": "f8cc7c513bbf3322badeccfd88a16149fcd88ed5585f6bae7180cad6ade0cf7e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "shared-folder__virgule-et-point-virgule.ps1",
+      "outil": "shared-folder",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 930,
+      "sha256": "9f3ed9ca453fd102a59ce994aad86bc214a2ebd18a69195b8a87351735ef86da",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__apostrophe-ascii.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 11115,
+      "sha256": "2acb2a53eaadd1594c22cab0b8adc27d8cdf45333e4f345796f38488c42a4952",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__apostrophe-typographique.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 11115,
+      "sha256": "c9bf789f06a9514fe92c64ed294bf36ed907105be8f51563c3574dc44efee245",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__chemin-avec-apostrophe.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 11099,
+      "sha256": "9f4edfbc1696a8495328243ba2e67c62c912e352bae7bc3a4964044a26d319b1",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__chemin-racine-c.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 10974,
+      "sha256": "10c3551d298d8642667a25c30f5ae4796586494217c2d11d4dc2082ca3fecb9c",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__default.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "default",
+      "octets": 10974,
+      "sha256": "10c3551d298d8642667a25c30f5ae4796586494217c2d11d4dc2082ca3fecb9c",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__dollar-backtick-guillemets.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 11107,
+      "sha256": "d20a65adeccecaaeae14e67c8309686ebcb7554af6bcedf522640ba078ac66c4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__espaces-et-accents.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 11123,
+      "sha256": "5dc224b6d1d9c3b4fe40311ebc57d405212cccc25fd24bf948533f7a88f5b9f0",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "smb-sessions-diagnostic__virgule-et-point-virgule.ps1",
+      "outil": "smb-sessions-diagnostic",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 11099,
+      "sha256": "7caf9d6ee8735a32d20f5b2e2ab897ed74f270931dac9b29064863101aa9ede4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__apostrophe-ascii.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 904,
+      "sha256": "68059d9569c8e9996a701f041a713ded45a54d220851b84d75c991c28407c8a9",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__apostrophe-typographique.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 908,
+      "sha256": "c60e092fa97e3a1d671822c517d1b3757b2d68556ff2da8affc0492d0f683a0e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__chemin-avec-apostrophe.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 896,
+      "sha256": "21275be31f9a09f9a45275afafe279f44504dc68240a6d1e88e3687908b0ec78",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__chemin-racine-c.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 896,
+      "sha256": "21275be31f9a09f9a45275afafe279f44504dc68240a6d1e88e3687908b0ec78",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__default.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "default",
+      "octets": 896,
+      "sha256": "21275be31f9a09f9a45275afafe279f44504dc68240a6d1e88e3687908b0ec78",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__dollar-backtick-guillemets.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 908,
+      "sha256": "0f8a3e64b50ff939f121e4d0ec515e8b70f67676c0b88796da3bfb6a8663b82d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__espaces-et-accents.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 908,
+      "sha256": "9c7b7a29882aa7476b01258518f6bf4947abda83a5dbf86cc699bbdbc30df650",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "static-ip__virgule-et-point-virgule.ps1",
+      "outil": "static-ip",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 900,
+      "sha256": "c4791d8c3ceac544a8671c41aac6a58c2afea2c47da5748d3fda53460a744ee6",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__apostrophe-ascii.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 693,
+      "sha256": "58f4b043e19331ee6d78d4a2b9fdf9c752b86142e785a2f654651fdad81a13fb",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__apostrophe-typographique.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 697,
+      "sha256": "880fa47f56be2e9d3ffdadde6585346fef01dc8d79e35767c8b3585e96c94ef7",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__chemin-avec-apostrophe.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 685,
+      "sha256": "e254f57a280344641e72cd9a0ba972f45e5793d6196a81db9166a94279fa479e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__chemin-racine-c.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 685,
+      "sha256": "e254f57a280344641e72cd9a0ba972f45e5793d6196a81db9166a94279fa479e",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__default.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "default",
+      "octets": 681,
+      "sha256": "8ab9963f43ee5bd52ba096c8a28c954f9754b80f20434a0eaa052c791933f862",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__dollar-backtick-guillemets.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 697,
+      "sha256": "7f227071fad56ecd60baefd6891a0a42082608df6aa428ba1fc00e757e12e81d",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__espaces-et-accents.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 697,
+      "sha256": "64e69eab245056bf4b36b923922a62d9222dc79001f536d1e64fd4492d062475",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    },
+    {
+      "fichier": "wifi-repair__virgule-et-point-virgule.ps1",
+      "outil": "wifi-repair",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 689,
+      "sha256": "1fb322ee5290adb3fed76d26e0b2064a71ca771d4178042f6334d2b28a0ce8c4",
+      "bom": true,
+      "origine": "avant LOT 4 (figé)",
+      "identiqueALaReference": true
+    }
+  ]
+}

@@ -146,9 +146,12 @@ export function verifier(errors, champ, resultat) {
 }
 
 /** Enrobage commun d'un script : en-tête, fonctions, corps, rapport. */
-export function assembler({ titre, outil, diagnostic, admin, parametres, corps, prefixeFichier, formats }) {
+export function assembler({ titre, outil, diagnostic, admin, parametres, corps, prefixeFichier, formats, version }) {
   return [
-    enteteScript({ titre, outil, diagnostic, admin }),
+    // `version` est facultatif. Omis, l'en-tête garde VERSION_OUTILS — ce qui
+    // laisse les scripts déjà figés rigoureusement identiques, octet pour
+    // octet. Un lot qui porte sa propre version la passe ici.
+    enteteScript({ titre, outil, diagnostic, admin, ...(version ? { version } : {}) }),
     blocParametres(parametres),
     '',
     fonctionsRapport(),
