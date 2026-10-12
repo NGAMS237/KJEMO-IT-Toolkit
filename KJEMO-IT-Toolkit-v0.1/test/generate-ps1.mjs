@@ -11,6 +11,7 @@
  */
 
 import { writeFileSync, readFileSync, mkdirSync, rmSync, readdirSync, existsSync } from 'node:fs';
+import { openSync, readSync, closeSync } from 'node:fs';
 import { createHash }                                  from 'node:crypto';
 import { dirname, resolve }                               from 'node:path';
 import { fileURLToPath, pathToFileURL }                   from 'node:url';
@@ -20,6 +21,8 @@ const ROOT      = resolve(__dirname, '..');
 const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
 const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { estBash, extensionDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
+const { normalizeScriptSh } = await import(pathToFileURL(resolve(ROOT, 'dist', 'noyau-bash.mjs')).href);
 
 // BOM UTF-8 : requis pour PowerShell 5.1 (lit les fichiers comme UTF-8)
 const BOM = Buffer.from([0xEF, 0xBB, 0xBF]);
@@ -29,7 +32,7 @@ mkdirSync(OUT_DIR, { recursive: true });
 try {
   const existing = readdirSync(OUT_DIR);
   for (const f of existing) {
-    if (f.endsWith('.ps1') || f === 'report.json') {
+    if (f.endsWith('.ps1') || f.endsWith('.sh') || f === 'report.json') {
       rmSync(resolve(OUT_DIR, f));
     }
   }
@@ -1991,30 +1994,63 @@ for (const tool of tools) {
       values[f.id] = dataset.values[f.id] !== undefined ? dataset.values[f.id] : defaults[f.id];
     }
 
+    // ------------------------------------------------------------------------
+    // DEUX PLATEFORMES, DEUX RÈGLES D'ÉCRITURE OPPOSÉES
+    //
+    // .ps1 : BOM UTF-8 obligatoire. Sans lui, Windows PowerShell 5.1 relit le
+    //        fichier en CP1252 et l'analyse déraille sur le premier tiret
+    //        cadratin. Le LOT 6 l'a payé.
+    // .sh  : BOM interdit, LF strict. Les trois octets du BOM se placeraient
+    //        avant « #! » et masqueraient le shebang.
+    //
+    // Et deux NORMALISEURS distincts : normalizeScript() remplace « antislash +
+    // saut de ligne » par « backtick + saut de ligne », ce qui est la
+    // continuation de ligne PowerShell. Appliqué à du Bash, il remplacerait des
+    // continuations valides par des substitutions de commande.
+    // ------------------------------------------------------------------------
+    const bash = estBash(tool);
     let content;
     try {
-      content = normalizeScript(tool.generate(values));
+      const brut = tool.generate(values);
+      content = bash ? normalizeScriptSh(brut) : normalizeScript(brut);
     } catch (err) {
       report.errors.push({ tool: tool.id, dataset: dataset.name, error: String(err) });
       console.error(`[ERR] ${tool.id} / ${dataset.name} : ${err}`);
       continue;
     }
 
-    const filename = `${tool.id}__${dataset.name}.ps1`;
+    const filename = `${tool.id}__${dataset.name}${extensionDe(tool)}`;
     const outPath  = resolve(OUT_DIR, filename);
-    // Écriture avec BOM UTF-8 (EF BB BF) pour PS 5.1
     const contentBuf = Buffer.from(content, 'utf-8');
-    writeFileSync(outPath, Buffer.concat([BOM, contentBuf]));
-    // Vérification des 3 premiers octets
-    const written = Buffer.alloc(3);
-    const fd = (await import('node:fs')).openSync(outPath, 'r');
-    (await import('node:fs')).readSync(fd, written, 0, 3, 0);
-    (await import('node:fs')).closeSync(fd);
-    if (!written.equals(BOM)) {
-      console.error(`[BOM FAIL] ${filename} : premiers octets ${written.toString('hex')} ≠ efbbbf`);
+    writeFileSync(outPath, bash ? contentBuf : Buffer.concat([BOM, contentBuf]));
+
+    // Relecture des premiers octets, dans les DEUX sens. On ne se contente pas
+    // d'avoir écrit ce qu'il fallait : on vérifie ce qui est sur le disque.
+    const tete = Buffer.alloc(3);
+    const fd = openSync(outPath, 'r');
+    readSync(fd, tete, 0, 3, 0);
+    closeSync(fd);
+    if (bash) {
+      if (tete.equals(BOM)) {
+        console.error(`[BOM INTERDIT] ${filename} : un .sh ne doit JAMAIS commencer par EF BB BF — le shebang serait masqué.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM présent sur un .sh' });
+      }
+      if (!content.startsWith('#!/usr/bin/env bash\n')) {
+        console.error(`[SHEBANG] ${filename} : première ligne incorrecte.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'shebang incorrect' });
+      }
+      if (content.includes('\r')) {
+        console.error(`[CRLF] ${filename} : le fichier contient un retour chariot.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'CR présent dans un .sh' });
+      }
+    } else if (!tete.equals(BOM)) {
+      console.error(`[BOM FAIL] ${filename} : premiers octets ${tete.toString('hex')} ≠ efbbbf`);
       report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM manquant' });
     }
-    report.generated.push({ tool: tool.id, dataset: dataset.name, file: filename, bytes: contentBuf.length + 3 });
+    report.generated.push({
+      tool: tool.id, dataset: dataset.name, file: filename,
+      bytes: contentBuf.length + (bash ? 0 : 3), sortie: bash ? '.sh' : '.ps1',
+    });
   }
 }
 

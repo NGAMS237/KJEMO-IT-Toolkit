@@ -345,9 +345,12 @@ export function blocPorteValidation({ titre, commande, fichier, consequence }) {
     '  if [ "${code}" -ne 0 ]; then',
     `    printf 'ARRET : la validation a echoue (%s).\\n' ${shQuote(titre)} >&2`,
     '    printf \'Fichier controle : %s\\n\' "${cible}" >&2',
-    '    printf \'--- sortie complete de la commande de controle ---\\n\' >&2',
+    // printf refuse un format qui COMMENCE par -- : il le prend pour une
+    // option. D ou le '%s\\n' systematique pour tout texte litteral, qui a de
+    // plus l avantage de ne pas interpreter un % present dans le texte.
+    '    printf \'%s\\n\' \'--- sortie complete de la commande de controle ---\' >&2',
     '    printf \'%s\\n\' "${sortie}" >&2',
-    '    printf \'--------------------------------------------------\\n\' >&2',
+    '    printf \'%s\\n\' \'--------------------------------------------------\' >&2',
     '    printf \'Rien n a ete applique ni recharge.\\n\' >&2',
     '    return 1',
     '  fi',

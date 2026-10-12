@@ -134,6 +134,12 @@ import {
 } from '../dist/rapport-ps.mjs';
 
 import { psB64 as psB64Noyau, assertValid as assertValidNoyau } from '../dist/noyau.mjs';
+// LOT 7 — la plateforme d'un outil et la validite de ses sources.
+import { plateformeDe, sortieDe, estBash, estLectureSeule, extensionDe,
+         nomFichierDe, etiquetteSortie, commandesExecution,
+         incoherencesPlateforme, CHAMPS_LINUX } from '../dist/plateforme.mjs';
+import { sourceLinuxValide, editeurDe, PREFIXES_SOURCES_LINUX } from '../dist/sources-linux.mjs';
+import { SOUS_RUBRIQUES_LINUX } from '../dist/categories.mjs';
 
 // ---------------------------------------------------------------------------
 // Comptage
@@ -700,9 +706,42 @@ for (const t of tools) {
     `${t.id} : aucun texte vide ni marqueur TODO`,
   );
 
-  // La source officielle reste un lien Microsoft Learn
-  assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
-    `${t.id} : source officielle Microsoft Learn`);
+  // ------------------------------------------------------------------------
+  // LA SOURCE DOIT ÊTRE PRIMAIRE POUR SA PLATEFORME
+  //
+  // La règle était « la source commence par https://learn.microsoft.com/ ».
+  // Elle n'était pas trop permissive : elle était MONOPLATEFORME. Un outil
+  // Linux ne peut pas citer Microsoft Learn pour documenter sshd_config, et
+  // l'y contraindre produirait soit une source hors sujet, soit une exception
+  // générale — c'est-à-dire plus de règle du tout.
+  //
+  // La règle devient donc : la source doit être primaire POUR SA PLATEFORME.
+  // Windows garde Microsoft Learn, strictement. Linux doit citer l'un des
+  // éditeurs primaires énumérés et justifiés dans dist/sources-linux.mjs :
+  // les gens qui écrivent le logiciel ou maintiennent la distribution. Aucun
+  // blogue, aucun forum, aucun agrégateur de recettes.
+  //
+  // Elle est plus précise que l'ancienne, et au moins aussi protectrice : un
+  // outil Windows citant une manpage Ubuntu est désormais refusé, ce que
+  // l'ancienne règle attrapait aussi, mais un outil Linux citant un blogue est
+  // refusé également, ce qu'elle ne pouvait pas faire puisqu'elle n'envisageait
+  // pas Linux.
+  // ------------------------------------------------------------------------
+  if (plateformeDe(t) === 'Linux') {
+    assert(sourceLinuxValide(t.source),
+      `${t.id} : source primaire Linux reconnue (${editeurDe(t.source) ?? 'éditeur NON reconnu : ' + t.source})`);
+    for (const so of t.sources) {
+      assert(sourceLinuxValide(so.url),
+        `${t.id} : source « ${so.label} » vient d\u2019un éditeur primaire`);
+    }
+    assert(!/^https:\/\/learn\.microsoft\.com\//.test(t.source),
+      `${t.id} : un outil Linux ne cite pas Microsoft Learn comme source principale`);
+  } else {
+    assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
+      `${t.id} : source officielle Microsoft Learn`);
+    assert(!sourceLinuxValide(t.source),
+      `${t.id} : un outil Windows ne cite pas une manpage Linux comme source principale`);
+  }
 }
 
 // Cohérence risque / élévation : un outil ATTENTION ou DESTRUCTIF exige l'admin
@@ -1355,7 +1394,11 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
 const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs',
-  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs', 'dist/outils-poste-b.mjs']
+  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs', 'dist/outils-poste-b.mjs',
+  // LOT 7 — le catalogue Linux. L'oublier ici ne rendrait pas la regle plus
+  // laxiste : elle compterait moins de generate() que d'outils et echouerait.
+  // C'est exactement ce qui s'est produit, et c'est la bonne facon d'echouer.
+  'dist/outils-linux.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -1605,9 +1648,14 @@ const outilsLot6 = outilsRecents.filter((t) => t.category === 'Poste de travail 
 assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
+const outilsLot7 = outilsRecents.filter((t) => t.category === 'Linux et services réseau');
 assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length
-  + outilsLot5.length + outilsLot6.length,
-  `tout outil ajouté appartient à Windows Server, Active Directory, GPO, Réseau ou Poste de travail Windows (${outilsRecents.length})`);
+  + outilsLot5.length + outilsLot6.length + outilsLot7.length,
+  `tout outil ajouté appartient à l\u2019une des six catégories peuplées (${outilsRecents.length})`);
+assert(outilsLot7.every((t) => SOUS_RUBRIQUES_LINUX.includes(t.subcategory)),
+  `chaque outil Linux porte une des dix sous-rubriques prévues (${outilsLot7.length})`);
+assert(outilsLot7.every((t) => plateformeDe(t) === 'Linux' && sortieDe(t) === '.sh'),
+  'chaque outil de la catégorie Linux déclare la plateforme Linux et une sortie .sh');
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
@@ -1625,21 +1673,65 @@ for (const outil of outilsRecents) {
   assert(outil.prereqs.length >= 3, `${outil.id} : les prérequis sont détaillés`);
   assert(outil.verifyAfter.length >= 2, `${outil.id} : au moins deux vérifications après exécution`);
   assert(outil.commonErrors.length >= 2, `${outil.id} : au moins deux erreurs fréquentes expliquées`);
-  assert(outil.os.some((o) => /Windows Server 2019/.test(o)) && outil.os.some((o) => /5\.1/.test(o)),
-    `${outil.id} : compatibilité déclarée précisément (2019 et PowerShell 5.1)`);
+  // ------------------------------------------------------------------------
+  // LA COMPATIBILITÉ SE DÉCLARE PRÉCISÉMENT — MAIS « PRÉCISÉMENT » DÉPEND DE
+  // LA PLATEFORME
+  //
+  // La règle exigeait « Windows Server 2019 » et « 5.1 » dans la liste os. Son
+  // intention est bonne : interdire un « compatible Windows » vague qui ne
+  // promet rien de vérifiable. Mais appliquée à un outil Linux, elle exige de
+  // déclarer une compatibilité PowerShell 5.1 sur une machine qui n'a pas de
+  // PowerShell — soit une déclaration fausse, soit une exception générale.
+  //
+  // La règle garde son intention et change de critère selon la plateforme :
+  // une version précise et un plancher d'interpréteur, dans les deux cas.
+  // ------------------------------------------------------------------------
+  if (plateformeDe(outil) === 'Linux') {
+    assert(outil.os.some((o) => /Ubuntu[^\d]*\d\d\.\d\d/.test(o)),
+      `${outil.id} : compatibilité déclarée précisément (une version d\u2019Ubuntu nommée)`);
+    assert(outil.os.some((o) => /Debian \d\d|systemd/.test(o)),
+      `${outil.id} : compatibilité déclarée précisément (Debian ou le socle systemd nommé)`);
+    assert(!outil.os.some((o) => /^Linux$|^Tout Linux$/i.test(o.trim())),
+      `${outil.id} : « Linux » seul est refusé — ce serait une promesse non vérifiable`);
+    for (const champ of CHAMPS_LINUX) {
+      assert(outil[champ] !== undefined,
+        `${outil.id} : le champ Linux « ${champ} » est déclaré`);
+    }
+    assert(incoherencesPlateforme(outil).length === 0,
+      `${outil.id} : déclarations de plateforme cohérentes (${incoherencesPlateforme(outil).join(' | ')})`);
+  } else {
+    assert(outil.os.some((o) => /Windows Server 2019/.test(o)) && outil.os.some((o) => /5\.1/.test(o)),
+      `${outil.id} : compatibilité déclarée précisément (2019 et PowerShell 5.1)`);
+  }
   assert(outil.rollback && outil.rollback.summary && outil.rollback.diagnostic && outil.rollback.command,
     `${outil.id} : procédure d’annulation en blocs distincts`);
 
-  // Sources : uniquement des pages Microsoft précises, en HTTPS.
-  assert(/^https:\/\/learn\.microsoft\.com\//.test(outil.source),
-    `${outil.id} : source principale sur learn.microsoft.com`);
+  // Sources : des pages PRÉCISES d'un éditeur primaire, en HTTPS. L'éditeur
+  // attendu dépend de la plateforme ; l'exigence de précision, non — une page
+  // d'accueil ne documente rien.
   assert(Array.isArray(outil.sources) && outil.sources.length >= 1,
     `${outil.id} : liste de sources officielles fournie`);
-  for (const src of outil.sources) {
-    assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(src.url),
-      `${outil.id} : source « ${src.label} » pointe vers une page Microsoft précise`);
-    assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(src.url),
-      `${outil.id} : source « ${src.label} » n’est pas la page d’accueil`);
+  if (plateformeDe(outil) === 'Linux') {
+    assert(sourceLinuxValide(outil.source),
+      `${outil.id} : source principale chez un éditeur primaire Linux`);
+    for (const src of outil.sources) {
+      assert(sourceLinuxValide(src.url),
+        `${outil.id} : source « ${src.label} » chez un éditeur primaire (${src.url})`);
+      // Une page d'accueil ne documente rien. On exige un chemin au-delà du
+      // domaine, sauf pour les deux wikis dont la page d'accueil EST un point
+      // d'entrée documentaire nommé.
+      assert(/^https:\/\/[^/]+\/\S+/.test(src.url),
+        `${outil.id} : source « ${src.label} » pointe vers une page précise, pas un domaine nu`);
+    }
+  } else {
+    assert(/^https:\/\/learn\.microsoft\.com\//.test(outil.source),
+      `${outil.id} : source principale sur learn.microsoft.com`);
+    for (const src of outil.sources) {
+      assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(src.url),
+        `${outil.id} : source « ${src.label} » pointe vers une page Microsoft précise`);
+      assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(src.url),
+        `${outil.id} : source « ${src.label} » n’est pas la page d’accueil`);
+    }
   }
 
   // Les outils modifiants commencent en Diagnostic ; les diagnostics exportent.
@@ -1692,8 +1784,33 @@ for (const outil of outilsRecents) {
   assert(!erreur, `${outil.id} : le script se génère avec les valeurs par défaut${erreur ? ' — ' + erreur.message : ''}`);
   if (erreur) continue;
 
-  assert(script.startsWith('#Requires -Version 5.1'),
-    `${outil.id} : le script déclare son plancher PowerShell 5.1`);
+    // ------------------------------------------------------------------------
+    // CHAQUE SCRIPT DÉCLARE SON PLANCHER D'INTERPRÉTEUR — LEQUEL DÉPEND DE LA
+    // PLATEFORME
+    //
+    // Côté PowerShell c'est « #Requires -Version 5.1 » : la première ligne dit
+    // sous quoi le script est censé tourner, et PowerShell refuse de le lancer
+    // ailleurs. Côté Bash l'équivalent exact est le shebang : « #!/usr/bin/env
+    // bash » dit que c'est bash et non sh, ce qui n'est pas un détail puisque
+    // les scripts du lot utilisent des tableaux et des substitutions que dash
+    // ne connaît pas.
+    //
+    // La règle garde son intention — un script dit sous quoi il tourne — et
+    // vérifie la forme propre à chaque plateforme.
+    // ------------------------------------------------------------------------
+    if (estBash(outil)) {
+      assert(script.startsWith('#!/usr/bin/env bash\n'),
+        `${outil.id} : le script déclare son interpréteur par un shebang bash exact`);
+      assert(/^set -Eeuo pipefail$/m.test(script),
+        `${outil.id} : le script active set -Eeuo pipefail`);
+      assert(!script.includes('\r'),
+        `${outil.id} : le script Bash ne contient aucun retour chariot`);
+      assert(script.charCodeAt(0) !== 0xFEFF,
+        `${outil.id} : le script Bash ne commence pas par un BOM`);
+    } else {
+      assert(script.startsWith('#Requires -Version 5.1'),
+        `${outil.id} : le script déclare son plancher PowerShell 5.1`);
+    }
   assert(script.includes(outil.id), `${outil.id} : le script s’identifie`);
 
   // Interdits absolus du LOT 2.
@@ -1793,8 +1910,24 @@ for (const outil of outilsRecents) {
 section('LOT 2 et 3 — validation : les données invalides sont refusées');
 
 for (const outil of outilsRecents) {
-  // Champ vide sur un champ obligatoire : le script ne doit pas être produit.
-  const obligatoires = outil.fields.filter((f) => !/facultatif/i.test(f.label));
+  // ------------------------------------------------------------------------
+  // CHAMP VIDE SUR UN CHAMP OBLIGATOIRE : AUCUN SCRIPT PRODUIT
+  //
+  // L'exemption se faisait sur le LIBELLÉ, par /facultatif/i. C'est fragile
+  // dans les deux sens : un libellé qui emploie le mot pour une autre raison
+  // exempte un champ obligatoire sans que personne le voie, et un champ
+  // réellement optionnel dont le libellé ne contient pas le mot fait échouer
+  // la règle — ce qui m'est arrivé avec « Service à examiner », vide par
+  // défaut parce que vide signifie « tout le système ».
+  //
+  // L'exemption se déclare désormais explicitement, par `optionnel: true` sur
+  // le champ. Le libellé reste accepté pour les outils Windows existants, afin
+  // de ne pas les modifier. Et une exigence NOUVELLE est ajoutée plus bas :
+  // un champ qui accepte le vide SANS être déclaré optionnel est refusé — ce
+  // que l'ancienne règle ne pouvait pas vérifier.
+  // ------------------------------------------------------------------------
+  const estOptionnel = (f) => f.optionnel === true || /facultatif/i.test(f.label);
+  const obligatoires = outil.fields.filter((f) => !estOptionnel(f));
   for (const champ of obligatoires.slice(0, 3)) {
     const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
     valeurs[champ.id] = '';
@@ -1804,6 +1937,24 @@ for (const outil of outilsRecents) {
     let leve = false;
     try { outil.generate(valeurs); } catch { leve = true; }
     assert(leve, `${outil.id} : generate() refuse de produire un script avec « ${champ.id} » vide`);
+  }
+
+  // La réciproque, qui est la protection nouvelle : un champ déclaré optionnel
+  // doit RÉELLEMENT accepter le vide, et un champ qui accepte le vide doit
+  // être déclaré optionnel. Sans ce contrôle, `optionnel: true` deviendrait un
+  // interrupteur pour faire taire la règle précédente.
+  for (const champ of outil.fields.filter((f) => f.optionnel === true)) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    valeurs[champ.id] = '';
+    const errors = outil.validate(valeurs);
+    assert(errors[champ.id] === undefined,
+      `${outil.id} : « ${champ.id} » est déclaré optionnel et accepte donc réellement le vide`);
+    let leveOpt = false;
+    try { outil.generate(valeurs); } catch { leveOpt = true; }
+    assert(!leveOpt,
+      `${outil.id} : generate() produit bien un script avec « ${champ.id} » vide, puisqu\u2019il est optionnel`);
+    assert(typeof champ.help === 'string' && champ.help.length > 10,
+      `${outil.id} : « ${champ.id} » étant optionnel, son aide explique ce que le vide signifie`);
   }
 }
 
@@ -3146,7 +3297,83 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
     let script;
     try { script = outil.generate(valeurs); } catch { continue; }
-    assert(!/\$\{[A-Za-z_]/.test(script), `${outil.id} : aucun \${...} non substitué`);
+    // ------------------------------------------------------------------------
+    // AUCUN RESTE DE GABARIT JAVASCRIPT — ET POUR BASH, UNE RÈGLE PLUS FORTE
+    //
+    // Côté PowerShell, bannir tout « ${lettre } » marche parce que PowerShell
+    // n'écrit presque jamais ses variables ainsi : une occurrence est donc
+    // presque sûrement un gabarit JS resté en place.
+    //
+    // En Bash, « ${KJEMO_TMP} » est la façon NORMALE et recommandée d'écrire
+    // une variable. La même règle y interdirait le langage lui-même. Il serait
+    // facile de l'exempter et de passer à autre chose — et ce serait perdre la
+    // protection précisément là où elle compte, puisque c'est le nouveau code
+    // qui risque le défaut.
+    //
+    // La règle est donc REMPLACÉE par une plus forte pour Bash : on relève
+    // TOUTES les variables citées par le script et on exige que chacune soit
+    // soit assignée dans le script, soit une variable d'environnement connue.
+    // Un gabarit JS resté en place — ${v.format}, ${this.id}, ${M} — ne
+    // satisfait aucune des deux conditions et se fait prendre. Cette version
+    // attrape aussi une faute de frappe sur un nom de variable, ce que
+    // l'ancienne ne voyait pas.
+    // ------------------------------------------------------------------------
+    if (estBash(outil)) {
+      // Les marqueurs francs d'un gabarit non substitué, d'abord.
+      for (const motif of [/\$\{v\./, /\$\{this\./, /\$\{o\./, /\$\{outil\./, /\$\{tool\./]) {
+        assert(!motif.test(script),
+          `${outil.id} : aucun gabarit JavaScript résiduel (${motif})`);
+      }
+      // Puis la règle de fond : toute variable citée doit exister.
+      //
+      // Une exclusion, étroite et justifiée : les chaînes de FORMAT passées à
+      // dpkg-query par « -f '...' » emploient la même syntaxe ${champ} pour
+      // désigner leurs propres champs — ${binary:Package}, ${Version}. Ce ne
+      // sont pas des variables du shell, et c'est précisément pour cela
+      // qu'elles sont entre apostrophes simples : bash ne doit PAS les
+      // développer. Elles sont retirées avant l'analyse, par leur forme exacte
+      // (« -f » suivi d'une chaîne à apostrophes simples), et non en
+      // autorisant les noms « binary » et « Version » — ce qui serait un trou
+      // par lequel passerait n'importe quel gabarit employant ces mots.
+      //
+      // Les COMMENTAIRES sont retirés avant ce comptage, pour la même raison
+      // qu'une garde ne doit pas accuser sa propre prose : un nom de variable
+      // cité dans un commentaire n'est pas une référence à une variable. Le
+      // commentaire qui explique la directive shellcheck ci-dessus en est
+      // justement l'exemple — il NOMME ${binary:Package} pour dire pourquoi il
+      // ne faut pas y toucher, et se faisait accuser.
+      //
+      // Les motifs francs de gabarit JS, eux, sont cherchés plus haut dans le
+      // texte COMPLET, commentaires inclus : un ${v.champ} resté dans un
+      // commentaire reste un défaut de génération, même s'il est inoffensif.
+      const scriptSansFormats = script
+        .replace(/-f\s+'[^']*'/g, "-f 'FORMAT'")
+        .replace(/^\s*#.*$/gm, '');
+      const citees = new Set();
+      for (const m of scriptSansFormats.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*)[}:]/g)) citees.add(m[1]);
+      const assignees = new Set();
+      for (const m of script.matchAll(/^\s*(?:local\s+|export\s+)?([A-Za-z_][A-Za-z0-9_]*)=/gm)) assignees.add(m[1]);
+      for (const m of script.matchAll(/^\s*local\s+([^\n]+)$/gm)) {
+        for (const mot of m[1].split(/\s+/)) {
+          const nom = mot.split('=')[0];
+          if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(nom)) assignees.add(nom);
+        }
+      }
+      for (const m of script.matchAll(/\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b/g)) assignees.add(m[1]);
+      for (const m of script.matchAll(/\bread\s+-r\s+([^\n;]+)/g)) {
+        for (const mot of m[1].split(/\s+/)) {
+          if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(mot)) assignees.add(mot);
+        }
+      }
+      // Les variables fournies par l'environnement ou par bash lui-même.
+      const ENV_CONNUES = new Set(['HOME', 'PATH', 'USER', 'LOGNAME', 'PWD', 'SHELL', 'LANG',
+        'LC_ALL', 'IFS', 'EUID', 'UID', 'HOSTNAME', 'TMPDIR', 'SUDO_USER', 'TERM', 'BASH_VERSION']);
+      const inconnues = [...citees].filter((n) => !assignees.has(n) && !ENV_CONNUES.has(n));
+      assert(inconnues.length === 0,
+        `${outil.id} : toute variable citée est assignée dans le script ou connue de l\u2019environnement (inconnues : ${inconnues.join(', ') || 'aucune'})`);
+    } else {
+      assert(!/\$\{[A-Za-z_]/.test(script), `${outil.id} : aucun \${...} non substitué`);
+    }
     assert(!/Marqueur\b/.test(script), `${outil.id} : aucun identifiant « Marqueur » résiduel`);
   }
 }

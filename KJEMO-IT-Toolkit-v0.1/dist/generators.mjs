@@ -29,6 +29,7 @@ import { toolsGpo } from './outils-gpo.mjs';
 import { toolsReseau } from './outils-reseau.mjs';
 import { toolsPoste } from './outils-poste.mjs';
 import { toolsPosteB } from './outils-poste-b.mjs';
+import { toolsLinux } from './outils-linux.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1576,4 +1577,18 @@ for (const outil of toolsGpo) tools.push(outil);
 for (const outil of toolsReseau) tools.push(outil);
 for (const outil of toolsPoste) tools.push(outil);
 for (const outil of toolsPosteB) tools.push(outil);
+
+// ---------------------------------------------------------------------------
+// LOT 7 — catalogue Linux et services reseau
+//
+// Premier lot multiplateforme du depot. Ces outils produisent du Bash, et non
+// du PowerShell : ils declarent `platform: 'Linux'` et `output: '.sh'`, que
+// `plateforme.mjs` lit pour choisir l'extension, l'encodage du telechargement
+// (jamais de BOM sur un .sh) et les commandes d'execution.
+//
+// L'ordre suit les dix sous-rubriques canoniques de `SOUS_RUBRIQUES_LINUX`,
+// parce que `sousRubriques()` restitue l'ordre du catalogue : ranger ici, c'est
+// ranger a l'ecran.
+// ---------------------------------------------------------------------------
+for (const outil of toolsLinux) tools.push(outil);
 
