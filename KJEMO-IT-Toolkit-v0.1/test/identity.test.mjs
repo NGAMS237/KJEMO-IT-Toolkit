@@ -1398,7 +1398,7 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   // LOT 7 — le catalogue Linux. L'oublier ici ne rendrait pas la regle plus
   // laxiste : elle compterait moins de generate() que d'outils et echouerait.
   // C'est exactement ce qui s'est produit, et c'est la bonne facon d'echouer.
-  'dist/outils-linux.mjs']
+  'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
