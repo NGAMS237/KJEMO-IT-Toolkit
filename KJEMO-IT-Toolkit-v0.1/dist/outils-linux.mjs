@@ -1494,11 +1494,16 @@ const bashScriptStarter = {
       'readonly KJEMO_ERREUR_USAGE=2',
       'readonly KJEMO_ERREUR_ENTREE=3',
       'readonly KJEMO_ERREUR_TRAITEMENT=4',
-      'readonly KJEMO_DEJA_EN_COURS=5',
+      // Le code 5 n existe QUE si le verrou existe. Declare sans verrou, il
+      // annoncerait dans l aide un etat que le script ne peut pas atteindre.
+      // ShellCheck l a vu (SC2034) le jour ou les jeux de donnees ont enfin
+      // porte avecVerrou: Non.
+      ...(avecVerrou ? ['readonly KJEMO_DEJA_EN_COURS=5'] : []),
       '',
       '# Valeurs par defaut des options.',
       'KJEMO_SOURCE=\'\'',
-      'KJEMO_SIMULER=0',
+      // Meme raison : sans l option --simuler, personne ne lit KJEMO_SIMULER.
+      ...(avecSimulation ? ['KJEMO_SIMULER=0'] : []),
       'KJEMO_VERBEUX=0',
       ...(avecJournal ? ['KJEMO_JOURNAL=\'\''] : []),
       '',

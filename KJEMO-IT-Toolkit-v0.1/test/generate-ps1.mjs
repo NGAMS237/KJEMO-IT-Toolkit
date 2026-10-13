@@ -21,7 +21,7 @@ const ROOT      = resolve(__dirname, '..');
 const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
 const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
-const { estBash, extensionDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
+const { estBash, extensionDe, plateformeDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
 const { normalizeScriptSh } = await import(pathToFileURL(resolve(ROOT, 'dist', 'noyau-bash.mjs')).href);
 
 // BOM UTF-8 : requis pour PowerShell 5.1 (lit les fichiers comme UTF-8)
@@ -1975,6 +1975,128 @@ const VALEURS_POSTE_B = {
   }
 };
 
+// ---------------------------------------------------------------------------
+// LOT 7 — valeurs Linux pour les huit jeux de données.
+//
+// MESURE AVANT CORRECTION : les 80 fichiers .sh produits par les dix
+// assistants Linux ne portaient que DIX empreintes SHA-256 distinctes. Les
+// huit jeux d'un même assistant étaient rigoureusement identiques octet pour
+// octet : aucune valeur saisie n'atteignait le script, et le corpus .sh ne
+// prouvait RIEN sur le transport des valeurs. Le dépôt avait déjà payé cette
+// erreur deux fois (LOT 4, LOT 5) ; c'est la troisième.
+//
+// Ces valeurs ne sont PAS fusionnées dans DATASETS.values comme celles des
+// lots précédents, et c'est volontaire : le champ « source » existe aussi sur
+// un assistant Windows. Le fusionner globalement changerait un script figé et
+// casserait la non-régression des 856. L'application est donc faite outil par
+// outil, et seulement quand plateformeDe(tool) === 'Linux' (voir plus bas).
+//
+// Le champ « confirmation » EST surchargé : blocConfirmation() pose
+// KJEMO_CONFIRMATION_OK=0 à l'écriture du script quelle que soit la phrase,
+// et la comparaison a lieu à l'exécution. Le surcharger teste donc le
+// transport d'une phrase accentuée sans désarmer le verrou.
+// ---------------------------------------------------------------------------
+const VALEURS_LINUX = {
+  "apostrophe-ascii": {
+    joursJournal: "3", seuilDisque: "80", nbUnites: "8", lignes: "40",
+    profondeur: "2", nbProcessus: "5", heure: "4", seuilInactif: "45",
+    format: "JSON", inclurePaquets: "Tous", inclureMateriel: "Non",
+    inclureChaine: "Non", priorite: "warning", periode: "6 hours ago",
+    demarrage: "Actuel", avecJournal: "Non", avecSimulation: "Oui",
+    avecVerrou: "Oui", compression: "zstd", sections: "Systemes",
+    frequence: "Horaire", portee: "Tous",
+    unite: "nginx.service", motif: "O'Brien",
+    nomScript: "traitement-d-adam", description: "Traite les fichiers de D'Adam et ecrit un rapport.",
+    source: "/srv/donnees/D'Adam", destination: "/srv/sauvegardes/D'Adam",
+    etiquette: "donnees-dadam", confirmation: "SAUVEGARDER donnees-dadam",
+    script: "/srv/scripts/traitement-d'adam.sh", journal: "/srv/scripts/journaux/d'adam.log",
+  },
+  "apostrophe-typographique": {
+    joursJournal: "5", seuilDisque: "90", nbUnites: "20", lignes: "120",
+    profondeur: "3", nbProcessus: "15", heure: "22", seuilInactif: "120",
+    format: "CSV", inclurePaquets: "Aucun", inclureMateriel: "Oui",
+    inclureChaine: "Oui", priorite: "crit", periode: "7 days ago",
+    demarrage: "Precedent", avecJournal: "Oui", avecSimulation: "Non",
+    avecVerrou: "Oui", compression: "aucune", sections: "Services",
+    frequence: "Hebdomadaire", portee: "Systeme",
+    unite: "ssh.service", motif: "D\u2019Arcy",
+    nomScript: "traitement-typo", description: "Traite les fichiers de D\u2019Adam \u2014 accueil.",
+    source: "/srv/donnees/D\u2019Adam", destination: "/srv/sauvegardes/D\u2019Adam",
+    etiquette: "donnees-typo", confirmation: "",
+    script: "/srv/scripts/traitement-d\u2019adam.sh", journal: "/srv/scripts/journaux/d\u2019adam.log",
+  },
+  "dollar-backtick-guillemets": {
+    joursJournal: "1", seuilDisque: "70", nbUnites: "30", lignes: "200",
+    profondeur: "4", nbProcessus: "20", heure: "0", seuilInactif: "365",
+    format: "JSON", inclurePaquets: "Principaux", inclureMateriel: "Non",
+    inclureChaine: "Oui", priorite: "emerg", periode: "15 min ago",
+    demarrage: "Periode", avecJournal: "Oui", avecSimulation: "Oui",
+    avecVerrou: "Non", compression: "gzip", sections: "Complet",
+    frequence: "Mensuel", portee: "Humains",
+    unite: "cockpit.socket", motif: "$(id -u)",
+    nomScript: "traitement-dollar", description: "Ecrit dans $HOME puis lit `pwd` et \"cite\" le resultat.",
+    source: "/srv/donnees/$HOME-et-`pwd`", destination: "/srv/sauvegardes/\"guillemets\"",
+    etiquette: "dollar-backtick", confirmation: "SAUVEGARDER dollar-backtick",
+    script: "/srv/scripts/$(whoami).sh", journal: "/srv/scripts/journaux/`date`.log",
+  },
+  "espaces-et-accents": {
+    joursJournal: "7", seuilDisque: "95", nbUnites: "12", lignes: "60",
+    profondeur: "1", nbProcessus: "8", heure: "12", seuilInactif: "30",
+    format: "CSV", inclurePaquets: "Tous", inclureMateriel: "Oui",
+    inclureChaine: "Non", priorite: "notice", periode: "1 hour ago",
+    demarrage: "Actuel", avecJournal: "Non", avecSimulation: "Non",
+    avecVerrou: "Non", compression: "zstd", sections: "Complet",
+    frequence: "Quotidien", portee: "Tous",
+    unite: "systemd-journald.service", motif: "\u00e9chec de d\u00e9marrage",
+    nomScript: "traitement-accentue", description: "Traite les donn\u00e9es partag\u00e9es du service r\u00e9seau.",
+    source: "/srv/Donn\u00e9es partag\u00e9es/Hiver 2026", destination: "/srv/Sauvegardes archiv\u00e9es",
+    etiquette: "donnees-partagees", confirmation: "",
+    script: "/srv/scripts/mon traitement accentu\u00e9.sh", journal: "/srv/scripts/journaux/\u00e9tat r\u00e9seau.log",
+  },
+  "virgule-et-point-virgule": {
+    joursJournal: "2", seuilDisque: "60", nbUnites: "25", lignes: "90",
+    profondeur: "2", nbProcessus: "12", heure: "6", seuilInactif: "60",
+    format: "JSON", inclurePaquets: "Aucun", inclureMateriel: "Non",
+    inclureChaine: "Oui", priorite: "alert", periode: "2 days ago",
+    demarrage: "Periode", avecJournal: "Oui", avecSimulation: "Oui",
+    avecVerrou: "Oui", compression: "gzip", sections: "Systemes",
+    frequence: "Horaire", portee: "Systeme",
+    unite: "smbd.service", motif: "err,warn;crit",
+    nomScript: "traitement-ponctuation", description: "Traite A, puis B ; enfin C.",
+    source: "/srv/donnees/A, B et C", destination: "/srv/sauvegardes/lot1;lot2",
+    etiquette: "a-b_c", confirmation: "SAUVEGARDER a-b_c",
+    script: "/srv/scripts/etape1;etape2.sh", journal: "/srv/scripts/journaux/a,b.log",
+  },
+  "chemin-racine-c": {
+    joursJournal: "4", seuilDisque: "75", nbUnites: "10", lignes: "30",
+    profondeur: "3", nbProcessus: "6", heure: "18", seuilInactif: "180",
+    format: "JSON", inclurePaquets: "Aucun", inclureMateriel: "Oui",
+    inclureChaine: "Non", priorite: "info", periode: "30 days ago",
+    demarrage: "Precedent", avecJournal: "Non", avecSimulation: "Oui",
+    avecVerrou: "Non", compression: "aucune", sections: "Services",
+    frequence: "Mensuel", portee: "Systeme",
+    unite: "nfs-server.service", motif: "C:\\Windows",
+    nomScript: "traitement-voisin-protege", description: "Recoit un chemin voisin d une racine protegee.",
+    source: "/srv/etc-sauvegarde/donnees", destination: "/srv/gitlab-archives",
+    etiquette: "voisin-protege", confirmation: "",
+    script: "/srv/scripts/sous-dossier/traitement.sh", journal: "/srv/scripts/journaux/cron.log",
+  },
+  "chemin-avec-apostrophe": {
+    joursJournal: "6", seuilDisque: "88", nbUnites: "18", lignes: "150",
+    profondeur: "5", nbProcessus: "25", heure: "2", seuilInactif: "15",
+    format: "CSV", inclurePaquets: "Tous", inclureMateriel: "Non",
+    inclureChaine: "Oui", priorite: "err", periode: "1 day ago",
+    demarrage: "Actuel", avecJournal: "Oui", avecSimulation: "Non",
+    avecVerrou: "Oui", compression: "zstd", sections: "Complet",
+    frequence: "Hebdomadaire", portee: "Tous",
+    unite: "cron.service", motif: "l'\u00e9chec d'hier",
+    nomScript: "traitement-apostrophe", description: "Traite l'export d'hier et l'archive.",
+    source: "/srv/d'adam/projet d'\u00e9t\u00e9", destination: "/srv/sauvegardes/d'adam",
+    etiquette: "export-d-hier", confirmation: "SAUVEGARDER export-d-hier",
+    script: "/srv/scripts/l'export d'hier.sh", journal: "/srv/scripts/journaux/l'echec.log",
+  },
+};
+
 for (const jeu of DATASETS) {
   const ajout = VALEURS_POSTE[jeu.name];
   if (ajout) Object.assign(jeu.values, ajout);
@@ -1983,14 +2105,22 @@ for (const jeu of DATASETS) {
 }
 
 const report = { generated: [], errors: [] };
+const valeursLinuxUtilisees = {};
 
 for (const tool of tools) {
   const defaults = Object.fromEntries(tool.fields.map((f) => [f.id, String(f.default ?? '')]));
 
   for (const dataset of DATASETS) {
     // Merge defaults + dataset overrides (uniquement les fields que l'outil a)
+    //
+    // Les valeurs Linux sont appliquées ICI, par outil, et APRÈS les valeurs
+    // communes. Raison : « source » est un champ partagé avec un assistant
+    // Windows figé. Une fusion globale dans DATASETS.values changerait son
+    // script et casserait la non-régression des 856.
+    const linux = plateformeDe(tool) === 'Linux' ? (VALEURS_LINUX[dataset.name] ?? {}) : {};
     const values = {};
     for (const f of tool.fields) {
+      if (linux[f.id] !== undefined) { values[f.id] = linux[f.id]; continue; }
       values[f.id] = dataset.values[f.id] !== undefined ? dataset.values[f.id] : defaults[f.id];
     }
 
@@ -2051,10 +2181,17 @@ for (const tool of tools) {
       tool: tool.id, dataset: dataset.name, file: filename,
       bytes: contentBuf.length + (bash ? 0 : 3), sortie: bash ? '.sh' : '.ps1',
     });
+    if (plateformeDe(tool) === 'Linux') valeursLinuxUtilisees[filename] = values;
   }
 }
 
 writeFileSync(resolve(OUT_DIR, 'report.json'), JSON.stringify(report, null, 2), 'utf-8');
+
+// Les valeurs REELLEMENT transmises a chaque script Bash, ecrites telles
+// quelles. test/sh-shellcheck.test.mjs s en sert pour decider si une alerte
+// ShellCheck porte sur une valeur saisie par l utilisateur ou sur du code
+// ecrit par nous. Sans ce fichier, la tolerance serait une affirmation.
+writeFileSync(resolve(OUT_DIR, '_valeurs-linux.json'), JSON.stringify(valeursLinuxUtilisees, null, 2), 'utf-8');
 
 
 
