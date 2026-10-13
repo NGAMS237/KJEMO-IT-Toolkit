@@ -79,7 +79,12 @@ export function blocGardienChemin({ lectureSeule = false } = {}) {
     '# Aucune ecriture n a lieu avant sa decision.',
     '# ---------------------------------------------------------------------------',
     `KJEMO_SEGMENTS_PROTEGES=(${SEGMENTS_PROTEGES.map((s) => shQuote(s)).join(' ')})`,
-    `KJEMO_RACINES_PROTEGEES=(${RACINES_PROTEGEES.map((s) => shQuote(s)).join(' ')})`,
+    // La liste des racines n'est emise QUE si elle sert. En lecture seule, la
+    // variante ne consulte pas les racines : la declarer quand meme laisserait
+    // un tableau mort dans le script, et ShellCheck le signale a juste titre.
+    ...(lectureSeule ? [] : [
+      `KJEMO_RACINES_PROTEGEES=(${RACINES_PROTEGEES.map((s) => shQuote(s)).join(' ')})`,
+    ]),
     '',
     '# realpath -m canonise sans exiger que le chemin EXISTE : il faut pouvoir',
     '# refuser /etc/x/y/z avant de le creer, pas apres.',
@@ -192,6 +197,11 @@ export function blocGardienChemin({ lectureSeule = false } = {}) {
     '',
     '# Refuse et explique, en nommant la zone. Le role dit a quoi servait le',
     '# chemin, pour qu on sache lequel des champs corriger.',
+    '# Refuse et explique. En cas d acceptation, KJEMO_CHEMIN_CANON porte le chemin',
+    '# CANONISE, et c est lui que les appelants doivent utiliser ensuite : operer',
+    '# sur le chemin canonique plutot que sur la saisie brute elimine les barres',
+    '# obliques en trop, les segments "." et les doubles separateurs, qui font',
+    '# ensuite diverger deux comparaisons de chemins censees etre identiques.',
     'kjemo_exiger_chemin_sur() {',
     '  local brut="${1:-}" role="${2:-chemin}"',
     '  if kjemo_chemin_sur "${brut}" "${role}"; then',
@@ -292,6 +302,29 @@ export function blocSauvegardeFichier() {
  * généré. Elle est donc relue par celui qui relit l'aperçu — ce qui est le
  * but. Le script ne lit rien sur l'entrée standard : un script qui pose une
  * question est un script qui bloque quand on le lance depuis cron.
+ *
+ * ---------------------------------------------------------------------------
+ * UNE CORRECTION : LE VERROU EST DANS LE SCRIPT, PAS DANS LE FORMULAIRE
+ * ---------------------------------------------------------------------------
+ * La première version de ce bloc faisait refuser la GÉNÉRATION par `validate()`
+ * tant que la phrase n'était pas exacte. C'était une erreur, pour deux raisons,
+ * et la convention déjà établie par le LOT 6 est la bonne.
+ *
+ * D'abord c'était à l'envers. On demandait de confirmer AVANT de pouvoir lire
+ * le script qu'on confirme. Or toute la pédagogie du dépôt repose sur « relis
+ * l'aperçu avant d'exécuter » : il faut donc pouvoir obtenir l'aperçu sans
+ * avoir rien confirmé.
+ *
+ * Ensuite cela rendait l'outil intestable. Le banc génère chaque assistant sur
+ * huit jeux de données ; aucun ne contient la phrase exacte, et les huit
+ * scripts échouaient à la génération. Un outil qu'on ne peut pas générer est un
+ * outil qu'on ne peut pas éprouver.
+ *
+ * Le modèle retenu, qui est celui de `temp-cleanup` au LOT 6 : la génération
+ * réussit toujours, le script porte le verrou, et un script dont la
+ * confirmation est absente est un script qui DIAGNOSTIQUE et refuse d'agir. La
+ * protection est intacte — elle est même meilleure, puisqu'elle vit dans le
+ * fichier qu'on exécute et non dans le formulaire qu'on a quitté.
  */
 export function blocConfirmation({ phraseAttendue, variableSaisie, action }) {
   return [
@@ -304,16 +337,75 @@ export function blocConfirmation({ phraseAttendue, variableSaisie, action }) {
     '# Elle vient du formulaire, donc elle est figee dans ce script : relis-la',
     '# dans l apercu. Le script ne lit rien sur l entree standard, pour pouvoir',
     '# etre lance sans terminal interactif.',
+    '#',
+    '# Le verrou est ICI, dans le script, et non dans le formulaire : on doit',
+    '# pouvoir obtenir et RELIRE le script sans avoir rien confirme. Sans la',
+    '# phrase exacte, ce script diagnostique et n ecrit rien.',
     '# ---------------------------------------------------------------------------',
-    `if [ "\${${variableSaisie}}" != ${shQuote(phraseAttendue)} ]; then`,
-    `  printf 'ARRET : la confirmation ne correspond pas.\\n' >&2`,
-    `  printf 'Action demandee : %s\\n' ${shQuote(action)} >&2`,
-    `  printf 'Phrase attendue : %s\\n' ${shQuote(phraseAttendue)} >&2`,
-    '  printf \'Rien n a ete modifie.\\n\' >&2',
-    '  exit 1',
+    'KJEMO_CONFIRMATION_OK=0',
+    `if [ "\${${variableSaisie}}" = ${shQuote(phraseAttendue)} ]; then`,
+    '  KJEMO_CONFIRMATION_OK=1',
+    'fi',
+    'if [ "${KJEMO_CONFIRMATION_OK}" -eq 1 ]; then',
+    "  kjemo_resultat 'Confirmation' 'Phrase exacte' 'OK' 'fournie' \\",
+    `    ${shQuote(`Action autorisee : ${action}`)}`,
+    'else',
+    "  kjemo_resultat 'Confirmation' 'Phrase exacte' 'PROBLEME' 'absente ou inexacte' \\",
+    `    ${shQuote(`Phrase attendue : ${phraseAttendue}`)}`,
     'fi',
     '',
   ];
+}
+
+/**
+ * La porte finale d'un outil modifiant : elle n'agit que si TOUTES les
+ * conditions sont réunies, et explique sinon laquelle manque.
+ *
+ * Le détail qui compte : la liste des conditions non remplies est AFFICHÉE.
+ * Un script qui dit seulement « conditions non réunies » envoie l'utilisateur
+ * deviner, et c'est ainsi qu'on finit par désactiver les vérifications une à
+ * une pour voir laquelle gêne.
+ *
+ * @param {Array<[string, string]>} conditions  [variableBash, explication]
+ */
+export function blocPorteFinale({ conditions, action }) {
+  const lignes = [
+    '# ---------------------------------------------------------------------------',
+    '# PORTE FINALE',
+    '#',
+    '# L action n a lieu que si TOUTES les conditions ci-dessous sont reunies.',
+    '# Celles qui manquent sont NOMMEES : un script qui dit seulement',
+    '# "conditions non reunies" envoie l utilisateur deviner, et c est comme cela',
+    '# qu on finit par desactiver les verifications une a une pour voir laquelle',
+    '# gene.',
+    '# ---------------------------------------------------------------------------',
+    'KJEMO_MANQUANTES=0',
+    'KJEMO_RAISONS="${KJEMO_TMP}/raisons.txt"',
+    ': > "${KJEMO_RAISONS}"',
+  ];
+  for (const [variable, explication] of conditions) {
+    lignes.push(
+      `if [ "\${${variable}:-0}" -ne 1 ]; then`,
+      '  KJEMO_MANQUANTES=$((KJEMO_MANQUANTES + 1))',
+      `  printf '%s\\n' ${shQuote(`- ${explication}`)} >> "\${KJEMO_RAISONS}"`,
+      'fi',
+    );
+  }
+  lignes.push(
+    '',
+    'if [ "${KJEMO_MANQUANTES}" -gt 0 ]; then',
+    `  printf '\\n%s\\n' ${shQuote(`AUCUNE MODIFICATION : ${action} n a pas eu lieu.`)}`,
+    '  printf \'%s\\n\' \'Conditions non remplies :\'',
+    '  cat "${KJEMO_RAISONS}"',
+    '  printf \'\\n%s\\n\' \'Corrige ces points, puis regenere le script depuis KJEMO IT Toolkit.\'',
+    '  printf \'%s\\n\' \'Ne retire aucune verification pour faire passer le script.\'',
+    '  KJEMO_AGIR=0',
+    'else',
+    '  KJEMO_AGIR=1',
+    'fi',
+    '',
+  );
+  return lignes;
 }
 
 /**

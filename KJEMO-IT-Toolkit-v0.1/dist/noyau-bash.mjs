@@ -51,6 +51,35 @@
  */
 export function shQuote(v) {
   const s = String(v ?? '');
+  // ---------------------------------------------------------------------------
+  // L'OCTET NUL EST REFUSÉ, ET CE N'EST PAS UN EXCÈS DE ZÈLE
+  //
+  // Toutes les autres valeurs sont transportables : les apostrophes simples les
+  // rendent littérales, quelles qu'elles soient. L'octet nul est la seule
+  // exception RÉELLE, et elle est structurelle, pas prudentielle.
+  //
+  // Un argument de commande, sous Unix, est une chaîne terminée par un octet
+  // nul. Un nul AU MILIEU d'une valeur n'est donc pas « un caractère difficile
+  // à citer » : c'est la fin de la chaîne. Bash ne peut pas le transporter, et
+  // il ne s'en plaint pas — il TRONQUE silencieusement. Une valeur
+  // « rapport\0; rm -rf /tmp » arriverait au script comme « rapport », et
+  // l'utilisateur verrait un résultat plausible, produit sur une autre cible
+  // que celle qu'il croyait avoir saisie.
+  //
+  // Une troncature silencieuse qui change la cible d'une commande est bien
+  // pire qu'une erreur. On lève donc, plutôt que de citer quelque chose dont
+  // on sait que le résultat ne correspondra pas à l'intention.
+  //
+  // En pratique un formulaire HTML n'en produit pas : ce cas vient d'un appel
+  // programmatique, et c'est précisément là qu'une erreur franche est utile.
+  // ---------------------------------------------------------------------------
+  if (s.includes('\0')) {
+    throw new Error(
+      'Valeur refusée : elle contient un octet nul (U+0000). Bash ne peut pas '
+      + 'le transporter dans un argument — la chaîne serait tronquée AU nul, '
+      + 'silencieusement, et le script agirait sur une cible différente de celle '
+      + 'qui a été saisie. Retire cet octet de la valeur.');
+  }
   return `'${s.split("'").join("'\\''")}'`;
 }
 
@@ -79,16 +108,40 @@ export function assertShConforme(texte) {
     throw new Error(
       `Script Bash invalide : la première ligne doit être exactement « ${SHEBANG_BASH} ».`);
   }
-  // Corps en ASCII : voir la justification au-dessus d'assemblerSh().
-  const horsAscii = [...t].find((c) => c.codePointAt(0) > 0x7F);
-  if (horsAscii) {
-    const point = horsAscii.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
-    const ligne = t.slice(0, t.indexOf(horsAscii)).split('\n').length;
-    throw new Error(
-      `Script Bash invalide : caractère non ASCII U+${point} (« ${horsAscii} ») `
-      + `ligne ${ligne}. Le corps des scripts .sh est en ASCII — un commentaire `
-      + 'en mojibake est une consigne de sécurité que personne ne lit.');
-  }
+  // ---------------------------------------------------------------------------
+  // LA RÈGLE ASCII N'EST PAS VÉRIFIÉE ICI — ET C'EST UNE CORRECTION
+  //
+  // Elle l'était, et elle était FAUSSE. Un contrôle « aucun caractère non ASCII
+  // dans le script assemblé » rejette aussi les VALEURS saisies par
+  // l'utilisateur, qui arrivent dans le script par shQuote. Le défaut s'est
+  // manifesté sur un cas parfaitement ordinaire : la description par défaut de
+  // bash-script-starter, « Traite les fichiers d'un dossier et écrit un
+  // rapport. », avec une apostrophe typographique et un accent. Autrement dit
+  // la règle interdisait d'écrire en français correct dans un formulaire
+  // français.
+  //
+  // Les deux choses sont à distinguer, et je les avais confondues :
+  //
+  //   - les valeurs de l'UTILISATEUR sont de l'UTF-8 quelconque. Elles doivent
+  //     passer intactes, accents et apostrophes typographiques compris.
+  //     shQuote() le garantit pour n'importe quel octet sauf le nul, et c'est
+  //     une propriété du langage, pas une liste de caractères tolérés.
+  //
+  //   - le texte que J'ÉCRIS — commentaires, noms de variables, messages du
+  //     script — reste en ASCII, pour la raison expliquée au-dessus
+  //     d'assemblerSh() : ces commentaires sont ce qu'on demande à
+  //     l'utilisateur de relire, et un terminal mal réglé les rendrait
+  //     illisibles.
+  //
+  // La discipline ASCII s'applique donc aux FRAGMENTS QUE J'AUTORE, et elle est
+  // vérifiée statiquement sur le code source des modules, par
+  // test/sh-hygiene.test.mjs. C'est le bon endroit : c'est là que je faisais
+  // l'erreur, et une vérification statique la montre avant même qu'un script
+  // soit généré.
+  //
+  // Ce qui reste vérifié ici est ce qui est réellement une condition de
+  // validité d'un .sh : pas de BOM, pas de CR, le shebang exact.
+  // ---------------------------------------------------------------------------
   return t;
 }
 
@@ -109,8 +162,13 @@ export const VERSION_LINUX = 'LOT 7 - Linux et services reseau - 7.0.0';
  * entièrement en ASCII.
  *
  * ---------------------------------------------------------------------------
- * POURQUOI LE CORPS DES SCRIPTS EST EN ASCII
+ * POURQUOI LE TEXTE QUE NOUS ÉCRIVONS EST EN ASCII
  * ---------------------------------------------------------------------------
+ * La règle porte sur les fragments AUTORÉS — commentaires, messages, noms de
+ * variables — et NON sur les valeurs saisies par l'utilisateur, qui sont de
+ * l'UTF-8 quelconque et doivent passer intactes. La confusion entre les deux a
+ * été une vraie erreur, corrigée : voir le commentaire dans assertShConforme().
+ *
  * Bash n'en a aucun besoin : un commentaire accentué dans un fichier UTF-8
  * sans BOM se lit parfaitement. Ce n'est donc PAS une limite du langage, et il
  * serait malhonnête de le présenter comme telle.
@@ -205,7 +263,14 @@ export function normalizeScriptSh(texte) {
  * @param {boolean} o.root         true si une action exige les privilèges
  * @param {string}  o.version
  */
-export function enteteBash({ titre, outil, diagnostic = true, root = false, version = VERSION_LINUX }) {
+export function enteteBash({
+  titre, outil, diagnostic = true, root = false, version = VERSION_LINUX,
+  // Un outil qui ne produit PAS de rapport ne doit pas declarer les variables
+  // du rapport : ShellCheck signale a juste titre une variable assignee et
+  // jamais lue, et il a raison — une variable morte est une intention
+  // abandonnee que le lecteur suivant croira utile.
+  avecRapport = true,
+} = {}) {
   return [
     SHEBANG_BASH,
     '#',
@@ -236,10 +301,12 @@ export function enteteBash({ titre, outil, diagnostic = true, root = false, vers
     '# un nom de fichier contenant un espace serait decoupe en deux arguments.',
     "IFS=$'\\n\\t'",
     '',
-    `KJEMO_OUTIL=${shQuote(outil)}`,
-    `KJEMO_VERSION=${shQuote(version)}`,
-    'KJEMO_DEBUT="$(date --iso-8601=seconds 2>/dev/null || date)"',
-    '',
+    ...(avecRapport ? [
+      `KJEMO_OUTIL=${shQuote(outil)}`,
+      `KJEMO_VERSION=${shQuote(version)}`,
+      'KJEMO_DEBUT="$(date --iso-8601=seconds 2>/dev/null || date)"',
+      '',
+    ] : []),
     '# Dossier de travail temporaire, cree par mktemp et detruit par la trap.',
     '# mktemp -d choisit un nom imprevisible et refuse d ecraser un existant :',
     '# un chemin fixe dans /tmp serait une faille (lien symbolique pose par un',
@@ -249,6 +316,15 @@ export function enteteBash({ titre, outil, diagnostic = true, root = false, vers
     '# Le nettoyage s execute a la sortie, quelle qu elle soit : fin normale,',
     '# erreur attrapee par set -e, Ctrl-C ou signal de terminaison. Sans EXIT',
     '# dans la liste, une sortie normale laisserait le dossier derriere elle.',
+    '# shellcheck disable=SC2317',
+    '# ShellCheck signale ce corps comme inatteignable. Il ne l est pas : la',
+    '# fonction est appelee par la trap posee juste apres, et ShellCheck dit',
+    '# lui-meme ne pas voir les invocations INDIRECTES. Le cas se manifeste',
+    '# surtout quand toutes les branches du script finissent par exit, ce qui est',
+    '# precisement le cas d un script bien ecrit.',
+    '#',
+    '# La directive est posee ICI, sur ce bloc seul, et non en exclusion globale :',
+    '# un vrai bout de code mort ailleurs doit continuer d etre signale.',
     'kjemo_menage() {',
     '  local code=$?',
     '  if [ -n "${KJEMO_TMP:-}" ] && [ -d "${KJEMO_TMP}" ]; then',

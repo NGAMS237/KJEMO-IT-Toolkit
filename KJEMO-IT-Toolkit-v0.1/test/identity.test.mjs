@@ -1734,11 +1734,56 @@ for (const outil of outilsRecents) {
     }
   }
 
-  // Les outils modifiants commencent en Diagnostic ; les diagnostics exportent.
+  // ------------------------------------------------------------------------
+  // UN OUTIL MODIFIANT NE MODIFIE RIEN PAR DEFAUT
+  //
+  // La règle exigeait un champ nommé exactement « mode » ou « bkMode », de
+  // valeur par défaut « Diagnostic ». C'est le mécanisme retenu par les lots
+  // Windows, et il est bon. Mais la règle vérifiait le MÉCANISME, pas
+  // l'INTENTION, et le lot Linux emploie un second mécanisme tout aussi
+  // contraignant : une phrase de confirmation dont l'absence fait diagnostiquer
+  // sans écrire.
+  //
+  // La règle est donc élargie au mécanisme ET resserrée sur l'intention : quel
+  // que soit le verrou, le script produit AVEC LES VALEURS PAR DÉFAUT doit
+  // porter la trace du verrou, et la porte qui empêche d'agir. C'est plus fort
+  // que l'ancienne version, qui se contentait de lire une chaîne dans un champ
+  // sans jamais regarder le script produit.
+  //
+  // La preuve par l'EXÉCUTION — lancer le script et constater zéro écriture —
+  // est faite séparément, par test/linux-verrous.test.mjs.
+  // ------------------------------------------------------------------------
   const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode');
+  const champConfirmation = outil.fields.find((f) => /confirmation/i.test(f.id));
   if (outil.risk === 'diagnostic') {
-    assert(outil.fields.some((f) => /Format/i.test(f.label)),
-      `${outil.id} : un outil de diagnostic propose un format de rapport`);
+    // L'intention de la règle : les constats d'un outil de diagnostic doivent
+    // pouvoir SORTIR de l'écran. Le mécanisme habituel est un sélecteur de
+    // format ; mais un outil dont la sortie EST un fichier — un CSV, un modèle
+    // de script — satisfait la même intention plus directement, et un
+    // sélecteur de format y serait absurde. La règle nomme donc l'intention et
+    // accepte les deux mécanismes.
+    const aFormat = outil.fields.some((f) => /Format/i.test(f.label));
+    const aDestination = outil.fields.some((f) => /^(destination|sortie|fichier|nomScript)$/i.test(f.id));
+    assert(aFormat || aDestination,
+      `${outil.id} : les constats peuvent sortir de l\u2019écran — sélecteur de format, ou fichier de sortie déclaré`);
+  } else if (plateformeDe(outil) === 'Linux') {
+    assert(champMode || champConfirmation,
+      `${outil.id} : un outil modifiant porte un verrou — sélecteur de mode ou phrase de confirmation`);
+    if (champConfirmation) {
+      assert(String(champConfirmation.default ?? '') === '',
+        `${outil.id} : la confirmation est VIDE par défaut, donc le script par défaut n\u2019écrit rien`);
+      // Et le script produit par défaut doit porter le verrou ET sa porte.
+      const valeursDefaut = Object.fromEntries(
+        outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      let scriptDefaut = '';
+      try { scriptDefaut = outil.generate(valeursDefaut); } catch { scriptDefaut = ''; }
+      assert(/KJEMO_CONFIRMATION_OK=0/.test(scriptDefaut),
+        `${outil.id} : le script par défaut initialise le verrou de confirmation à 0`);
+      assert(/KJEMO_AGIR/.test(scriptDefaut),
+        `${outil.id} : le script par défaut porte une porte qui conditionne l\u2019action`);
+      assert(/AUCUNE ECRITURE|AUCUNE MODIFICATION/.test(scriptDefaut),
+        `${outil.id} : le script dit explicitement qu\u2019il n\u2019écrit rien sans confirmation`);
+    }
   } else {
     assert(champMode, `${outil.id} : un outil modifiant porte un sélecteur de mode`);
     assert(champMode.default === 'Diagnostic',
@@ -1880,8 +1925,18 @@ for (const outil of outilsRecents) {
   assert(!/\bTODO\b|\bFIXME\b|\bXXX\b/.test(script), `${outil.id} : aucun marqueur TODO`);
   assert(!/http:\/\//.test(script), `${outil.id} : aucune URL non chiffrée`);
 
-  // Un outil modifiant doit garder ses actions derrière la garde de mode.
-  if (outil.risk !== 'diagnostic') {
+  // Un outil modifiant doit garder ses actions derrière un verrou, et le dire.
+  // Le verrou ne porte pas le même nom des deux côtés : $Mode en PowerShell,
+  // KJEMO_CONFIRMATION_OK et KJEMO_AGIR en Bash. L'exigence est la même, et la
+  // forme suit la plateforme.
+  if (outil.risk !== 'diagnostic' && estBash(outil)) {
+    assert(/KJEMO_CONFIRMATION_OK/.test(script),
+      `${outil.id} : le script Bash porte le verrou de confirmation`);
+    assert(/KJEMO_AGIR/.test(script),
+      `${outil.id} : le script Bash porte la porte qui conditionne l\u2019action`);
+    assert(/AUCUNE ECRITURE|AUCUNE MODIFICATION/.test(script),
+      `${outil.id} : le script annonce explicitement qu\u2019il n\u2019écrit rien sans confirmation`);
+  } else if (outil.risk !== 'diagnostic') {
     assert(/\$Mode\s*=|\$Mode -eq/.test(script),
       `${outil.id} : le script porte la garde de mode`);
     assert(/-WhatIf\b/.test(script) || /MODE DIAGNOSTIC/.test(script),
@@ -3352,7 +3407,12 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
       const citees = new Set();
       for (const m of scriptSansFormats.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*)[}:]/g)) citees.add(m[1]);
       const assignees = new Set();
-      for (const m of script.matchAll(/^\s*(?:local\s+|export\s+)?([A-Za-z_][A-Za-z0-9_]*)=/gm)) assignees.add(m[1]);
+      for (const m of script.matchAll(/^\s*(?:local\s+|export\s+|readonly\s+|declare\s+(?:-\w+\s+)?)?([A-Za-z_][A-Za-z0-9_]*)=/gm)) assignees.add(m[1]);
+      // Une affectation placée dans une branche — « if ...; then VAR=1; else VAR=0; fi »
+      // ou après un « ; » — est une affectation comme une autre. Ne reconnaître
+      // que le début de ligne faisait passer KJEMO_AGIR pour une variable
+      // inconnue alors qu'elle est assignée deux fois, dans les deux branches.
+      for (const m of script.matchAll(/(?:^|[;&|]|\bthen\b|\belse\b|\bdo\b)\s*([A-Za-z_][A-Za-z0-9_]*)=/g)) assignees.add(m[1]);
       for (const m of script.matchAll(/^\s*local\s+([^\n]+)$/gm)) {
         for (const mot of m[1].split(/\s+/)) {
           const nom = mot.split('=')[0];
