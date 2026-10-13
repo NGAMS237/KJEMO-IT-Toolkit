@@ -1,0 +1,213 @@
+# =============================================================================
+# validate-linux.yml — LOT 7 · KJEMO IT Toolkit
+# =============================================================================
+# Workflow réutilisable (workflow_call) : validation de la chaîne Bash.
+#
+# Pourquoi un workflow SÉPARÉ de validate.yml, et non quelques étapes ajoutées
+# à celui-ci : validate.yml tourne sur windows-latest. Bash, ShellCheck et
+# « bash -n » y existent (Git for Windows en fournit une version), mais ce
+# n'est pas le Bash qui exécutera ces scripts. Un script Bash destiné à Ubuntu
+# Server doit être validé sur un Linux, par le Bash de ce Linux. Sinon on
+# valide un interpréteur et on livre pour un autre — l'erreur exacte que le
+# LOT 6 a payée dans l'autre sens, en validant sous PowerShell 7 ce qui devait
+# tourner sous Windows PowerShell 5.1.
+#
+# CE QUE CE WORKFLOW PROUVE
+#   - les modules Linux sont du JavaScript valide ;
+#   - les 936 scripts se génèrent sans erreur, et les 856 .ps1 historiques
+#     restent identiques aux empreintes figées ;
+#   - les 80 .sh sont conformes à l'OCTET : pas de BOM, pas de CR, shebang
+#     exact, une seule fin de ligne finale ;
+#   - shQuote() transporte réellement les valeurs hostiles à travers un vrai
+#     bash, et refuse l'octet nul ;
+#   - « bash -n » accepte les 80 scripts ;
+#   - ShellCheck ne laisse aucune alerte sans origine prouvée.
+#
+# CE QUE CE WORKFLOW NE PROUVE PAS
+#   - il n'exécute AUCUN script sur un vrai serveur : pas de Samba, pas de NFS,
+#     pas de SSH, pas de Netplan appliqué. Un runner GitHub n'est pas un
+#     Ubuntu Server de production, et appliquer la configuration réseau d'un
+#     runner le déconnecterait ;
+#   - il ne remplace pas une recette sur machine réelle. Le rapport du lot dit
+#     explicitement quels niveaux de preuve sont atteints et lesquels ne le
+#     sont pas.
+#
+# Aucune continue-on-error, aucun `if` permissif : si une étape échoue, le
+# workflow échoue, et le déploiement Pages ne démarre pas.
+#
+# Contrainte : ne fusionner dans main et ne déployer qu'avec l'autorisation
+# explicite de Blaise ou du chef d'orchestre.
+# =============================================================================
+
+name: Validate Linux — LOT 7 (réutilisable)
+
+on:
+  workflow_call:
+    outputs:
+      status:
+        description: "OK ou FAIL"
+        value: ${{ jobs.validate-linux.outputs.status }}
+
+jobs:
+  validate-linux:
+    name: Chaîne Bash — hygiène octet, shQuote, bash -n, ShellCheck
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.set-status.outputs.status }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Node.js 20
+      #
+      # Note de dette : GitHub Actions signale que Node.js 20 approche sa fin
+      # de support pour les actions. Cette dette est consignée dans le rapport
+      # du LOT 7 et n'est PAS traitée ici : changer la version du moteur en
+      # même temps qu'on ajoute une validation rendrait illisible la cause d'un
+      # éventuel échec.
+      # -----------------------------------------------------------------------
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installer les dépendances Node.js
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: npm ci
+
+      # -----------------------------------------------------------------------
+      # 3. ShellCheck — version affichée, et absence = échec
+      #
+      # Si ShellCheck manquait et que l'étape se contentait de passer, cette
+      # validation serait verte sans avoir rien analysé. Le banc refuse de
+      # tourner sans lui ; cette étape le dit tôt et clairement.
+      # -----------------------------------------------------------------------
+      - name: Installer ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      - name: Afficher la version de bash
+        run: bash --version
+
+      # -----------------------------------------------------------------------
+      # 4. Syntaxe des modules Linux
+      # -----------------------------------------------------------------------
+      - name: Vérification syntaxe Node.js (modules Linux)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: |
+          for f in dist/plateforme.mjs dist/noyau-bash.mjs dist/gardes-bash.mjs \
+                   dist/validateurs-linux.mjs dist/sources-linux.mjs \
+                   dist/outils-linux.mjs dist/outils-linux-b.mjs \
+                   dist/generators.mjs dist/app.js; do
+            node --check "$f"
+            echo "  node --check OK : $f"
+          done
+
+      # -----------------------------------------------------------------------
+      # 5. Génération — 856 .ps1 + 80 .sh, et non-régression des 856
+      # -----------------------------------------------------------------------
+      - name: Générer les scripts (.ps1 + .sh)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/generate-ps1.mjs
+
+      # -----------------------------------------------------------------------
+      # 6. Hygiène à l'octet — les deux règles opposées
+      #
+      # .ps1 : BOM UTF-8 obligatoire.  .sh : BOM interdit, LF strict, shebang
+      # exact. Le même banc vérifie les deux, et refuse l'inverse de chacune.
+      # -----------------------------------------------------------------------
+      - name: Hygiène des scripts .sh et .ps1 (niveau octet)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sh-hygiene.test.mjs
+
+      - name: BOM UTF-8 des scripts .ps1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/check-ps1-bom.mjs
+
+      # -----------------------------------------------------------------------
+      # 7. shQuote — transport réel à travers bash, comparaison sur les octets
+      # -----------------------------------------------------------------------
+      - name: Transport des valeurs par shQuote (bash réel)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/shquote.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 8. bash -n sur les 80 scripts
+      #
+      # Niveau de preuve : analyse syntaxique. « bash -n » ne détecte pas une
+      # vérification vide, ni un format dpkg invalide — ce lot en a fait
+      # l'expérience sur les deux. Elle reste nécessaire, pas suffisante.
+      # -----------------------------------------------------------------------
+      - name: Analyse syntaxique bash -n
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: |
+          echecs=0
+          total=0
+          for f in test/generated/*.sh; do
+            total=$((total + 1))
+            if ! bash -n "$f"; then
+              echo "[bash -n ECHEC] $f"
+              echecs=$((echecs + 1))
+            fi
+          done
+          echo "bash -n : $total script(s), $echecs echec(s)"
+          if [ "$total" -eq 0 ]; then
+            echo "ECHEC : aucun script .sh analyse — la generation n a rien produit."
+            exit 1
+          fi
+          if [ "$echecs" -ne 0 ]; then
+            exit 1
+          fi
+
+      # -----------------------------------------------------------------------
+      # 9. ShellCheck — chaque alerte doit avoir une origine prouvée
+      # -----------------------------------------------------------------------
+      - name: Porte ShellCheck (attribution de chaque alerte)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sh-shellcheck.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10. Identité des fiches — règles multiplateformes comprises
+      # -----------------------------------------------------------------------
+      - name: Tests d'identité (fiches, sources, verrous déclarés)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/identity.test.mjs
+
+      - name: Sources citées — contrôle de forme (hors ligne)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sources-microsoft.mjs --hors-ligne
+
+      # -----------------------------------------------------------------------
+      # 11. Les workflows eux-mêmes
+      #
+      # Ce banc lit les fichiers YAML et prouve que la validation Linux est
+      # réellement branchée : sur push, sur pull_request, et comme dépendance
+      # du déploiement Pages. Sans lui, « le CI Linux est bloquant » serait une
+      # affirmation sur une intention.
+      # -----------------------------------------------------------------------
+      - name: Le CI Linux est-il réellement bloquant ?
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/ci-workflows.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 12. Artefacts
+      # -----------------------------------------------------------------------
+      - name: Publier les scripts générés
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sh-generated-${{ github.sha }}
+          path: KJEMO-IT-Toolkit-v0.1/test/generated/
+          retention-days: 14
+
+      - name: Définir le statut de sortie
+        id: set-status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT
