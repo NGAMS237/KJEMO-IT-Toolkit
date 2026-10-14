@@ -201,6 +201,18 @@ jobs:
         run: node test/sources-microsoft.mjs --hors-ligne
 
       # -----------------------------------------------------------------------
+      # 10 bis. Le contrat des commandes rapides
+      #
+      # Neuf obligations par commande, dont celle qui compte le plus : aucun
+      # commentaire dans le bloc copiable. Un « # » colle dans un terminal ne
+      # se comporte pas toujours en commentaire, et une commande copiee sur
+      # une seule ligne perd tout ce qui le suit.
+      # -----------------------------------------------------------------------
+      - name: Contrat des commandes rapides
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/commandes-rapides.test.mjs
+
+      # -----------------------------------------------------------------------
       # 11. Les workflows eux-mêmes
       #
       # Ce banc lit les fichiers YAML et prouve que la validation Linux est
