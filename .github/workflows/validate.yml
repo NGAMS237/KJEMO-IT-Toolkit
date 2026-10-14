@@ -80,6 +80,18 @@ jobs:
         shell: bash
 
       # -----------------------------------------------------------------------
+      # 6 bis. Non-régression des 856 scripts PowerShell historiques — LOT 7
+      #
+      # Ajout, pas remplacement : aucune étape existante n'est touchée. La
+      # baseline est versionnée dans test/scripts-baseline-856.json et la
+      # comparaison porte sur l'OCTET écrit, BOM compris.
+      # -----------------------------------------------------------------------
+      - name: Non-régression des 856 scripts PowerShell
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/baseline-856.test.mjs
+        shell: bash
+
+      # -----------------------------------------------------------------------
       # 7. Lister les fichiers générés
       # -----------------------------------------------------------------------
       - name: Lister les fichiers générés

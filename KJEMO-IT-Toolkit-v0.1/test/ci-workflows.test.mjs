@@ -262,6 +262,14 @@ for (const f of ATTENDUS) {
       : `${f} : condition permissive sur une étape qui garde quelque chose — ${fautives.join(' | ')}`);
 }
 
+// La non-régression des 856 doit être jouée des DEUX côtés. Elle a vécu six
+// commits hors du dépôt et hors de tout workflow ; la rattacher à un seul
+// workflow laisserait la moitié du chemin sans garde.
+for (const f of ['validate.yml', 'validate-linux.yml']) {
+  verifier(code[f].includes('node test/baseline-856.test.mjs'),
+    `${f} joue la non-régression des 856 scripts PowerShell`);
+}
+
 // `|| true` dans un bloc run éteint le code de sortie de la commande.
 for (const f of ATTENDUS) {
   verifier(!/\|\|\s*true/.test(code[f]), `${f} ne neutralise aucun code de sortie avec « || true »`);
@@ -285,6 +293,7 @@ const ORDRE = [
   ['npm ci', 'dépendances'],
   ['shellcheck --version', 'version de ShellCheck'],
   ['node test/generate-ps1.mjs', 'génération'],
+  ['node test/baseline-856.test.mjs', 'non-régression des 856'],
   ['node test/sh-hygiene.test.mjs', 'hygiène octet'],
   ['node test/shquote.test.mjs', 'shQuote'],
   // Le motif est la COMMANDE, pas le mot : « bash -n » figure aussi dans le

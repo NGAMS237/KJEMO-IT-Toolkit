@@ -118,6 +118,22 @@ jobs:
         run: node test/generate-ps1.mjs
 
       # -----------------------------------------------------------------------
+      # 5 bis. Non-régression des 856 scripts PowerShell historiques
+      #
+      # La baseline a vécu dans /tmp pendant six commits : la non-régression la
+      # plus importante du dépôt dépendait d'un fichier temporaire de session.
+      # Elle est maintenant versionnée, et comparée ici.
+      #
+      # Oui, ce contrôle porte sur des .ps1 et tourne dans le workflow Linux.
+      # C'est voulu : la génération est la même des deux côtés, et un lot
+      # Linux qui casserait un script Windows doit l'apprendre dans SON
+      # workflow, pas seulement dans l'autre. Il tourne aussi côté Windows.
+      # -----------------------------------------------------------------------
+      - name: Non-régression des 856 scripts PowerShell
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/baseline-856.test.mjs
+
+      # -----------------------------------------------------------------------
       # 6. Hygiène à l'octet — les deux règles opposées
       #
       # .ps1 : BOM UTF-8 obligatoire.  .sh : BOM interdit, LF strict, shebang
