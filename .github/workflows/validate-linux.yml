@@ -213,6 +213,22 @@ jobs:
         run: node test/scanner-bash.test.mjs
 
       # -----------------------------------------------------------------------
+      # 9 ter. Banc Linux a mouchards
+      #
+      # Les assistants modifiants sont EXECUTES, dans un bac a sable, avec les
+      # commandes modifiantes remplacees par des doublures qui journalisent
+      # leur nom, leurs arguments et leur ordre. On compte les appels et on
+      # mesure les fichiers reellement ecrits.
+      #
+      # Aucun vrai `mkfs`, aucun vrai `systemctl`, aucun vrai disque : les 48
+      # commandes surveillees sont doublees, et le banc verifie d'abord que
+      # chaque doublure fonctionne — un mouchard muet rendrait tout vert.
+      # -----------------------------------------------------------------------
+      - name: Banc Linux à mouchards (exécution réelle, doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/mouchards-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun

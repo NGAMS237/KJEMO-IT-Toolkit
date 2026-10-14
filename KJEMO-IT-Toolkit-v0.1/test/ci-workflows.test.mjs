@@ -301,6 +301,7 @@ const ORDRE = [
   ['if ! bash -n', 'bash -n'],
   ['node test/sh-shellcheck.test.mjs', 'porte ShellCheck'],
   ['node test/scanner-bash.test.mjs', 'scanner de sûreté'],
+  ['node test/mouchards-linux.test.mjs', 'banc à mouchards'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];
