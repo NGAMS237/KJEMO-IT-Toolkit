@@ -116,7 +116,7 @@ export function detruireBac(bac) {
  * selon les arguments — indispensable pour eprouver « la relecture echoue »
  * sans empecher l'ecriture de reussir.
  */
-export function poserMouchard(bac, commande, { code = 0, sortie = '', selonArgs = [] } = {}) {
+export function poserMouchard(bac, commande, { code = 0, sortie = '', selonArgs = [], avant = [] } = {}) {
   // Note sur le `--` passe a grep : sans lui, un motif comme « --test-label »
   // est pris par grep pour une suite d'options, et le mouchard rend alors
   // toujours son code par defaut. La passe C du banc paraissait verte pour
@@ -129,9 +129,16 @@ if printf '%s' "$*" | grep -qE -- ${quote(motif)}; then
   exit ${c}
 fi`).join('');
 
+  // `avant` permet a un mouchard d avoir une MEMOIRE : poser un marqueur au
+  // premier appel et repondre differemment ensuite. C est indispensable pour
+  // eprouver une sequence reelle — « sfdisk --dump » ne rend rien sur un
+  // disque vierge, et rend une table apres que « sfdisk --label gpt » est
+  // passe. Un mouchard sans memoire ne peut pas representer les deux, et le
+  // controle positif echouait pour cette seule raison.
   writeFileSync(chemin, `#!/usr/bin/env bash
 # Mouchard KJEMO — ${commande}. Journalise, puis rend un code choisi.
 printf '%s\\t%s\\n' ${quote(commande)} "$*" >> ${quote(bac.journal)}
+${avant.join('\n')}
 ${cas}
 ${sortie ? `printf '%s\\n' ${quote(sortie)}` : ':'}
 exit ${code}

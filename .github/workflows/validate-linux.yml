@@ -229,6 +229,25 @@ jobs:
         run: node test/mouchards-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 9 quater. Banc du stockage — verrous de partitionnement et de fstab
+      #
+      # Ce banc tourne en ROOT, et ce n'est pas un raccourci. Deux tests du
+      # script eprouve ne peuvent pas etre doubles par le PATH, parce que ce ne
+      # sont pas des commandes : « [ -b ] » est une primitive du shell, et
+      # l'assistant exige root et sort sinon. Le banc cree donc deux faux
+      # noeuds de peripherique avec mknod, et sans root il ECHOUE au lieu de se
+      # declarer ignore — sa preuve centrale est que sfdisk et mkfs sont
+      # inatteignables sans confirmation, et un lot ou cette preuve ne tourne
+      # pas ne doit pas etre vert.
+      #
+      # Aucun vrai disque n'est touche : sfdisk, mkfs, wipefs, mount et les
+      # autres sont des doublures, et /etc/fstab est redirige vers le bac.
+      # -----------------------------------------------------------------------
+      - name: Banc du stockage (racine requise, doublures, faux périphériques)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/stockage-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun

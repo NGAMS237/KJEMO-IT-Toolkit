@@ -629,7 +629,13 @@ export function blocPrivilegesBash({ exige = false, pourquoi = '' } = {}) {
     '  printf \'passer un script. Si tu n as pas ces droits, demande-les.\\n\' >&2',
     '  exit 1',
     'fi',
-    'KJEMO_ROOT=1',
+    // Pas de « KJEMO_ROOT=1 » ici. La branche exige:true vient de SORTIR si
+    // l on n est pas root : arriver apres ce « fi » est la preuve, et un
+    // drapeau qui redit une garantie deja acquise n est lu par personne.
+    // ShellCheck l a signale (SC2034) le jour ou le premier assistant a
+    // reellement demande root — linux-disk-partition-mount, au commit 13/n.
+    // Un assistant qui aurait besoin de brancher sur l identite le lira
+    // lui-meme avec id -u, comme le font les assistants en lecture seule.
     '',
   ];
 }

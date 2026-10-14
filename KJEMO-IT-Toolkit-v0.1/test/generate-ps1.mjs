@@ -2104,6 +2104,53 @@ const VALEURS_LINUX = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// LOT 7 — VALEURS PAR OUTIL
+//
+// VALEURS_LINUX est indexee par IDENTIFIANT DE CHAMP, et plusieurs assistants
+// partagent des noms de champ : « confirmation », « etiquette », « source ».
+// Le premier essai a donc donne a linux-disk-partition-mount la phrase de
+// confirmation de bash-backup-directory — et la generation a echoue, a juste
+// titre, puisque ce champ-la doit contenir le peripherique exact.
+//
+// Cette table-ci est indexee par OUTIL puis par champ, et elle est appliquee
+// APRES les deux autres. Elle sert aux champs dont la valeur n a de sens que
+// pour un assistant : une confirmation qui nomme sa cible, une etiquette dont
+// la longueur depend du systeme de fichiers choisi juste au-dessus.
+// ---------------------------------------------------------------------------
+const VALEURS_PAR_OUTIL = {
+  'linux-disk-partition-mount': {
+    'apostrophe-ascii': {
+      peripherique: '/dev/sdb', pointMontage: '/srv/donnees-dadam', systemeFichiers: 'ext4',
+      etiquette: 'dadam', optionsMontage: 'defaults,nofail', confirmation: '/dev/sdb',
+    },
+    'apostrophe-typographique': {
+      peripherique: '/dev/sdc', pointMontage: '/srv/donnees-typo', systemeFichiers: 'xfs',
+      etiquette: 'typo', optionsMontage: 'defaults', confirmation: '',
+    },
+    'dollar-backtick-guillemets': {
+      peripherique: '/dev/nvme0n1', pointMontage: '/srv/dollar', systemeFichiers: 'ext4',
+      etiquette: '', optionsMontage: 'defaults,noatime,nofail', confirmation: '/dev/nvme0n1',
+    },
+    'espaces-et-accents': {
+      peripherique: '/dev/vdb', pointMontage: '/srv/Donnees partagees', systemeFichiers: 'ext4',
+      etiquette: 'partage', optionsMontage: 'defaults,nofail', confirmation: '',
+    },
+    'virgule-et-point-virgule': {
+      peripherique: '/dev/sdd', pointMontage: '/srv/a-b_c', systemeFichiers: 'xfs',
+      etiquette: 'a-b_c', optionsMontage: 'defaults', confirmation: '/dev/sdd',
+    },
+    'chemin-racine-c': {
+      peripherique: '/dev/mmcblk0', pointMontage: '/mnt/voisin', systemeFichiers: 'ext4',
+      etiquette: 'voisin', optionsMontage: 'defaults,nofail', confirmation: '',
+    },
+    'chemin-avec-apostrophe': {
+      peripherique: '/dev/sde', pointMontage: '/srv/d-adam/projet', systemeFichiers: 'ext4',
+      etiquette: 'export', optionsMontage: 'defaults,noatime,nofail', confirmation: '/dev/sde',
+    },
+  },
+};
+
 for (const jeu of DATASETS) {
   const ajout = VALEURS_POSTE[jeu.name];
   if (ajout) Object.assign(jeu.values, ajout);
@@ -2125,8 +2172,10 @@ for (const tool of tools) {
     // Windows figé. Une fusion globale dans DATASETS.values changerait son
     // script et casserait la non-régression des 856.
     const linux = plateformeDe(tool) === 'Linux' ? (VALEURS_LINUX[dataset.name] ?? {}) : {};
+    const propres = (VALEURS_PAR_OUTIL[tool.id] ?? {})[dataset.name] ?? {};
     const values = {};
     for (const f of tool.fields) {
+      if (propres[f.id] !== undefined) { values[f.id] = propres[f.id]; continue; }
       if (linux[f.id] !== undefined) { values[f.id] = linux[f.id]; continue; }
       values[f.id] = dataset.values[f.id] !== undefined ? dataset.values[f.id] : defaults[f.id];
     }

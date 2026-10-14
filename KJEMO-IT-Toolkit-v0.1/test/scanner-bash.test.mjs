@@ -140,6 +140,70 @@ const EXCEPTIONS = [
       + '`fdisk -l`, sans cible et sans autre option. Un `fdisk /dev/sdb` serait '
       + 'refuse.',
   },
+  // -------------------------------------------------------------------------
+  // linux-disk-partition-mount — le seul assistant du depot qui partitionne et
+  // formate. Ses commandes dangereuses sont sa raison d etre : les interdire
+  // reviendrait a interdire l assistant. Ce que le scanner peut garantir, lui,
+  // c est qu aucune AUTRE forme ne se glisse a cote — chaque exception ci-
+  // dessous est ancree sur la forme exacte attendue.
+  //
+  // Ce que le scanner ne peut PAS garantir, et qui est donc prouve ailleurs :
+  // que ces commandes sont derriere la porte finale. C est le role de
+  // test/stockage-linux.test.mjs, qui EXECUTE le script avec des mouchards et
+  // mesure zero appel a sfdisk et a mkfs quand la confirmation manque.
+  // -------------------------------------------------------------------------
+  {
+    famille: 'mkfs',
+    outils: ['linux-disk-partition-mount'],
+    ligne: /^for kjemo_o in sfdisk lsblk blkid wipefs findmnt mkfs\.(ext4|xfs); do$/,
+    pourquoi:
+      'Controle de PRESENCE des outils, dans une boucle de prerequis : le nom '
+      + 'de la commande y est une donnee, pas une invocation. Verifier les '
+      + 'outils maintenant evite de s arreter au milieu, entre le '
+      + 'partitionnement et le formatage, dans l etat le plus inconfortable : '
+      + 'un disque partitionne et vide, et un operateur qui ne sait pas ou il '
+      + 'en est. L exception est ancree sur la ligne entiere.',
+  },
+  {
+    famille: 'mkfs',
+    outils: ['linux-disk-partition-mount'],
+    ligne: /^kjemo_mkfs=\(mkfs\.(ext4|xfs)\)$/,
+    pourquoi:
+      'Construction du TABLEAU de commande, derriere la porte finale et apres '
+      + 'la relecture de la table. L invocation elle-meme est '
+      + '"${kjemo_mkfs[@]}", qui ne nomme aucune commande et n est donc pas '
+      + 'signalee — c est le prix du tableau, choisi pour eviter le decoupage '
+      + 'de mots sur une variable d options. mkfs ne porte JAMAIS le disque : '
+      + 'il recoit "${KJEMO_PART}", decouvert par lsblk apres relecture, et '
+      + 'seulement si cette partition n a aucun systeme de fichiers.',
+  },
+  {
+    famille: 'wipefs',
+    outils: ['linux-disk-partition-mount'],
+    ligne: /^for kjemo_o in sfdisk .*wipefs.*; do$|^kjemo_sig= +\$\(wipefs -n --/,
+    pourquoi:
+      'Deux occurrences, toutes deux en lecture. La premiere est le controle de '
+      + 'presence. La seconde est "wipefs -n", son mode « ne fais rien » : il '
+      + 'LISTE les signatures, et c est precisement ce qui fait REFUSER le '
+      + 'disque a l etape 4. L exception exige le "-n" : un "wipefs -a" ne '
+      + 'correspondrait pas et serait refuse. Cet assistant n efface aucune '
+      + 'signature, et n offre aucun champ pour le faire.',
+  },
+  {
+    famille: 'fdisk / parted / sfdisk en ecriture',
+    outils: ['linux-disk-partition-mount'],
+    ligne: /^for kjemo_o in sfdisk .*; do$|^kjemo_table(_apres)?= +\$\(sfdisk --dump|^if sfdisk --help |^printf +\| sfdisk +--label gpt/,
+    pourquoi:
+      'Quatre formes, et une seule ecrit. « sfdisk --dump » LIT la table : '
+      + 'c est la sauvegarde de l etape 5 et la relecture de l etape 9. '
+      + '« sfdisk --help | grep -- --lock » detecte le verrou exclusif sans '
+      + 'toucher au disque. Le controle de presence ne fait que nommer la '
+      + 'commande. La seule ecriture est « sfdisk --label gpt », derriere la '
+      + 'porte finale a six conditions, et elle ne porte NI --force NI --wipe : '
+      + 'les deux annuleraient le refus des signatures. L exception est ancree '
+      + 'sur ces quatre formes exactes ; toute autre invocation de sfdisk, '
+      + 'fdisk ou parted serait refusee.',
+  },
   {
     famille: 'reboot ou shutdown',
     outils: ['linux-health-report'],

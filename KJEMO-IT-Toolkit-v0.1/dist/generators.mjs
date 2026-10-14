@@ -32,6 +32,7 @@ import { toolsPosteB } from './outils-poste-b.mjs';
 import { toolsLinux } from './outils-linux.mjs';
 import { toolsLinuxB } from './outils-linux-b.mjs';
 import { toolsLinuxC } from './outils-linux-c.mjs';
+import { toolsLinuxD } from './outils-linux-d.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1595,4 +1596,5 @@ for (const outil of toolsPosteB) tools.push(outil);
 for (const outil of toolsLinux) tools.push(outil);
 for (const outil of toolsLinuxB) tools.push(outil);
 for (const outil of toolsLinuxC) tools.push(outil);
+for (const outil of toolsLinuxD) tools.push(outil);
 
