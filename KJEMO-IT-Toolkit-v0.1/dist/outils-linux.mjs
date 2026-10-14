@@ -98,6 +98,7 @@ const linuxHealthReport = {
   distros: DISTROS,
   packages: ['systemd (présent par défaut)', 'procps — pour free et uptime', 'coreutils — pour df'],
   privileges: 'aucun',
+  privilegesRequis: 'aucun',
   readOnly: true,
   service: null,
   limites: [
@@ -443,6 +444,7 @@ const linuxSystemInventory = {
     'dmidecode — informations de la carte mère (à installer, et root pour lire)',
   ],
   privileges: 'aucun pour l’essentiel ; root seulement pour dmidecode',
+  privilegesRequis: 'root-partiel',
   readOnly: true,
   service: null,
   limites: [
@@ -759,6 +761,7 @@ const linuxBootDiagnostic = {
   distros: DISTROS,
   packages: ['systemd (présent par défaut)'],
   privileges: 'aucun',
+  privilegesRequis: 'aucun',
   readOnly: true,
   service: null,
   limites: [
@@ -1038,6 +1041,7 @@ const linuxLogDiagnostic = {
   distros: DISTROS,
   packages: ['systemd (présent par défaut)'],
   privileges: 'aucun, mais le journal système complet demande l\u2019appartenance au groupe adm ou systemd-journal',
+  privilegesRequis: 'aucun',
   readOnly: true,
   service: 'systemd-journald.service',
   limites: [
@@ -1415,6 +1419,7 @@ const bashScriptStarter = {
   distros: DISTROS,
   packages: ['bash 4.4 ou plus récent (présent par défaut)'],
   privileges: 'aucun',
+  privilegesRequis: 'aucun',
   readOnly: true,
   service: null,
   limites: [
@@ -1858,6 +1863,7 @@ const bashFileBatch = {
   distros: DISTROS,
   packages: ['findutils — find (présent par défaut)', 'coreutils — stat, sha256sum (présent par défaut)'],
   privileges: 'aucun',
+  privilegesRequis: 'aucun',
   readOnly: true,
   service: null,
   limites: [
@@ -2102,6 +2108,7 @@ const bashBackupDirectory = {
   distros: DISTROS,
   packages: ['tar (présent par défaut)', 'coreutils — sha256sum, df (présent par défaut)', 'gzip ou zstd selon la compression choisie'],
   privileges: 'aucun si la source et la destination sont lisibles et inscriptibles par la session',
+  privilegesRequis: 'aucun',
   readOnly: false,
   service: null,
   limites: [
@@ -2451,7 +2458,16 @@ const bashBackupDirectory = {
   keywords: ['sauvegarde', 'backup', 'archive', 'tar', 'dossier', 'manifeste', 'empreinte',
     'sha256', 'restauration', 'bash', 'linux', 'datee', 'compression', 'gzip', 'zstd', 'rotation'],
 
-  requiresAdmin: true,
+  // Était `true`, et c'était faux. Sauvegarder un dossier qu'on peut lire,
+  // vers un dossier où l'on peut écrire, ne demande pas root. Le `true`
+  // satisfaisait une règle de banc qui confondait le risque et l'élévation :
+  // voir l'en-tête de PRIVILEGES_REQUIS dans dist/plateforme.mjs.
+  //
+  // Ce qui n'a PAS changé : `risk: 'caution'` et le verrou de confirmation du
+  // script. Le risque ne baisse pas parce que l'élévation disparaît — ce sont
+  // deux questions différentes. Et le script généré, lui, disait déjà la
+  // vérité : il appelle blocPrivilegesBash({ exige: false }).
+  requiresAdmin: false,
   prereqs: [
     'Le droit de LIRE la totalité du dossier source : un fichier illisible apparaît dans le manifeste comme « illisible » et manquera dans l\u2019archive.',
     'Le droit d\u2019ÉCRIRE dans le dossier de destination, qui doit exister : le script ne le crée pas, pour ne pas écrire une sauvegarde à l\u2019endroit d\u2019une faute de frappe.',
@@ -2533,6 +2549,7 @@ const bashCsvReport = {
   distros: DISTROS,
   packages: ['coreutils et procps (présents par défaut)'],
   privileges: 'aucun',
+  privilegesRequis: 'aucun',
   readOnly: false,
   service: null,
   limites: [
@@ -2850,6 +2867,7 @@ const cronReadiness = {
   distros: DISTROS,
   packages: ['cron (à installer sur une image minimale : apt install cron)'],
   privileges: 'aucun pour le diagnostic ; l\u2019installation de la tâche se fait ensuite à la main',
+  privilegesRequis: 'aucun',
   readOnly: true,
   service: 'cron.service',
   limites: [

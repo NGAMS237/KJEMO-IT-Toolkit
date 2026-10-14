@@ -151,16 +151,111 @@ export function commandesExecution(outil) {
  * pour répondre une fois le script lancé.
  */
 export const CHAMPS_LINUX = [
-  'platform',    // Windows | Linux | Multi
-  'output',      // .ps1 | .sh | Documentation
-  'os',          // systèmes compatibles, en clair
-  'distros',     // distributions réellement visées
-  'packages',    // paquets nécessaires, noms Debian/Ubuntu
-  'privileges',  // 'aucun' | 'root' | 'root pour la partie modifiante'
-  'readOnly',    // true si le script n'écrit rien
-  'service',     // service systemd concerné, ou null
-  'limites',     // ce que l'outil ne fait pas, et ne prétend pas faire
+  'platform',          // Windows | Linux | Multi
+  'output',            // .ps1 | .sh | Documentation
+  'os',                // systèmes compatibles, en clair
+  'distros',           // distributions réellement visées
+  'packages',          // paquets nécessaires, noms Debian/Ubuntu
+  'privileges',        // la phrase lue par l'utilisateur
+  'privilegesRequis',  // la valeur lue par les bancs — voir PRIVILEGES_REQUIS
+  'readOnly',          // true si le script n'écrit rien
+  'service',           // service systemd concerné, ou null
+  'limites',           // ce que l'outil ne fait pas, et ne prétend pas faire
 ];
+
+/**
+ * ---------------------------------------------------------------------------
+ * TROIS NOTIONS, ET NON DEUX
+ * ---------------------------------------------------------------------------
+ * `bash-backup-directory` a été livré avec `requiresAdmin: true` alors que sa
+ * propre fiche écrivait, deux lignes plus bas : « aucun [privilège] si la
+ * source et la destination sont lisibles et inscriptibles par la session ».
+ * Les deux champs de la même fiche se contredisaient.
+ *
+ * La faute n'était pas une étourderie. Le banc d'identité portait la règle :
+ *
+ *     risque « caution » ou « destructive » hors AD/GPO  ⇒  requiresAdmin
+ *
+ * Elle CONFOND le risque et l'élévation. Sous Windows elle tient par accident,
+ * parce que modifier l'état de la machine y demande presque toujours l'admin.
+ * Sous Linux elle est fausse : écrire dans un dossier qu'on possède ne demande
+ * pas root. La fiche avait donc été rendue incohérente pour satisfaire une
+ * règle incohérente — et c'est le pire genre de mensonge dans un catalogue
+ * pédagogique, parce qu'il enseigne à taper sudo sans raison.
+ *
+ * Trois notions, trois endroits :
+ *
+ *   RISQUE        `risk`                   ce que l'opération peut abîmer
+ *   CONFIRMATION  verrou du script généré  ce qu'il faut taper pour engager
+ *   ÉLÉVATION     `privilegesRequis`       si root est nécessaire, et où
+ *
+ * `privileges` reste la phrase que l'utilisateur lit — elle peut nuancer,
+ * donner un groupe, nommer une commande. `privilegesRequis` est la valeur
+ * qu'un banc peut comparer. Garder les deux n'est pas une duplication : une
+ * énumération ne sait pas dire « root seulement pour dmidecode », et une
+ * phrase ne se compare pas.
+ * ---------------------------------------------------------------------------
+ */
+export const PRIVILEGES_REQUIS = [
+  'aucun',          // le script entier tourne sans root
+  'root-partiel',   // root n'est nécessaire QUE pour certaines vérifications
+  'root',           // le script ne peut rien faire d'utile sans root
+];
+
+/**
+ * Privilèges requis d'un outil, en valeur comparable.
+ *
+ * Pas de défaut permissif : un outil Linux qui ne déclare rien rend
+ * `undefined`, et le banc le refuse. Deviner « aucun » ferait passer un oubli
+ * pour une déclaration, et c'est précisément ce qu'on veut éviter ici.
+ */
+export function privilegesRequisDe(outil) {
+  return outil ? outil.privilegesRequis : undefined;
+}
+
+/** `true` si l'outil exige root pour l'ensemble de son travail. */
+export function exigeRoot(outil) {
+  return privilegesRequisDe(outil) === 'root';
+}
+
+/**
+ * Incohérences entre risque, confirmation et élévation.
+ *
+ * Retourne une liste, comme `incoherencesPlateforme()` et pour la même raison.
+ */
+export function incoherencesPrivileges(outil) {
+  const pb = [];
+  const pr = privilegesRequisDe(outil);
+  if (pr === undefined) {
+    pb.push('privilegesRequis non déclaré : l’élévation ne se devine pas');
+    return pb;
+  }
+  if (!PRIVILEGES_REQUIS.includes(pr)) {
+    pb.push(`privilegesRequis inconnu : ${pr}`);
+    return pb;
+  }
+  // La seule équivalence qui tient : requiresAdmin annonce une élévation
+  // TOTALE. « root-partiel » n'en est pas une — exiger sudo pour tout le
+  // script parce qu'une seule vérification en a besoin reviendrait à élever
+  // les 95 % restants sans nécessité.
+  if (outil.requiresAdmin !== (pr === 'root')) {
+    pb.push(`requiresAdmin=${outil.requiresAdmin} contredit privilegesRequis=${pr}`);
+  }
+  if (outil.readOnly === true && pr === 'root') {
+    pb.push('lecture seule mais root exigé en totalité : lire ne demande pas root');
+  }
+  // La phrase et l'énumération doivent raconter la même histoire. On ne lit
+  // pas la phrase en entier — on vérifie seulement qu'elle ne dit pas
+  // l'inverse de l'énumération.
+  const phrase = String(outil.privileges ?? '').toLowerCase();
+  if (pr === 'aucun' && /^root\b/.test(phrase)) {
+    pb.push('privilegesRequis=aucun mais la phrase commence par « root »');
+  }
+  if (pr === 'root' && phrase.startsWith('aucun')) {
+    pb.push('privilegesRequis=root mais la phrase commence par « aucun »');
+  }
+  return pb;
+}
 
 /**
  * Vérifie la cohérence des déclarations d'un outil. Retourne la liste des

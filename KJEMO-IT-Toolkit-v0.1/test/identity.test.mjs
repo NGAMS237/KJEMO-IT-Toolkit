@@ -137,7 +137,9 @@ import { psB64 as psB64Noyau, assertValid as assertValidNoyau } from '../dist/no
 // LOT 7 — la plateforme d'un outil et la validite de ses sources.
 import { plateformeDe, sortieDe, estBash, estLectureSeule, extensionDe,
          nomFichierDe, etiquetteSortie, commandesExecution,
-         incoherencesPlateforme, CHAMPS_LINUX } from '../dist/plateforme.mjs';
+         incoherencesPlateforme, incoherencesPrivileges,
+         PRIVILEGES_REQUIS, privilegesRequisDe,
+         CHAMPS_LINUX } from '../dist/plateforme.mjs';
 import { sourceLinuxValide, editeurDe, PREFIXES_SOURCES_LINUX } from '../dist/sources-linux.mjs';
 import { SOUS_RUBRIQUES_LINUX } from '../dist/categories.mjs';
 
@@ -744,12 +746,87 @@ for (const t of tools) {
   }
 }
 
-// Cohérence risque / élévation : un outil ATTENTION ou DESTRUCTIF exige l'admin
+// ---------------------------------------------------------------------------
+// RISQUE, CONFIRMATION, ÉLÉVATION : TROIS NOTIONS, TROIS RÈGLES
+//
+// L'ancienne règle disait, pour TOUS les outils :
+//
+//     risque « caution » ou « destructive » hors AD/GPO  ⇒  requiresAdmin
+//
+// Elle confondait le risque et l'élévation, et elle a produit un vrai défaut :
+// `bash-backup-directory` déclarait `requiresAdmin: true` alors que sa propre
+// fiche écrivait « aucun [privilège] si la source et la destination sont
+// lisibles et inscriptibles par la session ». La fiche avait été rendue
+// incohérente POUR SATISFAIRE la règle.
+//
+// Sous Windows, l'implication tient : modifier l'état de la machine y demande
+// presque toujours l'admin. La règle Windows est donc conservée TELLE QUELLE —
+// aucun affaiblissement.
+//
+// Sous Linux, elle est fausse : écrire dans un dossier qu'on possède ne
+// demande pas root. L'élévation y est donc déclarée explicitement, par
+// `privilegesRequis`, et c'est la COHÉRENCE entre les deux champs qui est
+// vérifiée — pas une implication tirée du risque.
+//
+// Ce qui protège un outil Linux risqué n'est pas sudo, c'est son verrou de
+// confirmation : il est vérifié ailleurs, dans le SCRIPT GÉNÉRÉ, par la règle
+// qui y exige KJEMO_CONFIRMATION_OK=0, KJEMO_AGIR et « AUCUNE ECRITURE ».
+// ---------------------------------------------------------------------------
 for (const t of tools) {
+  if (plateformeDe(t) === 'Linux') continue;
   if (RISQUES_ADMIN.includes(t.risk) && t.category !== 'Active Directory' && t.category !== 'GPO') {
     assert(t.requiresAdmin === true,
       `${t.id} : risque « ${t.risk} » hors AD/GPO ⇒ requiresAdmin = true`);
   }
+}
+
+// Côté Linux : l'élévation est déclarée, et elle doit concorder.
+for (const t of tools) {
+  if (plateformeDe(t) !== 'Linux') continue;
+  const pr = privilegesRequisDe(t);
+  assert(PRIVILEGES_REQUIS.includes(pr),
+    `${t.id} : privilegesRequis déclaré parmi ${PRIVILEGES_REQUIS.join(', ')} (${pr})`);
+  const pb = incoherencesPrivileges(t);
+  assert(pb.length === 0,
+    `${t.id} : risque, confirmation et élévation ne se contredisent pas (${pb.join(' | ')})`);
+}
+
+// Contre-épreuve de la règle ci-dessus. Une règle de cohérence qu'on n'a
+// jamais vue refuser une incohérence ne prouve rien : les quatre cas fautifs
+// sont soumis à la fonction, et elle doit les voir.
+{
+  const basePropre = { requiresAdmin: false, privileges: 'aucun', privilegesRequis: 'aucun', readOnly: true };
+  assert(incoherencesPrivileges(basePropre).length === 0,
+    'contre-épreuve privilèges : une déclaration cohérente est acceptée');
+  assert(incoherencesPrivileges({ ...basePropre, privilegesRequis: undefined }).length > 0,
+    'contre-épreuve privilèges : privilegesRequis absent est refusé');
+  assert(incoherencesPrivileges({ ...basePropre, privilegesRequis: 'sudo' }).length > 0,
+    'contre-épreuve privilèges : une valeur hors énumération est refusée');
+  assert(incoherencesPrivileges({ ...basePropre, requiresAdmin: true }).length > 0,
+    'contre-épreuve privilèges : requiresAdmin sans privilegesRequis=root est refusé — '
+    + 'c’est exactement le défaut de bash-backup-directory');
+  assert(incoherencesPrivileges({ ...basePropre, requiresAdmin: true, privilegesRequis: 'root' }).length > 0,
+    'contre-épreuve privilèges : lecture seule exigeant root en totalité est refusée');
+  assert(incoherencesPrivileges({
+    requiresAdmin: false, privileges: 'root obligatoire', privilegesRequis: 'aucun', readOnly: false,
+  }).length > 0,
+    'contre-épreuve privilèges : la phrase qui dit « root » contre une énumération « aucun » est refusée');
+  assert(incoherencesPrivileges({
+    requiresAdmin: true, privileges: 'aucun si le dossier est à vous', privilegesRequis: 'root', readOnly: false,
+  }).length > 0,
+    'contre-épreuve privilèges : la phrase qui dit « aucun » contre une énumération « root » est refusée');
+  // Et « root-partiel » ne doit PAS entraîner requiresAdmin : élever tout le
+  // script parce qu'une seule vérification en a besoin est le défaut inverse.
+  assert(incoherencesPrivileges({
+    requiresAdmin: false, privileges: 'aucun pour l’essentiel ; root pour dmidecode',
+    privilegesRequis: 'root-partiel', readOnly: true,
+  }).length === 0,
+    'contre-épreuve privilèges : root-partiel sans requiresAdmin est accepté');
+  assert(incoherencesPrivileges({
+    requiresAdmin: true, privileges: 'aucun pour l’essentiel ; root pour dmidecode',
+    privilegesRequis: 'root-partiel', readOnly: true,
+  }).length > 0,
+    'contre-épreuve privilèges : root-partiel AVEC requiresAdmin est refusé');
 }
 
 section('LOT 1 — bloc commun EXECUTION_NOTES');

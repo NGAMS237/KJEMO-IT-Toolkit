@@ -76,6 +76,7 @@ const linuxUserAudit = {
   distros: DISTROS,
   packages: ['passwd — chage, lastlog (présent par défaut)', 'coreutils (présent par défaut)'],
   privileges: 'aucun pour l\u2019essentiel ; root pour lire l\u2019état de verrouillage dans /etc/shadow',
+  privilegesRequis: 'root-partiel',
   readOnly: true,
   service: null,
   limites: [
