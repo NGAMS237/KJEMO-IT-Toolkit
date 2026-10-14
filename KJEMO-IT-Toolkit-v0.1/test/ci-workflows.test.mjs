@@ -300,6 +300,7 @@ const ORDRE = [
   // nom du job, plus haut dans le fichier, et l'ordre s'y serait trompe.
   ['if ! bash -n', 'bash -n'],
   ['node test/sh-shellcheck.test.mjs', 'porte ShellCheck'],
+  ['node test/scanner-bash.test.mjs', 'scanner de sûreté'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];

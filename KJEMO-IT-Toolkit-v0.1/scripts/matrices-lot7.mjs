@@ -24,10 +24,11 @@
  * l'autre.
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
-import { resolve, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { resolve, join, dirname } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 
+const __dirnameLocal = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(process.argv[2]);
 const OUT = resolve(process.argv[3]);
 const SHA_BASE = 'aff0f7a146076f2ee1cf1e621efdde775ea3e9e2';
@@ -174,64 +175,13 @@ const matriceScripts = {
 };
 
 // --- 3. Matrice des risques ------------------------------------------------
-const DANGERS = [
-  ['rm -rf', /\brm\s+-[a-z]*r[a-z]*f\b|\brm\s+-[a-z]*f[a-z]*r\b/],
-  ['rm', /\brm\s/],
-  ['rmdir', /\brmdir\b/],
-  ['dd vers un peripherique', /\bdd\b[^\n]*of=\/dev\//],
-  ['mkfs', /\bmkfs(\.|\s)/],
-  ['wipefs', /\bwipefs\b/],
-  ['fdisk / parted / sfdisk en ecriture', /\b(fdisk|parted|sfdisk)\b/],
-  ['chmod -R', /\bchmod\s+(-[a-zA-Z]*\s+)*-R\b|\bchmod\s+-R\b/],
-  ['chown -R', /\bchown\s+(-[a-zA-Z]*\s+)*-R\b|\bchown\s+-R\b/],
-  ['setfacl -R', /\bsetfacl\b[^\n]*-R\b/],
-  ['sed -i', /\bsed\s+(-[a-zA-Z]*\s+)*-i\b|\bsed\s+-i\b/],
-  ['redirection vers /etc', />\s*\/etc\//],
-  ['tee vers /etc', /\btee\b[^\n]*\/etc\//],
-  ['iptables -F', /\biptables\b[^\n]*-F\b/],
-  ['nft flush ruleset', /\bnft\b[^\n]*flush\s+ruleset/],
-  ['ufw reset ou disable', /\bufw\s+(reset|disable)\b/],
-  ['userdel / groupdel', /\b(userdel|groupdel)\b/],
-  ['suppression de cle SSH', /\brm\b[^\n]*(authorized_keys|id_rsa|id_ed25519)/],
-  ['ecriture dans passwd/shadow/sudoers', /(>|tee)[^\n]*\/etc\/(passwd|shadow|sudoers)/],
-  ['systemctl disable --now', /\bsystemctl\b[^\n]*disable\s+--now/],
-  ['telechargement puis execution', /\b(curl|wget)\b[^\n]*\|\s*(ba)?sh\b/],
-  ['eval', /\beval\b/],
-  ['mot de passe en clair', /(--password|PASSWORD=|passwd\s+--stdin)/i],
-  ['cle privee', /(BEGIN [A-Z ]*PRIVATE KEY|id_rsa\b(?!\.pub)|id_ed25519\b(?!\.pub))/],
-  ['joker non borne', /\brm\b[^\n]*\s\*(\s|$)/],
-  ['variable non protegee dans une commande destructrice', /\brm\b[^\n]*\$\{?[A-Za-z_][A-Za-z0-9_]*\}?(?![\w"])/],
-  ['reboot ou shutdown', /\b(reboot|shutdown|poweroff|halt)\b/],
-  ['Set-ExecutionPolicy', /Set-ExecutionPolicy/],
-];
-
-/** Retire les commentaires et le contenu des chaines : le code REELLEMENT execute. */
-function codeNu(src) {
-  let out = '';
-  let i = 0;
-  while (i < src.length) {
-    const c = src[i];
-    if (c === '#' && (i === 0 || /[\s;|&(]/.test(src[i - 1]))) {
-      const fin = src.indexOf('\n', i);
-      i = fin === -1 ? src.length : fin;
-      continue;
-    }
-    if (c === '\'' || c === '"') {
-      let j = i + 1;
-      while (j < src.length) {
-        if (src[j] === '\\') { j += 2; continue; }
-        if (src[j] === c) break;
-        j += 1;
-      }
-      out += ' ';
-      i = j + 1;
-      continue;
-    }
-    out += c;
-    i += 1;
-  }
-  return out;
-}
+// Les familles et le retrait du texte litteral viennent de
+// scripts/familles-dangereuses.mjs, partage avec test/scanner-bash.test.mjs.
+// Les tenir en double aurait produit, tot ou tard, une matrice qui surveille
+// une famille que le scanner ignore — ou l'inverse, plus grave encore.
+const { FAMILLES, codeNu } =
+  await import(pathToFileURL(resolve(__dirnameLocal, 'familles-dangereuses.mjs')).href);
+const DANGERS = FAMILLES.map((f) => [f.nom, f.motif]);
 
 const parOutil = {};
 for (const s of scriptsSh) {

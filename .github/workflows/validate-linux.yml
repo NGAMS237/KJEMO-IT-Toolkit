@@ -201,6 +201,18 @@ jobs:
         run: node test/sources-microsoft.mjs --hors-ligne
 
       # -----------------------------------------------------------------------
+      # 9 bis. Scanner de surete des scripts Bash
+      #
+      # Trente-et-une familles de commandes dangereuses, cherchees dans le CODE
+      # REELLEMENT EXECUTE. Toute occurrence non couverte par une exception
+      # ecrite et justifiee fait echouer le workflow — et toute exception qui
+      # ne sert plus aussi.
+      # -----------------------------------------------------------------------
+      - name: Scanner de sûreté des scripts Bash
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/scanner-bash.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun
