@@ -113,6 +113,34 @@ const EXCEPTIONS = [
       + 'passage du gardien de chemin.',
   },
   {
+    famille: 'wipefs',
+    outils: ['linux-storage-diagnostic'],
+    ligne: /\bwipefs -n\b|kjemo_dispo wipefs/,
+    pourquoi:
+      'Deux occurrences, toutes deux en LECTURE. La premiere est un test de '
+      + 'presence (`kjemo_dispo wipefs`) qui n execute pas la commande. La '
+      + 'seconde est `wipefs -n`, son mode « ne fais rien » : il LISTE les '
+      + 'signatures et n efface rien. C est la seule facon de repondre a « ce '
+      + 'disque est-il vraiment vide ? », et la question compte : un disque sans '
+      + 'partition peut porter une signature linux_raid_member residuelle, mkfs '
+      + 'reussira par-dessus, et le noyau redecouvrira l ancien ensemble au '
+      + 'demarrage. L exception EXIGE le « -n » : un futur `wipefs -a` ne '
+      + 'correspondrait pas a ce motif et serait refuse.',
+  },
+  {
+    famille: 'fdisk / parted / sfdisk en ecriture',
+    outils: ['linux-storage-diagnostic'],
+    ligne: /^fdisk -l$/,
+    pourquoi:
+      '`fdisk -l` LISTE puis SORT. C est le seul mode de fdisk qui ne propose '
+      + 'jamais d ecrire : sans -l, fdisk ouvre une session interactive sur le '
+      + 'peripherique nomme. Le motif de la famille ne distingue pas les modes, '
+      + 'et c est voulu — c est a l exception de le faire, par ecrit. Celle-ci '
+      + 'est ancree aux deux bouts (^...$) : elle ne tolere QUE la ligne nue '
+      + '`fdisk -l`, sans cible et sans autre option. Un `fdisk /dev/sdb` serait '
+      + 'refuse.',
+  },
+  {
     famille: 'reboot ou shutdown',
     outils: ['linux-health-report'],
     ligne: /\blast\b.*\breboot\b/,

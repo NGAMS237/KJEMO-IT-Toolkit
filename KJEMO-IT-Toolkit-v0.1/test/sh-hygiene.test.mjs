@@ -34,6 +34,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync, openSync, readSync, closeSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -402,6 +403,57 @@ section('Contre-épreuves : le banc peut-il échouer ?');
   const ps1SansBom = Buffer.from('#Requires -Version 5.1\n', 'utf8');
   assert(!ps1SansBom.subarray(0, 3).equals(BOM),
     'contre-épreuve — un .ps1 sans BOM est bien reconnu comme non conforme');
+}
+
+// ===========================================================================
+section('Plan 3 — les huit jeux d’un même assistant produisent huit scripts distincts');
+// ===========================================================================
+//
+// POURQUOI CETTE RÈGLE EXISTE, ET POURQUOI ELLE EST ICI POUR TOUJOURS
+//
+// Trois fois dans l’histoire de ce dépôt — LOT 4, LOT 5, puis LOT 7 — les huit
+// jeux de données d’un assistant ont produit huit fichiers RIGOUREUSEMENT
+// IDENTIQUES, parce qu’aucune valeur du jeu ne correspondait aux champs de
+// l’outil. Le corpus paraissait large et ne testait rien : les apostrophes,
+// les accents, les dollars et les points-virgules n’atteignaient jamais le
+// générateur.
+//
+// Les deux premières fois, le défaut a été trouvé à l’œil, longtemps après.
+// La troisième, par une mesure d’empreintes faite à la main. Cette règle en
+// fait un échec de banc : ajouter un assistant sans ajouter ses valeurs de jeu
+// casse le test, immédiatement, et le message dit quoi faire.
+//
+// Un assistant SANS AUCUN champ ne serait pas concerné — il n’en existe aucun
+// aujourd’hui, et le jour où il en existera un, cette règle devra être
+// assouplie avec une raison écrite, pas en silence.
+
+{
+  const parOutil = new Map();
+  for (const f of fichiersSh) {
+    const outil = f.split('__')[0];
+    if (!parOutil.has(outil)) parOutil.set(outil, []);
+    parOutil.get(outil).push(f);
+  }
+  for (const [outil, fichiers] of [...parOutil].sort()) {
+    const empreintes = new Set(fichiers.map(
+      (f) => createHash('sha256').update(readFileSync(join(GENERES, f))).digest('hex'),
+    ));
+    assert(empreintes.size === fichiers.length,
+      `${outil} : ${fichiers.length} jeux de données produisent ${empreintes.size} script(s) distinct(s)`
+      + `${empreintes.size === fichiers.length ? '' : ' — des jeux produisent le MÊME fichier : '
+        + 'leurs valeurs n’atteignent pas le générateur. Complète VALEURS_LINUX dans '
+        + 'test/generate-ps1.mjs avec les champs de cet assistant.'}`);
+  }
+
+  // Contre-épreuve : la règle doit savoir dire non. Deux contenus identiques
+  // rendent une seule empreinte, et c’est exactement ce qu’elle refuse.
+  const a = createHash('sha256').update('meme contenu').digest('hex');
+  const b = createHash('sha256').update('meme contenu').digest('hex');
+  assert(new Set([a, b]).size === 1,
+    'contre-épreuve — deux contenus identiques rendent bien UNE seule empreinte');
+  const c = createHash('sha256').update('contenu different').digest('hex');
+  assert(new Set([a, c]).size === 2,
+    'contre-épreuve — deux contenus différents rendent bien DEUX empreintes');
 }
 
 console.log('');

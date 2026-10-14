@@ -1998,6 +1998,7 @@ const VALEURS_POSTE_B = {
 // ---------------------------------------------------------------------------
 const VALEURS_LINUX = {
   "apostrophe-ascii": {
+    cible: "/dev/sdb", inclureSignatures: "Oui", inclureRaid: "Oui", tailleMiniGio: "5",
     joursJournal: "3", seuilDisque: "80", nbUnites: "8", lignes: "40",
     profondeur: "2", nbProcessus: "5", heure: "4", seuilInactif: "45",
     format: "JSON", inclurePaquets: "Tous", inclureMateriel: "Non",
@@ -2012,6 +2013,7 @@ const VALEURS_LINUX = {
     script: "/srv/scripts/traitement-d'adam.sh", journal: "/srv/scripts/journaux/d'adam.log",
   },
   "apostrophe-typographique": {
+    cible: "", inclureSignatures: "Non", inclureRaid: "Oui", tailleMiniGio: "1",
     joursJournal: "5", seuilDisque: "90", nbUnites: "20", lignes: "120",
     profondeur: "3", nbProcessus: "15", heure: "22", seuilInactif: "120",
     format: "CSV", inclurePaquets: "Aucun", inclureMateriel: "Oui",
@@ -2026,6 +2028,7 @@ const VALEURS_LINUX = {
     script: "/srv/scripts/traitement-d\u2019adam.sh", journal: "/srv/scripts/journaux/d\u2019adam.log",
   },
   "dollar-backtick-guillemets": {
+    cible: "/dev/nvme0n1", inclureSignatures: "Oui", inclureRaid: "Non", tailleMiniGio: "0",
     joursJournal: "1", seuilDisque: "70", nbUnites: "30", lignes: "200",
     profondeur: "4", nbProcessus: "20", heure: "0", seuilInactif: "365",
     format: "JSON", inclurePaquets: "Principaux", inclureMateriel: "Non",
@@ -2040,6 +2043,7 @@ const VALEURS_LINUX = {
     script: "/srv/scripts/$(whoami).sh", journal: "/srv/scripts/journaux/`date`.log",
   },
   "espaces-et-accents": {
+    cible: "/dev/sdc", inclureSignatures: "Non", inclureRaid: "Non", tailleMiniGio: "10",
     joursJournal: "7", seuilDisque: "95", nbUnites: "12", lignes: "60",
     profondeur: "1", nbProcessus: "8", heure: "12", seuilInactif: "30",
     format: "CSV", inclurePaquets: "Tous", inclureMateriel: "Oui",
@@ -2054,6 +2058,7 @@ const VALEURS_LINUX = {
     script: "/srv/scripts/mon traitement accentu\u00e9.sh", journal: "/srv/scripts/journaux/\u00e9tat r\u00e9seau.log",
   },
   "virgule-et-point-virgule": {
+    cible: "/dev/mapper/vg0-lv0", inclureSignatures: "Oui", inclureRaid: "Oui", tailleMiniGio: "3",
     joursJournal: "2", seuilDisque: "60", nbUnites: "25", lignes: "90",
     profondeur: "2", nbProcessus: "12", heure: "6", seuilInactif: "60",
     format: "JSON", inclurePaquets: "Aucun", inclureMateriel: "Non",
@@ -2068,6 +2073,7 @@ const VALEURS_LINUX = {
     script: "/srv/scripts/etape1;etape2.sh", journal: "/srv/scripts/journaux/a,b.log",
   },
   "chemin-racine-c": {
+    cible: "/dev/sdd1", inclureSignatures: "Non", inclureRaid: "Oui", tailleMiniGio: "7",
     joursJournal: "4", seuilDisque: "75", nbUnites: "10", lignes: "30",
     profondeur: "3", nbProcessus: "6", heure: "18", seuilInactif: "180",
     format: "JSON", inclurePaquets: "Aucun", inclureMateriel: "Oui",
@@ -2082,6 +2088,7 @@ const VALEURS_LINUX = {
     script: "/srv/scripts/sous-dossier/traitement.sh", journal: "/srv/scripts/journaux/cron.log",
   },
   "chemin-avec-apostrophe": {
+    cible: "", inclureSignatures: "Oui", inclureRaid: "Non", tailleMiniGio: "64",
     joursJournal: "6", seuilDisque: "88", nbUnites: "18", lignes: "150",
     profondeur: "5", nbProcessus: "25", heure: "2", seuilInactif: "15",
     format: "CSV", inclurePaquets: "Tous", inclureMateriel: "Non",
