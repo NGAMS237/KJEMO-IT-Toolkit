@@ -2119,6 +2119,45 @@ const VALEURS_LINUX = {
 // la longueur depend du systeme de fichiers choisi juste au-dessus.
 // ---------------------------------------------------------------------------
 const VALEURS_PAR_OUTIL = {
+  // Reseau. « cible » et « interface » sont des identifiants de champ partages
+  // avec des assistants de stockage, dont les valeurs globales sont des
+  // peripheriques : d'ou cette table par outil.
+  'linux-dns-diagnostic': {
+    'apostrophe-ascii':          { nom: 'archive.ubuntu.com', domaineAd: 'kjemo.local' },
+    'apostrophe-typographique':  { nom: 'documentation.ubuntu.com', domaineAd: '' },
+    'dollar-backtick-guillemets':{ nom: '1.1.1.1', domaineAd: 'labo.interne' },
+    'espaces-et-accents':        { nom: 'srv-fichiers.labo.local', domaineAd: '' },
+    'virgule-et-point-virgule':  { nom: 'dc01.kjemo.local', domaineAd: 'kjemo.local' },
+    'chemin-racine-c':           { nom: 'localhost', domaineAd: '' },
+    'chemin-avec-apostrophe':    { nom: 'd-adam.labo.local', domaineAd: 'd-adam.local' },
+  },
+  'linux-firewall-audit': {
+    'apostrophe-ascii':          { portVerifie: '22', lireIptables: 'Non' },
+    'apostrophe-typographique':  { portVerifie: '', lireIptables: 'Oui' },
+    'dollar-backtick-guillemets':{ portVerifie: '9090', lireIptables: 'Non' },
+    'espaces-et-accents':        { portVerifie: '445', lireIptables: 'Oui' },
+    'virgule-et-point-virgule':  { portVerifie: '2049', lireIptables: 'Non' },
+    'chemin-racine-c':           { portVerifie: '65535', lireIptables: 'Non' },
+    'chemin-avec-apostrophe':    { portVerifie: '389', lireIptables: 'Oui' },
+  },
+  'linux-network-diagnostic': {
+    'apostrophe-ascii':          { interface: 'enp0s3', cible: 'archive.ubuntu.com', testerConnectivite: 'Oui' },
+    'apostrophe-typographique':  { interface: '', cible: '1.1.1.1', testerConnectivite: 'Non' },
+    'dollar-backtick-guillemets':{ interface: 'ens18', cible: '192.168.30.1', testerConnectivite: 'Oui' },
+    'espaces-et-accents':        { interface: 'wlp2s0', cible: 'documentation.ubuntu.com', testerConnectivite: 'Non' },
+    'virgule-et-point-virgule':  { interface: 'eth0.30', cible: 'srv-fichiers.labo.local', testerConnectivite: 'Oui' },
+    'chemin-racine-c':           { interface: 'lo', cible: '127.0.0.1', testerConnectivite: 'Non' },
+    'chemin-avec-apostrophe':    { interface: 'br-lan', cible: 'dc01.kjemo.local', testerConnectivite: 'Oui' },
+  },
+  'netplan-readiness': {
+    'apostrophe-ascii':          { confirmation: 'enp0s3', interface: 'enp0s3', methode: 'Adresse statique', adresseCidr: '192.168.30.10/24', passerelle: '192.168.30.1', dns: '192.168.30.1 1.1.1.1', nomFichier: '99-kjemo-reseau.yaml' },
+    'apostrophe-typographique':  { confirmation: '', interface: 'ens18', methode: 'DHCP', adresseCidr: '', passerelle: '', dns: '', nomFichier: '99-dhcp.yaml' },
+    'dollar-backtick-guillemets':{ confirmation: 'enp1s0', interface: 'enp1s0', methode: 'Adresse statique', adresseCidr: '10.10.0.5/16', passerelle: '10.10.0.1', dns: '10.10.0.1', nomFichier: '70-labo.yaml' },
+    'espaces-et-accents':        { confirmation: '', interface: 'eth0.30', methode: 'Adresse statique', adresseCidr: '172.16.8.20/22', passerelle: '172.16.8.1', dns: '172.16.8.1 9.9.9.9', nomFichier: '60-vlan30.yaml' },
+    'virgule-et-point-virgule':  { confirmation: 'br-lan', interface: 'br-lan', methode: 'DHCP', adresseCidr: '', passerelle: '', dns: '', nomFichier: '99-pont.yaml' },
+    'chemin-racine-c':           { confirmation: '', interface: 'enx001122334455', methode: 'Adresse statique', adresseCidr: '192.168.1.200/24', passerelle: '192.168.1.254', dns: '192.168.1.254', nomFichier: '80-usb.yaml' },
+    'chemin-avec-apostrophe':    { confirmation: 'wlp2s0', interface: 'wlp2s0', methode: 'DHCP', adresseCidr: '', passerelle: '', dns: '', nomFichier: '99-sansfil.yaml' },
+  },
   // Services et journaux. Les champs « unite », « periode » et « priorite »
   // sont partages avec des assistants plus anciens dont le vocabulaire n'est
   // pas le meme : les valeurs globales de VALEURS_LINUX ne conviennent donc

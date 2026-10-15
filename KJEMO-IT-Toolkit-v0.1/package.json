@@ -26,6 +26,7 @@
     "test:raid-linux": "sudo -E env \"PATH=$PATH\" node test/raid-linux.test.mjs",
     "test:permissions-linux": "sudo -E env \"PATH=$PATH\" node test/permissions-linux.test.mjs",
     "test:services-linux": "node test/services-linux.test.mjs",
+    "test:reseau-linux": "node test/reseau-linux.test.mjs",
     "test:commandes-rapides": "node test/commandes-rapides.test.mjs",
     "test:ci-workflows": "node test/ci-workflows.test.mjs",
     "test:linux": "node test/generate-ps1.mjs && node test/baseline-856.test.mjs && node test/sh-hygiene.test.mjs && node test/shquote.test.mjs && node test/sh-shellcheck.test.mjs && node test/scanner-bash.test.mjs && node test/mouchards-linux.test.mjs && node test/commandes-rapides.test.mjs && node test/ci-workflows.test.mjs",

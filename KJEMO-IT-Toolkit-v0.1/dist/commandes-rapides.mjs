@@ -112,6 +112,13 @@ export function optionsDe(commande) {
  * d'options courtes groupables.
  */
 export const OPTIONS_MOT_UN_SEUL_TIRET = {
+  // `ip` accepte ses options en mot derriere un seul tiret — « -brief »,
+  // « -oneline », « -details » — et les abrege librement : « -br » vaut
+  // « -brief ». La regle par lettre y reprochait quatre lettres a « -brief ».
+  // Ajoute au commit 18/n, avec les commandes rapides du reseau.
+  ip: ['-brief', '-oneline', '-details', '-statistics', '-stats', '-json',
+    '-numeric', '-resolve', '-color', '-family', '-human', '-iec',
+    '-timestamp', '-all', '-netns', '-batch'],
   find: ['-xdev', '-type', '-perm', '-exec', '-execdir', '-print', '-print0',
     '-printf', '-name', '-iname', '-path', '-regex', '-user', '-group',
     '-mindepth', '-maxdepth', '-size', '-mtime', '-newer', '-empty', '-depth',

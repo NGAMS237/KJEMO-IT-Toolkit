@@ -335,6 +335,26 @@ jobs:
         run: node test/services-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 ter. Le banc du reseau, de Netplan, du DNS et du pare-feu
+      #
+      # Les trois diagnostics n'appellent AUCUNE commande modifiante : aucun
+      # « ip ... add/del/set/flush », aucun « ufw allow/deny/enable/reset »,
+      # aucun « nft add/delete/flush/-f », aucun « resolvectl flush-caches ».
+      # Ce ne sont pas des intentions mais des comptes mesures dans le journal
+      # des doublures.
+      #
+      # Pour Netplan : « netplan apply » est cherche dans le CODE NU —
+      # commentaires et chaines retires, pour ne pas accuser les commentaires
+      # qui expliquent justement pourquoi on ne l'emploie pas — et dans le
+      # journal, sur les huit jeux de donnees. La validation se fait sur une
+      # COPIE avec « netplan generate --root-dir », et sans confirmation aucun
+      # fichier n'est laisse sur le disque.
+      # -----------------------------------------------------------------------
+      - name: Banc du reseau, de Netplan, du DNS et du pare-feu (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/reseau-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun
