@@ -138,6 +138,43 @@ export const commandesStockage = [
     assistant: 'linux-storage-diagnostic',
     source: `${MAN}/man8/mdadm.8.html`,
   },
+  {
+    id: 'cr-mdadm-examine',
+    notion: 'linux-raid1-create',
+    besoin: 'Savoir si un disque porte DEJA un super-bloc RAID, avant de s\'en servir comme membre ou comme secours.',
+    commande: 'sudo mdadm --examine <DISQUE>',
+    exemple: 'sudo mdadm --examine /dev/sdb',
+    parametres: [
+      { jeton: '<DISQUE>', role: 'Le disque pris ISOLEMENT, pas l\'ensemble. C\'est son super-bloc qu\'on lit, celui que mdadm y a ecrit la derniere fois qu\'il a servi.', exemple: '/dev/sdb' },
+    ],
+    options: [
+      { option: '--examine', explication: '--examine lit le super-bloc d\'un MEMBRE. Ne pas le confondre avec --detail, qui interroge un ensemble deja assemble : sur un disque seul, --detail repond qu\'il ne s\'agit pas d\'un ensemble, et on en conclut a tort que le disque est vierge.' },
+    ],
+    resultat: 'Si le disque a deja servi : le nom de l\'ensemble, son UUID, le niveau de RAID, et le role que ce disque y tenait. S\'il n\'a jamais servi : « No md superblock detected », et c\'est la reponse qu\'on espere avant de creer un ensemble neuf.',
+    verification: 'sudo wipefs -n <DISQUE>',
+    risque: 'lecture',
+    retourArriere: null,
+    assistant: 'linux-raid1-create',
+    source: `${MAN}/man8/mdadm.8.html`,
+  },
+  {
+    id: 'cr-mdadm-detail-scan',
+    notion: 'linux-raid1-create',
+    besoin: 'Obtenir la ligne ARRAY a recopier dans /etc/mdadm/mdadm.conf, pour que l\'ensemble soit reassemble au demarrage.',
+    commande: 'sudo mdadm --detail --scan',
+    exemple: 'sudo mdadm --detail --scan',
+    parametres: [],
+    options: [
+      { option: '--detail', explication: '--detail demande le detail des ensembles.' },
+      { option: '--scan', explication: '--scan dit a mdadm de parcourir les ensembles ACTIFS au lieu d\'en attendre un en argument. Combine a --detail, il imprime une ligne ARRAY par ensemble, dans la forme exacte attendue par mdadm.conf.' },
+    ],
+    resultat: 'Une ligne « ARRAY /dev/mdX metadata=... UUID=... » par ensemble actif. La commande AFFICHE seulement : elle ne touche ni a mdadm.conf ni a l\'initramfs. Les deux restent a faire a la main, et c\'est deliberement laisse a l\'operateur.',
+    verification: 'cat /etc/mdadm/mdadm.conf',
+    risque: 'lecture',
+    retourArriere: null,
+    assistant: 'linux-raid1-create',
+    source: `${MAN}/man8/mdadm.8.html`,
+  },
 
   // =========================================================================
   // MONTAGE — reversible, mais pas anodin

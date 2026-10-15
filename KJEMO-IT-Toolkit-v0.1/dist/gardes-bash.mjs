@@ -502,3 +502,119 @@ export function blocEtatService() {
     '',
   ];
 }
+
+/**
+ * Montage persistant par UUID dans /etc/fstab, en huit étapes.
+ *
+ * ---------------------------------------------------------------------------
+ * POURQUOI CE BLOC EXISTE
+ * ---------------------------------------------------------------------------
+ * `linux-disk-partition-mount` porte cette séquence en ligne, écrite à la
+ * main. `linux-raid1-create` en a besoin à l'identique. Dupliquer une
+ * séquence de sécurité est la façon la plus sûre de la voir diverger : on
+ * corrige un défaut d'un côté, et l'autre copie le garde.
+ *
+ * Les huit étapes, dans cet ordre, et l'ordre est le fond du sujet :
+ *
+ *   1. copie temporaire du fichier réel
+ *   2. l'entrée est ajoutée DANS LA COPIE
+ *   3. `findmnt --verify --tab-file` valide la COPIE
+ *   4. si la validation échoue : ZÉRO écriture du fichier réel
+ *   5. sauvegarde vérifiée — APRÈS la validation, parce qu'on ne sauvegarde
+ *      pas un fichier qu'on ne modifiera pas
+ *   6. remplacement ATOMIQUE : fichier intermédiaire sur le MÊME système de
+ *      fichiers, puis `mv`. Un « > fstab » direct vide le fichier avant de le
+ *      remplir, et il existe alors un instant où /etc/fstab est tronqué
+ *   7. relecture et comparaison — « mv a rendu 0 » ne dit pas que le contenu
+ *      est celui qu'on voulait
+ *   8. montage, puis confirmation par `findmnt` — « mount a rendu 0 » ne dit
+ *      pas que le système de fichiers est en place
+ *
+ * `mount -a` n'est jamais la validation : il monte ce qui est montable et se
+ * tait sur ce qu'il ne comprend pas.
+ *
+ * Attend ces variables : `KJEMO_FSTAB`, `KJEMO_MP`, `KJEMO_UUID`, `KJEMO_FS`,
+ * `KJEMO_OPTIONS`, et la fonction `kjemo_sauvegarder` de
+ * `blocSauvegardeFichier()`.
+ */
+export function blocFstabPersistant({ quoi = 'ce systeme de fichiers' } = {}) {
+  return [
+    '# ---------------------------------------------------------------------------',
+    `# /etc/fstab : LES HUIT ETAPES POUR ${quoi.toUpperCase()}`,
+    '#',
+    '#   1 copie  2 modification de la copie  3 validation de la COPIE',
+    '#   4 zero ecriture si la validation echoue  5 sauvegarde verifiee',
+    '#   6 remplacement atomique  7 relecture et comparaison  8 montage confirme',
+    '#',
+    '# « mount -a » n est PAS la validation : il monte ce qui est montable et se',
+    '# tait sur ce qu il ne comprend pas. Il est utile, mais apres.',
+    '# ---------------------------------------------------------------------------',
+    'kjemo_fstab_persistant() {',
+    '  local copie="${KJEMO_TMP}/fstab.essai"',
+    '  local nouveau="${KJEMO_FSTAB}.kjemo-nouveau"',
+    '  local code=0 sortie=\'\'',
+    '',
+    '  if ! cp -p -- "${KJEMO_FSTAB}" "${copie}"; then',
+    "    printf '%s\\n' 'ARRET : la copie de travail de /etc/fstab n a pas pu etre creee.' >&2",
+    "    printf '%s\\n' '/etc/fstab n a PAS ete modifie : aucune ecriture n a eu lieu.' >&2",
+    '    return 1',
+    '  fi',
+    '  {',
+    "    printf '%s\\n' ''",
+    '    printf \'%s\\n\' "# Ajoute par KJEMO IT Toolkit le $(date +%Y-%m-%d) : ${KJEMO_UUID}"',
+    '    printf \'UUID=%s %s %s %s 0 2\\n\' \\',
+    '      "${KJEMO_UUID}" "${KJEMO_MP}" "${KJEMO_FS}" "${KJEMO_OPTIONS}"',
+    '  } >> "${copie}"',
+    '',
+    '  sortie="$(findmnt --verify --tab-file "${copie}" 2>&1)" || code=$?',
+    '  if [ "${code}" -ne 0 ]; then',
+    "    printf '%s\\n' 'ARRET : findmnt --verify refuse la copie de /etc/fstab.' >&2",
+    "    printf '%s\\n' '/etc/fstab n a PAS ete modifie : rien n a ete ecrit dans le fichier reel.' >&2",
+    "    printf '%s\\n' '--- sortie de findmnt --verify ---' >&2",
+    '    printf \'%s\\n\' "${sortie}" >&2',
+    '    return 1',
+    '  fi',
+    "  kjemo_resultat 'fstab' 'Validation de la copie' 'OK' 'findmnt --verify' \\",
+    "    'C est seulement maintenant que le fichier reel va etre touche.'",
+    '',
+    '  kjemo_sauvegarder "${KJEMO_FSTAB}"',
+    '',
+    '  if ! cp -p -- "${copie}" "${nouveau}"; then',
+    "    printf '%s\\n' 'ARRET : le fichier intermediaire n a pas pu etre ecrit dans /etc.' >&2",
+    "    printf '%s\\n' '/etc/fstab n a PAS ete modifie. La sauvegarde reste disponible.' >&2",
+    '    return 1',
+    '  fi',
+    '  mv -f -- "${nouveau}" "${KJEMO_FSTAB}"',
+    '',
+    '  if ! cmp -s -- "${KJEMO_FSTAB}" "${copie}"; then',
+    "    kjemo_resultat 'fstab' 'Relecture apres ecriture' 'PROBLEME' 'contenu different' \\",
+    '      "Le fichier relu ne correspond pas a la copie validee. Restaure : cp -p ${KJEMO_SAUVEGARDE} ${KJEMO_FSTAB}"',
+    "    printf '%s\\n' 'ARRET : /etc/fstab relu ne correspond pas a la copie validee.' >&2",
+    '    return 1',
+    '  fi',
+    "  kjemo_resultat 'fstab' 'Relecture apres ecriture' 'OK' 'identique a la copie validee' \\",
+    '    "Sauvegarde conservee : ${KJEMO_SAUVEGARDE}"',
+    '',
+    '  code=0',
+    '  mount "${KJEMO_MP}" > "${KJEMO_TMP}/mount.out" 2>&1 || code=$?',
+    '  if [ "${code}" -ne 0 ]; then',
+    "    kjemo_resultat 'Montage' \"${KJEMO_MP}\" 'PROBLEME' \"code ${code}\" \\",
+    '      "mount a echoue. /etc/fstab a ete modifie et sauvegarde dans ${KJEMO_SAUVEGARDE}."',
+    '    cat "${KJEMO_TMP}/mount.out" >&2',
+    '    return 1',
+    '  fi',
+    '  if findmnt --mountpoint "${KJEMO_MP}" > /dev/null 2>&1; then',
+    '    local src=\'\'',
+    '    src="$(findmnt -n -o SOURCE --mountpoint "${KJEMO_MP}" 2>/dev/null || true)"',
+    "    kjemo_resultat 'Montage' \"${KJEMO_MP}\" 'OK' \"${src}\" \\",
+    "      'Confirme par findmnt, et non par le code de retour de mount.'",
+    '  else',
+    "    kjemo_resultat 'Montage' \"${KJEMO_MP}\" 'PROBLEME' 'absent de findmnt' \\",
+    "      'mount a rendu 0 mais findmnt ne voit pas le montage.'",
+    '    return 1',
+    '  fi',
+    '  return 0',
+    '}',
+    '',
+  ];
+}

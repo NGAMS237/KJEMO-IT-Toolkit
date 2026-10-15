@@ -230,6 +230,99 @@ const EXCEPTIONS = [
       + 'y arriver le rendrait faux ailleurs. Exception etroite : elle ne '
       + 'tolere que les lignes ou `last` et `reboot` apparaissent ensemble.',
   },
+  // -------------------------------------------------------------------------
+  // linux-raid1-create — le second assistant du depot qui formate, et le seul
+  // qui cree un ensemble RAID. Comme pour le partitionnement, interdire ses
+  // commandes reviendrait a interdire l assistant ; ce que le scanner garantit,
+  // c est qu AUCUNE autre forme ne se glisse a cote.
+  //
+  // Ce que le scanner ne peut pas garantir, et qui est prouve dans
+  // test/raid-linux.test.mjs : que ces commandes sont derriere la porte finale,
+  // que mkfs recoit /dev/mdX et jamais un membre, et qu une confirmation
+  // absente donne zero appel destructif.
+  // -------------------------------------------------------------------------
+  {
+    famille: 'mkfs',
+    outils: ['linux-raid1-create'],
+    ligne: /^for kjemo_o in mdadm lsblk blkid wipefs findmnt mkfs\.(ext4|xfs); do\s*$/,
+    pourquoi:
+      'Controle de PRESENCE des outils, dans la boucle de prerequis : le nom de '
+      + 'la commande y est une donnee, pas une invocation. Verifier mkfs AVANT '
+      + 'de creer l ensemble evite l etat le plus inconfortable du sujet : un '
+      + 'miroir assemble, synchronise, et pas formatable parce que le paquet '
+      + 'manque. L exception est ancree sur la ligne entiere, et ne tolere que '
+      + 'les deux variantes de systeme de fichiers offertes par le formulaire.',
+  },
+  {
+    famille: 'wipefs',
+    outils: ['linux-raid1-create'],
+    ligne: /^for kjemo_o in mdadm lsblk blkid wipefs findmnt mkfs\.(ext4|xfs); do\s*$|^sig= +\$\(wipefs -n -- +2>\/dev\/null \|\| true\)\s*$/,
+    pourquoi:
+      'Deux occurrences, toutes deux en LECTURE. La premiere est le controle de '
+      + 'presence. La seconde est « wipefs -n », son mode « ne fais rien » : il '
+      + 'LISTE les signatures du disque examine, et c est precisement ce qui '
+      + 'fait REFUSER un membre porteur de donnees. Le cas compte ici plus '
+      + 'qu ailleurs : un disque qui porte une signature linux_raid_member '
+      + 'residuelle ferait redecouvrir un ancien ensemble au demarrage, '
+      + 'par-dessus le neuf. L exception EXIGE le « -n » : un futur « wipefs -a » '
+      + 'ne correspondrait pas et serait refuse. Cet assistant n efface aucune '
+      + 'signature et n offre aucun champ pour le faire.',
+  },
+  {
+    famille: 'mkfs',
+    outils: ['linux-raid1-create'],
+    ligne: /^kjemo_mkfs=\(mkfs\.(ext4|xfs)\s*\)\s*$/,
+    pourquoi:
+      'Construction du TABLEAU de commande, derriere la porte finale a cinq '
+      + 'conditions et apres la relecture de /proc/mdstat et de mdadm --detail. '
+      + 'L invocation elle-meme est "${kjemo_mkfs[@]}", qui ne nomme aucune '
+      + 'commande et n est donc pas signalee. La cible est "${KJEMO_ENS}", '
+      + 'verifiee trois fois : forme /dev/mdN, differente des trois disques '
+      + 'fournis, et relue par blkid. C est l erreur la plus couteuse du sujet — '
+      + 'formater un MEMBRE au lieu de l ensemble — et elle est gardee ici.',
+  },
+  {
+    famille: 'mdadm destructif',
+    outils: ['linux-raid1-create'],
+    ligne: /^kjemo_cmd=\(mdadm --create\s+--level=raid1 --raid-devices=2\s*$/,
+    pourquoi:
+      'Les deux seules formes de « mdadm --create » du depot, et la raison '
+      + 'd etre de l assistant. Elles sont construites en TABLEAU, derriere la '
+      + 'porte finale, apres examen individuel de chaque disque (bloc, non '
+      + 'monte, hors systeme, sans signature residuelle) et apres une '
+      + 'confirmation qui recapitule les roles. Ni « --force » ni '
+      + '« --assume-clean » n apparaissent : le premier passerait outre les '
+      + 'refus, le second mentirait sur la synchronisation. Le motif est ancre '
+      + 'sur « --level=raid1 --raid-devices=2 » : aucun autre niveau, aucun '
+      + 'autre nombre de membres ne correspondrait.',
+  },
+  {
+    famille: 'mdadm destructif',
+    outils: ['linux-raid-member-manage'],
+    ligne: /^mdadm --manage\s+--(fail|remove)\s*\\?\s*$/,
+    pourquoi:
+      'Les deux verbes du remplacement de membre, dans l ordre impose : '
+      + '« --fail » puis « --remove », avec une RELECTURE de /proc/mdstat et de '
+      + 'mdadm --detail apres chacun. L assistant refuse « --fail » si '
+      + 'l ensemble est DEJA degrade ou si une reconstruction tourne — marquer '
+      + 'un second membre defaillant sur un miroir a un seul membre sain detruit '
+      + 'les donnees, et c est le piege du sujet. « --zero-superblock » et '
+      + '« --stop » n apparaissent nulle part. Le motif est ancre sur ces deux '
+      + 'verbes seuls ; « --add », qui ne detruit rien, n est meme pas signale '
+      + 'par la famille.',
+  },
+  {
+    famille: 'wipefs',
+    outils: ['linux-raid-member-manage'],
+    ligne: /^kjemo_sig_e= +\$\(wipefs -n -- +2>\/dev\/null \|\| true\)\s*$/,
+    pourquoi:
+      'Une occurrence, en LECTURE : « wipefs -n » liste les signatures du '
+      + 'disque ENTRANT avant de le proposer a l ensemble. Ajouter un disque qui '
+      + 'porte encore un systeme de fichiers ou une signature '
+      + 'linux_raid_member, c est accepter de l ecraser sans l avoir dit ; '
+      + 'l assistant prefere le signaler et laisser decider. L exception exige '
+      + 'le « -n » : aucune forme effacante ne correspondrait a ce motif.',
+  },
 ];
 
 // ===========================================================================

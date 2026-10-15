@@ -2119,6 +2119,24 @@ const VALEURS_LINUX = {
 // la longueur depend du systeme de fichiers choisi juste au-dessus.
 // ---------------------------------------------------------------------------
 const VALEURS_PAR_OUTIL = {
+  'linux-raid1-create': {
+    'apostrophe-ascii':          { ensemble: '/dev/md1', membre1: '/dev/sdb', membre2: '/dev/sdc', spare: '/dev/sdd', pointMontage: '/srv/raid-dadam', systemeFichiers: 'ext4', confirmation: '/dev/md1' },
+    'apostrophe-typographique':  { ensemble: '/dev/md2', membre1: '/dev/sdb', membre2: '/dev/sdc', spare: '', pointMontage: '/srv/raid-typo', systemeFichiers: 'xfs', confirmation: '' },
+    'dollar-backtick-guillemets':{ ensemble: '/dev/md3', membre1: '/dev/nvme0n1', membre2: '/dev/nvme1n1', spare: '/dev/nvme2n1', pointMontage: '/srv/raid-dollar', systemeFichiers: 'ext4', confirmation: '/dev/md3' },
+    'espaces-et-accents':        { ensemble: '/dev/md4', membre1: '/dev/vdb', membre2: '/dev/vdc', spare: '', pointMontage: '/srv/raid partage', systemeFichiers: 'ext4', confirmation: '' },
+    'virgule-et-point-virgule':  { ensemble: '/dev/md5', membre1: '/dev/sdd', membre2: '/dev/sde', spare: '/dev/sdf', pointMontage: '/srv/a-b_c-raid', systemeFichiers: 'xfs', confirmation: '/dev/md5' },
+    'chemin-racine-c':           { ensemble: '/dev/md6', membre1: '/dev/sdg', membre2: '/dev/sdh', spare: '', pointMontage: '/mnt/raid-voisin', systemeFichiers: 'ext4', confirmation: '' },
+    'chemin-avec-apostrophe':    { ensemble: '/dev/md7', membre1: '/dev/sdi', membre2: '/dev/sdj', spare: '/dev/sdk', pointMontage: '/srv/d-adam/raid', systemeFichiers: 'ext4', confirmation: '/dev/md7' },
+  },
+  'linux-raid-member-manage': {
+    'apostrophe-ascii':          { ensemble: '/dev/md1', membreSortant: '/dev/sdc', membreEntrant: '/dev/sdd', confirmation: '/dev/md1' },
+    'apostrophe-typographique':  { ensemble: '/dev/md2', membreSortant: '/dev/sdc', membreEntrant: '', confirmation: '' },
+    'dollar-backtick-guillemets':{ ensemble: '/dev/md3', membreSortant: '', membreEntrant: '/dev/nvme2n1', confirmation: '/dev/md3' },
+    'espaces-et-accents':        { ensemble: '/dev/md4', membreSortant: '/dev/vdc', membreEntrant: '/dev/vdd', confirmation: '' },
+    'virgule-et-point-virgule':  { ensemble: '/dev/md5', membreSortant: '/dev/sde', membreEntrant: '', confirmation: '/dev/md5' },
+    'chemin-racine-c':           { ensemble: '/dev/md6', membreSortant: '', membreEntrant: '/dev/sdh', confirmation: '' },
+    'chemin-avec-apostrophe':    { ensemble: '/dev/md7', membreSortant: '/dev/sdj', membreEntrant: '/dev/sdk', confirmation: '/dev/md7' },
+  },
   'linux-quota-enable': {
     'apostrophe-ascii':          { pointMontage: '/srv/donnees-dadam', portee: 'Utilisateurs', confirmation: '/srv/donnees-dadam' },
     'apostrophe-typographique':  { pointMontage: '/srv/donnees-typo', portee: 'Groupes', confirmation: '' },

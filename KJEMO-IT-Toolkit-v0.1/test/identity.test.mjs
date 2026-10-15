@@ -1010,8 +1010,17 @@ for (const t of tools) {
 //   partitions precedente est restaurable depuis le fichier sfdisk --dump que
 //   l assistant ecrit et relit. Declarer l assistant reversible laisserait
 //   croire qu une commande defait le formatage. Elle n existe pas.
+// linux-raid1-create — ajoute par le LOT 7, commit 15/n.
+//   La creation d un RAID 1 ecrit un superbloc mdadm sur CHAQUE membre, puis
+//   l assistant formate l ensemble. Les deux actes sont sans retour : les
+//   donnees qui se trouvaient sur ces disques ne sont plus la, et aucune
+//   commande ne les ramene. Ce qui s annule — arreter l ensemble, retirer la
+//   ligne de /etc/fstab, effacer les superblocs pour rendre les disques
+//   reutilisables — est decrit dans rollback.command ; mais defaire la
+//   structure n est pas rendre les donnees. Le dire franchement est la seule
+//   facon de faire choisir des disques VIDES avant de lancer l assistant.
 const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'linux-disk-partition-mount',
-  'process-hung', 'temp-cleanup'];
+  'linux-raid1-create', 'process-hung', 'temp-cleanup'];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
   `les seuls outils declares irreversibles sont ${IRREVERSIBLES_ADMIS.join(' et ')} (${lectureSeule.join(', ') || 'aucun'})`);
@@ -1486,7 +1495,7 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   // laxiste : elle compterait moins de generate() que d'outils et echouerait.
   // C'est exactement ce qui s'est produit, et c'est la bonne facon d'echouer.
   'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs',
-  'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs']
+  'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,

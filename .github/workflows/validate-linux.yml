@@ -104,7 +104,10 @@ jobs:
         run: |
           for f in dist/plateforme.mjs dist/noyau-bash.mjs dist/gardes-bash.mjs \
                    dist/validateurs-linux.mjs dist/sources-linux.mjs \
+                   dist/commandes-rapides.mjs dist/commandes-stockage.mjs \
                    dist/outils-linux.mjs dist/outils-linux-b.mjs \
+                   dist/outils-linux-c.mjs dist/outils-linux-d.mjs \
+                   dist/outils-linux-e.mjs dist/outils-linux-f.mjs \
                    dist/generators.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
@@ -257,6 +260,29 @@ jobs:
       - name: Banc des quotas (racine requise, doublures)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: sudo -E env "PATH=$PATH" node test/quotas-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 sexies. Banc du RAID — neuf scenarios, dont deux controles positifs
+      #
+      # Comme les deux bancs precedents : tourne en ROOT, parce que
+      # linux-raid1-create exige root et sort sinon, et parce que « [ -b ] »
+      # est une primitive du shell qu'aucun mouchard ne peut doubler — le banc
+      # cree cinq faux noeuds avec mknod.
+      #
+      # Ce qu'il prouve : confirmation absente, membre monte, membre porteur
+      # d'une signature, doublon de disque et spare confondu avec un membre
+      # donnent chacun ZERO `mdadm --create` et ZERO mkfs ; mkfs recoit
+      # /dev/mdX et jamais un membre ; l'ordre fail, remove, add est tenu avec
+      # une relecture apres CHAQUE commande ; et une relecture muette bloque
+      # la suite au lieu de la poursuivre.
+      #
+      # Aucun vrai ensemble RAID n'est cree : mdadm, mkfs, blkid, wipefs,
+      # lsblk, findmnt et mount sont des doublures, et fstab est redirige vers
+      # le bac.
+      # -----------------------------------------------------------------------
+      - name: Banc du RAID (racine requise, doublures, faux périphériques)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/raid-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
