@@ -1496,7 +1496,7 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   // C'est exactement ce qui s'est produit, et c'est la bonne facon d'echouer.
   'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs',
   'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs',
-  'dist/outils-linux-g.mjs']
+  'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -3499,8 +3499,14 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
       // Les motifs francs de gabarit JS, eux, sont cherchés plus haut dans le
       // texte COMPLET, commentaires inclus : un ${v.champ} resté dans un
       // commentaire reste un défaut de génération, même s'il est inoffensif.
+      // Le motif accepte les trois ecritures de l'option : « -f 'FORMAT' »,
+      // « -f='FORMAT' » et « --showformat='FORMAT' ». Il ne reconnaissait que
+      // la premiere, et les champs de « dpkg-query -W -f='${Version}' » —
+      // forme employee par le diagnostic des paquets du commit 17/n —
+      // passaient pour des variables inconnues. L'exclusion reste ancree sur
+      // la FORME de l'option, et non sur les noms des champs.
       const scriptSansFormats = script
-        .replace(/-f\s+'[^']*'/g, "-f 'FORMAT'")
+        .replace(/--?(?:f|showformat)(?:\s+|=)'[^']*'/g, "-f 'FORMAT'")
         .replace(/^\s*#.*$/gm, '');
       const citees = new Set();
       for (const m of scriptSansFormats.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*)[}:]/g)) citees.add(m[1]);
@@ -3524,8 +3530,14 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
         }
       }
       // Les variables fournies par l'environnement ou par bash lui-même.
+      // SSH_CONNECTION et SSH_TTY sont posees par OpenSSH dans toute session
+      // distante, et un script qui decide s'il peut couper SSH a besoin de les
+      // LIRE. Elles sont ajoutees ici, et pas ailleurs : les ecrire serait un
+      // mensonge sur la nature de la session, et aucun script du lot ne le
+      // fait — la garde ci-dessus distingue lecture et affectation.
       const ENV_CONNUES = new Set(['HOME', 'PATH', 'USER', 'LOGNAME', 'PWD', 'SHELL', 'LANG',
-        'LC_ALL', 'IFS', 'EUID', 'UID', 'HOSTNAME', 'TMPDIR', 'SUDO_USER', 'TERM', 'BASH_VERSION']);
+        'LC_ALL', 'IFS', 'EUID', 'UID', 'HOSTNAME', 'TMPDIR', 'SUDO_USER', 'TERM', 'BASH_VERSION',
+        'SSH_CONNECTION', 'SSH_TTY']);
       const inconnues = [...citees].filter((n) => !assignees.has(n) && !ENV_CONNUES.has(n));
       assert(inconnues.length === 0,
         `${outil.id} : toute variable citée est assignée dans le script ou connue de l\u2019environnement (inconnues : ${inconnues.join(', ') || 'aucune'})`);

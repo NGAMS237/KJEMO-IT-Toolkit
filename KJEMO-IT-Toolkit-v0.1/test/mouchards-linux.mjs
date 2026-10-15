@@ -63,7 +63,7 @@ import { execFileSync } from 'node:child_process';
  * y compris ceux que personne n'appelle encore.
  */
 export const COMMANDES_SURVEILLEES = {
-  services: ['systemctl', 'service'],
+  services: ['systemctl', 'service', 'journalctl'],
   comptes: ['useradd', 'usermod', 'userdel', 'groupadd', 'groupmod', 'gpasswd', 'passwd', 'chage'],
   droits: ['chmod', 'chown', 'chgrp', 'setfacl'],
   montage: ['mount', 'umount'],
@@ -74,7 +74,14 @@ export const COMMANDES_SURVEILLEES = {
   ssh: ['sshd', 'ssh-keygen', 'ssh-copy-id'],
   samba: ['testparm', 'samba-tool', 'smbpasswd', 'net', 'pdbedit'],
   nfs: ['exportfs'],
-  heure: ['timedatectl', 'chronyc', 'ntpdate'],
+  heure: ['timedatectl', 'chronyc', 'ntpdate', 'hwclock'],
+  // Ajoutees au commit 17/n, avec le diagnostic des paquets. apt-get et dpkg
+  // ne sont pas « modifiants » dans ce lot — aucun assistant n installe quoi
+  // que ce soit — et c est precisement ce que le banc doit pouvoir PROUVER :
+  // sans doublure, « zero installation » serait une affirmation sur une
+  // intention. La seule forme employee est « apt-get -s install », et le banc
+  // verifie que le « -s » est la.
+  paquets: ['apt-get', 'apt', 'apt-cache', 'apt-mark', 'dpkg', 'dpkg-query'],
   archives: ['tar'],
 };
 

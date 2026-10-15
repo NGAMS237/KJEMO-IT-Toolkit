@@ -2119,6 +2119,46 @@ const VALEURS_LINUX = {
 // la longueur depend du systeme de fichiers choisi juste au-dessus.
 // ---------------------------------------------------------------------------
 const VALEURS_PAR_OUTIL = {
+  // Services et journaux. Les champs « unite », « periode » et « priorite »
+  // sont partages avec des assistants plus anciens dont le vocabulaire n'est
+  // pas le meme : les valeurs globales de VALEURS_LINUX ne conviennent donc
+  // pas, et c'est exactement la raison d'etre de cette table par outil.
+  'linux-package-diagnostic': {
+    'apostrophe-ascii':          { paquets: 'quota acl', verifierIntegrite: 'Non', simulerInstallation: 'Oui' },
+    'apostrophe-typographique':  { paquets: '', verifierIntegrite: 'Oui', simulerInstallation: 'Non' },
+    'dollar-backtick-guillemets':{ paquets: 'mdadm', verifierIntegrite: 'Non', simulerInstallation: 'Oui' },
+    'espaces-et-accents':        { paquets: 'samba winbind krb5-user', verifierIntegrite: 'Non', simulerInstallation: 'Non' },
+    'virgule-et-point-virgule':  { paquets: 'nfs-kernel-server,nfs-common', verifierIntegrite: 'Oui', simulerInstallation: 'Oui' },
+    'chemin-racine-c':           { paquets: 'cockpit', verifierIntegrite: 'Non', simulerInstallation: 'Non' },
+    'chemin-avec-apostrophe':    { paquets: 'openssh-server', verifierIntegrite: 'Oui', simulerInstallation: 'Oui' },
+  },
+  'linux-time-sync-diagnostic': {
+    'apostrophe-ascii':          { lireHorlogeMaterielle: 'Oui', lignesJournal: '20' },
+    'apostrophe-typographique':  { lireHorlogeMaterielle: 'Non', lignesJournal: '0' },
+    'dollar-backtick-guillemets':{ lireHorlogeMaterielle: 'Oui', lignesJournal: '200' },
+    'espaces-et-accents':        { lireHorlogeMaterielle: 'Non', lignesJournal: '50' },
+    'virgule-et-point-virgule':  { lireHorlogeMaterielle: 'Oui', lignesJournal: '5' },
+    'chemin-racine-c':           { lireHorlogeMaterielle: 'Non', lignesJournal: '120' },
+    'chemin-avec-apostrophe':    { lireHorlogeMaterielle: 'Oui', lignesJournal: '75' },
+  },
+  'systemd-service-control': {
+    'apostrophe-ascii':          { unite: 'nginx.service', action: 'Redemarrer', confirmation: 'nginx.service' },
+    'apostrophe-typographique':  { unite: 'cron.service', action: 'Demarrer', confirmation: '' },
+    'dollar-backtick-guillemets':{ unite: 'chrony.service', action: 'Arreter', confirmation: 'chrony.service' },
+    'espaces-et-accents':        { unite: 'smbd.service', action: 'Activer au demarrage', confirmation: '' },
+    'virgule-et-point-virgule':  { unite: 'nfs-server.service', action: 'Desactiver au demarrage', confirmation: 'nfs-server.service' },
+    'chemin-racine-c':           { unite: 'cockpit.socket', action: 'Recharger', confirmation: '' },
+    'chemin-avec-apostrophe':    { unite: 'mdmonitor.service', action: 'Redemarrer', confirmation: 'mdmonitor.service' },
+  },
+  'systemd-service-diagnostic': {
+    'apostrophe-ascii':          { unite: 'ssh.service', periode: 'Depuis ce demarrage', priorite: 'Erreurs et pires', lignes: '200' },
+    'apostrophe-typographique':  { unite: '', periode: '7 jours', priorite: 'Critiques seulement', lignes: '50' },
+    'dollar-backtick-guillemets':{ unite: 'smbd.service', periode: '15 minutes', priorite: 'Tout', lignes: '1000' },
+    'espaces-et-accents':        { unite: 'nfs-server.service', periode: '1 heure', priorite: 'Avertissements et pires', lignes: '300' },
+    'virgule-et-point-virgule':  { unite: 'cron.service', periode: '24 heures', priorite: 'Erreurs et pires', lignes: '75' },
+    'chemin-racine-c':           { unite: '', periode: 'Depuis ce demarrage', priorite: 'Tout', lignes: '5000' },
+    'chemin-avec-apostrophe':    { unite: 'cockpit.service', periode: '7 jours', priorite: 'Avertissements et pires', lignes: '120' },
+  },
   // Les quatre assistants de comptes et permissions. Les huit jeux doivent
   // produire huit scripts DISTINCTS : sans valeurs propres, « recursif » et
   // « format » suffisent rarement, et plusieurs jeux retombent sur le meme

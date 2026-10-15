@@ -105,11 +105,11 @@ jobs:
           for f in dist/plateforme.mjs dist/noyau-bash.mjs dist/gardes-bash.mjs \
                    dist/validateurs-linux.mjs dist/sources-linux.mjs \
                    dist/commandes-rapides.mjs dist/commandes-stockage.mjs \
-                   dist/commandes-permissions.mjs \
+                   dist/commandes-permissions.mjs dist/commandes-services.mjs \
                    dist/outils-linux.mjs dist/outils-linux-b.mjs \
                    dist/outils-linux-c.mjs dist/outils-linux-d.mjs \
                    dist/outils-linux-e.mjs dist/outils-linux-f.mjs \
-                   dist/outils-linux-g.mjs \
+                   dist/outils-linux-g.mjs dist/outils-linux-h.mjs \
                    dist/generators.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
@@ -225,8 +225,8 @@ jobs:
       # leur nom, leurs arguments et leur ordre. On compte les appels et on
       # mesure les fichiers reellement ecrits.
       #
-      # Aucun vrai `mkfs`, aucun vrai `systemctl`, aucun vrai disque : les 48
-      # commandes surveillees sont doublees, et le banc verifie d'abord que
+      # Aucun vrai `mkfs`, aucun vrai `systemctl`, aucun vrai disque : les
+      # commandes surveillees sont toutes doublees, et le banc verifie d'abord que
       # chaque doublure fonctionne — un mouchard muet rendrait tout vert.
       # -----------------------------------------------------------------------
       - name: Banc Linux à mouchards (exécution réelle, doublures)
@@ -309,6 +309,30 @@ jobs:
       - name: Banc des permissions, des ACL et des comptes (racine requise)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: sudo -E env "PATH=$PATH" node test/permissions-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 octies. Banc des services, des paquets et de l'heure
+      #
+      # Ce banc ne demande PAS root : les quatre assistants du commit 17/n
+      # n'exigent pas de privilege pour etre eprouves, et trois d'entre eux ne
+      # font que lire.
+      #
+      # Sa preuve centrale est une absence, et une absence se mesure : pour
+      # chacun des trois diagnostics, ZERO appel modifiant. Zero start, stop,
+      # restart, enable ou disable ; zero « apt-get install » sans le « -s » de
+      # simulation ; zero remove, purge, autoremove, upgrade ni meme update ;
+      # zero set-time, set-timezone ou set-ntp ; et hwclock uniquement avec
+      # --show. « Cet assistant est un diagnostic » est une intention — ces
+      # comptes en font un fait.
+      #
+      # Pour l'assistant qui agit : confirmation absente, unite inconnue, arret
+      # de SSH depuis une session SSH, verbe interdit injecte a la main donnent
+      # chacun zero action ; l'etat est lu avant, relu apres, et un ecart
+      # arrete le script en affichant le journal de l'unite.
+      # -----------------------------------------------------------------------
+      - name: Banc des services, des paquets et de l'heure (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/services-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides

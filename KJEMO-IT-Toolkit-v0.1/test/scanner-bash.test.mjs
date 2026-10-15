@@ -220,6 +220,20 @@ const EXCEPTIONS = [
   },
   {
     famille: 'reboot ou shutdown',
+    outils: ['linux-package-diagnostic'],
+    ligne: /\/var\/run\/reboot-required/,
+    pourquoi:
+      'Le mot « reboot » est ici dans le NOM D UN FICHIER : /var/run/reboot-required '
+      + 'et /var/run/reboot-required.pkgs, qu Ubuntu ecrit quand un paquet mis a jour '
+      + 'ne sera actif qu apres redemarrage. Les deux lignes les LISENT — un test '
+      + '« -f » et un « sort » — et rien dans cet assistant ne redemarre quoi que ce '
+      + 'soit. Le motif de la famille cherche le mot, pas la commande, et aucun motif '
+      + 'raisonnable ne distingue les deux sans comprendre le shell : c est donc a '
+      + 'l exception de le faire, ancree sur le chemin exact du fichier. Un vrai '
+      + '« reboot » ou « shutdown -r now » ne correspondrait pas a ce motif.',
+  },
+  {
+    famille: 'reboot ou shutdown',
     outils: ['linux-health-report'],
     ligne: /\blast\b.*\breboot\b/,
     pourquoi:

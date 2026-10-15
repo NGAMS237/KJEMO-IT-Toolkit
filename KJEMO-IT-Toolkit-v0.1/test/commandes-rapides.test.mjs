@@ -42,6 +42,8 @@ const { commandesStockage } =
   await import(pathToFileURL(resolve(ROOT, 'dist/commandes-stockage.mjs')).href);
 const { commandesPermissions } =
   await import(pathToFileURL(resolve(ROOT, 'dist/commandes-permissions.mjs')).href);
+const { commandesServices } =
+  await import(pathToFileURL(resolve(ROOT, 'dist/commandes-services.mjs')).href);
 const { tools } =
   await import(pathToFileURL(resolve(ROOT, 'dist/generators.mjs')).href);
 const { sourceLinuxValide, editeurDe } =
@@ -53,7 +55,7 @@ const pass = (m) => { ok += 1; if (process.env.KJEMO_VERBEUX) console.log(`  [OK
 const fail = (m) => { echecs.push(m); console.error(`  [ECHEC] ${m}`); };
 const verifier = (c, m) => (c ? pass(m) : fail(m));
 
-const TOUTES = [...commandesStockage, ...commandesPermissions];
+const TOUTES = [...commandesStockage, ...commandesPermissions, ...commandesServices];
 
 console.log('');
 console.log(`Plan 1 — contrat des ${TOUTES.length} commandes rapides`);
