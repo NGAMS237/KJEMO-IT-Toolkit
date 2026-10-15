@@ -311,6 +311,46 @@ const EXCEPTIONS = [
       + 'verbes seuls ; « --add », qui ne detruit rien, n est meme pas signale '
       + 'par la famille.',
   },
+  // -------------------------------------------------------------------------
+  // linux-permission-change — le seul assistant du depot qui change des droits
+  // en masse. Ses commandes recursives sont sa raison d etre quand on les
+  // demande explicitement ; ce que le scanner garantit, c est qu aucune autre
+  // forme ne se glisse a cote, et que la cible n est jamais une racine.
+  //
+  // Ce que le scanner ne peut pas garantir, et qui est prouve dans
+  // test/permissions-linux.test.mjs : que ces commandes sont derriere la porte
+  // finale, que le fichier de restauration a ete ecrit ET relu avant, et
+  // qu une recursion sur une racine systeme donne zero appel.
+  // -------------------------------------------------------------------------
+  {
+    famille: 'chown -R',
+    outils: ['linux-permission-change'],
+    ligne: /^kjemo_cmd_chown=\(chown --no-dereference --recursive -- *\)$/,
+    pourquoi:
+      'Construction du TABLEAU de commande, dans la branche ou la recursion a '
+      + 'ete demandee explicitement. L invocation est "${kjemo_cmd_chown[@]}", '
+      + 'qui ne nomme aucune commande. La cible est verifiee deux fois contre '
+      + 'la liste des racines interdites — par le formulaire et par le script — '
+      + 'et l option --no-dereference est presente : un lien symbolique '
+      + 'rencontre en chemin ne fait pas sortir de l arborescence visee. '
+      + 'L exception est ancree sur la ligne entiere : un chown recursif sans '
+      + '--no-dereference ne correspondrait pas et serait refuse.',
+  },
+  {
+    famille: 'chmod, chown ou setfacl par find -exec',
+    outils: ['linux-permission-change'],
+    ligne: /^find +-xdev -type [df] -exec chmod -- +\{\} \+ *\\?$/,
+    pourquoi:
+      'Les deux seules formes de chmod recursif du depot, et la raison pour '
+      + 'laquelle elles ne sont PAS un chmod -R : un mode de dossier applique '
+      + 'recursivement poserait le bit d execution et les bits speciaux sur '
+      + 'chaque FICHIER, ce qui rend les documents executables. Les dossiers et '
+      + 'les fichiers sont donc traites separement, avec deux modes distincts '
+      + 'calcules par le generateur. find recoit -xdev, donc ne traverse aucun '
+      + 'autre systeme de fichiers, et chmod recoit « -- » avant le mode. '
+      + 'L exception est ancree sur ces deux formes exactes ; tout autre '
+      + 'find -exec portant chmod, chown, chgrp ou setfacl serait refuse.',
+  },
   {
     famille: 'wipefs',
     outils: ['linux-raid-member-manage'],
@@ -420,6 +460,7 @@ const FAUTIFS = {
   'chmod -R': 'chmod -R 777 /srv',
   'chown -R': 'chown -R nobody /srv',
   'setfacl -R': 'setfacl -R -m u:bob:rwx /srv',
+  'chmod, chown ou setfacl par find -exec': 'find /srv -type f -exec chmod 777 {} +',
   'sed -i': 'sed -i s/a/b/ /etc/hosts',
   'redirection vers /etc': 'echo x > /etc/motd',
   'tee vers /etc': 'echo x | tee /etc/motd',

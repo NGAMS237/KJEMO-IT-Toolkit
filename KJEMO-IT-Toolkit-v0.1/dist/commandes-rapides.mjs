@@ -102,6 +102,30 @@ export function optionsDe(commande) {
  * vide si tout va bien — une liste et non une exception, pour la meme raison
  * qu'ailleurs dans ce depot : le banc veut TOUS les defauts d'un coup.
  */
+/**
+ * Les commandes dont certaines options s'ecrivent en MOT derriere un seul
+ * tiret. C'est une bizarrerie historique de `find`, et elle est reelle : ses
+ * « options » sont des predicats, pas des drapeaux groupables.
+ *
+ * La table est nominative et close. Ajouter une entree ici est une decision :
+ * celui qui en ajoute une doit pouvoir dire pourquoi cette commande n'a pas
+ * d'options courtes groupables.
+ */
+export const OPTIONS_MOT_UN_SEUL_TIRET = {
+  find: ['-xdev', '-type', '-perm', '-exec', '-execdir', '-print', '-print0',
+    '-printf', '-name', '-iname', '-path', '-regex', '-user', '-group',
+    '-mindepth', '-maxdepth', '-size', '-mtime', '-newer', '-empty', '-depth',
+    '-prune', '-quit', '-follow', '-links', '-inum', '-nouser', '-nogroup'],
+};
+
+/** Les options en mot admises pour la commande ecrite dans ce bloc copiable. */
+export function optionsMotUnTiret(commande) {
+  const mots = String(commande ?? '').trim().split(/\s+/).filter(Boolean);
+  // « sudo » et les affectations qui le precedent ne sont pas la commande.
+  const nom = (mots.find((m) => m !== 'sudo' && !m.includes('=')) ?? '').split('/').pop();
+  return OPTIONS_MOT_UN_SEUL_TIRET[nom] ?? [];
+}
+
 export function incoherencesCommandeRapide(c) {
   const pb = [];
   const txt = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -153,11 +177,19 @@ export function incoherencesCommandeRapide(c) {
   for (const o of optionsDe(c.commande)) {
     if (!expliquees.includes(o)) pb.push(`option ${o} utilisee mais non expliquee`);
   }
+  const motUnTiret = optionsMotUnTiret(c.commande);
   for (const o of c.options ?? []) {
     if (txt(o.explication).length < 10) pb.push(`option ${o.option} : explication trop courte`);
     // Un groupe de courtes options (-hT) doit expliquer CHAQUE lettre : sinon
     // « -hT : affichage lisible » laisse le T sans reponse.
-    if (/^-[A-Za-z]{2,}$/.test(o.option ?? '')) {
+    //
+    // Sauf pour les commandes dont les options s'ecrivent en MOT avec un seul
+    // tiret — find et ses predicats : « -xdev » est UNE option, et non
+    // « -x -d -e -v ». La regle par lettre y produisait quatre reproches
+    // absurdes. La liste ci-dessous est nominative et close, exactement comme
+    // les exceptions du scanner : elle dit QUELLE commande et QUELLES options,
+    // au lieu d'assouplir la regle pour tout le monde.
+    if (/^-[A-Za-z]{2,}$/.test(o.option ?? '') && !motUnTiret.includes(o.option)) {
       for (const lettre of o.option.slice(1)) {
         if (!o.explication.includes(`-${lettre}`)) {
           pb.push(`option ${o.option} : la lettre -${lettre} n'est pas expliquee separement`);

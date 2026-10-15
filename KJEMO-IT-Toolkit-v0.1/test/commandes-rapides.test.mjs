@@ -40,6 +40,8 @@ const { incoherencesCommandeRapide, optionsDe, RISQUES_COMMANDE,
   await import(pathToFileURL(resolve(ROOT, 'dist/commandes-rapides.mjs')).href);
 const { commandesStockage } =
   await import(pathToFileURL(resolve(ROOT, 'dist/commandes-stockage.mjs')).href);
+const { commandesPermissions } =
+  await import(pathToFileURL(resolve(ROOT, 'dist/commandes-permissions.mjs')).href);
 const { tools } =
   await import(pathToFileURL(resolve(ROOT, 'dist/generators.mjs')).href);
 const { sourceLinuxValide, editeurDe } =
@@ -51,7 +53,7 @@ const pass = (m) => { ok += 1; if (process.env.KJEMO_VERBEUX) console.log(`  [OK
 const fail = (m) => { echecs.push(m); console.error(`  [ECHEC] ${m}`); };
 const verifier = (c, m) => (c ? pass(m) : fail(m));
 
-const TOUTES = [...commandesStockage];
+const TOUTES = [...commandesStockage, ...commandesPermissions];
 
 console.log('');
 console.log(`Plan 1 — contrat des ${TOUTES.length} commandes rapides`);
@@ -152,6 +154,11 @@ const refus = [
   ['commentaire en debut de ligne', { commande: '# liste les disques\nlsblk -f' }],
   ['option non expliquee', { commande: 'lsblk -f -p', options: [{ option: '-f', explication: '-f affiche le systeme de fichiers et l\'UUID.' }] }],
   ['lettre non expliquee dans un groupe', { commande: 'df -hT', options: [{ option: '-hT', explication: '-h affiche des tailles lisibles.' }] }],
+  // L'exception des options en MOT derriere un seul tiret ne vaut que pour les
+  // commandes nommees dans la table. Sur lsblk, « -xdev » reste un groupe de
+  // quatre lettres, et chacune doit etre expliquee : sans cette contre-epreuve,
+  // l'exception serait un assouplissement general qui ne se verrait pas.
+  ['option en mot sur une commande hors table', { commande: 'lsblk -xdev', options: [{ option: '-xdev', explication: 'reste dans le systeme de fichiers de depart.' }] }],
   ['jeton non declare', { commande: 'lsblk -f <DISQUE>' }],
   ['parametre declare mais absent', { parametres: [{ jeton: '<DISQUE>', role: 'le disque vise', exemple: '/dev/sdb' }] }],
   ['jeton reste dans l\'exemple', { exemple: 'lsblk -f <DISQUE>' }],
@@ -171,6 +178,22 @@ for (const [nom, patch] of refus) {
   const pb = incoherencesCommandeRapide(c);
   verifier(pb.length > 0, `contre-epreuve : « ${nom} » est refuse${pb.length ? ' (' + pb[0] + ')' : ' — IL NE L\'EST PAS'}`);
 }
+
+// CONTROLE POSITIF de la meme exception : sur find, « -xdev » est UNE option,
+// et une explication unique suffit. Sans ce controle, la contre-epreuve
+// ci-dessus serait verte meme si la table ne servait a rien.
+verifier(incoherencesCommandeRapide({
+  ...modele(),
+  commande: 'find /srv -xdev -type f -perm -0002',
+  exemple: 'find /srv -xdev -type f -perm -0002',
+  options: [
+    { option: '-xdev', explication: '-xdev reste dans le systeme de fichiers de depart, et ne descend pas dans les montages.' },
+    { option: '-type', explication: '-type f limite la recherche aux fichiers ordinaires.' },
+    { option: '-perm', explication: '-perm avec un tiret devant le mode signifie AU MOINS ces bits.' },
+  ],
+  source: 'https://manpages.ubuntu.com/manpages/noble/en/man1/find.1.html',
+}).length === 0,
+  'controle positif : sur find, « -xdev » est accepte comme UNE option');
 
 // Un champ entierement absent doit etre vu, pas contourne.
 for (const champ of CHAMPS_COMMANDE_RAPIDE) {

@@ -54,12 +54,26 @@ export const FAMILLES = [
     pourquoi: 'Une ligne fautive dans fstab peut laisser la machine en mode de secours au prochain demarrage.' },
   { nom: 'quotaoff', motif: /\bquotaoff\b/,
     pourquoi: 'Desactive la comptabilite des quotas : les depassements cessent d\'etre comptes, en silence.' },
-  { nom: 'chmod -R', motif: /\bchmod\s+(-[a-zA-Z]*\s+)*-R\b|\bchmod\s+-R\b/,
+  // Les trois motifs ci-dessous ne voyaient que la forme COURTE. Un
+  // « chown --recursive » est exactement aussi recursif qu un « chown -R »,
+  // et il passait sans etre signale : angle mort trouve au commit 16/n, quand
+  // les premiers assistants de permissions ont employe les formes longues.
+  // Corrige au MOTIF, pas par exception.
+  { nom: 'chmod -R', motif: /\bchmod\b[^\n]*(\s-[a-zA-Z]*R\b|\s--recursive\b)/,
     pourquoi: 'Recursif : efface en masse des droits qui n\'etaient pas tous identiques.' },
-  { nom: 'chown -R', motif: /\bchown\s+(-[a-zA-Z]*\s+)*-R\b|\bchown\s+-R\b/,
+  { nom: 'chown -R', motif: /\bchown\b[^\n]*(\s-[a-zA-Z]*R\b|\s--recursive\b)/,
     pourquoi: 'Recursif : change la propriete de fichiers systeme si la cible est mal choisie.' },
-  { nom: 'setfacl -R', motif: /\bsetfacl\b[^\n]*-R\b/,
+  { nom: 'setfacl -R', motif: /\bsetfacl\b[^\n]*(\s-[a-zA-Z]*R\b|\s--recursive\b)/,
     pourquoi: 'Recursif sur une couche de droits que peu de gens relisent.' },
+  // Et la forme que NI l un NI l autre ne voyait : find -exec. Parcourir une
+  // arborescence avec find puis appliquer chmod a chaque entree est aussi
+  // recursif qu un -R, et c est meme la facon PROPRE de le faire quand on veut
+  // deux modes distincts pour les dossiers et pour les fichiers. Aussi
+  // recursif veut dire aussi dangereux : la famille existe donc, et les
+  // emplois legitimes passent par une exception ecrite.
+  { nom: 'chmod, chown ou setfacl par find -exec',
+    motif: /\bfind\b[^\n]*-exec\s+(chmod|chown|chgrp|setfacl)\b/,
+    pourquoi: 'Aussi recursif qu un -R, et invisible pour les motifs qui ne cherchent que -R.' },
   { nom: 'sed -i', motif: /\bsed\s+(-[a-zA-Z]*\s+)*-i\b|\bsed\s+-i\b/,
     pourquoi: 'Modifie un fichier EN PLACE, sans copie, souvent sans sauvegarde.' },
   { nom: 'redirection vers /etc', motif: />\s*\/etc\//,

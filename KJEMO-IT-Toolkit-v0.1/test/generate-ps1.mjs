@@ -2119,6 +2119,47 @@ const VALEURS_LINUX = {
 // la longueur depend du systeme de fichiers choisi juste au-dessus.
 // ---------------------------------------------------------------------------
 const VALEURS_PAR_OUTIL = {
+  // Les quatre assistants de comptes et permissions. Les huit jeux doivent
+  // produire huit scripts DISTINCTS : sans valeurs propres, « recursif » et
+  // « format » suffisent rarement, et plusieurs jeux retombent sur le meme
+  // fichier. C'est le defaut que les LOTS 4, 5 et 7 ont deja paye, et que le
+  // Plan 3 de sh-hygiene refuse desormais.
+  'linux-permission-audit': {
+    'apostrophe-ascii':          { chemin: '/srv/donnees-dadam', recursif: 'Oui', chercherRisques: 'Oui' },
+    'apostrophe-typographique':  { chemin: '/srv/donnees-typo', recursif: 'Non', chercherRisques: 'Non' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/dollar', recursif: 'Oui', chercherRisques: 'Non' },
+    'espaces-et-accents':        { chemin: '/srv/Donnees partagees', recursif: 'Non', chercherRisques: 'Oui' },
+    'virgule-et-point-virgule':  { chemin: '/srv/a-b_c', recursif: 'Oui', chercherRisques: 'Oui' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', recursif: 'Non', chercherRisques: 'Non' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/d-adam/projet', recursif: 'Oui', chercherRisques: 'Non' },
+  },
+  'linux-permission-change': {
+    'apostrophe-ascii':          { chemin: '/srv/donnees-dadam', proprietaire: 'o-brien', groupe: 'partage', mode: '2770', recursif: 'Non', confirmation: '/srv/donnees-dadam' },
+    'apostrophe-typographique':  { chemin: '/srv/donnees-typo', proprietaire: '', groupe: 'gg-typo', mode: '750', recursif: 'Oui', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/dollar', proprietaire: 'dadam', groupe: '', mode: '', recursif: 'Non', confirmation: '/srv/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/Donnees partagees', proprietaire: 'partage-admin', groupe: 'partage', mode: '2750', recursif: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/a-b_c', proprietaire: '', groupe: '', mode: '1770', recursif: 'Non', confirmation: '/srv/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', proprietaire: 'voisin', groupe: 'voisins', mode: '700', recursif: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/d-adam/projet', proprietaire: 'd-adam', groupe: 'projet', mode: '770', recursif: 'Oui', confirmation: '/srv/d-adam/projet' },
+  },
+  'linux-permission-acl': {
+    'apostrophe-ascii':          { chemin: '/srv/donnees-dadam', typeEntree: 'Utilisateur', nomEntree: 'o-brien', droits: 'rwx', appliquerDefaut: 'Oui', recursif: 'Non', confirmation: '/srv/donnees-dadam' },
+    'apostrophe-typographique':  { chemin: '/srv/donnees-typo', typeEntree: 'Groupe', nomEntree: 'gg-typo', droits: 'r-x', appliquerDefaut: 'Non', recursif: 'Oui', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/dollar', typeEntree: 'Utilisateur', nomEntree: 'dadam', droits: 'rw-', appliquerDefaut: 'Non', recursif: 'Non', confirmation: '/srv/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/Donnees partagees', typeEntree: 'Groupe', nomEntree: 'partage', droits: 'rwx', appliquerDefaut: 'Oui', recursif: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/a-b_c', typeEntree: 'Utilisateur', nomEntree: 'a-b_c', droits: 'r--', appliquerDefaut: 'Non', recursif: 'Non', confirmation: '/srv/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', typeEntree: 'Groupe', nomEntree: 'voisins', droits: 'rw-', appliquerDefaut: 'Oui', recursif: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/d-adam/projet', typeEntree: 'Utilisateur', nomEntree: 'd-adam', droits: 'rwx', appliquerDefaut: 'Oui', recursif: 'Oui', confirmation: '/srv/d-adam/projet' },
+  },
+  'linux-user-create': {
+    'apostrophe-ascii':          { nomUtilisateur: 'o-brien', commentaire: 'O Brien (apostrophe ASCII dans le nom)', groupePrincipal: '', groupesSecondaires: 'partage', shell: '/bin/bash', creerHome: 'Oui', confirmation: 'o-brien' },
+    'apostrophe-typographique':  { nomUtilisateur: 'gg-typo', commentaire: 'Nom avec apostrophe typographique \u2019 au milieu', groupePrincipal: 'etudiants', groupesSecondaires: '', shell: '/usr/sbin/nologin', creerHome: 'Non', confirmation: '' },
+    'dollar-backtick-guillemets':{ nomUtilisateur: 'dadam', commentaire: 'Valeur avec $HOME et `date` et "guillemets"', groupePrincipal: '', groupesSecondaires: 'partage,projet', shell: '/bin/bash', creerHome: 'Oui', confirmation: 'dadam' },
+    'espaces-et-accents':        { nomUtilisateur: 'partage-admin', commentaire: 'Donnees partagees, equipe reseau', groupePrincipal: 'partage', groupesSecondaires: '', shell: '/bin/bash', creerHome: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { nomUtilisateur: 'a-b_c', commentaire: 'a, b; c - separateurs dans le commentaire', groupePrincipal: '', groupesSecondaires: 'projet', shell: '/usr/sbin/nologin', creerHome: 'Non', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { nomUtilisateur: 'voisin', commentaire: 'Compte de service, aucune session', groupePrincipal: 'voisins', groupesSecondaires: '', shell: '/usr/sbin/nologin', creerHome: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { nomUtilisateur: 'd-adam', commentaire: 'D Adam, projet /srv/d-adam', groupePrincipal: '', groupesSecondaires: 'projet,partage', shell: '/bin/bash', creerHome: 'Oui', confirmation: 'd-adam' },
+  },
   'linux-raid1-create': {
     'apostrophe-ascii':          { ensemble: '/dev/md1', membre1: '/dev/sdb', membre2: '/dev/sdc', spare: '/dev/sdd', pointMontage: '/srv/raid-dadam', systemeFichiers: 'ext4', confirmation: '/dev/md1' },
     'apostrophe-typographique':  { ensemble: '/dev/md2', membre1: '/dev/sdb', membre2: '/dev/sdc', spare: '', pointMontage: '/srv/raid-typo', systemeFichiers: 'xfs', confirmation: '' },

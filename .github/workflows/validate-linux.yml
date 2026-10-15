@@ -105,9 +105,11 @@ jobs:
           for f in dist/plateforme.mjs dist/noyau-bash.mjs dist/gardes-bash.mjs \
                    dist/validateurs-linux.mjs dist/sources-linux.mjs \
                    dist/commandes-rapides.mjs dist/commandes-stockage.mjs \
+                   dist/commandes-permissions.mjs \
                    dist/outils-linux.mjs dist/outils-linux-b.mjs \
                    dist/outils-linux-c.mjs dist/outils-linux-d.mjs \
                    dist/outils-linux-e.mjs dist/outils-linux-f.mjs \
+                   dist/outils-linux-g.mjs \
                    dist/generators.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
@@ -283,6 +285,30 @@ jobs:
       - name: Banc du RAID (racine requise, doublures, faux périphériques)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: sudo -E env "PATH=$PATH" node test/raid-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 septies. Banc des permissions, des ACL et des comptes
+      #
+      # Tourne en ROOT, pour deux raisons : trois des quatre assistants exigent
+      # root et sortent sinon, et le banc cree des fichiers appartenant a
+      # d'autres comptes ainsi qu'un binaire setuid.
+      #
+      # Particularite de ce banc : chmod et chown sont doubles PUIS delegues
+      # aux vraies commandes, sur une arborescence jetable du bac. L'appel est
+      # enregistre ET l'effet a lieu, ce qui permet a la relecture par `stat` de
+      # dire la verite — et donc de prouver qu'elle n'est pas decorative.
+      #
+      # Ce qu'il prouve : confirmation absente, recursion sur une racine
+      # systeme, binaire setuid dans l'arborescence, proprietaire inconnu ou
+      # d'UID 0, releve de restauration impossible donnent chacun ZERO chmod et
+      # ZERO chown ; chown precede chmod ; les dossiers et les fichiers
+      # recoivent deux modes distincts, sans aucun chmod -R ; le masque d'une
+      # ACL est relu et l'ecart annonce ; et le script de creation de compte ne
+      # contient aucun mot de passe, ni commande qui en poserait un.
+      # -----------------------------------------------------------------------
+      - name: Banc des permissions, des ACL et des comptes (racine requise)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/permissions-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
