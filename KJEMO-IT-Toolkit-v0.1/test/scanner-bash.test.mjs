@@ -205,6 +205,20 @@ const EXCEPTIONS = [
       + 'fdisk ou parted serait refusee.',
   },
   {
+    famille: 'quotaoff',
+    outils: ['linux-quota-enable'],
+    ligne: /^for kjemo_o in quotacheck quotaon quotaoff repquota setquota findmnt; do$/,
+    pourquoi:
+      'Controle de PRESENCE des commandes du paquet quota, dans une boucle de '
+      + 'prerequis : le nom y est une donnee, pas une invocation. Verifier les '
+      + 'outils AVANT de modifier /etc/fstab evite de s arreter entre la '
+      + 'modification du fichier et l initialisation de la comptabilite. '
+      + 'L assistant n appelle JAMAIS quotaoff : la desactivation est decrite '
+      + 'dans sa procedure d annulation, a lancer a la main. L exception est '
+      + 'ancree sur la ligne entiere ; un vrai « quotaoff <montage> » ne '
+      + 'correspondrait pas et serait refuse.',
+  },
+  {
     famille: 'reboot ou shutdown',
     outils: ['linux-health-report'],
     ligne: /\blast\b.*\breboot\b/,

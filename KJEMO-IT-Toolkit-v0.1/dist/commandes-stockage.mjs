@@ -255,4 +255,85 @@ export const commandesStockage = [
     assistant: 'linux-raid-member-manage',
     source: `${MAN}/man4/md.4.html`,
   },
+  // =========================================================================
+  // QUOTAS — observation, et les deux actes reversibles
+  // =========================================================================
+  {
+    id: 'cr-quota-utilisateur',
+    notion: 'linux-quota-limits',
+    besoin: 'Voir la limite et la consommation d\'un utilisateur precis.',
+    commande: 'sudo quota -u -s <UTILISATEUR>',
+    exemple: 'sudo quota -u -s blaise',
+    parametres: [
+      { jeton: '<UTILISATEUR>', role: 'Le compte a interroger. Il doit exister : getent passwd le confirme.', exemple: 'blaise' },
+    ],
+    options: [
+      { option: '-u', explication: '-u interroge la comptabilite des UTILISATEURS. Pour un groupe, c\'est -g : les deux comptabilites sont independantes, et un fichier compte pour son proprietaire ET pour son groupe.' },
+      { option: '-s', explication: '-s affiche les tailles en unites lisibles plutot qu\'en blocs de 1 Kio. Sans lui, « 921600 » est la vraie valeur, mais personne ne la lit comme 900 Mio.' },
+    ],
+    resultat: 'Une ligne par systeme de fichiers avec quota : espace utilise, limite souple, limite dure, delai de grace, puis les memes colonnes pour le nombre de fichiers. Aucune sortie signifie qu aucune limite ne s applique a ce compte.',
+    verification: 'sudo repquota -s <POINT_DE_MONTAGE>',
+    risque: 'lecture',
+    retourArriere: null,
+    assistant: 'linux-quota-limits',
+    source: `${MAN}/man1/quota.1.html`,
+  },
+  {
+    id: 'cr-quota-grace',
+    notion: 'linux-quota-limits',
+    besoin: 'Connaitre la periode de grace, c\'est-a-dire combien de temps la limite souple peut etre depassee.',
+    commande: 'sudo repquota -s <POINT_DE_MONTAGE>',
+    exemple: 'sudo repquota -s /srv/donnees',
+    parametres: [
+      { jeton: '<POINT_DE_MONTAGE>', role: 'Le systeme de fichiers equipe de quotas.', exemple: '/srv/donnees' },
+    ],
+    options: [
+      { option: '-s', explication: '-s affiche des unites lisibles. Les deux premieres lignes de la sortie donnent la periode de grace pour l espace et pour les fichiers.' },
+    ],
+    resultat: 'Les lignes « Block grace time » et « Inode grace time », puis le tableau par utilisateur. La grace est GLOBALE au systeme de fichiers : la changer pour une personne la change pour tout le monde.',
+    verification: 'sudo quota -u -s <UTILISATEUR>',
+    risque: 'lecture',
+    retourArriere: null,
+    assistant: 'linux-quota-limits',
+    source: `${MAN}/man8/repquota.8.html`,
+  },
+  {
+    id: 'cr-setquota-retirer',
+    notion: 'linux-quota-limits',
+    besoin: 'Retirer toute limite de quota a un utilisateur, sans toucher a ses fichiers.',
+    commande: 'sudo setquota -u <UTILISATEUR> 0 0 0 0 <POINT_DE_MONTAGE>',
+    exemple: 'sudo setquota -u blaise 0 0 0 0 /srv/donnees',
+    parametres: [
+      { jeton: '<UTILISATEUR>', role: 'Le compte dont on retire les limites.', exemple: 'blaise' },
+      { jeton: '<POINT_DE_MONTAGE>', role: 'Le systeme de fichiers equipe de quotas.', exemple: '/srv/donnees' },
+    ],
+    options: [
+      { option: '-u', explication: '-u vise la comptabilite des utilisateurs. Les quatre zeros sont, dans l ordre : espace souple, espace dur, fichiers souple, fichiers dur. Un zero signifie « aucune limite », et non « limite de zero ».' },
+    ],
+    resultat: 'Aucune sortie si tout va bien. L utilisateur n a plus aucune limite sur ce systeme de fichiers, et aucun de ses fichiers n a ete touche.',
+    verification: 'sudo quota -u -s <UTILISATEUR>',
+    risque: 'reversible',
+    retourArriere: 'sudo setquota -u <UTILISATEUR> <ancien-souple> <ancien-dur> <ancien-isouple> <ancien-idur> <POINT_DE_MONTAGE>',
+    assistant: 'linux-quota-limits',
+    source: `${MAN}/man8/setquota.8.html`,
+  },
+  {
+    id: 'cr-quotaoff',
+    notion: 'linux-quota-enable',
+    besoin: 'Desactiver la comptabilite des quotas sur un systeme de fichiers, sans rien supprimer.',
+    commande: 'sudo quotaoff -v <POINT_DE_MONTAGE>',
+    exemple: 'sudo quotaoff -v /srv/donnees',
+    parametres: [
+      { jeton: '<POINT_DE_MONTAGE>', role: 'Le systeme de fichiers dont on arrete la comptabilite.', exemple: '/srv/donnees' },
+    ],
+    options: [
+      { option: '-v', explication: '-v affiche ce qui a ete desactive. Sans lui, la commande reussit en silence et rien ne distingue « desactive » de « deja desactive ».' },
+    ],
+    resultat: 'Une ligne par comptabilite arretee. Les limites ne sont pas effacees : elles redeviennent actives au prochain quotaon. Aucune donnee utilisateur n est touchee.',
+    verification: 'sudo repquota -a',
+    risque: 'reversible',
+    retourArriere: 'sudo quotaon -v <POINT_DE_MONTAGE>',
+    assistant: 'linux-quota-enable',
+    source: `${MAN}/man8/quotaon.8.html`,
+  },
 ];

@@ -303,6 +303,7 @@ const ORDRE = [
   ['node test/scanner-bash.test.mjs', 'scanner de sûreté'],
   ['node test/mouchards-linux.test.mjs', 'banc à mouchards'],
   ['node test/stockage-linux.test.mjs', 'banc du stockage'],
+  ['node test/quotas-linux.test.mjs', 'banc des quotas'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];

@@ -248,6 +248,17 @@ jobs:
         run: sudo -E env "PATH=$PATH" node test/stockage-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 9 quinquies. Banc des quotas — sept scenarios de verrou
+      #
+      # Comme le banc du stockage : tourne en ROOT, parce que les deux
+      # assistants exigent root et sortent sinon. Aucun vrai quotaon, aucun
+      # systeme de fichiers reellement equipe, aucun /etc/fstab reel touche.
+      # -----------------------------------------------------------------------
+      - name: Banc des quotas (racine requise, doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/quotas-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun

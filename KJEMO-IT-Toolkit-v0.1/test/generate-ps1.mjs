@@ -2119,6 +2119,24 @@ const VALEURS_LINUX = {
 // la longueur depend du systeme de fichiers choisi juste au-dessus.
 // ---------------------------------------------------------------------------
 const VALEURS_PAR_OUTIL = {
+  'linux-quota-enable': {
+    'apostrophe-ascii':          { pointMontage: '/srv/donnees-dadam', portee: 'Utilisateurs', confirmation: '/srv/donnees-dadam' },
+    'apostrophe-typographique':  { pointMontage: '/srv/donnees-typo', portee: 'Groupes', confirmation: '' },
+    'dollar-backtick-guillemets':{ pointMontage: '/srv/dollar', portee: 'Les deux', confirmation: '/srv/dollar' },
+    'espaces-et-accents':        { pointMontage: '/srv/Donnees partagees', portee: 'Les deux', confirmation: '' },
+    'virgule-et-point-virgule':  { pointMontage: '/srv/a-b_c', portee: 'Utilisateurs', confirmation: '/srv/a-b_c' },
+    'chemin-racine-c':           { pointMontage: '/mnt/voisin', portee: 'Groupes', confirmation: '' },
+    'chemin-avec-apostrophe':    { pointMontage: "/srv/d-adam/projet", portee: 'Les deux', confirmation: "/srv/d-adam/projet" },
+  },
+  'linux-quota-limits': {
+    'apostrophe-ascii':          { pointMontage: '/srv/donnees-dadam', typeCible: 'Utilisateur', nomCible: 'o-brien', unite: 'Mio', espaceSoft: '900', espaceHard: '1000', inodesSoft: '0', inodesHard: '0', confirmation: 'o-brien' },
+    'apostrophe-typographique':  { pointMontage: '/srv/donnees-typo', typeCible: 'Groupe', nomCible: 'gg-typo', unite: 'Gio', espaceSoft: '5', espaceHard: '10', inodesSoft: '1000', inodesHard: '2000', confirmation: '' },
+    'dollar-backtick-guillemets':{ pointMontage: '/srv/dollar', typeCible: 'Utilisateur', nomCible: 'dadam', unite: 'Kio', espaceSoft: '0', espaceHard: '0', inodesSoft: '0', inodesHard: '0', confirmation: 'dadam' },
+    'espaces-et-accents':        { pointMontage: '/srv/Donnees partagees', typeCible: 'Groupe', nomCible: 'partage', unite: 'Mio', espaceSoft: '2048', espaceHard: '4096', inodesSoft: '0', inodesHard: '0', confirmation: '' },
+    'virgule-et-point-virgule':  { pointMontage: '/srv/a-b_c', typeCible: 'Utilisateur', nomCible: 'a-b_c', unite: 'Mio', espaceSoft: '100', espaceHard: '0', inodesSoft: '50', inodesHard: '0', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { pointMontage: '/mnt/voisin', typeCible: 'Utilisateur', nomCible: 'voisin', unite: 'Gio', espaceSoft: '1', espaceHard: '2', inodesSoft: '0', inodesHard: '0', confirmation: '' },
+    'chemin-avec-apostrophe':    { pointMontage: "/srv/d-adam/projet", typeCible: 'Groupe', nomCible: 'export-hier', unite: 'Mio', espaceSoft: '512', espaceHard: '512', inodesSoft: '10', inodesHard: '20', confirmation: 'export-hier' },
+  },
   'linux-disk-partition-mount': {
     'apostrophe-ascii': {
       peripherique: '/dev/sdb', pointMontage: '/srv/donnees-dadam', systemeFichiers: 'ext4',
