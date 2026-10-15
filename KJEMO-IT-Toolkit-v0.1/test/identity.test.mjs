@@ -1496,7 +1496,8 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   // C'est exactement ce qui s'est produit, et c'est la bonne facon d'echouer.
   'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs',
   'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs',
-  'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs', 'dist/outils-linux-i.mjs']
+  'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs', 'dist/outils-linux-i.mjs',
+  'dist/outils-linux-j.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -1986,7 +1987,13 @@ for (const outil of outilsRecents) {
   // demandent le secret a la console, au moment de l'execution. Ce qui reste
   // interdit sans exception, c'est de le fabriquer, de le convertir en clair,
   // ou de le laisser trainer.
-  assert(!/ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
+  // « -Password » est un PARAMETRE PowerShell : il est toujours precede d'une
+  // espace ou d'un debut de ligne. Sans cette ancre, le motif accusait
+  // « prohibit-password » — la valeur par defaut officielle de PermitRootLogin,
+  // citee par les assistants SSH du LOT 7, qui n'est evidemment pas un secret.
+  // Corrige au MOTIF, et non par une exception : une exception aurait leve le
+  // controle pour tout le script.
+  assert(!/ConvertTo-SecureString|(?:^|\s)-Password\b|PlainText/i.test(script),
     `${outil.id} : aucun secret fabriqué ni converti en clair`);
   const lignes = script.split('\n');
   // Une ligne qui se contente d'AFFICHER le nom d'une commande — un commentaire,

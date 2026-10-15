@@ -355,6 +355,35 @@ jobs:
         run: node test/reseau-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 quater. Le banc de SSH
+      #
+      # Les trois outils en lecture n'appellent AUCUNE commande modifiante, et
+      # le quatrieme n'ecrit un fichier que si les SEPT conditions de sa porte
+      # finale sont reunies : configuration lue, ligne Include presente,
+      # durcissement demande, second acces administrateur PROUVE par le script,
+      # fichier prepare, « sshd -t » accepte, confirmation exacte. Il manque une
+      # condition, il ne reste aucun fichier.
+      #
+      # La preuve qui compte le plus : un faux fichier de cle privee portant un
+      # MARQUEUR unique est pose dans le bac, et le marqueur doit etre absent de
+      # la sortie comme du rapport JSON. Aucune cle privee n'est lue, affichee
+      # ni copiee, et c'est mesure plutot que promis.
+      #
+      # Ce banc a besoin du VRAI sshd : « sshd -T » et « sshd -t » tournent
+      # reellement. Sans openssh-server, il ECHOUE en annoncant NON EXECUTE —
+      # il ne se declare jamais vert sans avoir rien prouve.
+      # -----------------------------------------------------------------------
+      - name: Installer openssh-server pour le banc SSH
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq openssh-server openssh-client
+          sudo mkdir -p /run/sshd
+
+      - name: Banc de SSH (doublures, et le vrai sshd pour -T et -t)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/ssh-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun

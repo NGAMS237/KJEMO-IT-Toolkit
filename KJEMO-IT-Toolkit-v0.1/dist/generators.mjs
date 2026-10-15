@@ -38,6 +38,7 @@ import { toolsLinuxF } from './outils-linux-f.mjs';
 import { toolsLinuxG } from './outils-linux-g.mjs';
 import { toolsLinuxH } from './outils-linux-h.mjs';
 import { toolsLinuxI } from './outils-linux-i.mjs';
+import { toolsLinuxJ } from './outils-linux-j.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1607,4 +1608,5 @@ for (const outil of toolsLinuxF) tools.push(outil);
 for (const outil of toolsLinuxG) tools.push(outil);
 for (const outil of toolsLinuxH) tools.push(outil);
 for (const outil of toolsLinuxI) tools.push(outil);
+for (const outil of toolsLinuxJ) tools.push(outil);
 

@@ -2305,6 +2305,47 @@ const VALEURS_PAR_OUTIL = {
       etiquette: 'export', optionsMontage: 'defaults,noatime,nofail', confirmation: '/dev/sde',
     },
   },
+  // Les quatre assistants SSH. « port », « confirmation » et « nomFichier »
+  // sont partages avec le reseau et le stockage, dont les valeurs globales
+  // n'ont rien a voir : d'ou cette table par outil. Pour
+  // ssh-hardening-audit, les jeux ou un durcissement est demande doivent
+  // nommer un compte — le formulaire refuse l'inverse, et c'est voulu.
+  'ssh-server-readiness': {
+    'apostrophe-ascii':          { port: '22', lireJournal: 'Oui' },
+    'apostrophe-typographique':  { port: '2222', lireJournal: 'Non' },
+    'dollar-backtick-guillemets':{ port: '22', lireJournal: 'Non' },
+    'espaces-et-accents':        { port: '2022', lireJournal: 'Oui' },
+    'virgule-et-point-virgule':  { port: '65535', lireJournal: 'Oui' },
+    'chemin-racine-c':           { port: '1', lireJournal: 'Non' },
+    'chemin-avec-apostrophe':    { port: '8022', lireJournal: 'Oui' },
+  },
+  'ssh-client-diagnostic': {
+    'apostrophe-ascii':          { hote: 'srv-labo.kjemo.local', utilisateur: 'o-brien', port: '22', interrogerServeur: 'Oui' },
+    'apostrophe-typographique':  { hote: 'dc01.kjemo.local', utilisateur: '', port: '22', interrogerServeur: 'Non' },
+    'dollar-backtick-guillemets':{ hote: '192.168.30.10', utilisateur: 'dadam', port: '2222', interrogerServeur: 'Oui' },
+    'espaces-et-accents':        { hote: 'srv-fichiers.labo.local', utilisateur: 'partage-admin', port: '22', interrogerServeur: 'Non' },
+    'virgule-et-point-virgule':  { hote: 'srv-a-b-c.labo.local', utilisateur: 'a-b_c', port: '2022', interrogerServeur: 'Oui' },
+    'chemin-racine-c':           { hote: 'localhost', utilisateur: '', port: '22', interrogerServeur: 'Non' },
+    'chemin-avec-apostrophe':    { hote: 'd-adam.labo.local', utilisateur: 'd-adam', port: '8022', interrogerServeur: 'Oui' },
+  },
+  'ssh-key-readiness': {
+    'apostrophe-ascii':          { compte: 'o-brien' },
+    'apostrophe-typographique':  { compte: '' },
+    'dollar-backtick-guillemets':{ compte: 'dadam' },
+    'espaces-et-accents':        { compte: 'partage-admin' },
+    'virgule-et-point-virgule':  { compte: 'a-b_c' },
+    'chemin-racine-c':           { compte: 'voisin' },
+    'chemin-avec-apostrophe':    { compte: 'd-adam' },
+  },
+  'ssh-hardening-audit': {
+    'apostrophe-ascii':          { compteAdminProuve: 'o-brien', desactiverMotDePasse: 'Oui', interdireRoot: 'Oui', nomFichier: '99-kjemo-durcissement.conf', confirmation: 'o-brien' },
+    'apostrophe-typographique':  { compteAdminProuve: '', desactiverMotDePasse: 'Non', interdireRoot: 'Non', nomFichier: '99-audit-seul.conf', confirmation: '' },
+    'dollar-backtick-guillemets':{ compteAdminProuve: 'dadam', desactiverMotDePasse: 'Oui', interdireRoot: 'Non', nomFichier: '70-labo-ssh.conf', confirmation: 'dadam' },
+    'espaces-et-accents':        { compteAdminProuve: 'partage-admin', desactiverMotDePasse: 'Non', interdireRoot: 'Oui', nomFichier: '60-sans-root.conf', confirmation: '' },
+    'virgule-et-point-virgule':  { compteAdminProuve: 'a-b_c', desactiverMotDePasse: 'Oui', interdireRoot: 'Oui', nomFichier: '80-a-b_c.conf', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { compteAdminProuve: '', desactiverMotDePasse: 'Non', interdireRoot: 'Non', nomFichier: '90-voisin.conf', confirmation: '' },
+    'chemin-avec-apostrophe':    { compteAdminProuve: 'd-adam', desactiverMotDePasse: 'Non', interdireRoot: 'Oui', nomFichier: '99-d-adam.conf', confirmation: 'd-adam' },
+  },
 };
 
 for (const jeu of DATASETS) {
