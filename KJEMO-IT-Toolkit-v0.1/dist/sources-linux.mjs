@@ -47,8 +47,11 @@ export const PREFIXES_SOURCES_LINUX = [
   // NFS côté noyau et côté utilitaires.
   { prefixe: 'https://www.kernel.org/doc/', editeur: 'Noyau Linux' },
   { prefixe: 'https://linux-nfs.org/', editeur: 'linux-nfs' },
-  // Cockpit.
+  // Cockpit. Le guide officiel vit sur docs.cockpit-project.org depuis que la
+  // documentation a ete separee du site : les deux prefixes sont donc
+  // declares, et ce sont bien deux adresses du MEME editeur.
   { prefixe: 'https://cockpit-project.org/', editeur: 'Projet Cockpit' },
+  { prefixe: 'https://docs.cockpit-project.org/', editeur: 'Projet Cockpit' },
   // Netplan.
   { prefixe: 'https://netplan.readthedocs.io/', editeur: 'Canonical — Netplan' },
   // nftables, le successeur d'iptables.

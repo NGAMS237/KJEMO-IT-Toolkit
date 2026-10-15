@@ -309,6 +309,7 @@ const ORDRE = [
   ['node test/services-linux.test.mjs', 'banc des services'],
   ['node test/reseau-linux.test.mjs', 'banc du reseau'],
   ['node test/ssh-linux.test.mjs', 'banc de SSH'],
+  ['node test/cockpit-linux.test.mjs', 'banc de Cockpit'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];

@@ -384,6 +384,26 @@ jobs:
         run: sudo -E env "PATH=$PATH" node test/ssh-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 quinquies. Le banc de Cockpit
+      #
+      # Les deux assistants sont en lecture : zero paquet installe, zero unite
+      # demarree ou activee, zero port ouvert, zero certificat touche.
+      #
+      # La preuve centrale : ni « -k » ni « --insecure » ni aucune requete HTTP
+      # dans le code nu, sur chacun des jeux. Un avertissement de certificat
+      # autosigne est le comportement ATTENDU, et le « reparer » en desactivant
+      # la verification est la seule erreur vraiment grave de ce sujet.
+      #
+      # Le cas du cours est joue : socket actif, ecoute sur le BOUCLAGE. Le
+      # rapport doit nommer l'adresse d'ecoute et disculper le pare-feu — c'est
+      # la que le banc a trouve un defaut reel, un motif cherche dans la ligne
+      # entiere de « ss » accusant la colonne du PAIR.
+      # -----------------------------------------------------------------------
+      - name: Banc de Cockpit (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cockpit-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun

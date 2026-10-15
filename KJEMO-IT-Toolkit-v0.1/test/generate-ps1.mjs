@@ -2310,6 +2310,26 @@ const VALEURS_PAR_OUTIL = {
   // n'ont rien a voir : d'ou cette table par outil. Pour
   // ssh-hardening-audit, les jeux ou un durcissement est demande doivent
   // nommer un compte — le formulaire refuse l'inverse, et c'est voulu.
+  // Cockpit. « port » est partage avec SSH et le pare-feu, dont les valeurs
+  // globales n'ont rien a voir avec 9090.
+  'cockpit-install-readiness': {
+    'apostrophe-ascii':          { port: '9090', verifierCertificat: 'Oui' },
+    'apostrophe-typographique':  { port: '9091', verifierCertificat: 'Non' },
+    'dollar-backtick-guillemets':{ port: '9090', verifierCertificat: 'Non' },
+    'espaces-et-accents':        { port: '8443', verifierCertificat: 'Oui' },
+    'virgule-et-point-virgule':  { port: '10090', verifierCertificat: 'Oui' },
+    'chemin-racine-c':           { port: '443', verifierCertificat: 'Non' },
+    'chemin-avec-apostrophe':    { port: '19090', verifierCertificat: 'Oui' },
+  },
+  'cockpit-connection-diagnostic': {
+    'apostrophe-ascii':          { adresseNavigateur: '192.168.30.10', port: '9090', lireJournal: 'Oui' },
+    'apostrophe-typographique':  { adresseNavigateur: '', port: '9090', lireJournal: 'Non' },
+    'dollar-backtick-guillemets':{ adresseNavigateur: '10.10.0.5', port: '9091', lireJournal: 'Oui' },
+    'espaces-et-accents':        { adresseNavigateur: 'srv-labo.kjemo.local', port: '8443', lireJournal: 'Non' },
+    'virgule-et-point-virgule':  { adresseNavigateur: 'dc01.kjemo.local', port: '10090', lireJournal: 'Oui' },
+    'chemin-racine-c':           { adresseNavigateur: '', port: '443', lireJournal: 'Oui' },
+    'chemin-avec-apostrophe':    { adresseNavigateur: 'd-adam.labo.local', port: '19090', lireJournal: 'Non' },
+  },
   'ssh-server-readiness': {
     'apostrophe-ascii':          { port: '22', lireJournal: 'Oui' },
     'apostrophe-typographique':  { port: '2222', lireJournal: 'Non' },

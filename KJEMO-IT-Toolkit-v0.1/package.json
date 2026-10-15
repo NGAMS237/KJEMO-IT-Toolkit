@@ -27,6 +27,7 @@
     "test:permissions-linux": "sudo -E env \"PATH=$PATH\" node test/permissions-linux.test.mjs",
     "test:services-linux": "node test/services-linux.test.mjs",
     "test:reseau-linux": "node test/reseau-linux.test.mjs",
+    "test:cockpit-linux": "node test/cockpit-linux.test.mjs",
     "test:ssh-linux": "sudo -E env \"PATH=$PATH\" node test/ssh-linux.test.mjs",
     "test:commandes-rapides": "node test/commandes-rapides.test.mjs",
     "test:ci-workflows": "node test/ci-workflows.test.mjs",
