@@ -311,6 +311,7 @@ const ORDRE = [
   ['node test/ssh-linux.test.mjs', 'banc de SSH'],
   ['node test/cockpit-linux.test.mjs', 'banc de Cockpit'],
   ['node test/samba-linux.test.mjs', 'banc du partage Samba'],
+  ['node test/samba-ad-linux.test.mjs', 'banc de Samba AD'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];

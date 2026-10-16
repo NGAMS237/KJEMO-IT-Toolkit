@@ -2310,6 +2310,45 @@ const VALEURS_PAR_OUTIL = {
   // n'ont rien a voir : d'ou cette table par outil. Pour
   // ssh-hardening-audit, les jeux ou un durcissement est demande doivent
   // nommer un compte — le formulaire refuse l'inverse, et c'est voulu.
+  // Samba AD. « realm », « netbios » et « adresseIp » sont propres a ce
+  // module ; « confirmation » et « compte » sont partages avec presque tout le
+  // lot, et leurs valeurs globales n'ont rien a voir avec un domaine.
+  'samba-ad-dc-readiness': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', netbios: 'KJEMO' },
+    'apostrophe-typographique':  { realm: 'labo.interne', netbios: 'LABO' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', netbios: 'DOLLAR' },
+    'espaces-et-accents':        { realm: 'partage.lan', netbios: 'PARTAGE' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', netbios: 'A-B-C' },
+    'chemin-racine-c':           { realm: 'voisin.lan', netbios: 'VOISIN' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', netbios: 'D-ADAM' },
+  },
+  'samba-ad-dc-provision': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', netbios: 'KJEMO', adresseIp: '192.168.30.10', nomFichier: 'kjemo-provision-ad.txt', confirmation: 'kjemo.lan' },
+    'apostrophe-typographique':  { realm: 'labo.interne', netbios: 'LABO', adresseIp: '10.10.0.5', nomFichier: 'labo-provision.txt', confirmation: '' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', netbios: 'DOLLAR', adresseIp: '172.16.8.20', nomFichier: '70-dollar-ad.txt', confirmation: 'dollar.lan' },
+    'espaces-et-accents':        { realm: 'partage.lan', netbios: 'PARTAGE', adresseIp: '192.168.1.200', nomFichier: 'partage-ad.txt', confirmation: '' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', netbios: 'A-B-C', adresseIp: '192.168.30.11', nomFichier: 'a-b_c-ad.txt', confirmation: 'a-b-c.lan' },
+    'chemin-racine-c':           { realm: 'voisin.lan', netbios: 'VOISIN', adresseIp: '10.0.0.9', nomFichier: 'voisin-ad.txt', confirmation: '' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', netbios: 'D-ADAM', adresseIp: '192.168.30.12', nomFichier: 'd-adam-ad.txt', confirmation: 'd-adam.lan' },
+  },
+  'samba-ad-health': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', verifierReplication: 'Oui' },
+    'apostrophe-typographique':  { realm: 'labo.interne', verifierReplication: 'Non' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', verifierReplication: 'Oui' },
+    'espaces-et-accents':        { realm: 'partage.lan', verifierReplication: 'Non' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', verifierReplication: 'Oui' },
+    'chemin-racine-c':           { realm: 'voisin.lan', verifierReplication: 'Non' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', verifierReplication: 'Oui' },
+  },
+  'samba-ad-user-manage': {
+    'apostrophe-ascii':          { action: 'Lister les comptes', compte: '' },
+    'apostrophe-typographique':  { action: 'Examiner un compte', compte: 'o-brien' },
+    'dollar-backtick-guillemets':{ action: 'Préparer une création', compte: 'dadam' },
+    'espaces-et-accents':        { action: 'Préparer une désactivation', compte: 'partage-admin' },
+    'virgule-et-point-virgule':  { action: 'Préparer une réactivation', compte: 'a-b_c' },
+    'chemin-racine-c':           { action: 'Préparer une création', compte: 'voisin' },
+    'chemin-avec-apostrophe':    { action: 'Examiner un compte', compte: 'd-adam' },
+  },
   // Samba. « chemin », « groupe » et « confirmation » sont partages avec les
   // assistants de permissions, dont les valeurs globales designent d'autres
   // cibles : d'ou cette table par outil.

@@ -52,6 +52,12 @@ export const PREFIXES_SOURCES_LINUX = [
   // declares, et ce sont bien deux adresses du MEME editeur.
   { prefixe: 'https://cockpit-project.org/', editeur: 'Projet Cockpit' },
   { prefixe: 'https://docs.cockpit-project.org/', editeur: 'Projet Cockpit' },
+  // Kerberos, en amont. La page klist(1) n'est PAS publiee pour noble sur
+  // manpages.ubuntu.com — verifie : elle rend un vrai 404 — alors que
+  // krb5.conf(5) l'est. Plutot que de citer une version d'Ubuntu plus ancienne
+  // pour une seule commande, on cite l'editeur amont, qui est MIT.
+  { prefixe: 'https://web.mit.edu/Kerberos/', editeur: 'MIT — Kerberos (amont)' },
+  { prefixe: 'https://web.mit.edu/kerberos/', editeur: 'MIT — Kerberos (amont)' },
   // Netplan.
   { prefixe: 'https://netplan.readthedocs.io/', editeur: 'Canonical — Netplan' },
   // nftables, le successeur d'iptables.

@@ -1020,7 +1020,15 @@ for (const t of tools) {
 //   structure n est pas rendre les donnees. Le dire franchement est la seule
 //   facon de faire choisir des disques VIDES avant de lancer l assistant.
 const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'linux-disk-partition-mount',
-  'linux-raid1-create', 'process-hung', 'temp-cleanup'];
+  'linux-raid1-create', 'process-hung', 'temp-cleanup',
+  // 22/n : preparer un provisionnement de controleur de domaine. L assistant
+  // lui-meme ne provisionne pas — il remet un cahier de manoeuvre — mais la
+  // fiche declare reversible: false parce que ce qu elle DOCUMENTE ne s annule
+  // pas : un domaine provisionne se defait en restaurant la machine, et aucun
+  // fichier retire ne le defait. Declarer true aurait ete fabriquer une
+  // securite inexistante.
+  'samba-ad-dc-provision',
+];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
   `les seuls outils declares irreversibles sont ${IRREVERSIBLES_ADMIS.join(' et ')} (${lectureSeule.join(', ') || 'aucun'})`);
@@ -1498,7 +1506,7 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs',
   'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs', 'dist/outils-linux-i.mjs',
   'dist/outils-linux-j.mjs', 'dist/outils-linux-k.mjs',
-  'dist/outils-linux-l.mjs']
+  'dist/outils-linux-l.mjs', 'dist/outils-linux-m.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,

@@ -432,6 +432,32 @@ jobs:
         run: node test/samba-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 septies. Le banc de Samba AD
+      #
+      # DEUX redirections, chacune avec son garde-fou : KJEMO_SMBCONF pour
+      # /etc/samba/smb.conf, et KJEMO_PRIV1 pour /var/lib/samba/private. La
+      # seconde permet d'eprouver « un domaine existe deja » sans fabriquer un
+      # faux domaine sur la machine. Si une substitution ne s'applique pas, le
+      # banc ECHOUE.
+      #
+      # LA PREUVE CENTRALE : aucun des quatre assistants n'appelle samba-tool
+      # pour AGIR. Mesure dans le journal des doublures et dans le code nu :
+      # pas de domain provision, pas de user create, pas de setpassword, pas de
+      # getpassword, pas de syncpasswords, pas de user delete, pas de kinit, et
+      # aucune option de mot de passe.
+      #
+      # Le controle anti-secret du cahier de manoeuvre a sa contre-epreuve : on
+      # injecte une option de mot de passe dans le fichier prepare, et la
+      # remise doit etre annulee. Le banc a d'ailleurs trouve que la premiere
+      # version de ce controle accusait les COMMENTAIRES qui expliquent
+      # pourquoi --adminpass est refuse — le meme defaut qu'au commit 18/n pour
+      # « netplan apply ».
+      # -----------------------------------------------------------------------
+      - name: Banc de Samba AD (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/samba-ad-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun
