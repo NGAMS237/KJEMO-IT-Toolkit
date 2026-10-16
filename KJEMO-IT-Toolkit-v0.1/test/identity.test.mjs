@@ -1497,7 +1497,8 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs',
   'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs',
   'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs', 'dist/outils-linux-i.mjs',
-  'dist/outils-linux-j.mjs', 'dist/outils-linux-k.mjs']
+  'dist/outils-linux-j.mjs', 'dist/outils-linux-k.mjs',
+  'dist/outils-linux-l.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,

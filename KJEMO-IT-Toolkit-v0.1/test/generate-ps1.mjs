@@ -2310,6 +2310,36 @@ const VALEURS_PAR_OUTIL = {
   // n'ont rien a voir : d'ou cette table par outil. Pour
   // ssh-hardening-audit, les jeux ou un durcissement est demande doivent
   // nommer un compte — le formulaire refuse l'inverse, et c'est voulu.
+  // Samba. « chemin », « groupe » et « confirmation » sont partages avec les
+  // assistants de permissions, dont les valeurs globales designent d'autres
+  // cibles : d'ou cette table par outil.
+  'samba-readiness': {
+    'apostrophe-ascii':          { cheminEnvisage: '/srv/partage', compteEnvisage: 'o-brien' },
+    'apostrophe-typographique':  { cheminEnvisage: '', compteEnvisage: '' },
+    'dollar-backtick-guillemets':{ cheminEnvisage: '/srv/dollar', compteEnvisage: 'dadam' },
+    'espaces-et-accents':        { cheminEnvisage: '/srv/Donnees partagees', compteEnvisage: '' },
+    'virgule-et-point-virgule':  { cheminEnvisage: '/srv/a-b_c', compteEnvisage: 'a-b_c' },
+    'chemin-racine-c':           { cheminEnvisage: '', compteEnvisage: 'voisin' },
+    'chemin-avec-apostrophe':    { cheminEnvisage: '/srv/d-adam/projet', compteEnvisage: 'd-adam' },
+  },
+  'samba-share-create': {
+    'apostrophe-ascii':          { nomPartage: 'partage', chemin: '/srv/partage', groupe: 'partage', ecriture: 'Oui', hotesAutorises: '192.168.30.0/24', confirmation: 'partage' },
+    'apostrophe-typographique':  { nomPartage: 'archives', chemin: '/srv/archives', groupe: 'gg-typo', ecriture: 'Non', hotesAutorises: '', confirmation: '' },
+    'dollar-backtick-guillemets':{ nomPartage: 'dollar', chemin: '/srv/dollar', groupe: 'dollar', ecriture: 'Oui', hotesAutorises: '10.10.0.0/16', confirmation: 'dollar' },
+    'espaces-et-accents':        { nomPartage: 'donnees', chemin: '/srv/Donnees partagees', groupe: 'partage', ecriture: 'Oui', hotesAutorises: '', confirmation: '' },
+    'virgule-et-point-virgule':  { nomPartage: 'a-b_c', chemin: '/srv/a-b_c', groupe: 'a-b_c', ecriture: 'Non', hotesAutorises: '172.16.8.0/22 192.168.1.5', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { nomPartage: 'voisin', chemin: '/mnt/voisin', groupe: 'voisins', ecriture: 'Non', hotesAutorises: '', confirmation: '' },
+    'chemin-avec-apostrophe':    { nomPartage: 'd-adam', chemin: '/srv/d-adam/projet', groupe: 'projet', ecriture: 'Oui', hotesAutorises: '192.168.30.50', confirmation: 'd-adam' },
+  },
+  'samba-diagnostic': {
+    'apostrophe-ascii':          { nomPartage: 'partage', compteTeste: 'o-brien', hoteTeste: '192.168.30.50' },
+    'apostrophe-typographique':  { nomPartage: '', compteTeste: '', hoteTeste: '' },
+    'dollar-backtick-guillemets':{ nomPartage: 'dollar', compteTeste: 'dadam', hoteTeste: '10.10.0.7' },
+    'espaces-et-accents':        { nomPartage: 'donnees', compteTeste: 'partage-admin', hoteTeste: '' },
+    'virgule-et-point-virgule':  { nomPartage: 'a-b_c', compteTeste: 'a-b_c', hoteTeste: '172.16.8.9' },
+    'chemin-racine-c':           { nomPartage: 'voisin', compteTeste: '', hoteTeste: '192.168.1.200' },
+    'chemin-avec-apostrophe':    { nomPartage: 'd-adam', compteTeste: 'd-adam', hoteTeste: '' },
+  },
   // Cockpit. « port » est partage avec SSH et le pare-feu, dont les valeurs
   // globales n'ont rien a voir avec 9090.
   'cockpit-install-readiness': {

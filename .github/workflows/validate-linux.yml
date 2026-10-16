@@ -404,6 +404,34 @@ jobs:
         run: node test/cockpit-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 sexies. Le banc du partage Samba
+      #
+      # /etc/samba/smb.conf est REDIRIGE vers le bac en reecrivant la seule
+      # ligne KJEMO_SMBCONF du script genere ; si la substitution ne
+      # s'applique pas, le banc ECHOUE — sans quoi il ecrirait dans le vrai
+      # fichier.
+      #
+      # testparm est le VRAI binaire : une doublure ne prouverait que la
+      # doublure. C'est lui qui a montre le defaut corrige dans ce commit —
+      # une directive mal orthographiee le fait sortir en 0 en ecrivant
+      # « Unknown parameter encountered », et un assistant qui se fierait au
+      # seul code de sortie installerait une configuration dont un reglage est
+      # ignore en silence.
+      #
+      # Le banc prouve aussi le retour arriere : quand la relecture echoue
+      # apres ecriture, la sauvegarde est RESTAUREE et aucun service n'est
+      # recharge. Et sans confirmation, il n'y a meme pas de .bak.
+      # -----------------------------------------------------------------------
+      - name: Installer samba-common-bin pour le banc Samba
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq samba-common-bin
+
+      - name: Banc du partage Samba (doublures, et le vrai testparm)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/samba-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun
