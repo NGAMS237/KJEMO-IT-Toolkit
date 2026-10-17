@@ -54,6 +54,8 @@ const { commandesSamba } =
   await import(pathToFileURL(resolve(ROOT, 'dist/commandes-samba.mjs')).href);
 const { commandesSambaAd } =
   await import(pathToFileURL(resolve(ROOT, 'dist/commandes-samba-ad.mjs')).href);
+const { commandesNfs } =
+  await import(pathToFileURL(resolve(ROOT, 'dist/commandes-nfs.mjs')).href);
 const { tools } =
   await import(pathToFileURL(resolve(ROOT, 'dist/generators.mjs')).href);
 const { sourceLinuxValide, editeurDe } =
@@ -67,7 +69,7 @@ const verifier = (c, m) => (c ? pass(m) : fail(m));
 
 const TOUTES = [...commandesStockage, ...commandesPermissions, ...commandesServices,
   ...commandesReseau, ...commandesSsh, ...commandesCockpit, ...commandesSamba,
-  ...commandesSambaAd];
+  ...commandesSambaAd, ...commandesNfs];
 
 console.log('');
 console.log(`Plan 1 — contrat des ${TOUTES.length} commandes rapides`);

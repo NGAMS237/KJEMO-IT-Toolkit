@@ -2435,6 +2435,31 @@ const VALEURS_PAR_OUTIL = {
     'chemin-racine-c':           { compteAdminProuve: '', desactiverMotDePasse: 'Non', interdireRoot: 'Non', nomFichier: '90-voisin.conf', confirmation: '' },
     'chemin-avec-apostrophe':    { compteAdminProuve: 'd-adam', desactiverMotDePasse: 'Non', interdireRoot: 'Oui', nomFichier: '99-d-adam.conf', confirmation: 'd-adam' },
   },
+  // NFS. Aucun jeu ne porte de joker, de « * » ni de /0 : le formulaire les
+  // refuse, et un jeu qui en contiendrait ferait echouer la generation. Les
+  // cas refuses sont eprouves par le banc, qui les ATTEND.
+  //
+  // « chemin » n a pas d espace pour nfs-export-create : exports(5) exige des
+  // guillemets autour d un nom d export qui en contient, et l assistant refuse
+  // plutot que de les ecrire.
+  'nfs-server-readiness': {
+    'apostrophe-ascii':          { cheminEnvisage: '/srv/nfs/partage', clientEnvisage: '192.168.30.0/24' },
+    'apostrophe-typographique':  { cheminEnvisage: '', clientEnvisage: '' },
+    'dollar-backtick-guillemets':{ cheminEnvisage: '/srv/nfs/dollar', clientEnvisage: '10.10.0.7' },
+    'espaces-et-accents':        { cheminEnvisage: '/srv/nfs/Donnees partagees', clientEnvisage: 'poste-labo.kjemo.local' },
+    'virgule-et-point-virgule':  { cheminEnvisage: '/srv/nfs/a-b_c', clientEnvisage: '172.16.8.0/22' },
+    'chemin-racine-c':           { cheminEnvisage: '/mnt/voisin', clientEnvisage: '' },
+    'chemin-avec-apostrophe':    { cheminEnvisage: '/srv/nfs/d-adam/projet', clientEnvisage: 'd-adam.labo.local' },
+  },
+  'nfs-export-create': {
+    'apostrophe-ascii':          { chemin: '/srv/nfs/partage', client: '192.168.30.0/24', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/partage' },
+    'apostrophe-typographique':  { chemin: '/srv/nfs/archives', client: '192.168.30.50', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/nfs/dollar', client: '10.10.0.0/16', ecriture: 'Oui', squashTous: 'Oui', confirmation: '/srv/nfs/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/nfs/donnees-partagees', client: 'poste-labo.kjemo.local', ecriture: 'Non', squashTous: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/nfs/a-b_c', client: '172.16.8.0/22', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', client: '192.168.1.200', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/nfs/d-adam/projet', client: 'd-adam.labo.local', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/d-adam/projet' },
+  },
 };
 
 for (const jeu of DATASETS) {

@@ -458,6 +458,39 @@ jobs:
         run: node test/samba-ad-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 octies. Le banc de NFS
+      #
+      # /etc/exports est REDIRIGE vers le bac en reecrivant la seule ligne
+      # KJEMO_EXPORTS='/etc/exports' du script genere. Si la substitution ne
+      # s'applique pas, le banc ECHOUE : sans ce garde-fou il ecrirait dans le
+      # vrai fichier du coureur.
+      #
+      # IL N'Y A PAS DE VRAI BINAIRE A UTILISER ICI, ET C'EST LE SUJET. Le banc
+      # Samba se sert du VRAI testparm parce que testparm valide un fichier
+      # quelconque sans rien appliquer. NFS n'a pas d'equivalent : exportfs(8)
+      # pour Ubuntu 24.04 n'offre aucune option d'essai a blanc, et « -r »
+      # applique ET retire les entrees disparues du fichier. exportfs n'est
+      # donc present ici que comme DOUBLURE, et son journal sert a prouver que
+      # l'assistant ne l'appelle jamais pour agir.
+      #
+      # LA PREUVE CENTRALE : l'assistant ecrit la ligne, la relit, et n'applique
+      # pas. Zero appel a exportfs avec -r, -a, -u ou -o, dans les huit passes.
+      #
+      # Et la contre-epreuve du verrou : la ligne construite est trafiquee dans
+      # le script genere — « * », no_root_squash, /0, root_squash retire — et
+      # le script doit refuser d'ecrire alors meme que le formulaire a laisse
+      # passer. Un verrou qui ne se verifie qu'une fois est un verrou qu'on
+      # retire sans s'en apercevoir.
+      #
+      # Ce banc demande root : nfs-export-create s'arrete sans lui, et un banc
+      # qui ne mesurerait que huit refus de privileges se declarerait vert
+      # sans rien avoir eprouve. Il annonce NON EXECUTE plutot que de le faire.
+      # -----------------------------------------------------------------------
+      - name: Banc de NFS (doublures, aucune application)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/nfs-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun

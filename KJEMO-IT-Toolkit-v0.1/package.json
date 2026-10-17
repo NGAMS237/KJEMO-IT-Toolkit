@@ -28,6 +28,7 @@
     "test:services-linux": "node test/services-linux.test.mjs",
     "test:reseau-linux": "node test/reseau-linux.test.mjs",
     "test:samba-ad-linux": "node test/samba-ad-linux.test.mjs",
+    "test:nfs-linux": "sudo -E env \"PATH=$PATH\" node test/nfs-linux.test.mjs",
     "test:samba-linux": "node test/samba-linux.test.mjs",
     "test:cockpit-linux": "node test/cockpit-linux.test.mjs",
     "test:ssh-linux": "sudo -E env \"PATH=$PATH\" node test/ssh-linux.test.mjs",
