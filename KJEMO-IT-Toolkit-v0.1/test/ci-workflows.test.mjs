@@ -270,6 +270,20 @@ for (const f of ['validate.yml', 'validate-linux.yml']) {
     `${f} joue la non-régression des 856 scripts PowerShell`);
 }
 
+// Les bancs PowerShell tournent sous LES DEUX MOTEURS, et avec l'interpréteur
+// IMPOSÉ. Un banc lancé sans « --powershell » retomberait sur ce qui traîne, et
+// un résultat obtenu sous PowerShell 7 ne dit rien de Windows PowerShell 5.1 —
+// ce qui est d'autant plus vrai pour la jonction de domaine, dont l'applet
+// n'existe QUE dans 5.1.
+for (const banc of ['poste-verrous', 'fiches-poste-b', 'jonction-domaine']) {
+  for (const moteur of ['powershell', 'pwsh']) {
+    verifier(code['validate.yml'].includes(`node test/${banc}.test.mjs --powershell ${moteur}`),
+      `validate.yml joue test/${banc}.test.mjs sous ${moteur}, interpréteur imposé`);
+  }
+  verifier(!new RegExp(`node test/${banc}\\.test\\.mjs(?!\\s+--powershell)`).test(code['validate.yml']),
+    `validate.yml ne lance jamais test/${banc}.test.mjs sans imposer l'interpréteur`);
+}
+
 // `|| true` dans un bloc run éteint le code de sortie de la commande.
 for (const f of ATTENDUS) {
   verifier(!/\|\|\s*true/.test(code[f]), `${f} ne neutralise aucun code de sortie avec « || true »`);

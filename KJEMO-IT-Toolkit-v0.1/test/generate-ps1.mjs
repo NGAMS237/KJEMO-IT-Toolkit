@@ -2460,6 +2460,39 @@ const VALEURS_PAR_OUTIL = {
     'chemin-racine-c':           { chemin: '/mnt/voisin', client: '192.168.1.200', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
     'chemin-avec-apostrophe':    { chemin: '/srv/nfs/d-adam/projet', client: 'd-adam.labo.local', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/d-adam/projet' },
   },
+  // Jonction de domaine Windows. Ces trois assistants vivent dans la
+  // categorie du LOT 6 et viennent du LOT 7 : leurs champs portent des
+  // identifiants a eux, et aucune valeur commune ne les atteint.
+  //
+  // Aucun jeu ne contient de mot de passe : il n'y a aucun champ pour en
+  // recevoir, et c'est le point du module.
+  'windows-domain-join-readiness': {
+    'apostrophe-ascii':          { jrDomaine: 'kjemo.local', jrControleur: 'dc01.kjemo.local' },
+    'apostrophe-typographique':  { jrDomaine: 'labo.kjemo.local', jrControleur: '' },
+    'dollar-backtick-guillemets':{ jrDomaine: 'dollar.local', jrControleur: '10.10.0.5' },
+    'espaces-et-accents':        { jrDomaine: 'ecole.kjemo.local', jrControleur: 'dc-ecole.kjemo.local' },
+    'virgule-et-point-virgule':  { jrDomaine: 'a-b-c.local', jrControleur: '172.16.8.10' },
+    'chemin-racine-c':           { jrDomaine: 'voisin.local', jrControleur: '' },
+    'chemin-avec-apostrophe':    { jrDomaine: 'd-adam.labo.local', jrControleur: 'dc-d-adam.labo.local' },
+  },
+  'windows-domain-join': {
+    'apostrophe-ascii':          { mode: 'Appliquer', jdDomaine: 'kjemo.local', jdControleur: 'dc01.kjemo.local', jdUniteOrg: 'OU=Postes,DC=kjemo,DC=local', jdJournal: 'C:\\Kjemo\\Journaux', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'apostrophe-typographique':  { mode: 'Diagnostic', jdDomaine: 'labo.kjemo.local', jdControleur: '', jdUniteOrg: '', jdJournal: 'C:\\Kjemo\\Jonction', jdConfirmation: '' },
+    'dollar-backtick-guillemets':{ mode: 'Appliquer', jdDomaine: 'dollar.local', jdControleur: '10.10.0.5', jdUniteOrg: '', jdJournal: 'D:\\Journaux\\Kjemo', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'espaces-et-accents':        { mode: 'Diagnostic', jdDomaine: 'ecole.kjemo.local', jdControleur: 'dc-ecole.kjemo.local', jdUniteOrg: 'OU=Salle 204,OU=Postes,DC=ecole,DC=kjemo,DC=local', jdJournal: 'C:\\Kjemo\\Journaux ecole', jdConfirmation: '' },
+    'virgule-et-point-virgule':  { mode: 'Appliquer', jdDomaine: 'a-b-c.local', jdControleur: '172.16.8.10', jdUniteOrg: 'OU=a-b_c,DC=a-b-c,DC=local', jdJournal: 'C:\\Kjemo\\a-b_c', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'chemin-racine-c':           { mode: 'Diagnostic', jdDomaine: 'voisin.local', jdControleur: '', jdUniteOrg: '', jdJournal: 'C:\\Journaux', jdConfirmation: '' },
+    'chemin-avec-apostrophe':    { mode: 'Appliquer', jdDomaine: 'd-adam.labo.local', jdControleur: 'dc-d-adam.labo.local', jdUniteOrg: 'CN=Computers,DC=d-adam,DC=labo,DC=local', jdJournal: 'C:\\Kjemo\\d-adam', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+  },
+  'windows-domain-join-diagnostic': {
+    'apostrophe-ascii':          { jgDomaine: 'kjemo.local', jgControleur: 'dc01.kjemo.local', jgJours: '7' },
+    'apostrophe-typographique':  { jgDomaine: '', jgControleur: '', jgJours: '1' },
+    'dollar-backtick-guillemets':{ jgDomaine: 'dollar.local', jgControleur: '10.10.0.5', jgJours: '14' },
+    'espaces-et-accents':        { jgDomaine: 'ecole.kjemo.local', jgControleur: '', jgJours: '30' },
+    'virgule-et-point-virgule':  { jgDomaine: 'a-b-c.local', jgControleur: '172.16.8.10', jgJours: '3' },
+    'chemin-racine-c':           { jgDomaine: '', jgControleur: 'dc-voisin.voisin.local', jgJours: '60' },
+    'chemin-avec-apostrophe':    { jgDomaine: 'd-adam.labo.local', jgControleur: '', jgJours: '21' },
+  },
 };
 
 for (const jeu of DATASETS) {
@@ -2668,7 +2701,12 @@ if (ecarts712.length === 0) {
 // Chaque lot annonce SA version. La correspondance se fait par la categorie
 // de l'outil, lue dans le catalogue : c'est elle qui dit de quel lot vient un
 // script, et non son nom de fichier.
+// La correspondance se fait par la categorie, et — depuis le commit 24/n —
+// par la SOUS-RUBRIQUE quand une categorie heberge deux lots. « Jonction de
+// domaine » vit dans la categorie du LOT 6 parce que c'est la qu'on la
+// cherche, et vient du LOT 7. La regle la plus precise passe en premier.
 const VERSIONS_PAR_LOT = [
+  { lot: 'LOT 7', categorie: 'Poste de travail Windows', sousRubrique: 'Jonction de domaine', version: 'LOT 7 — Jonction de domaine Windows — 7.0.0' },
   { lot: 'LOT 5', categorie: 'Réseau', version: 'LOT 5 — Réseau avancé — 5.0.0' },
   { lot: 'LOT 6', categorie: 'Poste de travail Windows', version: 'LOT 6 — Poste de travail Windows — 6.0.0' },
 ];
@@ -2679,7 +2717,8 @@ const VERSION_HERITEE = 'LOT 2 — 2.0.0';
 // font pas partie des « nouveaux ».
 const versionAttendue = new Map();
 for (const t of tools) {
-  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category);
+  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category
+    && (!r.sousRubrique || r.sousRubrique === t.subcategory));
   if (regle) versionAttendue.set(t.id, regle);
 }
 

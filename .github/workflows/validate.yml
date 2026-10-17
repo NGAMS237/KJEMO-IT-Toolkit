@@ -397,6 +397,60 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
+      # 11 septies. Jonction de domaine (LOT 7, commit 24/n) — les verrous
+      #
+      # Trois assistants PowerShell, executes dans une session ou Add-Computer,
+      # Remove-Computer, Rename-Computer, Set-DnsClientServerAddress,
+      # Set-TimeZone, Reset-ComputerMachinePassword et Get-Credential sont des
+      # DOUBLURES qui consignent chaque appel. Le banc COMPTE les appels.
+      #
+      # LA PREUVE CENTRALE : Add-Computer n'est appele que lorsque les onze
+      # conditions sont reunies, et le parametre de redemarrage n'est passe
+      # dans AUCUNE passe. Le secret vient de Get-Credential, apres le verrou,
+      # et la doublure rend un mot de passe reconnaissable que le banc cherche
+      # ensuite dans la sortie, dans le journal et dans le rapport.
+      #
+      # Huit passes de refus, un controle positif, et une contre-epreuve du
+      # banc lui-meme : un appel reel a Add-Computer doit etre vu.
+      #
+      # Les DEUX moteurs, interpreteur impose, sans continue-on-error. Sous
+      # Windows PowerShell 5.1 la mesure porte sur le moteur de reference ;
+      # sous PowerShell 7, le banc le dit — l'applet de jonction n'y existe
+      # pas, et elle n'est ici qu'une doublure.
+      # -----------------------------------------------------------------------
+      - name: Verrous de jonction de domaine — Windows PowerShell 5.1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: powershell
+        run: |
+          Write-Host "Moteur impose : powershell.exe"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          if ($PSVersionTable.PSEdition -eq 'Core') {
+              Write-Error "Repli silencieux detecte : cette etape doit tourner sous Windows PowerShell, pas sous PowerShell 7."
+              exit 1
+          }
+          node test/jonction-domaine.test.mjs --powershell powershell
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Verrous de jonction en echec sous PS 5.1 (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      - name: Verrous de jonction de domaine — PowerShell 7
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: pwsh
+        run: |
+          Write-Host "Moteur impose : pwsh"
+          Write-Host "Version du moteur : $($PSVersionTable.PSVersion)"
+          if ($PSVersionTable.PSEdition -ne 'Core') {
+              Write-Error "Repli silencieux detecte : cette etape doit tourner sous PowerShell 7."
+              exit 1
+          }
+          node test/jonction-domaine.test.mjs --powershell pwsh
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Verrous de jonction en echec sous PS 7 (code $LASTEXITCODE)."
+              exit $LASTEXITCODE
+          }
+
+      # -----------------------------------------------------------------------
       # 11 sexies. Sources citees — controle de FORME, hors ligne
       #
       # La verification EN LIGNE (code HTTP reel, titre reel, detection des

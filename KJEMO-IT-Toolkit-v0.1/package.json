@@ -39,6 +39,7 @@
     "test:sources:horsligne": "node test/sources-microsoft.mjs --hors-ligne",
     "test:cmdlets:export": "node test/cmdlets-export.mjs",
     "test:cmdlets": "node test/cmdlets-export.mjs && pwsh -File ./scripts/Test-KjemoCmdlets.ps1",
+    "test:jonction-domaine": "node test/jonction-domaine.test.mjs --powershell pwsh",
     "test:fiches-poste-b": "node test/fiches-poste-b.test.mjs --powershell pwsh",
     "test:browser:poste-b": "node test/browser-poste-b.test.mjs",
     "test:sources:6b": "node test/sources-microsoft.mjs --json LOT-6B-SOURCES.json"
