@@ -328,6 +328,13 @@ const ORDRE = [
   ['node test/samba-ad-linux.test.mjs', 'banc de Samba AD'],
   ['node test/nfs-linux.test.mjs', 'banc de NFS'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
+  ['node test/capacites-linux.test.mjs', 'sonde des capacités'],
+  ['node test/dette-6b-format.test.mjs', 'dette 6B'],
+  ['node test/negatifs-lot7.test.mjs', 'bancs négatifs LOT 7'],
+  ['node test/negatifs-lot7-contre-epreuves.test.mjs', 'contre-épreuves du banc négatif'],
+  ['npx playwright install chromium', 'Chromium Playwright (Linux)'],
+  ['node test/browser-lot7.test.mjs', 'navigateur LOT 7'],
+  ['node test/browser-lot7-contre-epreuves.test.mjs', 'contre-épreuves du navigateur LOT 7'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];
 

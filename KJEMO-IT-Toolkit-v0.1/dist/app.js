@@ -774,7 +774,18 @@ function renderTool() {
   view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   const content = view.querySelector('#tabContent');
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
-  const script = normalizeScript(tool.generate(defaultValues));
+  // LOT 7 (25/n) — le normaliseur suit la PLATEFORME, aussi pour l'aperçu
+  // INITIAL. Il ne le faisait pas : normalizeScript() (continuation PowerShell,
+  // « antislash + saut de ligne » devient « backtick + saut de ligne ») était
+  // appliqué aux scripts Bash, dont 42 assistants affichaient — et offraient en
+  // Copier / Télécharger avant tout clic sur « Générer » — un script où chaque
+  // continuation de ligne était devenue une substitution de commande. « bash -n »
+  // refusait les 42. Le chemin de soumission, lui, aiguillait correctement, ce
+  // qui rendait le défaut invisible : il ne frappait que les valeurs par défaut.
+  // Toujours UN SEUL appel à generate() par site (la garde d'identité en compte
+  // deux : aperçu initial, soumission).
+  const scriptBrut = tool.generate(defaultValues);
+  const script = estBash(tool) ? normalizeScriptSh(scriptBrut) : normalizeScript(scriptBrut);
   const titreSection = (n, texte, id) =>
     `<h2 class="fiche-section-title" id="${id}">`
     + `<span class="fiche-step" aria-hidden="true">${n}</span>${textToCode(texte)}</h2>`;

@@ -309,6 +309,9 @@ jobs:
       - name: Banc des permissions, des ACL et des comptes (racine requise)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: sudo -E env "PATH=$PATH" node test/permissions-linux.test.mjs
+        env:
+          # Sur le runner, chown doit marcher : son absence est un ECHEC, pas un NON EXECUTE.
+          KJEMO_CAPACITES_REQUISES: '1'
 
       # -----------------------------------------------------------------------
       # 9 octies. Banc des services, des paquets et de l'heure
@@ -501,6 +504,46 @@ jobs:
       - name: Contrat des commandes rapides
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/commandes-rapides.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
+      #
+      # Sequentiels, bloquants, sans continue-on-error. Chaque banc de
+      # contre-epreuves prouve que son banc devient ROUGE quand un verrou du
+      # produit saute. Ubuntu Server reel : NON EXECUTE (ces bancs tournent sur
+      # un runner ubuntu-latest avec des doublures, pas sur un serveur reel).
+      # -----------------------------------------------------------------------
+      - name: Sonde des capacites (chown, mknod) et sa contre-epreuve
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/capacites-linux.test.mjs
+
+      - name: Dette 6B - selecteur Format du rapport (detection sans modification)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/dette-6b-format.test.mjs
+
+      - name: Bancs negatifs LOT 7 (19 familles, refus + positif + contre-epreuve)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/negatifs-lot7.test.mjs
+
+      - name: Contre-epreuves du banc negatif (12 pannes produit)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/negatifs-lot7-contre-epreuves.test.mjs
+
+      - name: Installer Chromium (Playwright)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: npx playwright install chromium --with-deps
+
+      - name: Navigateur - identite des 153 outils (Linux visible, Bash)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-identity.test.mjs
+
+      - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-lot7.test.mjs
+
+      - name: Contre-epreuves du banc navigateur LOT 7 (16 mutations)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-lot7-contre-epreuves.test.mjs
 
       # -----------------------------------------------------------------------
       # 11. Les workflows eux-mêmes
