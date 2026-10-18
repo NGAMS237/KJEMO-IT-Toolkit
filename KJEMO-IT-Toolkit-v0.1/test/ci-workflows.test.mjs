@@ -335,6 +335,7 @@ const ORDRE = [
   ['npx playwright install chromium', 'Chromium Playwright (Linux)'],
   ['node test/browser-lot7.test.mjs', 'navigateur LOT 7'],
   ['node test/browser-lot7-contre-epreuves.test.mjs', 'contre-épreuves du navigateur LOT 7'],
+  ['node test/matrices-lot7.mjs --verifier', 'matrices du LOT 7'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];
 

@@ -1,5 +1,25 @@
 # Journal des changements
 
+## LOT 7 — Linux, Bash, Samba et NFS (commits 1 a 26)
+
+**Etat : developpe localement, teste localement. NON pousse, NON teste en CI
+GitHub, NON fusionne, NON deploye. Ubuntu Server reel, controleur Samba AD
+reel, export NFS reel, jonction de domaine reelle : NON EXECUTE.**
+
+- 46 assistants : 43 Linux (Bash) et 3 jonction de domaine (PowerShell) ;
+  153 outils au total, 1224 scripts de reference (880 `.ps1`, 344 `.sh`),
+  112 commandes rapides.
+- 25/n : banc navigateur Chromium reel (8 categories, 46 routes, recherche,
+  favoris, historique, clavier, 390 px) et 16 contre-epreuves ; 19 familles de
+  tests negatifs (refus, controle positif, contre-epreuve) et 12 pannes
+  produit injectees ; sonde de capacites (chown, mknod) ; dette 6B detectee
+  sans modification ; CI Linux etendue sans continue-on-error.
+- Correctif produit : l'apercu des assistants Bash utilise `normalizeScriptSh`
+  (42 apercus etaient corrompus par la normalisation PowerShell).
+- 26/n : documentation, matrices (`LOT-7-MATRICE-*.json`, generees par
+  `test/matrices-lot7.mjs`), sources verifiees en ligne (2 ecarts documentes),
+  feuille de route.
+
 ## LOT 6 correctif V3 — revue Codex finale
 
 **Etat : developpe localement, teste localement. NON fusionne, NON deploye,

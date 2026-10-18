@@ -545,6 +545,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-lot7-contre-epreuves.test.mjs
 
+      - name: Matrices et catalogue du LOT 7 (aucune derive)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrices-lot7.mjs --verifier
+
       # -----------------------------------------------------------------------
       # 11. Les workflows eux-mêmes
       #

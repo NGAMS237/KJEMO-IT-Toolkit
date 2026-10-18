@@ -1,0 +1,120 @@
+{
+  "lot": "LOT 7",
+  "outilsParRisque": {
+    "diagnostic": 94,
+    "caution": 53,
+    "safe": 2,
+    "destructive": 4
+  },
+  "outilsParPlateformeEtRisque": {
+    "Windows / diagnostic": 66,
+    "Windows / caution": 40,
+    "Windows / safe": 2,
+    "Linux / caution": 13,
+    "Linux / diagnostic": 28,
+    "Windows / destructive": 2,
+    "Linux / destructive": 2
+  },
+  "lot7ParRisque": {
+    "caution": 13,
+    "diagnostic": 28,
+    "destructive": 2
+  },
+  "lot7Modifiants": [
+    {
+      "id": "bash-backup-directory",
+      "risque": "caution"
+    },
+    {
+      "id": "linux-disk-partition-mount",
+      "risque": "destructive"
+    },
+    {
+      "id": "linux-permission-acl",
+      "risque": "caution"
+    },
+    {
+      "id": "linux-permission-change",
+      "risque": "caution"
+    },
+    {
+      "id": "linux-quota-enable",
+      "risque": "caution"
+    },
+    {
+      "id": "linux-quota-limits",
+      "risque": "caution"
+    },
+    {
+      "id": "linux-raid-member-manage",
+      "risque": "caution"
+    },
+    {
+      "id": "linux-raid1-create",
+      "risque": "destructive"
+    },
+    {
+      "id": "linux-user-create",
+      "risque": "caution"
+    },
+    {
+      "id": "netplan-readiness",
+      "risque": "caution"
+    },
+    {
+      "id": "nfs-export-create",
+      "risque": "caution"
+    },
+    {
+      "id": "samba-ad-dc-provision",
+      "risque": "caution"
+    },
+    {
+      "id": "samba-share-create",
+      "risque": "caution"
+    },
+    {
+      "id": "ssh-hardening-audit",
+      "risque": "caution"
+    },
+    {
+      "id": "systemd-service-control",
+      "risque": "caution"
+    }
+  ],
+  "lot7Diagnostics": [
+    "bash-csv-report",
+    "bash-file-batch",
+    "bash-script-starter",
+    "cockpit-connection-diagnostic",
+    "cockpit-install-readiness",
+    "cron-readiness",
+    "linux-boot-diagnostic",
+    "linux-dns-diagnostic",
+    "linux-firewall-audit",
+    "linux-health-report",
+    "linux-log-diagnostic",
+    "linux-network-diagnostic",
+    "linux-package-diagnostic",
+    "linux-permission-audit",
+    "linux-storage-diagnostic",
+    "linux-system-inventory",
+    "linux-time-sync-diagnostic",
+    "linux-user-audit",
+    "nfs-server-readiness",
+    "samba-ad-dc-readiness",
+    "samba-ad-health",
+    "samba-ad-user-manage",
+    "samba-diagnostic",
+    "samba-readiness",
+    "ssh-client-diagnostic",
+    "ssh-key-readiness",
+    "ssh-server-readiness",
+    "systemd-service-diagnostic"
+  ],
+  "commandesParRisque": {
+    "lecture": 101,
+    "reversible": 8,
+    "attention": 3
+  }
+}

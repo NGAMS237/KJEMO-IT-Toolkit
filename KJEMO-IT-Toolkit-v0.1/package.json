@@ -39,6 +39,8 @@
     "test:negatifs:contre-epreuves": "node test/negatifs-lot7-contre-epreuves.test.mjs",
     "test:browser:lot7": "node test/browser-lot7.test.mjs",
     "test:browser:lot7:contre-epreuves": "node test/browser-lot7-contre-epreuves.test.mjs",
+    "matrices:lot7": "node test/matrices-lot7.mjs",
+    "test:matrices": "node test/matrices-lot7.mjs --verifier",
     "test:ci-workflows": "node test/ci-workflows.test.mjs",
     "test:linux": "node test/generate-ps1.mjs && node test/baseline-856.test.mjs && node test/sh-hygiene.test.mjs && node test/shquote.test.mjs && node test/sh-shellcheck.test.mjs && node test/scanner-bash.test.mjs && node test/mouchards-linux.test.mjs && node test/commandes-rapides.test.mjs && node test/ci-workflows.test.mjs",
     "test:sources": "node test/sources-microsoft.mjs --json LOT-4-SOURCES.json",
