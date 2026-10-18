@@ -521,6 +521,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/dette-6b-format.test.mjs
 
+      - name: Netplan v2 - passerelle et fichier cloud-init (refus, positif, contre-epreuve)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/netplan-v2.test.mjs
+
       - name: Bancs negatifs LOT 7 (19 familles, refus + positif + contre-epreuve)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/negatifs-lot7.test.mjs

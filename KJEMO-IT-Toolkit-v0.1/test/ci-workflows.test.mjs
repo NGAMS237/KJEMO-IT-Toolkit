@@ -330,6 +330,7 @@ const ORDRE = [
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
   ['node test/capacites-linux.test.mjs', 'sonde des capacités'],
   ['node test/dette-6b-format.test.mjs', 'dette 6B'],
+  ['node test/netplan-v2.test.mjs', 'Netplan v2'],
   ['node test/negatifs-lot7.test.mjs', 'bancs négatifs LOT 7'],
   ['node test/negatifs-lot7-contre-epreuves.test.mjs', 'contre-épreuves du banc négatif'],
   ['npx playwright install chromium', 'Chromium Playwright (Linux)'],

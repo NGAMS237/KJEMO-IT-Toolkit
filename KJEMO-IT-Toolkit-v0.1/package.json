@@ -35,6 +35,7 @@
     "test:commandes-rapides": "node test/commandes-rapides.test.mjs",
     "test:capacites": "node test/capacites-linux.test.mjs",
     "test:dette-6b": "node test/dette-6b-format.test.mjs",
+    "test:netplan-v2": "node test/netplan-v2.test.mjs",
     "test:negatifs": "node test/negatifs-lot7.test.mjs",
     "test:negatifs:contre-epreuves": "node test/negatifs-lot7-contre-epreuves.test.mjs",
     "test:browser:lot7": "node test/browser-lot7.test.mjs",

@@ -26,7 +26,12 @@ formulaire se contourne en éditant le fichier téléchargé.
 8. **Réseau.** Clients NFS « * », `no_root_squash`, `/0`, hôtes Samba trop
    larges, ports hors bornes sont refusés (N13, N14).
 9. **SSH.** Aucun durcissement sans compte nommé et sans preuve d'un second
-   accès (N15). **Netplan n'est jamais appliqué** (N16).
+   accès (N15). **Netplan n'est jamais appliqué** (N16). Netplan refuse en
+   outre une passerelle égale à l'hôte, au réseau ou à la diffusion (facultative
+   sinon), ne modifie jamais un fichier produit par cloud-init, prépare un
+   candidat sous un autre nom, refuse un nom déjà présent dans `/etc/netplan` et
+   s'arrête quand plusieurs fichiers déclarent déjà l'interface
+   (`test/netplan-v2.test.mjs`).
 10. **Diagnostics sans écriture.** 28 assistants : zéro appel modifiant, aucun
     contournement du PATH (N17).
 11. **Aucun secret** dans les champs, scripts, URL, rapports (N18).

@@ -1,5 +1,32 @@
 # Journal des changements
 
+## LOT 7 (27/n) — Netplan : passerelle et fichier cloud-init
+
+**Etat inchange : developpe localement, teste localement. NON pousse, NON teste
+en CI GitHub, NON fusionne, NON deploye.**
+
+Un seul outil modifie : `netplan-readiness`. Seuls ses 8 scripts `.sh` changent ;
+les 880 `.ps1` et les 336 autres `.sh` restent identiques octet par octet.
+
+- **Constat.** `50-cloud-init.yaml` n'etait ni genere ni propose (le nom par
+  defaut est `99-kjemo-reseau.yaml`) : il figurait dans un message informatif,
+  un commentaire et une erreur courante. Mais le formulaire l'acceptait, et la
+  mise en place l'aurait ecrase. De meme, la passerelle par defaut n'etait pas
+  l'adresse de l'hote, mais le formulaire acceptait cette valeur.
+- **Passerelle.** Facultative en statique (sans elle, aucune route par defaut
+  n'est ecrite). Renseignee, elle doit etre une IPv4 valide du meme sous-reseau,
+  differente de l'hote, de l'adresse du reseau et de l'adresse de diffusion.
+- **Fichier.** Un nom contenant `cloud-init` est refuse. Le script inventorie
+  `/etc/netplan`, detecte les fichiers cloud-init (en-tete ou nom), les annonce,
+  ne les modifie jamais, remet un candidat separe, le valide sur une copie,
+  refuse un nom deja present, et s'arrete quand plusieurs fichiers declarent
+  deja l'interface. Jamais de `netplan apply`.
+- **Preuve.** `test/netplan-v2.test.mjs` : 31 refus, 51 controles positifs,
+  22 contre-epreuves (chaque verrou arrache et vu).
+- **Rapport final.** Une seule branche canonique, mesuree par
+  `git branch --show-current` ; les bancs locaux et la verification en ligne
+  des sources sont distingues explicitement.
+
 ## LOT 7 — Linux, Bash, Samba et NFS (commits 1 a 26)
 
 **Etat : developpe localement, teste localement. NON pousse, NON teste en CI

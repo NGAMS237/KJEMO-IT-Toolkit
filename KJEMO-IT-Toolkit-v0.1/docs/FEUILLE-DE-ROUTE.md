@@ -97,8 +97,11 @@ préservés.
 
 ## Observations du LOT 7 non corrigées (volontairement)
 
-- Netplan : le nom de fichier proposé est `50-cloud-init.yaml` ; la passerelle
-  par défaut reprend l'adresse de l'hôte.
+- Netplan (corrigé au 27/n, voir le CHANGELOG) : `50-cloud-init.yaml` n'a
+  jamais été le nom proposé (le défaut est `99-kjemo-reseau.yaml`) ; il
+  n'apparaissait que dans un message et une erreur courante, mais le formulaire
+  l'acceptait. La passerelle égale à l'hôte, au réseau ou à la diffusion était
+  acceptée. Les deux sont refusées.
 - `networking.service` : le script en parle mieux que le formulaire.
 - Point de montage contenant des espaces ou `;` : refusé par prudence.
 - Les commandes rapides ne sont affichées par aucun écran.

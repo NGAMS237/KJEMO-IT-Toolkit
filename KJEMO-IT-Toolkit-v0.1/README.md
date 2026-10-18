@@ -290,6 +290,7 @@ Le projet est volontairement sans dépendance d’exécution. Ouvrir
     npm run test:sources:6b          # chaque source officielle répond, et porte le bon titre
     npm run test:sources:horsligne   # contrôle de forme seul, sans appel réseau
     npm run test:linux               # chaîne Bash : hygiène, shQuote, ShellCheck, scanner, mouchards, commandes rapides
+    npm run test:netplan-v2          # Netplan : passerelle (hôte, réseau, diffusion) et fichier cloud-init
     npm run test:negatifs            # 19 familles de verrous : refus, contrôle positif, contre-épreuve
     npm run test:negatifs:contre-epreuves   # 12 pannes produit : le banc négatif doit rougir
     npm run test:browser:lot7        # Chromium réel : 8 catégories, 46 routes, recherche, clavier, 390 px

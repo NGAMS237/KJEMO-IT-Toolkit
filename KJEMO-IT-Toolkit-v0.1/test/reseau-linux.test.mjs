@@ -35,7 +35,7 @@
 // Aucune interface configurée, aucune règle de pare-feu posée, aucun
 // /etc/netplan touché. Ubuntu Server réel : NON EXÉCUTÉ.
 // ---------------------------------------------------------------------------
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -123,7 +123,15 @@ function bacNetplan(nom, {
     nomFichier: '99-kjemo-reseau.yaml',
     format: 'Console',
   };
-  return { bac, texte: normalizeScriptSh(netplan.generate(valeurs)) };
+  // Le dossier Netplan du script est une constante : on la remplace par un
+  // dossier VIDE du bac, pour que ce banc ne lise jamais le /etc/netplan de la
+  // machine qui l'execute (un runner peut y avoir un 50-cloud-init.yaml).
+  const dossierNetplan = join(bac.racine, 'etc-netplan');
+  mkdirSync(dossierNetplan);
+  const brut = normalizeScriptSh(netplan.generate(valeurs));
+  const constante = "KJEMO_NETPLAN_DIR='/etc/netplan'";
+  if (brut.split(constante).length - 1 !== 1) { console.error(`ECHEC : la constante ${constante} n'est pas trouvee exactement une fois`); process.exit(1); }
+  return { bac, texte: brut.replace(constante, () => `KJEMO_NETPLAN_DIR=${sq(dossierNetplan)}`) };
 }
 
 const envBac = (bac) => ({ HOME: bac.travail });
