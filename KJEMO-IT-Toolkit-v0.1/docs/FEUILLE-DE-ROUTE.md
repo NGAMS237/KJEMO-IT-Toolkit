@@ -80,3 +80,33 @@ décision d'architecture, pas une fonctionnalité à ajouter.
   connu » est à relire à chaque livraison, et un lot non fusionné y reste
   marqué non fusionné.
 - Il ne remplace pas les rapports de lot, qui seuls portent les mesures.
+
+
+## Actualisation du 20 octobre 2026 — audit documentaire Samba (LOT 7)
+
+Cette section actualise le statut du LOT 7 sans modifier les états historiques consignés ci-dessus.
+
+### Références vérifiées
+- `main` : `aff0f7a146076f2ee1cf1e621efdde775ea3e9e2`.
+- `claude/lot-7-linux-bash-samba-nfs` : `ef8400ff8b77b7108f7b0201bad72db865160343`.
+- Comparaison GitHub : branche LOT 7 en avance de 20 commits, sans retard, 53 fichiers ajoutés ou modifiés.
+- La branche contient des modules Linux, des commandes rapides et des tests de permissions, RAID, services, réseau, SSH et Cockpit. Aucun fichier ou test explicitement nommé Samba n'a été repéré dans l'arborescence ; une recherche approfondie du contenu des modules reste nécessaire avant de conclure à une absence fonctionnelle.
+- Statut : développé sur branche distante ; **non fusionné dans main, non déployé, CI et exécution réelle non revérifiées dans cet audit**.
+
+### LOT 7 — SAMBA-ADV-01 (planifié, non implémenté par cet audit)
+Sources pédagogiques : `S05-Partage_de_fichiers_Samba-A26`, `S05-Formatif_5_Partage_de_fichiers_Samba-A26` et `S05-Exemple_de_partage_dun_dossier_par_groupe`.
+
+1. **Inventaire préalable** : examiner le contenu réel des modules Linux pour identifier les commandes Samba/SMB/NFS déjà présentes et éviter les doublons.
+2. **Diagnostic Samba** : statut des services selon le rôle (serveur autonome ou AD-DC), `testparm`, `smbstatus`, réseau et pare-feu, avec scripts de lecture seule.
+3. **Partages sécurisés** : générateur de configuration `smb.conf`, utilisateurs/groupes autorisés, lecture/écriture, vérification des droits POSIX/ACL, sauvegarde préalable et tests.
+4. **Samba Active Directory** : gestion guidée des comptes, groupes et membres via `samba-tool`, sans mots de passe en clair.
+5. **Client SMB** : découverte, connexion et transfert `smbclient` (`get`, `mget`, `put`, `mput`, récursivité) avec avertissements sur les effets.
+6. **RAID1 et partages** : scénario transversal de vérification du RAID, montage et partage, sans recréer les assistants RAID existants.
+7. **Validation** : tests de génération, analyse statique ShellCheck, contrôles de sécurité, tests négatifs des permissions, CI Linux, puis lab Ubuntu/Windows avant fusion.
+
+### Garde-fous
+- Le site GitHub Pages génère des scripts ; il ne les exécute pas.
+- Ne pas reprendre `chmod 777`, les partages invités, les mots de passe d'exemple ou l'ouverture générale du pare-feu comme réglages par défaut.
+- Ne pas supposer l'existence de `/dev/md127` ni utiliser un UID/GID numérique fixe.
+- Ne pas modifier `main`, publier sur Pages ou déclarer PASS un test non exécuté.
+- Les modifications effectives du code Samba nécessitent une étape de développement et de validation distincte.
