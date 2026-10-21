@@ -270,6 +270,20 @@ for (const f of ['validate.yml', 'validate-linux.yml']) {
     `${f} joue la non-régression des 856 scripts PowerShell`);
 }
 
+// Les bancs PowerShell tournent sous LES DEUX MOTEURS, et avec l'interpréteur
+// IMPOSÉ. Un banc lancé sans « --powershell » retomberait sur ce qui traîne, et
+// un résultat obtenu sous PowerShell 7 ne dit rien de Windows PowerShell 5.1 —
+// ce qui est d'autant plus vrai pour la jonction de domaine, dont l'applet
+// n'existe QUE dans 5.1.
+for (const banc of ['poste-verrous', 'fiches-poste-b', 'jonction-domaine']) {
+  for (const moteur of ['powershell', 'pwsh']) {
+    verifier(code['validate.yml'].includes(`node test/${banc}.test.mjs --powershell ${moteur}`),
+      `validate.yml joue test/${banc}.test.mjs sous ${moteur}, interpréteur imposé`);
+  }
+  verifier(!new RegExp(`node test/${banc}\\.test\\.mjs(?!\\s+--powershell)`).test(code['validate.yml']),
+    `validate.yml ne lance jamais test/${banc}.test.mjs sans imposer l'interpréteur`);
+}
+
 // `|| true` dans un bloc run éteint le code de sortie de la commande.
 for (const f of ATTENDUS) {
   verifier(!/\|\|\s*true/.test(code[f]), `${f} ne neutralise aucun code de sortie avec « || true »`);
@@ -310,7 +324,19 @@ const ORDRE = [
   ['node test/reseau-linux.test.mjs', 'banc du reseau'],
   ['node test/ssh-linux.test.mjs', 'banc de SSH'],
   ['node test/cockpit-linux.test.mjs', 'banc de Cockpit'],
+  ['node test/samba-linux.test.mjs', 'banc du partage Samba'],
+  ['node test/samba-ad-linux.test.mjs', 'banc de Samba AD'],
+  ['node test/nfs-linux.test.mjs', 'banc de NFS'],
   ['node test/commandes-rapides.test.mjs', 'contrat des commandes rapides'],
+  ['node test/capacites-linux.test.mjs', 'sonde des capacités'],
+  ['node test/dette-6b-format.test.mjs', 'dette 6B'],
+  ['node test/netplan-v2.test.mjs', 'Netplan v2'],
+  ['node test/negatifs-lot7.test.mjs', 'bancs négatifs LOT 7'],
+  ['node test/negatifs-lot7-contre-epreuves.test.mjs', 'contre-épreuves du banc négatif'],
+  ['npx playwright install chromium', 'Chromium Playwright (Linux)'],
+  ['node test/browser-lot7.test.mjs', 'navigateur LOT 7'],
+  ['node test/browser-lot7-contre-epreuves.test.mjs', 'contre-épreuves du navigateur LOT 7'],
+  ['node test/matrices-lot7.mjs --verifier', 'matrices du LOT 7'],
   ['node test/ci-workflows.test.mjs', 'lecture des workflows'],
 ];
 

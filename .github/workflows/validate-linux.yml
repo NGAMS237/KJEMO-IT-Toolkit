@@ -309,6 +309,9 @@ jobs:
       - name: Banc des permissions, des ACL et des comptes (racine requise)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: sudo -E env "PATH=$PATH" node test/permissions-linux.test.mjs
+        env:
+          # Sur le runner, chown doit marcher : son absence est un ECHEC, pas un NON EXECUTE.
+          KJEMO_CAPACITES_REQUISES: '1'
 
       # -----------------------------------------------------------------------
       # 9 octies. Banc des services, des paquets et de l'heure
@@ -404,6 +407,93 @@ jobs:
         run: node test/cockpit-linux.test.mjs
 
       # -----------------------------------------------------------------------
+      # 10 sexies. Le banc du partage Samba
+      #
+      # /etc/samba/smb.conf est REDIRIGE vers le bac en reecrivant la seule
+      # ligne KJEMO_SMBCONF du script genere ; si la substitution ne
+      # s'applique pas, le banc ECHOUE — sans quoi il ecrirait dans le vrai
+      # fichier.
+      #
+      # testparm est le VRAI binaire : une doublure ne prouverait que la
+      # doublure. C'est lui qui a montre le defaut corrige dans ce commit —
+      # une directive mal orthographiee le fait sortir en 0 en ecrivant
+      # « Unknown parameter encountered », et un assistant qui se fierait au
+      # seul code de sortie installerait une configuration dont un reglage est
+      # ignore en silence.
+      #
+      # Le banc prouve aussi le retour arriere : quand la relecture echoue
+      # apres ecriture, la sauvegarde est RESTAUREE et aucun service n'est
+      # recharge. Et sans confirmation, il n'y a meme pas de .bak.
+      # -----------------------------------------------------------------------
+      - name: Installer samba-common-bin pour le banc Samba
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq samba-common-bin
+
+      - name: Banc du partage Samba (doublures, et le vrai testparm)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/samba-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 septies. Le banc de Samba AD
+      #
+      # DEUX redirections, chacune avec son garde-fou : KJEMO_SMBCONF pour
+      # /etc/samba/smb.conf, et KJEMO_PRIV1 pour /var/lib/samba/private. La
+      # seconde permet d'eprouver « un domaine existe deja » sans fabriquer un
+      # faux domaine sur la machine. Si une substitution ne s'applique pas, le
+      # banc ECHOUE.
+      #
+      # LA PREUVE CENTRALE : aucun des quatre assistants n'appelle samba-tool
+      # pour AGIR. Mesure dans le journal des doublures et dans le code nu :
+      # pas de domain provision, pas de user create, pas de setpassword, pas de
+      # getpassword, pas de syncpasswords, pas de user delete, pas de kinit, et
+      # aucune option de mot de passe.
+      #
+      # Le controle anti-secret du cahier de manoeuvre a sa contre-epreuve : on
+      # injecte une option de mot de passe dans le fichier prepare, et la
+      # remise doit etre annulee. Le banc a d'ailleurs trouve que la premiere
+      # version de ce controle accusait les COMMENTAIRES qui expliquent
+      # pourquoi --adminpass est refuse — le meme defaut qu'au commit 18/n pour
+      # « netplan apply ».
+      # -----------------------------------------------------------------------
+      - name: Banc de Samba AD (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/samba-ad-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 octies. Le banc de NFS
+      #
+      # /etc/exports est REDIRIGE vers le bac en reecrivant la seule ligne
+      # KJEMO_EXPORTS='/etc/exports' du script genere. Si la substitution ne
+      # s'applique pas, le banc ECHOUE : sans ce garde-fou il ecrirait dans le
+      # vrai fichier du coureur.
+      #
+      # IL N'Y A PAS DE VRAI BINAIRE A UTILISER ICI, ET C'EST LE SUJET. Le banc
+      # Samba se sert du VRAI testparm parce que testparm valide un fichier
+      # quelconque sans rien appliquer. NFS n'a pas d'equivalent : exportfs(8)
+      # pour Ubuntu 24.04 n'offre aucune option d'essai a blanc, et « -r »
+      # applique ET retire les entrees disparues du fichier. exportfs n'est
+      # donc present ici que comme DOUBLURE, et son journal sert a prouver que
+      # l'assistant ne l'appelle jamais pour agir.
+      #
+      # LA PREUVE CENTRALE : l'assistant ecrit la ligne, la relit, et n'applique
+      # pas. Zero appel a exportfs avec -r, -a, -u ou -o, dans les huit passes.
+      #
+      # Et la contre-epreuve du verrou : la ligne construite est trafiquee dans
+      # le script genere — « * », no_root_squash, /0, root_squash retire — et
+      # le script doit refuser d'ecrire alors meme que le formulaire a laisse
+      # passer. Un verrou qui ne se verifie qu'une fois est un verrou qu'on
+      # retire sans s'en apercevoir.
+      #
+      # Ce banc demande root : nfs-export-create s'arrete sans lui, et un banc
+      # qui ne mesurerait que huit refus de privileges se declarerait vert
+      # sans rien avoir eprouve. Il annonce NON EXECUTE plutot que de le faire.
+      # -----------------------------------------------------------------------
+      - name: Banc de NFS (doublures, aucune application)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/nfs-linux.test.mjs
+
+      # -----------------------------------------------------------------------
       # 10 bis. Le contrat des commandes rapides
       #
       # Neuf obligations par commande, dont celle qui compte le plus : aucun
@@ -414,6 +504,54 @@ jobs:
       - name: Contrat des commandes rapides
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/commandes-rapides.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
+      #
+      # Sequentiels, bloquants, sans continue-on-error. Chaque banc de
+      # contre-epreuves prouve que son banc devient ROUGE quand un verrou du
+      # produit saute. Ubuntu Server reel : NON EXECUTE (ces bancs tournent sur
+      # un runner ubuntu-latest avec des doublures, pas sur un serveur reel).
+      # -----------------------------------------------------------------------
+      - name: Sonde des capacites (chown, mknod) et sa contre-epreuve
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/capacites-linux.test.mjs
+
+      - name: Dette 6B - selecteur Format du rapport (detection sans modification)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/dette-6b-format.test.mjs
+
+      - name: Netplan v2 - passerelle et fichier cloud-init (refus, positif, contre-epreuve)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/netplan-v2.test.mjs
+
+      - name: Bancs negatifs LOT 7 (19 familles, refus + positif + contre-epreuve)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/negatifs-lot7.test.mjs
+
+      - name: Contre-epreuves du banc negatif (12 pannes produit)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/negatifs-lot7-contre-epreuves.test.mjs
+
+      - name: Installer Chromium (Playwright)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: npx playwright install chromium --with-deps
+
+      - name: Navigateur - identite des 153 outils (Linux visible, Bash)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-identity.test.mjs
+
+      - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-lot7.test.mjs
+
+      - name: Contre-epreuves du banc navigateur LOT 7 (16 mutations)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-lot7-contre-epreuves.test.mjs
+
+      - name: Matrices et catalogue du LOT 7 (aucune derive)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrices-lot7.mjs --verifier
 
       # -----------------------------------------------------------------------
       # 11. Les workflows eux-mêmes

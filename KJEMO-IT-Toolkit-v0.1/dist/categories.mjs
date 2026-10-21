@@ -94,6 +94,11 @@ export const SOUS_RUBRIQUES_LINUX = [
   'SSH et accès distant',
   'Cockpit',
   'Samba',
+  // Nouvelle sous-rubrique canonique du commit 22/n. Samba AD et Samba
+  // partage ne se melangent pas : un controleur de domaine fait tourner UN
+  // processus « samba » qui contient son propre serveur SMB, et laisser smbd
+  // actif a cote donne deux serveurs sur le port 445.
+  'Samba AD',
   'NFS',
   'Stockage Linux',
 ];

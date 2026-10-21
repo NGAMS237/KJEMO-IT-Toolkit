@@ -35,6 +35,7 @@ l'un de l'autre et aucun document du projet ne doit les mélanger.
 | LOT 6B | Poste de travail Windows, assistants 13 à 30 | développé localement, testé localement — **non fusionné, non déployé** |
 | LOT 6B V2 | Correctif de la revue Codex sur quatre points | développé localement, testé localement — **non fusionné, non déployé** |
 | LOT 6 V3 | Correctif de sécurité du gardien de chemin et du comptage final | développé localement, testé localement — **non fusionné, non déployé** |
+| LOT 7 | Linux, Bash, Samba, NFS : 46 assistants (43 Linux + 3 jonction de domaine), 112 commandes rapides, 19 familles de tests négatifs | développé localement, testé localement (Bash réel + doublures, Chromium réel) — **non poussé, non testé en CI, non fusionné, non déployé, non testé sur Ubuntu Server réel** |
 
 L'état exact des LOTS 6A et 6B au moment de leur livraison est consigné dans
 leurs rapports respectifs, section « État du push, de la fusion et du
@@ -47,8 +48,11 @@ fiche, aucun test ne leur correspond dans le dépôt. Ils ne sont pas des
 sous-rubriques d'un lot existant : en particulier, **Bash, Samba et Azure ne
 sont pas des catégories du LOT 6B**, et ne doivent pas y être ajoutés.
 
-### LOT 7 — Linux
-Linux, Bash, services, journaux, paquets, SSH, stockage, Samba et NFS.
+### LOT 6C — Correctif de la dette 6B (consigné, non commencé)
+18 assistants et 144 scripts du LOT 6B portent un sélecteur « Format du
+rapport » qui ne commande rien (valeur lue, jamais utilisée). Le LOT 7 les
+**détecte et les liste** (`npm run test:dette-6b`) sans modifier les 856 scripts
+de référence. Le correctif réclame de nouvelles empreintes : c'est un lot à part.
 
 ### LOT 8 — Azure et Entra ID
 Azure, Entra ID, machines virtuelles, réseau Azure, stockage, sauvegarde et
@@ -147,3 +151,28 @@ Cette section est un état de coordination et **ne vaut ni fusion, ni déploieme
 - LOT 12 : exécution locale facultative, sous réserve d'une étude d'architecture et de sécurité préalable.
 
 **Règle de coordination :** ne jamais déclarer « terminé », « PASS », « fusionné » ou « déployé » sans preuve correspondante ; ne pas modifier `main` directement pour cette consolidation documentaire.
+## Navigation et fiche cibles — consignées, non implémentées
+
+La hiérarchie cible à quatre niveaux (Microsoft Windows ; Linux et services
+réseau ; Réseau et Cisco ; Cloud et outils multiplateformes) et le modèle de
+fiche cible (onglets CMD/PowerShell/GUI, copie impossible tant qu'un
+placeholder subsiste, etc.) sont décrits dans
+[`ARCHITECTURE-MULTIPLATEFORME.md`](ARCHITECTURE-MULTIPLATEFORME.md). Aucune
+ligne de code ne les réalise ; les identifiants et routes existants sont
+préservés.
+
+## Observations du LOT 7 non corrigées (volontairement)
+
+- Netplan (corrigé au 27/n, voir le CHANGELOG) : `50-cloud-init.yaml` n'a
+  jamais été le nom proposé (le défaut est `99-kjemo-reseau.yaml`) ; il
+  n'apparaissait que dans un message et une erreur courante, mais le formulaire
+  l'acceptait. La passerelle égale à l'hôte, au réseau ou à la diffusion était
+  acceptée. Les deux sont refusées.
+- `networking.service` : le script en parle mieux que le formulaire.
+- Point de montage contenant des espaces ou `;` : refusé par prudence.
+- Les commandes rapides ne sont affichées par aucun écran.
+- Copie du bandeau d'accueil écrite pour Windows seulement.
+- Le bouton retour passe à la ligne à 390 px ; les liens de sources de moins de
+  24 px sont exemptés de la règle WCAG 2.5.8.
+- N19 (jonction PowerShell) est éprouvée statiquement (niveau 1), pas exécutée.
+- `chown` et `mknod` réels ne sont exécutables que si la capacité existe.

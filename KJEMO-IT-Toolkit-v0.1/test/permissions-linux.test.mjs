@@ -54,6 +54,7 @@ const ROOT = resolve(__dirname, '..');
 const { tools } = await import(pathToFileURL(resolve(ROOT, 'dist/generators.mjs')).href);
 const { normalizeScriptSh } = await import(pathToFileURL(resolve(ROOT, 'dist/noyau-bash.mjs')).href);
 const M = await import(pathToFileURL(resolve(ROOT, 'test/mouchards-linux.mjs')).href);
+const CAP = await import(pathToFileURL(resolve(ROOT, 'test/capacites-linux.mjs')).href);
 
 let ok = 0;
 const echecs = [];
@@ -126,6 +127,40 @@ if (!trouve) {
 }
 const COMPTE = trouve.compte;
 const GROUPE = trouve.groupe;
+
+// ---------------------------------------------------------------------------
+// LOT 7 (25/n) — LA CAPACITÉ DE chown EST MESURÉE AVANT TOUT, PAR UNE SONDE
+// INDÉPENDANTE DE L'ASSISTANT. Voir test/capacites-linux.mjs.
+//
+// Dans un conteneur dont l'espace de noms utilisateur ne projette pas ce
+// compte, « chown » échoue avec « Invalid argument ». Ce n'est pas une
+// régression de l'assistant : c'est une limite du conteneur. Le banc l'annonce
+// alors NON EXÉCUTÉ (code 77, jamais 0), avec la raison exacte.
+//
+// Si la sonde RÉUSSIT, le banc s'exécute, et chaque anomalie est un ÉCHEC : un
+// chown qui échouerait ensuite serait une régression, pas une limite.
+// ---------------------------------------------------------------------------
+{
+  const uidCompte = Number(execFileSync('id', ['-u', COMPTE], { encoding: 'utf8' }).trim());
+  const sonde = CAP.sonderChown({ compte: COMPTE, groupe: GROUPE, uidAttendu: uidCompte });
+  const decision = CAP.decider(sonde);
+  if (decision.verdict === 'NON_EXECUTE') {
+    console.error('');
+    console.error('Permissions Linux : NON EXÉCUTÉ.');
+    console.error(`  Raison : ${decision.raison}`);
+    console.error('  Ce conteneur interdit reellement chown vers un autre UID : le controle positif');
+    console.error('  de linux-permission-change ne peut pas etre joue ici, et ce n est pas un resultat.');
+    console.error('  Code de sortie 77 (ni succes, ni echec). Un environnement qui possede la capacite');
+    console.error('  doit l EXIGER avec KJEMO_CAPACITES_REQUISES=1 : l absence devient alors un ECHEC.');
+    process.exit(CAP.CODE_NON_EXECUTE);
+  }
+  if (decision.verdict === 'ECHEC') {
+    console.error('');
+    console.error(`ECHEC : ${decision.raison}`);
+    process.exit(1);
+  }
+  console.log(`Capacite de chown : ${decision.raison}.`);
+}
 console.log(`Compte d essai decouvert : ${COMPTE}:${GROUPE} (chown agira reellement, sur le bac seulement).`);
 // /srv doit exister pour que la passe C refuse pour la BONNE raison — racine
 // interdite — et non parce que la cible n'existe pas.
@@ -140,6 +175,12 @@ mkdirSync('/srv', { recursive: true });
  * La meme lecon que le banc du RAID, ou le defaut avait ete vu a la passe F.
  */
 const sq = (v) => `'${String(v).split("'").join("'\\''")}'`;
+
+// Le chown que les doublures DELEGUENT. Par defaut le vrai. KJEMO_BANC_CHOWN
+// existe pour la contre-epreuve de test/capacites-linux.test.mjs : elle y met un
+// chown qui echoue pour prouver qu un echec APRES une sonde reussie est une
+// regression (code 1), et jamais un NON EXECUTE.
+const BIN_CHOWN = process.env.KJEMO_BANC_CHOWN || '/bin/chown';
 
 /** Une arborescence jetable : deux dossiers, trois fichiers. */
 function arborescence(bac, { avecSetuid = false } = {}) {
@@ -169,7 +210,7 @@ function arborescence(bac, { avecSetuid = false } = {}) {
  */
 function doubluresReelles(bac) {
   M.poserMouchard(bac, 'chmod', { avant: ['exec /bin/chmod "$@"'] });
-  M.poserMouchard(bac, 'chown', { avant: ['exec /bin/chown "$@"'] });
+  M.poserMouchard(bac, 'chown', { avant: [`exec ${BIN_CHOWN} "$@"`] });
   M.poserMouchard(bac, 'chgrp', { avant: ['exec /bin/chgrp "$@"'] });
   M.poserMouchard(bac, 'getent', { avant: ['exec /usr/bin/getent "$@"'] });
 }
@@ -638,7 +679,7 @@ function bacCompte(nom, {
   });
   M.poserMouchard(bac, 'passwd', { code: 0, sortie: `${nomUtilisateur} L 01/01/2026 0 99999 7 -1` });
   M.poserMouchard(bac, 'chmod', { avant: ['exec /bin/chmod "$@"'] });
-  M.poserMouchard(bac, 'chown', { avant: ['exec /bin/chown "$@"'] });
+  M.poserMouchard(bac, 'chown', { avant: [`exec ${BIN_CHOWN} "$@"`] });
 
   const valeurs = {
     nomUtilisateur,

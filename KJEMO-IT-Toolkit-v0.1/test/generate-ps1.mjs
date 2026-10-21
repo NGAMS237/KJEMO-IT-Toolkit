@@ -2310,6 +2310,75 @@ const VALEURS_PAR_OUTIL = {
   // n'ont rien a voir : d'ou cette table par outil. Pour
   // ssh-hardening-audit, les jeux ou un durcissement est demande doivent
   // nommer un compte — le formulaire refuse l'inverse, et c'est voulu.
+  // Samba AD. « realm », « netbios » et « adresseIp » sont propres a ce
+  // module ; « confirmation » et « compte » sont partages avec presque tout le
+  // lot, et leurs valeurs globales n'ont rien a voir avec un domaine.
+  'samba-ad-dc-readiness': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', netbios: 'KJEMO' },
+    'apostrophe-typographique':  { realm: 'labo.interne', netbios: 'LABO' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', netbios: 'DOLLAR' },
+    'espaces-et-accents':        { realm: 'partage.lan', netbios: 'PARTAGE' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', netbios: 'A-B-C' },
+    'chemin-racine-c':           { realm: 'voisin.lan', netbios: 'VOISIN' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', netbios: 'D-ADAM' },
+  },
+  'samba-ad-dc-provision': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', netbios: 'KJEMO', adresseIp: '192.168.30.10', nomFichier: 'kjemo-provision-ad.txt', confirmation: 'kjemo.lan' },
+    'apostrophe-typographique':  { realm: 'labo.interne', netbios: 'LABO', adresseIp: '10.10.0.5', nomFichier: 'labo-provision.txt', confirmation: '' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', netbios: 'DOLLAR', adresseIp: '172.16.8.20', nomFichier: '70-dollar-ad.txt', confirmation: 'dollar.lan' },
+    'espaces-et-accents':        { realm: 'partage.lan', netbios: 'PARTAGE', adresseIp: '192.168.1.200', nomFichier: 'partage-ad.txt', confirmation: '' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', netbios: 'A-B-C', adresseIp: '192.168.30.11', nomFichier: 'a-b_c-ad.txt', confirmation: 'a-b-c.lan' },
+    'chemin-racine-c':           { realm: 'voisin.lan', netbios: 'VOISIN', adresseIp: '10.0.0.9', nomFichier: 'voisin-ad.txt', confirmation: '' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', netbios: 'D-ADAM', adresseIp: '192.168.30.12', nomFichier: 'd-adam-ad.txt', confirmation: 'd-adam.lan' },
+  },
+  'samba-ad-health': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', verifierReplication: 'Oui' },
+    'apostrophe-typographique':  { realm: 'labo.interne', verifierReplication: 'Non' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', verifierReplication: 'Oui' },
+    'espaces-et-accents':        { realm: 'partage.lan', verifierReplication: 'Non' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', verifierReplication: 'Oui' },
+    'chemin-racine-c':           { realm: 'voisin.lan', verifierReplication: 'Non' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', verifierReplication: 'Oui' },
+  },
+  'samba-ad-user-manage': {
+    'apostrophe-ascii':          { action: 'Lister les comptes', compte: '' },
+    'apostrophe-typographique':  { action: 'Examiner un compte', compte: 'o-brien' },
+    'dollar-backtick-guillemets':{ action: 'Préparer une création', compte: 'dadam' },
+    'espaces-et-accents':        { action: 'Préparer une désactivation', compte: 'partage-admin' },
+    'virgule-et-point-virgule':  { action: 'Préparer une réactivation', compte: 'a-b_c' },
+    'chemin-racine-c':           { action: 'Préparer une création', compte: 'voisin' },
+    'chemin-avec-apostrophe':    { action: 'Examiner un compte', compte: 'd-adam' },
+  },
+  // Samba. « chemin », « groupe » et « confirmation » sont partages avec les
+  // assistants de permissions, dont les valeurs globales designent d'autres
+  // cibles : d'ou cette table par outil.
+  'samba-readiness': {
+    'apostrophe-ascii':          { cheminEnvisage: '/srv/partage', compteEnvisage: 'o-brien' },
+    'apostrophe-typographique':  { cheminEnvisage: '', compteEnvisage: '' },
+    'dollar-backtick-guillemets':{ cheminEnvisage: '/srv/dollar', compteEnvisage: 'dadam' },
+    'espaces-et-accents':        { cheminEnvisage: '/srv/Donnees partagees', compteEnvisage: '' },
+    'virgule-et-point-virgule':  { cheminEnvisage: '/srv/a-b_c', compteEnvisage: 'a-b_c' },
+    'chemin-racine-c':           { cheminEnvisage: '', compteEnvisage: 'voisin' },
+    'chemin-avec-apostrophe':    { cheminEnvisage: '/srv/d-adam/projet', compteEnvisage: 'd-adam' },
+  },
+  'samba-share-create': {
+    'apostrophe-ascii':          { nomPartage: 'partage', chemin: '/srv/partage', groupe: 'partage', ecriture: 'Oui', hotesAutorises: '192.168.30.0/24', confirmation: 'partage' },
+    'apostrophe-typographique':  { nomPartage: 'archives', chemin: '/srv/archives', groupe: 'gg-typo', ecriture: 'Non', hotesAutorises: '', confirmation: '' },
+    'dollar-backtick-guillemets':{ nomPartage: 'dollar', chemin: '/srv/dollar', groupe: 'dollar', ecriture: 'Oui', hotesAutorises: '10.10.0.0/16', confirmation: 'dollar' },
+    'espaces-et-accents':        { nomPartage: 'donnees', chemin: '/srv/Donnees partagees', groupe: 'partage', ecriture: 'Oui', hotesAutorises: '', confirmation: '' },
+    'virgule-et-point-virgule':  { nomPartage: 'a-b_c', chemin: '/srv/a-b_c', groupe: 'a-b_c', ecriture: 'Non', hotesAutorises: '172.16.8.0/22 192.168.1.5', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { nomPartage: 'voisin', chemin: '/mnt/voisin', groupe: 'voisins', ecriture: 'Non', hotesAutorises: '', confirmation: '' },
+    'chemin-avec-apostrophe':    { nomPartage: 'd-adam', chemin: '/srv/d-adam/projet', groupe: 'projet', ecriture: 'Oui', hotesAutorises: '192.168.30.50', confirmation: 'd-adam' },
+  },
+  'samba-diagnostic': {
+    'apostrophe-ascii':          { nomPartage: 'partage', compteTeste: 'o-brien', hoteTeste: '192.168.30.50' },
+    'apostrophe-typographique':  { nomPartage: '', compteTeste: '', hoteTeste: '' },
+    'dollar-backtick-guillemets':{ nomPartage: 'dollar', compteTeste: 'dadam', hoteTeste: '10.10.0.7' },
+    'espaces-et-accents':        { nomPartage: 'donnees', compteTeste: 'partage-admin', hoteTeste: '' },
+    'virgule-et-point-virgule':  { nomPartage: 'a-b_c', compteTeste: 'a-b_c', hoteTeste: '172.16.8.9' },
+    'chemin-racine-c':           { nomPartage: 'voisin', compteTeste: '', hoteTeste: '192.168.1.200' },
+    'chemin-avec-apostrophe':    { nomPartage: 'd-adam', compteTeste: 'd-adam', hoteTeste: '' },
+  },
   // Cockpit. « port » est partage avec SSH et le pare-feu, dont les valeurs
   // globales n'ont rien a voir avec 9090.
   'cockpit-install-readiness': {
@@ -2365,6 +2434,64 @@ const VALEURS_PAR_OUTIL = {
     'virgule-et-point-virgule':  { compteAdminProuve: 'a-b_c', desactiverMotDePasse: 'Oui', interdireRoot: 'Oui', nomFichier: '80-a-b_c.conf', confirmation: 'a-b_c' },
     'chemin-racine-c':           { compteAdminProuve: '', desactiverMotDePasse: 'Non', interdireRoot: 'Non', nomFichier: '90-voisin.conf', confirmation: '' },
     'chemin-avec-apostrophe':    { compteAdminProuve: 'd-adam', desactiverMotDePasse: 'Non', interdireRoot: 'Oui', nomFichier: '99-d-adam.conf', confirmation: 'd-adam' },
+  },
+  // NFS. Aucun jeu ne porte de joker, de « * » ni de /0 : le formulaire les
+  // refuse, et un jeu qui en contiendrait ferait echouer la generation. Les
+  // cas refuses sont eprouves par le banc, qui les ATTEND.
+  //
+  // « chemin » n a pas d espace pour nfs-export-create : exports(5) exige des
+  // guillemets autour d un nom d export qui en contient, et l assistant refuse
+  // plutot que de les ecrire.
+  'nfs-server-readiness': {
+    'apostrophe-ascii':          { cheminEnvisage: '/srv/nfs/partage', clientEnvisage: '192.168.30.0/24' },
+    'apostrophe-typographique':  { cheminEnvisage: '', clientEnvisage: '' },
+    'dollar-backtick-guillemets':{ cheminEnvisage: '/srv/nfs/dollar', clientEnvisage: '10.10.0.7' },
+    'espaces-et-accents':        { cheminEnvisage: '/srv/nfs/Donnees partagees', clientEnvisage: 'poste-labo.kjemo.local' },
+    'virgule-et-point-virgule':  { cheminEnvisage: '/srv/nfs/a-b_c', clientEnvisage: '172.16.8.0/22' },
+    'chemin-racine-c':           { cheminEnvisage: '/mnt/voisin', clientEnvisage: '' },
+    'chemin-avec-apostrophe':    { cheminEnvisage: '/srv/nfs/d-adam/projet', clientEnvisage: 'd-adam.labo.local' },
+  },
+  'nfs-export-create': {
+    'apostrophe-ascii':          { chemin: '/srv/nfs/partage', client: '192.168.30.0/24', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/partage' },
+    'apostrophe-typographique':  { chemin: '/srv/nfs/archives', client: '192.168.30.50', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/nfs/dollar', client: '10.10.0.0/16', ecriture: 'Oui', squashTous: 'Oui', confirmation: '/srv/nfs/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/nfs/donnees-partagees', client: 'poste-labo.kjemo.local', ecriture: 'Non', squashTous: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/nfs/a-b_c', client: '172.16.8.0/22', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', client: '192.168.1.200', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/nfs/d-adam/projet', client: 'd-adam.labo.local', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/d-adam/projet' },
+  },
+  // Jonction de domaine Windows. Ces trois assistants vivent dans la
+  // categorie du LOT 6 et viennent du LOT 7 : leurs champs portent des
+  // identifiants a eux, et aucune valeur commune ne les atteint.
+  //
+  // Aucun jeu ne contient de mot de passe : il n'y a aucun champ pour en
+  // recevoir, et c'est le point du module.
+  'windows-domain-join-readiness': {
+    'apostrophe-ascii':          { jrDomaine: 'kjemo.local', jrControleur: 'dc01.kjemo.local' },
+    'apostrophe-typographique':  { jrDomaine: 'labo.kjemo.local', jrControleur: '' },
+    'dollar-backtick-guillemets':{ jrDomaine: 'dollar.local', jrControleur: '10.10.0.5' },
+    'espaces-et-accents':        { jrDomaine: 'ecole.kjemo.local', jrControleur: 'dc-ecole.kjemo.local' },
+    'virgule-et-point-virgule':  { jrDomaine: 'a-b-c.local', jrControleur: '172.16.8.10' },
+    'chemin-racine-c':           { jrDomaine: 'voisin.local', jrControleur: '' },
+    'chemin-avec-apostrophe':    { jrDomaine: 'd-adam.labo.local', jrControleur: 'dc-d-adam.labo.local' },
+  },
+  'windows-domain-join': {
+    'apostrophe-ascii':          { mode: 'Appliquer', jdDomaine: 'kjemo.local', jdControleur: 'dc01.kjemo.local', jdUniteOrg: 'OU=Postes,DC=kjemo,DC=local', jdJournal: 'C:\\Kjemo\\Journaux', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'apostrophe-typographique':  { mode: 'Diagnostic', jdDomaine: 'labo.kjemo.local', jdControleur: '', jdUniteOrg: '', jdJournal: 'C:\\Kjemo\\Jonction', jdConfirmation: '' },
+    'dollar-backtick-guillemets':{ mode: 'Appliquer', jdDomaine: 'dollar.local', jdControleur: '10.10.0.5', jdUniteOrg: '', jdJournal: 'D:\\Journaux\\Kjemo', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'espaces-et-accents':        { mode: 'Diagnostic', jdDomaine: 'ecole.kjemo.local', jdControleur: 'dc-ecole.kjemo.local', jdUniteOrg: 'OU=Salle 204,OU=Postes,DC=ecole,DC=kjemo,DC=local', jdJournal: 'C:\\Kjemo\\Journaux ecole', jdConfirmation: '' },
+    'virgule-et-point-virgule':  { mode: 'Appliquer', jdDomaine: 'a-b-c.local', jdControleur: '172.16.8.10', jdUniteOrg: 'OU=a-b_c,DC=a-b-c,DC=local', jdJournal: 'C:\\Kjemo\\a-b_c', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'chemin-racine-c':           { mode: 'Diagnostic', jdDomaine: 'voisin.local', jdControleur: '', jdUniteOrg: '', jdJournal: 'C:\\Journaux', jdConfirmation: '' },
+    'chemin-avec-apostrophe':    { mode: 'Appliquer', jdDomaine: 'd-adam.labo.local', jdControleur: 'dc-d-adam.labo.local', jdUniteOrg: 'CN=Computers,DC=d-adam,DC=labo,DC=local', jdJournal: 'C:\\Kjemo\\d-adam', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+  },
+  'windows-domain-join-diagnostic': {
+    'apostrophe-ascii':          { jgDomaine: 'kjemo.local', jgControleur: 'dc01.kjemo.local', jgJours: '7' },
+    'apostrophe-typographique':  { jgDomaine: '', jgControleur: '', jgJours: '1' },
+    'dollar-backtick-guillemets':{ jgDomaine: 'dollar.local', jgControleur: '10.10.0.5', jgJours: '14' },
+    'espaces-et-accents':        { jgDomaine: 'ecole.kjemo.local', jgControleur: '', jgJours: '30' },
+    'virgule-et-point-virgule':  { jgDomaine: 'a-b-c.local', jgControleur: '172.16.8.10', jgJours: '3' },
+    'chemin-racine-c':           { jgDomaine: '', jgControleur: 'dc-voisin.voisin.local', jgJours: '60' },
+    'chemin-avec-apostrophe':    { jgDomaine: 'd-adam.labo.local', jgControleur: '', jgJours: '21' },
   },
 };
 
@@ -2574,7 +2701,12 @@ if (ecarts712.length === 0) {
 // Chaque lot annonce SA version. La correspondance se fait par la categorie
 // de l'outil, lue dans le catalogue : c'est elle qui dit de quel lot vient un
 // script, et non son nom de fichier.
+// La correspondance se fait par la categorie, et — depuis le commit 24/n —
+// par la SOUS-RUBRIQUE quand une categorie heberge deux lots. « Jonction de
+// domaine » vit dans la categorie du LOT 6 parce que c'est la qu'on la
+// cherche, et vient du LOT 7. La regle la plus precise passe en premier.
 const VERSIONS_PAR_LOT = [
+  { lot: 'LOT 7', categorie: 'Poste de travail Windows', sousRubrique: 'Jonction de domaine', version: 'LOT 7 — Jonction de domaine Windows — 7.0.0' },
   { lot: 'LOT 5', categorie: 'Réseau', version: 'LOT 5 — Réseau avancé — 5.0.0' },
   { lot: 'LOT 6', categorie: 'Poste de travail Windows', version: 'LOT 6 — Poste de travail Windows — 6.0.0' },
 ];
@@ -2585,7 +2717,8 @@ const VERSION_HERITEE = 'LOT 2 — 2.0.0';
 // font pas partie des « nouveaux ».
 const versionAttendue = new Map();
 for (const t of tools) {
-  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category);
+  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category
+    && (!r.sousRubrique || r.sousRubrique === t.subcategory));
   if (regle) versionAttendue.set(t.id, regle);
 }
 

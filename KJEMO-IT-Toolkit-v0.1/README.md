@@ -206,6 +206,38 @@ et quatre s'y ajoutent, propres au poste de travail :
   nomme explicitement ce qu'il ne lit pas — mots de passe, cookies, jetons,
   sessions, favoris, historique, extensions, données synchronisées.
 
+## Linux, Bash, Samba et NFS (LOT 7)
+
+Le catalogue compte **153 outils** : 107 Windows et **46 du LOT 7**, dont 43
+assistants Linux (sortie `.sh`, catégorie « Linux et services réseau », onze
+sous-rubriques) et 3 assistants de jonction de domaine (PowerShell, rangés
+dans « Poste de travail Windows »). Le dépôt livre **1224 scripts** de
+référence (880 `.ps1` et 344 `.sh`) et **112 commandes rapides**.
+
+Règles qui gouvernent les assistants Linux, sans exception :
+
+1. **Diagnostic par défaut.** 28 assistants ne modifient rien ; 15 modifient
+   la machine (13 « caution », 2 « destructive ») et exigent une phrase de
+   confirmation exacte, annoncée par le script lui-même.
+2. **Aucun secret** dans un champ, un script, une URL ou un rapport.
+3. **Le script relit et refuse.** Un verrou est dans le script généré, pas
+   seulement dans le formulaire : le banc négatif le prouve en armant puis en
+   désarmant chaque verrou.
+4. **Rien n'est appliqué à l'insu de la personne** : Netplan n'est jamais
+   appliqué, NFS n'est jamais exporté, SSH n'est jamais redémarré sans preuve
+   d'un second accès.
+
+Niveau de preuve : exécution réelle de Bash avec des **doublures** (mouchards
+sur le PATH) et ShellCheck. **Ubuntu Server réel, contrôleur Samba AD réel,
+export NFS réel et jonction de domaine réelle : NON EXÉCUTÉ.** GitHub Actions :
+NON EXÉCUTÉ tant qu'aucun push n'a eu lieu.
+
+Documentation : [architecture multiplateforme](docs/ARCHITECTURE-MULTIPLATEFORME.md),
+[commandes rapides](docs/COMMANDES-RAPIDES.md),
+[sécurité Bash](docs/SECURITE-BASH.md),
+[catalogue des 46 assistants](docs/CATALOGUE-46-ASSISTANTS.md),
+[sources officielles](docs/SOURCES-OFFICIELLES.md). Matrices : `LOT-7-MATRICE-*.json`.
+
 ## Première version
 
 - Configuration IPv4 statique et DNS
@@ -257,6 +289,15 @@ Le projet est volontairement sans dépendance d’exécution. Ouvrir
     npm run test:bom                 # BOM UTF-8 des scripts PowerShell livrés
     npm run test:sources:6b          # chaque source officielle répond, et porte le bon titre
     npm run test:sources:horsligne   # contrôle de forme seul, sans appel réseau
+    npm run test:linux               # chaîne Bash : hygiène, shQuote, ShellCheck, scanner, mouchards, commandes rapides
+    npm run test:netplan-v2          # Netplan : passerelle (hôte, réseau, diffusion) et fichier cloud-init
+    npm run test:negatifs            # 19 familles de verrous : refus, contrôle positif, contre-épreuve
+    npm run test:negatifs:contre-epreuves   # 12 pannes produit : le banc négatif doit rougir
+    npm run test:browser:lot7        # Chromium réel : 8 catégories, 46 routes, recherche, clavier, 390 px
+    npm run test:browser:lot7:contre-epreuves   # 16 mutations : le banc navigateur doit rougir
+    npm run test:capacites           # sonde chown/mknod : NON EXÉCUTÉ (77) distinct d'une régression (1)
+    npm run test:dette-6b            # liste, sans les modifier, les scripts au sélecteur « Format du rapport » mort
+    node test/matrices-lot7.mjs --verifier   # les matrices et le catalogue n'ont pas dérivé
 
 `npm run test:poste-verrous` et `npm run test:fiches-poste-b` acceptent
 `--powershell <exe>`. L'interpréteur est alors **imposé** : si l'exécutable

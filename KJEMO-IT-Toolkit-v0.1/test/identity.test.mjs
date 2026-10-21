@@ -1020,7 +1020,15 @@ for (const t of tools) {
 //   structure n est pas rendre les donnees. Le dire franchement est la seule
 //   facon de faire choisir des disques VIDES avant de lancer l assistant.
 const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'linux-disk-partition-mount',
-  'linux-raid1-create', 'process-hung', 'temp-cleanup'];
+  'linux-raid1-create', 'process-hung', 'temp-cleanup',
+  // 22/n : preparer un provisionnement de controleur de domaine. L assistant
+  // lui-meme ne provisionne pas — il remet un cahier de manoeuvre — mais la
+  // fiche declare reversible: false parce que ce qu elle DOCUMENTE ne s annule
+  // pas : un domaine provisionne se defait en restaurant la machine, et aucun
+  // fichier retire ne le defait. Declarer true aurait ete fabriquer une
+  // securite inexistante.
+  'samba-ad-dc-provision',
+];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
   `les seuls outils declares irreversibles sont ${IRREVERSIBLES_ADMIS.join(' et ')} (${lectureSeule.join(', ') || 'aucun'})`);
@@ -1497,7 +1505,9 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
   'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs',
   'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs',
   'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs', 'dist/outils-linux-i.mjs',
-  'dist/outils-linux-j.mjs', 'dist/outils-linux-k.mjs']
+  'dist/outils-linux-j.mjs', 'dist/outils-linux-k.mjs',
+  'dist/outils-linux-l.mjs', 'dist/outils-linux-m.mjs',
+  'dist/outils-linux-n.mjs', 'dist/outils-poste-jonction.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -2057,7 +2067,29 @@ for (const outil of outilsRecents) {
 
   // Un diagnostic pur ne doit contenir aucun verbe modifiant hors simulation.
   if (outil.risk === 'diagnostic') {
-    const modifiants = lignesDeCode.join('\n')
+    // NOMMER une applet n'est pas l'APPELER.
+    //
+    // « Get-Command -Name 'Add-Computer' » est une LECTURE : elle demande si
+    // l'applet existe dans cette session. C'est le premier contrôle des
+    // assistants de jonction de domaine, parce que la panne la plus fréquente
+    // du sujet est d'avoir ouvert PowerShell 7, où cette applet n'existe pas.
+    // Le nom figure aussi dans le libellé du contrôle et dans la phrase qui
+    // explique son absence. L'ancienne règle lisait ces chaînes et criait à
+    // l'appel.
+    //
+    // La règle n'est pas assouplie : elle est rendue exacte. En PowerShell,
+    // une invocation n'est JAMAIS entre apostrophes — une chaîne littérale est
+    // une donnée, pas un appel. Les chaînes littérales sont donc retirées
+    // avant la recherche, et tout ce qui reste est du code. La contre-épreuve
+    // ci-dessous le prouve dans les deux sens.
+    //
+    // Le retrait des chaînes ne peut pas servir de porte dérobée : un appel
+    // construit depuis une chaîne demanderait Invoke-Expression, et la ligne
+    // suivante le refuse explicitement.
+    const sansChaines = lignesDeCode.join('\n').replace(/'(?:[^']|'')*'/g, "''");
+    assert(!/Invoke-Expression|\biex\b/i.test(sansChaines),
+      `${outil.id} : aucune évaluation de chaîne — sans quoi retirer les chaînes littérales masquerait un appel`);
+    const modifiants = sansChaines
       .match(/\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g) ?? [];
     const autorises = ['Add-KjemoResultat', 'New-Object', 'New-TimeSpan', 'Set-Content',
                        'New-Item', 'Add-Member', 'Start-Sleep'];
@@ -2065,6 +2097,28 @@ for (const outil of outilsRecents) {
     assert(interdits.length === 0,
       `${outil.id} : aucun cmdlet modifiant dans un outil de diagnostic (${interdits.join(', ') || 'aucun'})`);
   }
+}
+
+// Contre-épreuve du raffinement ci-dessus, dans les DEUX sens : le jeton ne
+// doit effacer que le nom passé à Get-Command, jamais une invocation.
+{
+  const nettoyer = (t) => t.replace(/'(?:[^']|'')*'/g, "''");
+  const motif = /\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g;
+  assert(!motif.test(nettoyer("$a = Get-Command -Name 'Add-Computer' -ErrorAction SilentlyContinue")),
+    'contre-épreuve — nommer une applet à Get-Command n’est pas l’appeler');
+  motif.lastIndex = 0;
+  assert(motif.test(nettoyer("Add-Computer -DomainName $d")),
+    'contre-épreuve — une VRAIE invocation reste détectée');
+  motif.lastIndex = 0;
+  assert(motif.test(nettoyer("Get-Command -Name 'Add-Computer'; Remove-Item $x")),
+    'contre-épreuve — une invocation sur la même ligne qu’un Get-Command reste détectée');
+  motif.lastIndex = 0;
+  assert(!motif.test(nettoyer("$c = 'Applet Add-Computer'")),
+    'contre-épreuve — un nom d’applet dans un libellé n’est pas un appel');
+  motif.lastIndex = 0;
+  assert(motif.test(nettoyer("if ($x) { Remove-Item $y } else { $z = 'rien' }")),
+    'contre-épreuve — une invocation hors chaîne reste détectée quand une chaîne la suit');
+  motif.lastIndex = 0;
 }
 
 section('LOT 2 et 3 — validation : les données invalides sont refusées');
@@ -4153,6 +4207,12 @@ function codeSeulLot6(script) {
     'Sécurité',
     'Réparation Windows',
     'Stockage et nettoyage',
+    // Ajoutee au commit 24/n. La categorie reste celle du LOT 6 — c'est la
+    // ou quelqu'un cherche « joindre un poste au domaine » — mais les trois
+    // assistants viennent du LOT 7 et portent LEUR version. Les deux choses
+    // sont independantes : la categorie dit ou l'on range, la version dit
+    // d'ou vient le script.
+    'Jonction de domaine',
   ];
 
   const ATTENDUS_LOT6A = [
@@ -4201,16 +4261,45 @@ function codeSeulLot6(script) {
   // -------------------------------------------------------------------------
   section('LOT 6 — métadonnée de version');
 
+  // La version se verifie PAR LOT, et non par categorie. « Jonction de
+  // domaine » habite la categorie du LOT 6 et vient du LOT 7 : exiger
+  // VERSION_LOT6 de ses scripts ferait annoncer un lot faux. La regle est
+  // donc dedoublee, et resserree dans les deux sens — chaque script porte la
+  // version de SON lot, et aucun ne porte celle de l'autre.
+  const VERSION_LOT7_JONCTION = 'LOT 7 — Jonction de domaine Windows — 7.0.0';
+  const estJonction = (t) => t.subcategory === 'Jonction de domaine';
   let lot6Essais = 0;
   let lot6Justes = 0;
   let lot6Herite = 0;
-  for (const outil of outilsPoste) {
+  for (const outil of outilsPoste.filter((t) => !estJonction(t))) {
     for (const script of scriptsDeLOutil(outil)) {
       lot6Essais += 1;
       if (script.includes(`$KjemoVersion = '${VERSION_LOT6}'`)
         && script.includes(`# Outil KJEMO : ${outil.id} — ${VERSION_LOT6}`)) lot6Justes += 1;
       if (script.includes(VERSION_OUTILS)) lot6Herite += 1;
     }
+  }
+  {
+    let essais = 0;
+    let justes = 0;
+    let herite = 0;
+    const outilsJonction = outilsPoste.filter(estJonction);
+    assert(outilsJonction.length === 3,
+      `LOT 7 : les trois assistants de jonction de domaine sont la (${outilsJonction.length})`);
+    for (const outil of outilsJonction) {
+      for (const script of scriptsDeLOutil(outil)) {
+        essais += 1;
+        if (script.includes(`$KjemoVersion = '${VERSION_LOT7_JONCTION}'`)
+          && script.includes(`# Outil KJEMO : ${outil.id} — ${VERSION_LOT7_JONCTION}`)) justes += 1;
+        if (script.includes(VERSION_LOT6) || script.includes(VERSION_OUTILS)) herite += 1;
+      }
+    }
+    assert(essais >= outilsJonction.length,
+      `LOT 7 : ${essais} script(s) de jonction produits pour cette verification`);
+    assert(justes === essais,
+      `LOT 7 : tous les scripts de jonction annoncent « ${VERSION_LOT7_JONCTION} » (${justes}/${essais})`);
+    assert(herite === 0,
+      `LOT 7 : aucun script de jonction ne porte la version du LOT 6 ni celle d'origine (${herite})`);
   }
   assert(lot6Essais >= outilsPoste.length,
     `LOT 6 : ${lot6Essais} script(s) produits pour cette vérification`);

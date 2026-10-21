@@ -643,6 +643,47 @@ const METHODES = {
   'Adresse statique': 'statique',
 };
 
+/**
+ * Contrôle de la passerelle d'une configuration statique.
+ *
+ * Elle est FACULTATIVE : sans elle, la configuration ne déclare aucune route
+ * par défaut (un réseau isolé n'en veut pas). Quand elle est renseignée, elle
+ * doit désigner une machine du réseau — et pas n'importe quelle adresse du
+ * réseau. Netplan accepte sans se plaindre une passerelle égale à l'adresse de
+ * l'hôte (la machine se prend pour sa propre sortie), à l'adresse du réseau ou
+ * à celle de diffusion : « netplan generate » ne voit aucune de ces fautes, et
+ * le réseau ne route plus rien.
+ *
+ * Renvoie le message d'erreur, ou null.
+ */
+function erreurPasserelle(adresse, passerelle) {
+  const p = validateIPv4(passerelle, 'La passerelle');
+  if (!p.ok) return p.error;
+  const a = validateAdresseCidr(adresse, 'L’adresse');
+  if (!a.ok) return null; // l'adresse porte sa propre erreur
+  const [ip, prefixe] = adresse.split('/');
+  const bits = Number(prefixe);
+  const enEntier = (x) => x.split('.').reduce((acc, o) => (acc * 256) + Number(o), 0);
+  const masque = bits === 0 ? 0 : (0xFFFFFFFF << (32 - bits)) >>> 0;
+  const hote = enEntier(ip);
+  const gw = enEntier(passerelle);
+  const reseau = (hote & masque) >>> 0;
+  const diffusion = (reseau | (~masque >>> 0)) >>> 0;
+  if (((gw & masque) >>> 0) !== reseau) {
+    return `La passerelle « ${passerelle} » n’appartient pas au réseau de « ${adresse} ». Netplan génère cette configuration sans se plaindre, et le réseau ne fonctionne pas : le noyau n’a aucun moyen de joindre une passerelle hors de son propre réseau. C’est la faute la plus fréquente de ce formulaire, et la seule que « netplan generate » ne voit pas.`;
+  }
+  if (gw === hote) {
+    return `La passerelle « ${passerelle} » est l’adresse de la machine elle-même (« ${ip} »). La machine serait sa propre sortie : aucun paquet ne quitterait le réseau, et « netplan generate » ne s’en plaint pas. Saisis l’adresse du routeur, ou laisse la passerelle vide si aucune route par défaut n’est voulue.`;
+  }
+  if (bits <= 30 && gw === reseau) {
+    return `La passerelle « ${passerelle} » est l’adresse du RÉSEAU lui-même (le premier numéro du réseau ${adresse}), pas celle d’une machine : aucun routeur ne peut y répondre. Saisis l’adresse du routeur, ou laisse la passerelle vide.`;
+  }
+  if (bits <= 30 && gw === diffusion) {
+    return `La passerelle « ${passerelle} » est l’adresse de DIFFUSION du réseau ${adresse}, pas celle d’une machine : elle s’adresse à tout le monde à la fois et aucun routeur ne peut la porter. Saisis l’adresse du routeur, ou laisse la passerelle vide.`;
+  }
+  return null;
+}
+
 const netplanReadiness = {
   id: 'netplan-readiness',
   icon: '◇',
@@ -669,6 +710,7 @@ const netplanReadiness = {
     'N’écrit rien dans /etc/netplan. Le fichier préparé va dans le dossier personnel, avec les deux commandes à taper : « netplan try » d’abord, qui revient tout seul en arrière après 120 secondes si personne ne confirme.',
     'N’exécute pas « netplan try » non plus : il demande un terminal interactif. Un script qui le lancerait sans terminal appliquerait la configuration puis la laisserait revenir en arrière — le pire des deux mondes.',
     'Ne configure pas le sans-fil : une clé Wi-Fi est un secret, et aucun secret n’entre dans un formulaire de ce lot.',
+    'Ne modifie JAMAIS un fichier produit par cloud-init (50-cloud-init.yaml en général : il est réécrit à chaque démarrage). Il le repère à son en-tête, l’annonce, et prépare un CANDIDAT SÉPARÉ sous un autre nom. Il refuse aussi un nom déjà présent dans /etc/netplan, et s’arrête quand plusieurs fichiers déclarent déjà l’interface.',
     'Ne touche pas aux fichiers Netplan existants, même pour les corriger. Il les lit, signale ce qui cloche, et laisse décider — plusieurs fichiers qui se superposent sont un cas légitime autant qu’un accident.',
     'IPv4 seulement. Une configuration IPv6 a ses propres pièges — autoconfiguration, adresses temporaires, routes annoncées — et les mélanger dans le même formulaire rendrait les deux obscures.',
   ],
@@ -701,12 +743,12 @@ const netplanReadiness = {
     },
     {
       id: 'passerelle',
-      label: 'Passerelle (statique)',
+      label: 'Passerelle (statique, facultative)',
       type: 'text',
       default: '192.168.30.1',
       placeholder: '192.168.30.1',
       optionnel: true,
-      help: 'Obligatoire en statique, ignorée en DHCP. Elle doit appartenir au même réseau que l’adresse : l’assistant le vérifie.',
+      help: 'Facultative : laisse-la vide si aucune route par défaut n’est voulue (réseau isolé). Renseignée, elle doit être une AUTRE machine du même réseau que l’adresse : ni l’adresse de l’hôte, ni celle du réseau, ni celle de diffusion. Ignorée en DHCP. L’assistant vérifie chacun de ces points.',
     },
     {
       id: 'dns',
@@ -732,7 +774,7 @@ const netplanReadiness = {
       type: 'text',
       default: '99-kjemo-reseau.yaml',
       placeholder: '99-kjemo-reseau.yaml',
-      help: 'Netplan lit les fichiers de /etc/netplan dans l’ordre alphabétique : un nom commençant par 99 passe en dernier et l’emporte sur les autres.',
+      help: 'Netplan lit les fichiers de /etc/netplan dans l’ordre alphabétique : un nom commençant par 99 passe en dernier et l’emporte sur les autres. Le nom ne doit pas contenir « cloud-init » : ce fichier-là est régénéré par cloud-init et ne se remplace pas. À l’exécution, le script refuse aussi un nom déjà présent dans /etc/netplan.',
     },
     CHAMP_FORMAT,
   ],
@@ -752,21 +794,12 @@ const netplanReadiness = {
     if (statique) {
       const a = validateAdresseCidr(adresse, 'L’adresse');
       if (!a.ok) errors.adresseCidr = a.error;
-      const p = validateIPv4(passerelle, 'La passerelle');
-      if (!p.ok) errors.passerelle = p.error;
+      if (passerelle !== '') {
+        const e = erreurPasserelle(adresse, passerelle);
+        if (e !== null) errors.passerelle = e;
+      }
       if (dns.length === 0) {
         errors.dns = 'En adresse statique, aucun serveur DNS n’est fourni automatiquement : sans eux, les noms ne se résolvent plus, et le symptôme ressemble à une panne réseau complète alors que la route fonctionne.';
-      }
-      // La passerelle doit être dans le même réseau que l'adresse : c'est la
-      // faute la plus fréquente, et netplan generate ne la voit pas.
-      if (a.ok && p.ok) {
-        const [ip, prefixe] = adresse.split('/');
-        const bits = Number(prefixe);
-        const enEntier = (s) => s.split('.').reduce((acc, o) => (acc * 256) + Number(o), 0);
-        const masque = bits === 0 ? 0 : (0xFFFFFFFF << (32 - bits)) >>> 0;
-        if ((enEntier(ip) & masque) !== (enEntier(passerelle) & masque)) {
-          errors.passerelle = `La passerelle « ${passerelle} » n’appartient pas au réseau de « ${adresse} ». Netplan génère cette configuration sans se plaindre, et le réseau ne fonctionne pas : le noyau n’a aucun moyen de joindre une passerelle hors de son propre réseau. C’est la faute la plus fréquente de ce formulaire, et la seule que « netplan generate » ne voit pas.`;
-        }
       }
     }
     if (dns.length > 3) {
@@ -781,6 +814,8 @@ const netplanReadiness = {
       errors.nomFichier = f.error;
     } else if (!/\.yaml$/.test(String(v.nomFichier).trim())) {
       errors.nomFichier = 'Le nom doit finir par « .yaml ». Netplan ne lit que les fichiers *.yaml de /etc/netplan : un fichier nommé autrement est ignoré en silence, et on cherche longtemps pourquoi la configuration ne s’applique pas.';
+    } else if (/cloud-init/i.test(String(v.nomFichier))) {
+      errors.nomFichier = 'Le nom ne doit pas contenir « cloud-init ». Un fichier comme 50-cloud-init.yaml est PRODUIT par cloud-init et réécrit à chaque démarrage : le remplacer, c’est perdre le changement au prochain redémarrage ou, pire, croire avoir configuré une machine qui revient à l’ancienne configuration. Choisis un nom à toi, par exemple 99-kjemo-reseau.yaml.';
     }
     validerFormat(v, errors);
     return errors;
@@ -811,9 +846,11 @@ const netplanReadiness = {
         '      dhcp4: false',
         '      addresses:',
         `        - ${adresse}`,
-        '      routes:',
-        '        - to: default',
-        `          via: ${passerelle}`,
+        ...(passerelle !== '' ? [
+          '      routes:',
+          '        - to: default',
+          `          via: ${passerelle}`,
+        ] : []),
         '      nameservers:',
         '        addresses:',
         ...dns.map((d) => `          - ${d}`),
@@ -851,7 +888,7 @@ const netplanReadiness = {
       "  printf '%s\\t%s\\n' 'Interface' \"${KJEMO_IFACE}\"",
       "  printf '%s\\t%s\\n' 'Methode' \"${KJEMO_METHODE}\"",
       "  printf '%s\\t%s\\n' 'Adresse' \"${KJEMO_ADRESSE:-fournie par DHCP}\"",
-      "  printf '%s\\t%s\\n' 'Passerelle' \"${KJEMO_PASSERELLE:-fournie par DHCP}\"",
+      `  printf '%s\\t%s\\n' 'Passerelle' "\${KJEMO_PASSERELLE:-${statique ? 'aucune - pas de route par defaut' : 'fournie par DHCP'}}"`,
       "  printf '%s\\t%s\\n' 'DNS' \"${KJEMO_DNS:-fournis par DHCP}\"",
       "  printf '%s\\t%s\\n' 'Application' 'AUCUNE - netplan apply n est jamais lance'",
       "  printf '%s\\t%s\\n' 'Format' \"${KJEMO_FORMAT}\"",
@@ -894,7 +931,13 @@ const netplanReadiness = {
       '  fi',
       'fi',
       '',
-      'KJEMO_FICHIERS="$(find /etc/netplan -maxdepth 1 -name \'*.yaml\' -o -maxdepth 1 -name \'*.yml\' 2>/dev/null | sort || true)"',
+      '# Le dossier est une CONSTANTE du script, jamais une variable d environnement :',
+      '# la seule chose qu il inventorie, copie pour valider et protege, c est celui-ci.',
+      "KJEMO_NETPLAN_DIR='/etc/netplan'",
+      'KJEMO_NOM_LIBRE_OK=1',
+      'KJEMO_CONCURRENCE_OK=1',
+      'KJEMO_CLOUDINIT=""',
+      'KJEMO_FICHIERS="$(find "${KJEMO_NETPLAN_DIR}" -maxdepth 1 \\( -name \'*.yaml\' -o -name \'*.yml\' \\) 2>/dev/null | sort || true)"',
       'if [ -z "${KJEMO_FICHIERS}" ]; then',
       "  kjemo_resultat 'Fichiers' '/etc/netplan' 'ATTENTION' 'aucun fichier' \\",
       "    'Aucune configuration Netplan. Sur une machine installee, c est inhabituel : le reseau est peut-etre configure par cloud-init, par NetworkManager, ou l interface est en DHCP sans configuration explicite.'",
@@ -908,17 +951,44 @@ const netplanReadiness = {
       "    kjemo_resultat 'Fichiers' 'Extension .yml' 'PROBLEME' \"${KJEMO_YML}\" \\",
       "      'Netplan ne lit QUE les fichiers *.yaml. Ces fichiers sont ignores en silence : leur contenu n a aucun effet, et on cherche longtemps pourquoi la configuration ne s applique pas.'",
       '  fi',
+      '  # Les fichiers PRODUITS PAR cloud-init : leur en-tete le dit, et leur nom',
+      '  # aussi (50-cloud-init.yaml). cloud-init les reecrit a chaque demarrage :',
+      '  # ce script ne les modifie JAMAIS, et refuse de poser un fichier du meme nom.',
+      '  while IFS= read -r kjemo_f; do',
+      '    [ -n "${kjemo_f}" ] || continue',
+      '    if head -n 10 -- "${kjemo_f}" 2>/dev/null | grep -qiE \'cloud-init|provided by the datasource\' || printf \'%s\\n\' "${kjemo_f##*/}" | grep -qi \'cloud-init\'; then',
+      '      KJEMO_CLOUDINIT="${KJEMO_CLOUDINIT}${KJEMO_CLOUDINIT:+ }${kjemo_f}"',
+      '    fi',
+      '  done <<KJEMO_LISTE',
+      '${KJEMO_FICHIERS}',
+      'KJEMO_LISTE',
+      '  if [ -n "${KJEMO_CLOUDINIT}" ]; then',
+      "    kjemo_resultat 'Fichiers' 'Fichier produit par cloud-init' 'ATTENTION' \"${KJEMO_CLOUDINIT}\" \\",
+      "      'Ce fichier est genere par cloud-init et reecrit a chaque demarrage : ce script ne le modifie JAMAIS. Le fichier prepare est un CANDIDAT SEPARE, sous un autre nom, valide avec les existants. Pour que cloud-init cesse de gerer le reseau, c est une decision a part (un fichier /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg avec network: {config: disabled}) que ce script ne prend pas.'",
+      '  fi',
+      '  # Un nom deja present dans le dossier serait ECRASE par la mise en place :',
+      '  # le script le refuse, quel que soit le fichier.',
+      '  if [ -e "${KJEMO_NETPLAN_DIR}/${KJEMO_NOM_FICHIER}" ] || [ -L "${KJEMO_NETPLAN_DIR}/${KJEMO_NOM_FICHIER}" ]; then',
+      '    KJEMO_NOM_LIBRE_OK=0',
+      "    kjemo_resultat 'Fichiers' 'Nom deja pris' 'PROBLEME' \"${KJEMO_NETPLAN_DIR}/${KJEMO_NOM_FICHIER}\" \\",
+      "      'Un fichier de ce nom existe deja dans /etc/netplan : la mise en place l ecraserait. Choisis un autre nom. Le fichier existant n a pas ete touche.'",
+      '  fi',
       '  # Les permissions : un fichier Netplan lisible par tous peut exposer une',
       '  # cle Wi-Fi. netplan lui-meme avertit depuis la version 0.106.',
-      '  KJEMO_LARGES="$(find /etc/netplan -maxdepth 1 -name \'*.yaml\' -perm /044 2>/dev/null || true)"',
+      '  KJEMO_LARGES="$(find "${KJEMO_NETPLAN_DIR}" -maxdepth 1 -name \'*.yaml\' -perm /044 2>/dev/null || true)"',
       '  if [ -n "${KJEMO_LARGES}" ]; then',
       "    kjemo_resultat 'Fichiers' 'Permissions trop larges' 'ATTENTION' \"${KJEMO_LARGES}\" \\",
       "      'Ces fichiers sont lisibles par le groupe ou par tous. Un fichier Netplan peut contenir une cle Wi-Fi ou un mot de passe de connexion : le mode attendu est 600. netplan lui-meme avertit a chaque execution quand ce n est pas le cas.'",
       '  fi',
       '  # Les interfaces DEJA declarees : si la notre y est, deux fichiers',
       '  # vont se superposer, et il faut le savoir AVANT.',
-      '  KJEMO_DEJA="$(grep -l -E \"^[[:space:]]+${KJEMO_IFACE}:\" /etc/netplan/*.yaml 2>/dev/null || true)"',
-      '  if [ -n "${KJEMO_DEJA}" ]; then',
+      '  KJEMO_DEJA="$(grep -l -E \"^[[:space:]]+${KJEMO_IFACE}:\" "${KJEMO_NETPLAN_DIR}"/*.yaml 2>/dev/null || true)"',
+      '  KJEMO_NB_DEJA="$(printf \'%s\\n\' "${KJEMO_DEJA}" | grep -c . || true)"',
+      '  if [ "${KJEMO_NB_DEJA:-0}" -ge 2 ]; then',
+      '    KJEMO_CONCURRENCE_OK=0',
+      "    kjemo_resultat 'Fichiers' 'Interface declaree plusieurs fois' 'PROBLEME' \"${KJEMO_DEJA}\" \\",
+      '      "L interface ${KJEMO_IFACE} est deja declaree dans ${KJEMO_NB_DEJA} fichiers. Ajouter un fichier de plus creerait une configuration CONCURRENTE de plus, et le dernier lu l emporterait cle par cle sans que personne ne sache lequel. Le script s arrete avant toute ecriture : mets d abord ces fichiers d accord. Aucun n a ete touche."',
+      '  elif [ -n "${KJEMO_DEJA}" ]; then',
       "    kjemo_resultat 'Fichiers' 'Interface deja declaree' 'ATTENTION' \"${KJEMO_DEJA}\" \\",
       '      "L interface ${KJEMO_IFACE} est deja declaree dans ces fichiers. Le fichier prepare s ajoutera par-dessus : Netplan fusionne cle par cle, et le dernier lu l emporte. Ce n est pas forcement une erreur, mais il faut le savoir — notamment pour dhcp4, qui restera a sa valeur precedente si le nouveau fichier ne la nomme pas."',
       '  fi',
@@ -999,8 +1069,8 @@ const netplanReadiness = {
       'if [ "${KJEMO_PREPARE_OK}" -eq 1 ] && [ "${KJEMO_OUTILS_OK}" -eq 1 ]; then',
       '  KJEMO_RACINE="${KJEMO_TMP}/racine"',
       '  mkdir -p -- "${KJEMO_RACINE}/etc/netplan"',
-      '  if [ -d /etc/netplan ]; then',
-      '    find /etc/netplan -maxdepth 1 -name \'*.yaml\' -exec cp -p -- {} "${KJEMO_RACINE}/etc/netplan/" \\; 2>/dev/null || true',
+      '  if [ -d "${KJEMO_NETPLAN_DIR}" ]; then',
+      '    find "${KJEMO_NETPLAN_DIR}" -maxdepth 1 -name \'*.yaml\' -exec cp -p -- {} "${KJEMO_RACINE}/etc/netplan/" \\; 2>/dev/null || true',
       '  fi',
       '  cp -p -- "${KJEMO_PREPARE}" "${KJEMO_RACINE}/etc/netplan/${KJEMO_NOM_FICHIER}"',
       '  kjemo_code=0',
@@ -1032,6 +1102,8 @@ const netplanReadiness = {
           ['KJEMO_IFACE_OK', 'L interface demandee n existe pas : la configuration ne s appliquerait a rien.'],
           ['KJEMO_PREPARE_OK', 'Le fichier prepare n a pas pu etre ecrit.'],
           ['KJEMO_VALIDE_OK', 'Netplan refuse la configuration preparee.'],
+          ['KJEMO_NOM_LIBRE_OK', 'Le nom demande existe deja dans /etc/netplan : la mise en place l ecraserait.'],
+          ['KJEMO_CONCURRENCE_OK', 'Plusieurs fichiers declarent deja cette interface : en ajouter un creerait une configuration concurrente.'],
           ['KJEMO_CONFIRMATION_OK', 'La confirmation ne reprend pas exactement le nom de l interface.'],
         ],
         action: 'la remise du fichier prepare et de la procedure',
@@ -1090,6 +1162,9 @@ const netplanReadiness = {
       '  printf \'%s\\n\' "   sudo rm -f /etc/netplan/${KJEMO_NOM_FICHIER}"',
       "  printf '%s\\n' '   sudo netplan try'",
       "  printf '%s\\n' ''",
+      '  if [ -n "${KJEMO_CLOUDINIT}" ]; then',
+      "    printf '%s\\n' 'Un fichier produit par cloud-init existe : il n a pas ete modifie, et le fichier remis porte un autre nom.'",
+      '  fi',
       "  printf '%s\\n' 'Ce que ce script n a PAS fait : il n a rien ecrit dans'",
       "  printf '%s\\n' '/etc/netplan, et il n a lance ni netplan apply ni netplan try.'",
       "  printf '%s\\n' '=============================================================='",
@@ -1105,6 +1180,7 @@ const netplanReadiness = {
     'Relève le nom EXACT de l’interface : « ip -brief link show ». « eth0 » n’existe plus sur une installation récente.',
     'Regarde ce qui existe déjà : « ls -l /etc/netplan/ ». Netplan lit les *.yaml dans l’ordre alphabétique, et le dernier l’emporte clé par clé.',
     'Un fichier en .yml est IGNORÉ en silence : seuls les *.yaml sont lus.',
+    'Si « 50-cloud-init.yaml » existe, ne le modifie pas : cloud-init le réécrit à chaque démarrage. Écris un fichier à part (99-…), et décide séparément de laisser ou non cloud-init gérer le réseau.',
     'Le mode attendu est 600 : un fichier Netplan peut contenir une clé Wi-Fi, et netplan avertit lui-même quand il est lisible par tous.',
     'Écris le fichier, par exemple « /etc/netplan/99-local.yaml », avec « network: », « version: 2 », « renderer: networkd », puis « ethernets: » et ton interface.',
     'En statique, l’adresse porte son préfixe — « 192.168.30.10/24 » — et les serveurs DNS sont obligatoires : rien ne les fournit plus.',
