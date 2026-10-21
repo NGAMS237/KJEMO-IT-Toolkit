@@ -226,7 +226,7 @@ verifier(deploy.if === undefined,
 // validerait un autre interpréteur que celui qui exécutera les scripts.
 const jobsLin = yml['validate-linux.yml'].jobs ?? {};
 const jobLin = jobsLin['validate-linux'] ?? {};
-verifier(String(jobLin['runs-on']) === 'ubuntu-latest', 'la validation Linux tourne sur ubuntu-latest');
+verifier(String(jobLin['runs-on']) === 'ubuntu-22.04', 'la validation Linux utilise Ubuntu 22.04, compatible avec Playwright 1.44.1');
 const appelable = yml['validate-linux.yml'].on ?? yml['validate-linux.yml'].true ?? {};
 verifier(Object.prototype.hasOwnProperty.call(appelable, 'workflow_call'),
   'validate-linux.yml est réutilisable (workflow_call)');

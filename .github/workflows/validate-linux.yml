@@ -51,7 +51,9 @@ on:
 jobs:
   validate-linux:
     name: Chaîne Bash — hygiène octet, shQuote, bash -n, ShellCheck
-    runs-on: ubuntu-latest
+    # Playwright 1.44.1 declare les dependances Ubuntu 22.04.
+    # Figer cette image evite la migration implicite de ubuntu-latest.
+    runs-on: ubuntu-22.04
     outputs:
       status: ${{ steps.set-status.outputs.status }}
 
@@ -60,7 +62,7 @@ jobs:
       # 1. Checkout
       # -----------------------------------------------------------------------
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # -----------------------------------------------------------------------
       # 2. Node.js 20
@@ -72,7 +74,7 @@ jobs:
       # éventuel échec.
       # -----------------------------------------------------------------------
       - name: Configurer Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
 
@@ -572,7 +574,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Publier les scripts générés
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sh-generated-${{ github.sha }}
           path: KJEMO-IT-Toolkit-v0.1/test/generated/
