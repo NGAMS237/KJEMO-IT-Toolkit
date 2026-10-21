@@ -176,3 +176,82 @@ préservés.
   24 px sont exemptés de la règle WCAG 2.5.8.
 - N19 (jonction PowerShell) est éprouvée statiquement (niveau 1), pas exécutée.
 - `chown` et `mknod` réels ne sont exécutables que si la capacité existe.
+
+## Actualisation du 21 octobre 2026 — Réseau et Cisco : RESEAU-CISCO-01
+
+**Décision : chantier inscrit à la roadmap, planifié, non développé et non testé.**
+Il appartient au volet « Réseau et Cisco » de l’architecture cible. Il est distinct
+du LOT 8 Azure / Entra ID, dont la mission a été transmise à Claude ; aucune
+livraison de code LOT 8 n’est attestée par cette actualisation. Les numéros et
+périmètres des LOTS 9 à 12 restent inchangés. Aucun numéro de lot supplémentaire
+ni calendrier n’est fixé ici.
+
+### Origine et état de départ
+
+- Cours du 21 octobre : `420-FBL-LI_-_S05_-_Evolutivite_des_VLANs_DTP_VTP.pptx`,
+  `420-FBL-LI_-_S05_-_Formatif_06.zip` et synthèse `Markdown collé(1).md`.
+- Le calculateur `ipv4-subnet-calculator` existe déjà : le réutiliser, sans le dupliquer.
+- Au contrôle du code, aucun assistant dédié VLAN, trunk, DTP ou VTP n’a été
+  repéré dans les modules du Toolkit. La rubrique cible « Réseau et Cisco »
+  constitue une intention d’architecture, pas une implémentation.
+- Cette inscription documentaire ne modifie aucun générateur, aucune commande
+  ni aucun statut de fusion ou de déploiement des lots en cours.
+
+### Périmètre à développer, par priorité
+
+1. **VLAN et ports access — priorité haute.** Inventorier les VLAN, préparer
+   leur création et leur nommage, affecter un port à un VLAN existant, distinguer
+   la base VLAN de l’affectation locale des interfaces. Vérifications avant/après.
+2. **Trunks — priorité haute.** Préparer une liaison explicite, vérifier son état
+   opérationnel, les VLAN autorisés et le VLAN natif ; diagnostiquer les écarts
+   entre extrémités et les VLAN qui ne traversent pas la liaison.
+3. **Diagnostic guidé — priorité haute.** Parcours distincts : « trunk absent »,
+   « VLAN non transporté », « VLAN présent mais PC injoignable » et « VLAN non
+   propagé ». Relier chaque hypothèse aux commandes de lecture et aux résultats
+   attendus, sans prétendre avoir interrogé le switch depuis le site.
+4. **DTP — priorité pédagogique.** Fiches et simulation des combinaisons
+   `dynamic auto`, `dynamic desirable`, `access` et `trunk`. Distinguer le
+   laboratoire de négociation DTP des configurations explicites, avec
+   `nonegotiate` lorsque le matériel et le scénario le permettent.
+5. **VTP — priorité administration et prévention des incidents.** Diagnostic des
+   modes, domaine, version, authentification et numéro de révision ; expliquer
+   ce qui est propagé et ce qui reste local. Le périmètre pédagogique initial
+   porte sur VTP v1/v2 ; VTP v3 doit être traité séparément si ajouté.
+6. **Raccordement d’un switch — contrôle préalable.** Checklist de lecture de la
+   configuration et de la révision VTP avant connexion à un domaine existant,
+   sauvegarde de l’état et identification des risques de propagation.
+
+### Laboratoire de référence
+
+Préparer un exercice reproductible dans Packet Tracer avec DS1, AS1 et AS2 :
+DS1 Fa0/7 vers AS1 Fa0/7, DS1 Fa0/9 vers AS2 Fa0/9 ; domaine de laboratoire
+`CCNA-LAB`, VLAN 10/20/30/40/50. Vérifier la formation des trunks, la propagation
+VTP et, séparément, l’affectation des ports access. Prévoir des pannes injectées
+(auto/auto, domaine différent, VLAN non autorisé sur trunk) et leur diagnostic.
+Ne pas intégrer le mot de passe d’exemple du cours dans les modèles par défaut.
+
+### Contrat de sécurité et critères de validation
+
+- Génération de commandes et procédures uniquement : aucune connexion distante
+  ni application automatique aux équipements.
+- Diagnostic en lecture seule par défaut ; cible et interface explicitement
+  sélectionnées, sauvegarde et confirmation pour toute modification proposée.
+- Pas de suppression de VLAN, d’effacement de `vlan.dat`, de remise à zéro de
+  configuration ni de modification globale des ports comme étape automatique.
+- Ne pas remplacer silencieusement une liste de VLAN autorisés sur un trunk.
+- Ne pas copier les paramètres du laboratoire comme configuration de production.
+  Vérifier les commandes selon le modèle et la version IOS, notamment la
+  différence entre `Fa0/x` et `Gi1/0/x`.
+- Tests des champs, de la génération, des refus, de la copie et du téléchargement ;
+  contre-épreuves et non-régression du catalogue existant.
+- Distinguer tests de génération, simulation Packet Tracer et équipement physique.
+  Aucun de ces niveaux ne vaut preuve d’exécution d’un autre.
+- Fournir des résultats attendus pour `show vlan brief`, `show interfaces trunk`,
+  `show interfaces <interface> switchport` et `show vtp status`.
+- Sources : cours fournis et documentation officielle Cisco adaptée au matériel,
+  dont [Configuring VTP — précautions sur les révisions v1/v2](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3850/software/release/3se/vlan/configuration_guide/b_vlan_3se_3850_cg/b_vlan_3se_3850_cg_chapter_011.html).
+
+**Condition de clôture :** inventaire sans doublons, assistants et laboratoire
+livrés, tests exécutés avec preuves, puis revue et intégration distinctes.
+L’inscription à la roadmap seule ne constitue pas une livraison.
+
