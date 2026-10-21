@@ -355,7 +355,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Banc du reseau, de Netplan, du DNS et du pare-feu (doublures)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/reseau-linux.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/reseau-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 quater. Le banc de SSH
@@ -432,7 +432,7 @@ jobs:
 
       - name: Banc du partage Samba (doublures, et le vrai testparm)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/samba-linux.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/samba-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 septies. Le banc de Samba AD
@@ -458,7 +458,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Banc de Samba AD (doublures)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/samba-ad-linux.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/samba-ad-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 octies. Le banc de NFS
@@ -508,6 +508,8 @@ jobs:
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #
+      # Les scenarios positifs demandent root (sonde chown, Netplan et
+      # assistants proteges) ; les commandes surveillees restent doublees.
       # Sequentiels, bloquants, sans continue-on-error. Chaque banc de
       # contre-epreuves prouve que son banc devient ROUGE quand un verrou du
       # produit saute. Ubuntu Server reel : NON EXECUTE (ces bancs tournent sur
@@ -515,7 +517,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Sonde des capacites (chown, mknod) et sa contre-epreuve
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/capacites-linux.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/capacites-linux.test.mjs
 
       - name: Dette 6B - selecteur Format du rapport (detection sans modification)
         working-directory: KJEMO-IT-Toolkit-v0.1
@@ -523,15 +525,15 @@ jobs:
 
       - name: Netplan v2 - passerelle et fichier cloud-init (refus, positif, contre-epreuve)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/netplan-v2.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/netplan-v2.test.mjs
 
       - name: Bancs negatifs LOT 7 (19 familles, refus + positif + contre-epreuve)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/negatifs-lot7.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/negatifs-lot7.test.mjs
 
       - name: Contre-epreuves du banc negatif (12 pannes produit)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/negatifs-lot7-contre-epreuves.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/negatifs-lot7-contre-epreuves.test.mjs
 
       - name: Installer Chromium (Playwright)
         working-directory: KJEMO-IT-Toolkit-v0.1
