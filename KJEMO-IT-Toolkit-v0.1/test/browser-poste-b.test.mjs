@@ -5,7 +5,7 @@
  * Chromium RÉEL (Playwright) sur les 18 assistants ajoutés par le LOT 6B.
  *
  * Ce banc ne refait pas ce que browser-identity.test.mjs fait déjà : cette
- * suite-là parcourt les 107 outils du catalogue et éprouve, pour chacun,
+ * suite-là parcourt tous les outils du catalogue et éprouve, pour chacun,
  * Copier, Télécharger, le BOM UTF-8 du fichier téléchargé et l'identité
  * octet par octet entre l'aperçu, le presse-papiers, le fichier et
  * generate() côté Node. Les 18 nouveaux outils en bénéficient sans qu'on
@@ -162,8 +162,11 @@ section('Les 18 assistants du LOT 6B dans la grille');
   const manquants = IDS_6B.filter((id) => !outilsDe(id));
   assert(manquants.length === 0,
     `les 18 identifiants du LOT 6B sont au catalogue`, manquants.join(', '));
-  assert(tools.length === 107,
-    `le catalogue compte ${tools.length} outils (107 attendus après le LOT 6B)`);
+  // Ce banc porte sur les 18 fiches 6B, meme quand d'autres lots agrandissent
+  // le catalogue. Le total global est controle par identity et les matrices.
+  const outils6B = tools.filter((t) => IDS_6B.includes(t.id));
+  assert(outils6B.length === 18 && new Set(outils6B.map((t) => t.id)).size === 18,
+    `le catalogue contient exactement les 18 outils distincts du LOT 6B (${outils6B.length} trouves)`);
 
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
