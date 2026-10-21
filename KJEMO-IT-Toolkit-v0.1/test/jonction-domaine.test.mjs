@@ -40,7 +40,7 @@
  */
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -144,14 +144,22 @@ const compter = (appels, nom) => appels.filter((a) => a === nom || a.startsWith(
  * deja coute six corrections au LOT 7 : chercher une ligne OK dans la sortie
  * console, c'est chercher ce qui n'y est pas. Le banc lit donc le FICHIER.
  */
+// Node parcourt les fichiers sur Windows comme sur Linux : find.exe sous
+// Windows cherche du texte, et ne sait pas enumerer une arborescence Unix.
+function fichiersDuBanc(prefixe, extension, dossier = travail) {
+  return readdirSync(dossier, { withFileTypes: true }).flatMap((entree) => {
+    const chemin = join(dossier, entree.name);
+    if (entree.isDirectory()) return fichiersDuBanc(prefixe, extension, chemin);
+    return entree.isFile() && entree.name.startsWith(prefixe)
+      && entree.name.endsWith(extension) ? [chemin] : [];
+  }).sort();
+}
 function lignesRapport(nom) {
-  const r = spawnSync('find', [travail, '-name', `${nom}*.json`], { encoding: 'utf8' });
-  const liste = String(r.stdout ?? '').split('\n').filter(Boolean).sort();
+  const liste = fichiersDuBanc(nom, '.json');
   if (liste.length === 0) return [];
-  try {
-    const brut = JSON.parse(readFileSync(liste[liste.length - 1], 'utf8'));
-    return brut.Resultats ?? brut.resultats ?? brut.Controles ?? brut.controles ?? [];
-  } catch { return []; }
+  // Set-Content -Encoding UTF8 ajoute un BOM sous Windows PowerShell 5.1.
+  const brut = JSON.parse(readFileSync(liste[liste.length - 1], 'utf8').replace(/^\uFEFF/, ''));
+  return brut.Resultats ?? brut.resultats ?? brut.Controles ?? brut.controles ?? [];
 }
 const champDe = (l, nom) => l[nom] ?? l[nom.toLowerCase()] ?? '';
 const ligneRapport = (lignes, controle) => lignes.find((x) => champDe(x, 'Controle') === controle);
@@ -165,10 +173,18 @@ const prerequis = outilOuEchec('windows-domain-join-readiness');
 const jonction = outilOuEchec('windows-domain-join');
 const diagnostic = outilOuEchec('windows-domain-join-diagnostic');
 
-const valeursDe = (outil, surcharges = {}) => ({
-  ...Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')])),
-  ...surcharges,
-});
+const valeursDe = (outil, surcharges = {}) => {
+  const valeurs = {
+    ...Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')])),
+    ...surcharges,
+  };
+  // Sous Windows C: existe deja : toutes les ecritures restent dans le bac.
+  // Les chemins volontairement refuses (par exemple C:\\) restent intacts.
+  if (process.platform === 'win32' && valeurs.jdJournal === 'C:\\Kjemo\\Journaux') {
+    valeurs.jdJournal = join(travail, 'Journaux');
+  }
+  return valeurs;
+};
 
 /**
  * L'élévation se lit par une classe .NET qui n'existe pas sous Linux. Sans
@@ -196,6 +212,7 @@ function avecElevation(script, eleve) {
  * reste celle du script : c'est elle qui est éprouvée.
  */
 function avecCheminsWindows(script) {
+  if (process.platform === 'win32') return script;
   let sortie = script;
   const remplacements = [
     [
@@ -291,14 +308,14 @@ function Resolve-KjemoBancCanon {
 #
 # New-PSDrive fait pointer « C: » vers le bac. Le gardien de chemin du produit,
 # lui, continue de raisonner sur le texte du chemin : sa logique est intacte.
-$null = New-PSDrive -Name C -PSProvider FileSystem -Root ${psLitteral(travail)} -Scope Global -ErrorAction SilentlyContinue
+${process.platform === 'win32' ? '# Lecteurs Windows natifs : aucun remappage de C:.' : `$null = New-PSDrive -Name C -PSProvider FileSystem -Root ${psLitteral(travail)} -Scope Global -ErrorAction Stop`}
 
 $env:SystemRoot = 'C:\\Windows'
 $env:SystemDrive = 'C:'
 $env:ProgramFiles = 'C:\\Program Files'
 $env:ProgramData = 'C:\\ProgramData'
-$env:USERPROFILE = 'C:\\Users\\banc'
-$null = New-Item -ItemType Directory -Path 'C:\\Users\\banc\\Desktop' -ErrorAction SilentlyContinue
+$env:USERPROFILE = ${psLitteral(process.platform === 'win32' ? join(travail, 'Users', 'banc') : 'C:\\Users\\banc')}
+$null = New-Item -ItemType Directory -Path (Join-Path $env:USERPROFILE 'Desktop') -Force -ErrorAction Stop
 $env:COMPUTERNAME = ${psLitteral(nomPoste)}
 $env:USERNAME = 'banc'
 
@@ -629,8 +646,7 @@ section('Passe D — CONTRÔLE POSITIF : toutes les conditions réunies');
     assert(compter(r.appels, interdit) === 0, `D — ZERO ${interdit}, même dans le contrôle positif`);
   }
   // Le journal du produit existe, et ne contient aucun secret.
-  const fichiers = spawnSync('find', [travail, '-name', 'kjemo-jonction-*.txt'], { encoding: 'utf8' });
-  const liste = String(fichiers.stdout ?? '').split('\n').filter(Boolean);
+  const liste = fichiersDuBanc('kjemo-jonction-', '.txt');
   assert(liste.length >= 1, `D : le journal du produit a été écrit (${liste.length})`);
   const journaux = liste.map((f) => readFileSync(f, 'utf8'));
   assert(journaux.some((t) => /Demande         : ACCEPTEE/.test(t)),

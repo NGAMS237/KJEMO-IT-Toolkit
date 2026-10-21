@@ -316,9 +316,9 @@ jobs:
       # -----------------------------------------------------------------------
       # 9 octies. Banc des services, des paquets et de l'heure
       #
-      # Ce banc ne demande PAS root : les quatre assistants du commit 17/n
-      # n'exigent pas de privilege pour etre eprouves, et trois d'entre eux ne
-      # font que lire.
+      # root est requis pour eprouver le controle positif des services et
+      # hwclock --show. Les commandes restent des doublures journalisees ;
+      # les gardes du produit ne sont pas contournees.
       #
       # Sa preuve centrale est une absence, et une absence se mesure : pour
       # chacun des trois diagnostics, ZERO appel modifiant. Zero start, stop,
@@ -335,7 +335,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Banc des services, des paquets et de l'heure (doublures)
         working-directory: KJEMO-IT-Toolkit-v0.1
-        run: node test/services-linux.test.mjs
+        run: sudo -E env "PATH=$PATH" node test/services-linux.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 ter. Le banc du reseau, de Netplan, du DNS et du pare-feu
