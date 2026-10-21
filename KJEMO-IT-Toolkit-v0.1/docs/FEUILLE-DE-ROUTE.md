@@ -110,3 +110,40 @@ Sources pédagogiques : `S05-Partage_de_fichiers_Samba-A26`, `S05-Formatif_5_Par
 - Ne pas supposer l'existence de `/dev/md127` ni utiliser un UID/GID numérique fixe.
 - Ne pas modifier `main`, publier sur Pages ou déclarer PASS un test non exécuté.
 - Les modifications effectives du code Samba nécessitent une étape de développement et de validation distincte.
+
+
+## Consolidation du 21 octobre 2026 — transfert V2 LOT 7 / LOT 6C
+
+Cette section est un état de coordination et **ne vaut ni fusion, ni déploiement, ni certification des tests**. Les états historiques plus haut sont conservés pour traçabilité.
+
+### État GitHub vérifié
+- Branche distante LOT 7 : `claude/lot-7-linux-bash-samba-nfs`, commit `8626a206d39a160955311e54a80d165810d80f48` avant cette consolidation ; 21 commits devant `main`, aucun derrière.
+- `main` : `aff0f7a146076f2ee1cf1e621efdde775ea3e9e2` lors de la vérification.
+- Le correctif LOT 6C V2 est **fourni sous forme de livraison locale**, non publié dans une branche distante identifiée lors de la vérification. Commit annoncé dans les artefacts : `7dd1304027554ccb77d9c870c9470e853e5f478a`, basé sur `2deb49ee50e3f51e8dc6a6bf8df02b02b366a99f`, tree annoncé `9e4b1605a0123db0633193a04880ad17fa9ebdc9`.
+- Le rapport de livraison V2 annonce 35 commandes de test au code 0 dans un clone neuf, mais **Windows réel, Windows PowerShell 5.1, Robocopy réel et GitHub Actions non exécutés**. Ne pas assimiler ces résultats déclarés à une CI distante vérifiée.
+- La livraison locale LOT 7 et la branche LOT 7 distante doivent être comparées et réconciliées ; conserver l'actualisation SAMBA-ADV-01 et toute implémentation Samba existante avant de développer de nouveaux assistants.
+
+### Portes de sortie avant LOT 8
+1. Comparer les arbres et historiques du LOT 7 local et distant ; inventaire réel des commandes et tests Samba ; résoudre les écarts sans écrasement.
+2. Publier le LOT 7 sur branche de travail, vérifier les CI GitHub, réaliser la revue, puis fusionner par merge commit après validation.
+3. Revoir le LOT 6C V2 : garde des simulations, mentions Robocopy et contre-épreuves ; publier sa branche, vérifier CI, puis fusionner après validation.
+4. Vérifier le déploiement GitHub Pages et les liens/fiches générés ; distinguer contrôles automatiques et tests manuels Windows/Ubuntu encore à faire.
+5. Mettre à jour les références des commits et les statuts des lots **après** les fusions réelles, sans les anticiper.
+
+### LOT 8 — Azure / Microsoft Entra ID (prochain gros lot, planifié)
+- **Identités et accès** : utilisateurs, groupes, rôles Azure RBAC, moindre privilège, Entra ID, MFA et bonnes pratiques d'administration.
+- **Compute** : machines virtuelles Azure, états, tailles, disques, diagnostics et nettoyage guidé des ressources de lab.
+- **Réseau** : VNets, sous-réseaux, NSG, IP, DNS, connectivité et diagnostics.
+- **Stockage et protection** : comptes de stockage, accès, sauvegarde et restauration guidée.
+- **Observabilité et coûts** : Azure Monitor, journaux, alertes, inventaire, budgets et prévention des dépenses involontaires.
+- **Scripts et pédagogie** : Azure CLI / Az PowerShell, prérequis, risques, modes simulation ou lecture seule lorsque possibles, fiches pas-à-pas et labs progressifs.
+- **Qualité** : tests des générateurs, validation statique, aucune commande destructive exécutée automatiquement, pas de secrets dans les scripts, vérifications sur compte de lab avant toute promesse de compatibilité réelle.
+- **Statut** : planifié, **non commencé, non fusionné, non déployé**.
+
+### Lots suivants (maintenus)
+- LOT 9 : imprimantes.
+- LOT 10 : analyse avancée des disques, sans doublon de `disk-scan`.
+- LOT 11 : rapports, bilingue, sécurité et qualité transversales.
+- LOT 12 : exécution locale facultative, sous réserve d'une étude d'architecture et de sécurité préalable.
+
+**Règle de coordination :** ne jamais déclarer « terminé », « PASS », « fusionné » ou « déployé » sans preuve correspondante ; ne pas modifier `main` directement pour cette consolidation documentaire.
