@@ -1,0 +1,99 @@
+{
+  "lot": 9,
+  "verification": "Lecture web par outil de recuperation de page (WebFetch), session du 2026-10-22. Une page qui repond avec le titre attendu = 'confirmee' (la page existe). Cela ne prouve PAS que chaque phrase de la fiche y est reprise.",
+  "sources": [
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/get-printer",
+      "titre": "Get-Printer (PrintManagement) | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/get-printerport",
+      "titre": "Get-PrinterPort (PrintManagement) | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/get-printerdriver",
+      "titre": "Get-PrinterDriver (PrintManagement) | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-printer",
+      "titre": "Win32_Printer class - Win32 apps | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/cimcmdlets/get-ciminstance",
+      "titre": "Get-CimInstance (CimCmdlets) - PowerShell | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/get-printjob",
+      "titre": "Get-PrintJob (PrintManagement) | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-service",
+      "titre": "Get-Service (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent",
+      "titre": "Get-WinEvent (Microsoft.PowerShell.Diagnostics) - PowerShell",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/add-printer",
+      "titre": "Add-Printer",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/add-printerport",
+      "titre": "Add-PrinterPort (PrintManagement) | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/cimcmdlets/invoke-cimmethod",
+      "titre": "Invoke-CimMethod",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/printmanagement/remove-printjob",
+      "titre": "Remove-PrintJob (PrintManagement) | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/restart-service",
+      "titre": "Restart-Service (Microsoft.PowerShell.Management) - PowerShell | Microsoft Learn",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://openprinting.github.io/cups/doc/man-lpstat.html",
+      "titre": "lpstat(1)",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://openprinting.github.io/cups/doc/options.html",
+      "titre": "Command-Line Printing and Options",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://openprinting.github.io/cups/doc/man-cancel.html",
+      "titre": "cancel(1)",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://openprinting.github.io/cups/doc/man-cupsenable.html",
+      "titre": "cupsenable(8)",
+      "statut": "confirmee"
+    },
+    {
+      "url": "https://openprinting.github.io/cups/doc/man-cupsaccept.html",
+      "titre": "cupsaccept(8)",
+      "statut": "confirmee"
+    }
+  ],
+  "constats": [
+    "Restart-Service documente -WhatIf (confirme sur la page Microsoft)."
+  ]
+}

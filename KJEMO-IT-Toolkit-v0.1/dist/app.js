@@ -526,6 +526,7 @@ function compatMarkup(tool) {
     + bloc('Limites connues', tool.limites)
     + cloudMarkup(tool, { bloc, ligne })
     + ciscoMarkup(tool, { bloc })
+    + impressionMarkup(tool, { bloc })
     + `</div>`;
 }
 
@@ -574,6 +575,29 @@ function ciscoMarkup(tool, { bloc }) {
     + bloc('Limites de cet assistant', c.limites)
     + p('Ce qui a été validé', c.validation)
     + p('Matériel de référence', c.materiel)
+    + `</div>`;
+}
+
+/**
+ * LOT 9 — Imprimantes. Contrat pédagogique d'une fiche d'impression : problème,
+ * exemple, première vérification, ce qui est lu, ce qui est écrit, effets,
+ * limites et périmètre de validation. Le texte vient de la fiche ; la page ne
+ * collecte rien. Absent des autres catégories.
+ */
+function impressionMarkup(tool, { bloc }) {
+  const c = tool.impression;
+  if (!c) return '';
+  const p = (titre, v) => (v ? `<h3>${titre}</h3><p>${textToCode(String(v))}</p>` : '');
+  return `<div class="impression-bloc" id="impressionBloc">`
+    + `<h3>Imprimantes : ce qui se passe</h3>`
+    + p('Le problème', c.probleme)
+    + p('Exemple en entreprise', c.exemple)
+    + p('Première vérification', c.premiere)
+    + p('Ce qui est lu', c.lit)
+    + p('Ce qui est écrit', c.ecrit)
+    + p('Effets', c.effets)
+    + bloc('Limites de cet assistant', c.limites)
+    + (Array.isArray(c.validation) ? bloc('Ce qui a été validé — et ce qui ne l’a pas été', c.validation) : '')
     + `</div>`;
 }
 

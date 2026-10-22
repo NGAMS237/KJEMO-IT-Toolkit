@@ -59,7 +59,7 @@ export const CATEGORIES = [
     id: 'imprimantes',
     name: 'Imprimantes',
     icon: '▩',
-    description: 'Files d’attente, pilotes et serveurs d’impression.',
+    description: 'Inventaire, diagnostic, configuration guidée et déblocage ciblé des files d’impression Windows et CUPS. Les assistants lisent d’abord ; aucun ne télécharge de pilote.',
   },
   {
     id: 'linux',
@@ -141,6 +141,20 @@ export const SOUS_RUBRIQUES_CISCO = [
   'VLAN et ports d’accès',
   'Trunks et DTP',
   'VTP et diagnostic',
+];
+
+/**
+ * Sous-rubriques canoniques de « Imprimantes » (LOT 9), dans l'ordre où l'on
+ * s'en sert : on LIT d'abord (inventaire, diagnostic, réseau), on configure
+ * ensuite, on ne débloque qu'en dernier, et CUPS a sa propre rubrique parce
+ * que ses outils ne sont pas ceux de Windows.
+ */
+export const SOUS_RUBRIQUES_IMPRESSION = [
+  'Inventaire et diagnostic Windows',
+  'Réseau et files partagées',
+  'Configuration Windows',
+  'Déblocage ciblé Windows',
+  'Linux et CUPS',
 ];
 
 /** Identifiant technique de la pseudo-catégorie « toutes ». */

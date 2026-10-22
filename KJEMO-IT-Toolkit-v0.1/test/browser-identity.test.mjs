@@ -940,8 +940,10 @@ console.log('\n[accueil 1B] — structure d’accueil et navigation par catégor
   // LOT 7 (25/n) : « Linux et services réseau » n'est PLUS vide — 43 assistants
   // depuis le commit 1/n. L'ancienne assertion cherchait le nom « Linux », qui
   // n'existe plus : elle passait sans rien mesurer. Seule « Imprimantes » reste vide.
-  assert(!cartes.some((k) => k.nom === 'Imprimantes'),
-    'aucune catégorie vide affichée : « Imprimantes » est absente');
+  // LOT 9 : « Imprimantes » est désormais habitée (15 assistants) et donc VISIBLE ; la règle reste
+  // « aucune carte sans outil » : toute carte autre que « Tout » correspond à une catégorie utilisée.
+  assert(cartes.some((k) => k.nom === 'Imprimantes') && cartes.every((k) => k.nom === 'Tout' || utilisees.includes(k.nom)),
+    'aucune catégorie vide affichée ; « Imprimantes », habitée depuis le LOT 9, est visible');
   assert(!cartes.some((k) => k.nom === 'Linux'),
     'l’ancien nom « Linux » n’existe plus à l’écran');
   assert(cartes.some((k) => k.nom === 'Linux et services réseau'),
@@ -1573,7 +1575,7 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
   // « Poste de travail Windows » est habitée par le LOT 6, et « Linux et
   // services réseau » par le LOT 7 — elle doit être VISIBLE, pas masquée pour
   // faire passer un ancien décompte.
-  assert(!noms.includes('Imprimantes'), 'catégorie vide masquée : « Imprimantes »');
+  assert(noms.includes('Imprimantes'), 'catégorie habitée visible : « Imprimantes » (LOT 9)');
   assert(noms.includes('Linux et services réseau'),
     'LOT 7 : « Linux et services réseau » est visible dans la grille');
   assert(!noms.includes('Windows poste de travail'),
@@ -1585,7 +1587,7 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
   const pourvues = new Set(tools.map((t) => t.category));
   assert(noms.length === pourvues.size + 1,
     `« Tout » + ${pourvues.size} catégories pourvues (${noms.length})`);
-  assert(noms.length === 10, `Azure + Cisco : 10 catégories à l’écran, « Tout » comprise, Imprimantes masquée (${noms.length})`);
+  assert(noms.length === 11 && noms.includes('Imprimantes'), `Azure + Cisco + Imprimantes : 11 catégories à l’écran, « Tout » comprise, Imprimantes visible (${noms.length})`);
 
   // Windows Server réunit shared-folder et les outils du LOT 2.
   const attendusWs = tools.filter((t) => t.category === 'Windows Server').length;

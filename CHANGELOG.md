@@ -1,5 +1,18 @@
 # Journal des changements
 
+## LOT 9 — Imprimantes (branche claude/lot-9-imprimantes)
+
+**Etat : developpe localement, teste localement. NON pousse (GitHub a refuse l'ecriture), NON teste en CI GitHub, NON fusionne, NON deploye.
+Windows PowerShell 5.1 : NON EXECUTE. Imprimante, spouleur ou CUPS reels : NON EXECUTE.** Base : checkpoint d'integration `0c4aa86`.
+
+- **15 assistants** dans la categorie « Imprimantes » : 11 Windows (PrintManagement, CIM, Spooler ; `.ps1`) et 4 CUPS (`.sh`). 211 assistants au total, 10 categories visibles.
+- Parcours A (lecture : inventaire, file, spouleur, reseau par protocole, file partagee), B (configuration guidee : port TCP/IP + imprimante avec pilote DEJA installe, connexion de file partagee, imprimante par defaut du compte, page de test), C (deblocage cible : un travail, spouleur), D (CUPS : inventaire, diagnostic, annulation d'un travail, reactivation d'une file).
+- Garde-fous : aucun pilote telecharge ou installe ; cibles par nom EXACT (jamais joker ni prefixe) ; phrase de confirmation exacte embarquee dans le script ; lecture avant action et relecture apres ; `-WhatIf` uniquement pour `Add-PrinterPort`, `Remove-PrintJob`, `Restart-Service` ; aucune purge generale du spool ; jamais « repare » deduit d'un code de sortie.
+- Bancs : doublures PowerShell 7 et faux binaires CUPS, analyse par arbre syntaxique, contre-epreuves (garde retiree, appel interdit injecte, `-WhatIf` invente), navigateur (routes, validation, phrase, .ps1 avec BOM, .sh sans BOM en LF, 390 px).
+- Matrices `LOT-9-MATRICE-*.json` avec detection de derive ; `LOT-9-SOURCES.json` (18 pages officielles Microsoft/OpenPrinting confirmees par lecture web) ; inventaire `dist/cmdlets.mjs` complete (7 cmdlets) ; scripts `package.json` et etapes `validate-linux.yml` ajoutes.
+- Corrections trouvees par le banc : message TCP CUPS qui confondait refus et delai ; raison d'arret CUPS non affichee en sortie Console ; directive ShellCheck deplacee par une edition ; detecteur de mot interdit sans « reparé ».
+- Laboratoires `docs/labs-imprimantes/` : 3 guides NON EXECUTES.
+
 ## Intégration Azure + Cisco (branche claude/integration-azure-cisco)
 
 Réunit LOT 8 (`8633b46`, Azure et Entra ID, 24 assistants) et RESEAU-CISCO-01 (`5168d9e`, Réseau et Cisco, 19 assistants) sur la base commune `78a2c8b`. Aucun lot n'est écrasé.

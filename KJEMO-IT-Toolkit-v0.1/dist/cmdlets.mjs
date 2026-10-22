@@ -242,6 +242,14 @@ export const CMDLETS_EXTERNES = {
   'Get-PnpDevice': { module: 'PnpDevice', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/pnpdevice/get-pnpdevice' },
   // --- PrintManagement — Windows
   'Get-Printer': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/get-printer' },
+  // LOT 9 — Imprimantes : lectures PrintManagement, et trois écritures ciblées (jamais sans phrase exacte)
+  'Get-PrinterPort': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/get-printerport' },
+  'Get-PrinterDriver': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/get-printerdriver' },
+  'Get-PrintJob': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/get-printjob' },
+  'Add-PrinterPort': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/add-printerport' },
+  'Add-Printer': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/add-printer' },
+  'Remove-PrintJob': { module: 'PrintManagement', fourniPar: 'Windows', os: 'Windows 10/11 et Windows Server 2016 et plus récent', doc: 'https://learn.microsoft.com/powershell/module/printmanagement/remove-printjob' },
+  'Invoke-CimMethod': { module: 'CimCmdlets', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/cimcmdlets/invoke-cimmethod' },
   // --- VpnClient — Windows
   'Get-VpnConnection': { module: 'VpnClient', fourniPar: 'Windows', os: 'Windows 10/11', doc: 'https://learn.microsoft.com/powershell/module/vpnclient/get-vpnconnection' },
   'Get-VpnConnectionTrigger': { module: 'VpnClient', fourniPar: 'Windows', os: 'Windows 10/11', doc: 'https://learn.microsoft.com/powershell/module/vpnclient/get-vpnconnectiontrigger' },

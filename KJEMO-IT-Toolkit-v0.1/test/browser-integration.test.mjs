@@ -142,16 +142,16 @@ async function verifierFiche(page, tool, contexte) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n[accueil] 10 cartes, Imprimantes masquée, deux nouvelles catégories');
+console.log('\n[accueil] 11 cartes (LOT 9 : Imprimantes visible), deux nouvelles catégories');
 {
   const { context, page, problemes } = await nouvellePage();
   await page.goto(BASE);
   await page.waitForSelector('#toolGrid .open-tool');
   const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => e.dataset.category));
   assert(CATEGORIES.length === 10, `10 catégories canoniques (${CATEGORIES.length})`);
-  assert(cartes.length === 10, `10 cartes à l'accueil, « Tout » comprise (${cartes.length})`);
+  assert(cartes.length === 11, `11 cartes à l'accueil, « Tout » comprise (${cartes.length})`);
   assert(cartes.includes(AZ) && cartes.includes(CI), 'cartes Azure et Cisco présentes');
-  assert(!cartes.includes('Imprimantes'), 'Imprimantes est masquée tant qu’elle est vide');
+  assert(cartes.includes('Imprimantes'), 'Imprimantes est visible depuis le LOT 9 (elle n’est plus vide)');
   assert(await page.locator('#toolGrid .open-tool').count() === tools.length, `la grille « Tout » affiche les ${tools.length} outils`);
   for (const [cat, n] of [[AZ, azure.length], [CI, cisco.length]]) {
     await page.click(`#categoryGrid .category-card[data-category="${cat}"]`);

@@ -1,0 +1,238 @@
+[
+  {
+    "id": "imp-win-inventaire",
+    "sousRubrique": "Inventaire et diagnostic Windows",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impFormat"
+    ],
+    "sources": 5,
+    "admin": false
+  },
+  {
+    "id": "imp-win-diagnostic-file",
+    "sousRubrique": "Inventaire et diagnostic Windows",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impNom",
+      "impAge",
+      "impDocs",
+      "impFormat"
+    ],
+    "sources": 7,
+    "admin": false
+  },
+  {
+    "id": "imp-win-spouleur",
+    "sousRubrique": "Inventaire et diagnostic Windows",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impJours",
+      "impFormat"
+    ],
+    "sources": 4,
+    "admin": false
+  },
+  {
+    "id": "imp-win-reseau",
+    "sousRubrique": "Réseau et files partagées",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impHote",
+      "impProto",
+      "impPort",
+      "impFormat"
+    ],
+    "sources": 2,
+    "admin": false
+  },
+  {
+    "id": "imp-win-partage-unc",
+    "sousRubrique": "Réseau et files partagées",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impUnc",
+      "impFormat"
+    ],
+    "sources": 2,
+    "admin": false
+  },
+  {
+    "id": "imp-win-config-reseau",
+    "sousRubrique": "Configuration Windows",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "impNom",
+      "impHote",
+      "impPortTcp",
+      "impPilote",
+      "impNomPort",
+      "impMode",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 5,
+    "admin": true
+  },
+  {
+    "id": "imp-win-connexion-partage",
+    "sousRubrique": "Configuration Windows",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "impUnc",
+      "impPiloteAuto",
+      "impMode",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 3,
+    "admin": false
+  },
+  {
+    "id": "imp-win-defaut",
+    "sousRubrique": "Configuration Windows",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "impNom",
+      "impMode",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 4,
+    "admin": false
+  },
+  {
+    "id": "imp-win-page-test",
+    "sousRubrique": "Configuration Windows",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": false,
+    "champs": [
+      "impNom",
+      "impMode",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 4,
+    "admin": false
+  },
+  {
+    "id": "imp-win-annuler-travail",
+    "sousRubrique": "Déblocage ciblé Windows",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": false,
+    "champs": [
+      "impNom",
+      "impJob",
+      "impMode",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 3,
+    "admin": false
+  },
+  {
+    "id": "imp-win-spouleur-redemarrer",
+    "sousRubrique": "Déblocage ciblé Windows",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": false,
+    "champs": [
+      "impMachine",
+      "impMode",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 4,
+    "admin": true
+  },
+  {
+    "id": "imp-cups-inventaire",
+    "sousRubrique": "Linux et CUPS",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impDest",
+      "impFormat"
+    ],
+    "sources": 2,
+    "admin": false
+  },
+  {
+    "id": "imp-cups-diagnostic-file",
+    "sousRubrique": "Linux et CUPS",
+    "os": 3,
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "impDest",
+      "impFormat"
+    ],
+    "sources": 2,
+    "admin": false
+  },
+  {
+    "id": "imp-cups-annuler-travail",
+    "sousRubrique": "Linux et CUPS",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": false,
+    "champs": [
+      "impDest",
+      "impJob",
+      "impProprio",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 2,
+    "admin": false
+  },
+  {
+    "id": "imp-cups-reactiver-file",
+    "sousRubrique": "Linux et CUPS",
+    "os": 3,
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "impDest",
+      "impAction",
+      "impConfirmation",
+      "impFormat"
+    ],
+    "sources": 3,
+    "admin": false
+  }
+]

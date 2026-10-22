@@ -1,0 +1,86 @@
+[
+  {
+    "commande": "Add-Printer",
+    "occurrences": 22
+  },
+  {
+    "commande": "Add-PrinterPort",
+    "occurrences": 12
+  },
+  {
+    "commande": "cancel",
+    "occurrences": 2
+  },
+  {
+    "commande": "cupsaccept",
+    "occurrences": 2
+  },
+  {
+    "commande": "cupsenable",
+    "occurrences": 6
+  },
+  {
+    "commande": "Get-ChildItem",
+    "occurrences": 2
+  },
+  {
+    "commande": "Get-CimInstance",
+    "occurrences": 13
+  },
+  {
+    "commande": "Get-Command",
+    "occurrences": 34
+  },
+  {
+    "commande": "Get-Date",
+    "occurrences": 72
+  },
+  {
+    "commande": "Get-ItemProperty",
+    "occurrences": 6
+  },
+  {
+    "commande": "Get-Location",
+    "occurrences": 17
+  },
+  {
+    "commande": "Get-Printer",
+    "occurrences": 112
+  },
+  {
+    "commande": "Get-PrinterDriver",
+    "occurrences": 24
+  },
+  {
+    "commande": "Get-PrinterPort",
+    "occurrences": 19
+  },
+  {
+    "commande": "Get-PrintJob",
+    "occurrences": 29
+  },
+  {
+    "commande": "Get-Service",
+    "occurrences": 14
+  },
+  {
+    "commande": "Get-WinEvent",
+    "occurrences": 4
+  },
+  {
+    "commande": "Invoke-CimMethod",
+    "occurrences": 8
+  },
+  {
+    "commande": "lpstat",
+    "occurrences": 66
+  },
+  {
+    "commande": "Remove-PrintJob",
+    "occurrences": 12
+  },
+  {
+    "commande": "Restart-Service",
+    "occurrences": 14
+  }
+]

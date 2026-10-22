@@ -47,7 +47,7 @@ import { tmpdir } from 'node:os';
 // Azure + Cisco intégrés — 8 catégories au LOT 7 (« Tout » comprise) + « Azure et Entra ID » (LOT 8)
 // + « Réseau et Cisco » (RESEAU-CISCO-01) = 10. Le compte est explicite : un compte déduit du
 // catalogue ne détecterait pas une catégorie ajoutée ou perdue par erreur.
-const NB_CATEGORIES = 10;
+const NB_CATEGORIES = 11; // LOT 9 : « Imprimantes » est pourvue et visible (10 catégories + « Tout »)
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
@@ -123,7 +123,8 @@ const MOBILE = { width: 390, height: 844 };
 // ---------------------------------------------------------------------------
 // Les 46 assistants du lot — MESURÉS sur le catalogue, jamais recopiés
 // ---------------------------------------------------------------------------
-const linux = tools.filter((t) => t.platform === 'Linux');
+// Le lot 7 = les outils Linux de la catégorie « Linux et services réseau » : les 4 assistants CUPS du LOT 9 (catégorie Imprimantes) n'en font pas partie.
+const linux = tools.filter((t) => t.platform === 'Linux' && t.category === 'Linux et services réseau');
 const jonction = tools.filter((t) => t.subcategory === 'Jonction de domaine');
 const lot7 = [...linux, ...jonction];
 // KJEMO_OUTILS=a,b : restreint les passes B et F à ces assistants (contre-épreuves
@@ -248,7 +249,7 @@ try {
     verifier(Boolean(carteLinux), 'A5 : « Linux et services réseau » est affichée');
     verifier(Boolean(carteLinux) && /43\s+outils/.test(carteLinux.texte),
       `A6 : sa carte annonce 43 outils (« ${(carteLinux?.texte ?? '').slice(0, 60)}… »)`);
-    verifier(!cartes.some((k) => k.nom === 'Imprimantes'), 'A7 : « Imprimantes », vide, reste masquée');
+    verifier(cartes.some((k) => k.nom === 'Imprimantes'), 'A7 : « Imprimantes », pourvue depuis le LOT 9, est affichée');
     verifier(!cartes.some((k) => k.nom === 'Linux'), 'A8 : l\'ancien nom « Linux » n\'existe plus à l\'écran');
 
     const sous = sousRubriques(tools, 'Linux et services réseau');

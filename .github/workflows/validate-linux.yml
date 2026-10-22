@@ -531,6 +531,21 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/sources-cisco.mjs
 
+      # 10 quater ter. LOT 9 - assistants Imprimantes (Windows PrintManagement et CUPS)
+      #
+      # Les scripts sont EXECUTES contre des DOUBLURES : PowerShell 7 avec des
+      # cmdlets factices, Bash avec de faux binaires CUPS. Aucune imprimante,
+      # aucun spouleur, aucun cupsd reels : essai reel NON EXECUTE.
+      # Windows PowerShell 5.1 : NON EXECUTE par ce job.
+      # -----------------------------------------------------------------------
+      - name: Banc des assistants Imprimantes (doublures, garde de confirmation, contre-epreuves)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/impression-assistants.test.mjs
+
+      - name: Sources Imprimantes (registre et domaines officiels)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sources-impression.mjs
+
       - name: Contrat des commandes rapides
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/commandes-rapides.test.mjs
@@ -581,6 +596,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-cisco.test.mjs
 
+      - name: Navigateur LOT 9 - 15 fiches Imprimantes (routes, validation, phrase, .ps1 BOM, .sh sans BOM, 390 px)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-impression.test.mjs
+
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-lot7.test.mjs
@@ -596,6 +615,10 @@ jobs:
       - name: Matrices et catalogue Cisco (aucune derive)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/matrices-cisco.mjs --verifier
+
+      - name: Matrices et catalogue du LOT 9 Imprimantes (aucune derive)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrices-lot9.mjs --verifier
 
       - name: Matrices et catalogue du LOT 7 (aucune derive)
         working-directory: KJEMO-IT-Toolkit-v0.1

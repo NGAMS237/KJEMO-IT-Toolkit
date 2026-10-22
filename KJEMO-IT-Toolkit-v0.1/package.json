@@ -62,7 +62,12 @@
     "test:browser:cisco": "node test/browser-cisco.test.mjs",
     "test:sources:cisco": "node test/sources-cisco.mjs",
     "matrices:cisco": "node test/matrices-cisco.mjs",
-    "test:matrices:cisco": "node test/matrices-cisco.mjs --verifier"
+    "test:matrices:cisco": "node test/matrices-cisco.mjs --verifier",
+    "test:impression": "node test/impression-assistants.test.mjs",
+    "test:browser:impression": "node test/browser-impression.test.mjs",
+    "test:sources:9": "node test/sources-impression.mjs",
+    "matrices:lot9": "node test/matrices-lot9.mjs",
+    "test:matrices:lot9": "node test/matrices-lot9.mjs --verifier"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1"

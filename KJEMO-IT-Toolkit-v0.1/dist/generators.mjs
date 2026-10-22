@@ -46,6 +46,7 @@ import { toolsLinuxN } from './outils-linux-n.mjs';
 import { toolsPosteJonction } from './outils-poste-jonction.mjs';
 import { toolsAzure } from './outils-azure.mjs';
 import { toolsCisco } from './outils-cisco.mjs';
+import { toolsImpression } from './outils-impression.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1623,4 +1624,5 @@ for (const outil of toolsLinuxN) tools.push(outil);
 for (const outil of toolsPosteJonction) tools.push(outil);
 for (const outil of toolsAzure) tools.push(outil);
 for (const outil of toolsCisco) tools.push(outil);
+for (const outil of toolsImpression) tools.push(outil);
 
