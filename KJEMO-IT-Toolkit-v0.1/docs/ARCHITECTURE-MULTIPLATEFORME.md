@@ -57,6 +57,14 @@ pas être reconstruite de mémoire ; **aucune ligne de code ne la réalise**.
 3. **Réseau et Cisco.**
 4. **Cloud** (Azure, AWS) et **Outils multiplateformes**.
 
+> **État au LOT 8 (22 octobre 2026, développé localement, non fusionné).** La
+> catégorie « Azure et Entra ID » (24 assistants, plateforme `Multi`, sortie
+> `.ps1`) existe dans le code sur la branche `claude/lot-8-azure-entra-id`. Elle est
+> bâtie sur sa propre fabrique `outilAzure` (`dist/noyau-azure.mjs`) : en-tête,
+> garde de commandes, garde de contexte (tenant / abonnement attendus), rapport
+> Console / JSON / CSV, lectures qui échouent bruyamment. Elle ne se connecte à
+> rien. AWS n'est pas développé.
+
 Règles : les GPO de domaine passent sous Active Directory ; les politiques
 locales restent dans Poste de travail Windows ; DHCP, DNS et serveur de
 fichiers relèvent de Windows Server ; **aucun identifiant ni aucune route

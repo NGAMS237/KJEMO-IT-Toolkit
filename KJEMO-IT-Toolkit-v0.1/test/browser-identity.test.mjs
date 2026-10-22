@@ -215,7 +215,12 @@ const INVALID_INPUTS = {
 // ---------------------------------------------------------------------------
 // Tests par outil
 // ---------------------------------------------------------------------------
-for (const tool of tools) {
+// RESEAU-CISCO-01 : les fiches Cisco produisent un fichier .ios.txt (ni BOM, ni
+// shebang, ni stratégie d'exécution PowerShell). Leur contrat navigateur — copie,
+// téléchargement sans BOM, notes d'exécution IOS, confirmation, mobile — est
+// éprouvé par test/browser-cisco.test.mjs. Elles sont exclues de CETTE boucle
+// par-outil seulement ; tous les décomptes de catalogue plus bas les incluent.
+for (const tool of tools.filter((t) => t.category !== 'Réseau et Cisco')) {
   console.log(`\n[${tool.id}] — ${tool.title}`);
 
   // Valeur canonique attendue (référence côté Node.js)
@@ -1580,7 +1585,7 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
   const pourvues = new Set(tools.map((t) => t.category));
   assert(noms.length === pourvues.size + 1,
     `« Tout » + ${pourvues.size} catégories pourvues (${noms.length})`);
-  assert(noms.length === 8, `LOT 7 : 8 catégories à l’écran, « Tout » comprise (${noms.length})`);
+  assert(noms.length === 10, `Azure + Cisco : 10 catégories à l’écran, « Tout » comprise, Imprimantes masquée (${noms.length})`);
 
   // Windows Server réunit shared-folder et les outils du LOT 2.
   const attendusWs = tools.filter((t) => t.category === 'Windows Server').length;

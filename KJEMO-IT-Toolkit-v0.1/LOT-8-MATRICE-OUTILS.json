@@ -1,0 +1,1500 @@
+{
+  "lot": "LOT 8 — Azure et Entra ID — 8.0.0",
+  "total": 24,
+  "parSousRubrique": {
+    "Connexion, contexte et accès": 3,
+    "Surveillance et coûts": 4,
+    "Réseau Azure": 4,
+    "Stockage et protection": 4,
+    "Machines virtuelles": 5,
+    "Microsoft Entra ID": 4
+  },
+  "parRisque": {
+    "diagnostic": 21,
+    "caution": 3
+  },
+  "lectureSeule": 21,
+  "outils": [
+    {
+      "id": "azure-abonnements-rg",
+      "titre": "Inventaire des abonnements et des groupes de ressources",
+      "sousRubrique": "Connexion, contexte et accès",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azDebut",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzResource",
+        "Get-AzResourceGroup",
+        "Get-AzSubscription"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzResource",
+        "Get-AzResourceGroup",
+        "Get-AzSubscription",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.accounts/get-azsubscription",
+        "https://learn.microsoft.com/powershell/module/az.resources/get-azresourcegroup",
+        "https://learn.microsoft.com/powershell/module/az.resources/get-azresource",
+        "https://learn.microsoft.com/azure/azure-resource-manager/management/overview"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-alertes-diagnostics",
+      "titre": "Alertes et paramètres de diagnostic : ce qui est surveillé",
+      "sousRubrique": "Surveillance et coûts",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzMetricAlertRuleV2"
+      ],
+      "commandesFacultatives": [
+        "Get-AzActionGroup",
+        "Get-AzActivityLogAlert",
+        "Get-AzSubscriptionDiagnosticSetting"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzActionGroup",
+        "Get-AzActivityLogAlert",
+        "Get-AzContext",
+        "Get-AzSubscriptionDiagnosticSetting",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/azure/azure-monitor/alerts/alerts-overview",
+        "https://learn.microsoft.com/powershell/module/az.monitor/get-azmetricalertrulev2",
+        "https://learn.microsoft.com/azure/azure-monitor/alerts/action-groups",
+        "https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-budgets",
+      "titre": "Budgets Azure : lire les alertes de dépense (pas un plafond)",
+      "sousRubrique": "Surveillance et coûts",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzConsumptionBudget",
+        "Get-AzContext"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzConsumptionBudget",
+        "Get-AzContext",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/azure/cost-management-billing/costs/tutorial-acm-create-budgets",
+        "https://learn.microsoft.com/powershell/module/az.billing/get-azconsumptionbudget",
+        "https://learn.microsoft.com/azure/cost-management-billing/costs/cost-mgt-best-practices"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-contexte",
+      "titre": "Prérequis et contexte Azure : suis-je au bon endroit ?",
+      "sousRubrique": "Connexion, contexte et accès",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext"
+      ],
+      "commandesFacultatives": [
+        "Get-MgContext"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.accounts/get-azcontext",
+        "https://learn.microsoft.com/powershell/azure/context-persistence",
+        "https://learn.microsoft.com/powershell/azure/install-azure-powershell",
+        "https://learn.microsoft.com/powershell/microsoftgraph/installation"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-journal-activite",
+      "titre": "Journal d’activité : qui a fait quoi, et ce qui a échoué",
+      "sousRubrique": "Surveillance et coûts",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azHeures",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azStatut",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzActivityLog",
+        "Get-AzContext"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzActivityLog",
+        "Get-AzContext",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.monitor/get-azactivitylog",
+        "https://learn.microsoft.com/azure/azure-monitor/essentials/activity-log"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-rbac",
+      "titre": "Affectations de rôles Azure (RBAC) et diagnostic des accès",
+      "sousRubrique": "Connexion, contexte et accès",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azPortee",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": true
+        },
+        {
+          "id": "azPrincipal",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzRoleAssignment"
+      ],
+      "commandesFacultatives": [
+        "Get-AzResourceGroup"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzResourceGroup",
+        "Get-AzRoleAssignment",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.resources/get-azroleassignment",
+        "https://learn.microsoft.com/azure/role-based-access-control/overview",
+        "https://learn.microsoft.com/azure/role-based-access-control/rbac-and-directory-admin-roles",
+        "https://learn.microsoft.com/azure/role-based-access-control/built-in-roles"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-reseau-dns",
+      "titre": "DNS Azure et diagnostic de connectivité depuis le poste",
+      "sousRubrique": "Réseau Azure",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azHote",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azTcp",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azPort",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext"
+      ],
+      "commandesFacultatives": [
+        "Get-AzDnsZone",
+        "Get-AzPrivateDnsVirtualNetworkLink",
+        "Get-AzPrivateDnsZone"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzDnsZone",
+        "Get-AzPrivateDnsVirtualNetworkLink",
+        "Get-AzPrivateDnsZone",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.privatedns/get-azprivatednszone",
+        "https://learn.microsoft.com/powershell/module/az.privatedns/get-azprivatednsvirtualnetworklink",
+        "https://learn.microsoft.com/powershell/module/az.dns/get-azdnszone",
+        "https://learn.microsoft.com/azure/virtual-network/virtual-networks-name-resolution-for-vms-and-role-instances"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-reseau-interfaces-ip",
+      "titre": "Interfaces réseau et adresses IP (privées et publiques)",
+      "sousRubrique": "Réseau Azure",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzNetworkInterface",
+        "Get-AzPublicIpAddress"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzNetworkInterface",
+        "Get-AzPublicIpAddress",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.network/get-aznetworkinterface",
+        "https://learn.microsoft.com/powershell/module/az.network/get-azpublicipaddress",
+        "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-addresses"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-reseau-nsg",
+      "titre": "Groupes de sécurité réseau (NSG) : règles et accès administratifs exposés",
+      "sousRubrique": "Réseau Azure",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azNsg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzNetworkSecurityGroup"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzNetworkSecurityGroup",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.network/get-aznetworksecuritygroup",
+        "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
+        "https://learn.microsoft.com/azure/bastion/bastion-overview"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-reseau-vnets",
+      "titre": "Réseaux virtuels (VNet) et sous-réseaux : plan d’adressage et diagnostic",
+      "sousRubrique": "Réseau Azure",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzVirtualNetwork"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzVirtualNetwork",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.network/get-azvirtualnetwork",
+        "https://learn.microsoft.com/azure/virtual-network/virtual-networks-overview",
+        "https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-ressources-inutilisees",
+      "titre": "Ressources de laboratoire potentiellement inutilisées (inventaire)",
+      "sousRubrique": "Surveillance et coûts",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azJoursSnapshot",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzDisk"
+      ],
+      "commandesFacultatives": [
+        "Get-AzNetworkInterface",
+        "Get-AzPublicIpAddress",
+        "Get-AzSnapshot",
+        "Get-AzVM"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzDisk",
+        "Get-AzNetworkInterface",
+        "Get-AzPublicIpAddress",
+        "Get-AzSnapshot",
+        "Get-AzVM",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/azure/cost-management-billing/costs/cost-mgt-best-practices",
+        "https://learn.microsoft.com/powershell/module/az.compute/get-azdisk",
+        "https://learn.microsoft.com/azure/virtual-machines/states-billing",
+        "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-addresses"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-sauvegarde-coffres",
+      "titre": "Coffres Recovery Services et état des sauvegardes de machines virtuelles",
+      "sousRubrique": "Stockage et protection",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azJours",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzRecoveryServicesBackupItem",
+        "Get-AzRecoveryServicesVault"
+      ],
+      "commandesFacultatives": [
+        "Get-AzVM"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzRecoveryServicesBackupItem",
+        "Get-AzRecoveryServicesVault",
+        "Get-AzVM",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesvault",
+        "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupitem",
+        "https://learn.microsoft.com/azure/backup/backup-azure-vms-introduction",
+        "https://learn.microsoft.com/azure/backup/backup-azure-arm-restore-vms"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-sauvegarde-restauration",
+      "titre": "Restaurer les disques d’une machine sauvegardée vers une cible de laboratoire distincte",
+      "sousRubrique": "Stockage et protection",
+      "risque": "caution",
+      "lectureSeule": false,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRgCoffre",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azCoffre",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRgVm",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azVm",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRgCible",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azStockage",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRgStockage",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azMode",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azConfirmation",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzRecoveryServicesBackupContainer",
+        "Get-AzRecoveryServicesBackupItem",
+        "Get-AzRecoveryServicesBackupRecoveryPoint",
+        "Get-AzRecoveryServicesVault",
+        "Get-AzResourceGroup",
+        "Get-AzStorageAccount",
+        "Restore-AzRecoveryServicesBackupItem"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzRecoveryServicesBackupContainer",
+        "Get-AzRecoveryServicesBackupItem",
+        "Get-AzRecoveryServicesBackupRecoveryPoint",
+        "Get-AzRecoveryServicesVault",
+        "Get-AzResourceGroup",
+        "Get-AzStorageAccount",
+        "Get-MgContext",
+        "Restore-AzRecoveryServicesBackupItem"
+      ],
+      "actionsWhatIf": [
+        "Restore-AzRecoveryServicesBackupItem"
+      ],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.recoveryservices/restore-azrecoveryservicesbackupitem",
+        "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackuprecoverypoint",
+        "https://learn.microsoft.com/azure/backup/backup-azure-vms-automation",
+        "https://learn.microsoft.com/azure/backup/backup-azure-arm-restore-vms"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-stockage-exposition",
+      "titre": "Exposition et accès d’UN compte de stockage (conteneurs, réseau, protection)",
+      "sousRubrique": "Stockage et protection",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azCompte",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzStorageAccount"
+      ],
+      "commandesFacultatives": [
+        "Get-AzRmStorageContainer",
+        "Get-AzStorageBlobServiceProperty"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzRmStorageContainer",
+        "Get-AzStorageAccount",
+        "Get-AzStorageBlobServiceProperty",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.storage/get-azrmstoragecontainer",
+        "https://learn.microsoft.com/powershell/module/az.storage/get-azstorageblobserviceproperty",
+        "https://learn.microsoft.com/azure/storage/blobs/security-recommendations",
+        "https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-stockage-inventaire",
+      "titre": "Inventaire des comptes de stockage et de leurs réglages de sécurité",
+      "sousRubrique": "Stockage et protection",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzStorageAccount"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzStorageAccount",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.storage/get-azstorageaccount",
+        "https://learn.microsoft.com/azure/storage/common/storage-account-overview",
+        "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent",
+        "https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-vm-arret",
+      "titre": "Arrêter et désallouer une machine virtuelle Azure (prévisualisation, puis action confirmée)",
+      "sousRubrique": "Machines virtuelles",
+      "risque": "caution",
+      "lectureSeule": false,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azVm",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azArret",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azMode",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azConfirmation",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzVM",
+        "Stop-AzVM"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzVM",
+        "Get-MgContext",
+        "Stop-AzVM"
+      ],
+      "actionsWhatIf": [
+        "Stop-AzVM"
+      ],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.compute/stop-azvm",
+        "https://learn.microsoft.com/powershell/module/az.compute/get-azvm",
+        "https://learn.microsoft.com/azure/virtual-machines/states-billing"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-vm-demarrage",
+      "titre": "Démarrer une machine virtuelle Azure (prévisualisation, puis action confirmée)",
+      "sousRubrique": "Machines virtuelles",
+      "risque": "caution",
+      "lectureSeule": false,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azVm",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azMode",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azConfirmation",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzVM",
+        "Start-AzVM"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzVM",
+        "Get-MgContext",
+        "Start-AzVM"
+      ],
+      "actionsWhatIf": [
+        "Start-AzVM"
+      ],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.compute/start-azvm",
+        "https://learn.microsoft.com/powershell/module/az.compute/get-azvm",
+        "https://learn.microsoft.com/azure/virtual-machines/states-billing"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-vm-disques-interfaces",
+      "titre": "Diagnostic des disques managés et des interfaces réseau d’une machine",
+      "sousRubrique": "Machines virtuelles",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azVm",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzDisk",
+        "Get-AzNetworkInterface"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzDisk",
+        "Get-AzNetworkInterface",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.compute/get-azdisk",
+        "https://learn.microsoft.com/powershell/module/az.network/get-aznetworkinterface",
+        "https://learn.microsoft.com/azure/virtual-machines/disks-understand-billing"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-vm-etat",
+      "titre": "Configuration, état et éléments de dépannage d’une machine virtuelle",
+      "sousRubrique": "Machines virtuelles",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azVm",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azHeures",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzVM"
+      ],
+      "commandesFacultatives": [
+        "Get-AzActivityLog"
+      ],
+      "cmdletsDansLeScript": [
+        "Get-AzActivityLog",
+        "Get-AzContext",
+        "Get-AzVM",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.compute/get-azvm",
+        "https://learn.microsoft.com/powershell/module/az.monitor/get-azactivitylog",
+        "https://learn.microsoft.com/azure/virtual-machines/boot-diagnostics",
+        "https://learn.microsoft.com/azure/virtual-machines/extensions/agent-windows"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "azure-vm-inventaire",
+      "titre": "Inventaire des machines virtuelles Azure et de leur état réel",
+      "sousRubrique": "Machines virtuelles",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azAbonnement",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azRg",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "az",
+      "scopesGraph": [],
+      "commandesObligatoires": [
+        "Get-AzContext",
+        "Get-AzVM"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-AzVM",
+        "Get-MgContext"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/az.compute/get-azvm",
+        "https://learn.microsoft.com/azure/virtual-machines/states-billing",
+        "https://learn.microsoft.com/azure/virtual-machines/sizes/overview"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "entra-appartenances",
+      "titre": "Appartenances Entra : groupes d’un utilisateur ou membres d’un groupe",
+      "sousRubrique": "Microsoft Entra ID",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azSens",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azCible",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "graph",
+      "scopesGraph": [
+        "User.Read.All",
+        "Directory.Read.All"
+      ],
+      "commandesObligatoires": [
+        "Get-MgContext",
+        "Get-MgGroupMember",
+        "Get-MgUserMemberOf"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-MgContext",
+        "Get-MgGroupMember",
+        "Get-MgUserMemberOf"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mgusermemberof",
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroupmember",
+        "https://learn.microsoft.com/entra/fundamentals/concept-learn-about-groups"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "entra-mfa",
+      "titre": "Enregistrement de l’authentification multifacteur (MFA) : ce qui est lisible",
+      "sousRubrique": "Microsoft Entra ID",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azUtilisateur",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "graph",
+      "scopesGraph": [
+        "AuditLog.Read.All"
+      ],
+      "commandesObligatoires": [
+        "Get-MgContext",
+        "Get-MgReportAuthenticationMethodUserRegistrationDetail"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-MgContext",
+        "Get-MgReportAuthenticationMethodUserRegistrationDetail"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.reports/get-mgreportauthenticationmethoduserregistrationdetail",
+        "https://learn.microsoft.com/entra/identity/authentication/concept-mfa-howitworks",
+        "https://learn.microsoft.com/entra/identity/authentication/howto-authentication-methods-activity",
+        "https://learn.microsoft.com/entra/fundamentals/security-defaults"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "entra-recherche",
+      "titre": "Rechercher des utilisateurs ou des groupes Microsoft Entra",
+      "sousRubrique": "Microsoft Entra ID",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azObjet",
+          "type": "select",
+          "facultatif": false
+        },
+        {
+          "id": "azDebut",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "graph",
+      "scopesGraph": [
+        "User.Read.All",
+        "Directory.Read.All"
+      ],
+      "commandesObligatoires": [
+        "Get-MgContext",
+        "Get-MgGroup",
+        "Get-MgUser"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-MgContext",
+        "Get-MgGroup",
+        "Get-MgUser"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mguser",
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroup",
+        "https://learn.microsoft.com/powershell/microsoftgraph/authentication-commands",
+        "https://learn.microsoft.com/azure/role-based-access-control/rbac-and-directory-admin-roles"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    },
+    {
+      "id": "entra-roles",
+      "titre": "Rôles Microsoft Entra actifs et permissions nécessaires",
+      "sousRubrique": "Microsoft Entra ID",
+      "risque": "diagnostic",
+      "lectureSeule": true,
+      "plateforme": "Multi",
+      "sortie": ".ps1",
+      "champs": [
+        {
+          "id": "azTenant",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azDebut",
+          "type": "text",
+          "facultatif": false
+        },
+        {
+          "id": "azLimite",
+          "type": "number",
+          "facultatif": false
+        },
+        {
+          "id": "azFormat",
+          "type": "select",
+          "facultatif": false
+        }
+      ],
+      "portee": "graph",
+      "scopesGraph": [
+        "RoleManagement.Read.Directory",
+        "Directory.Read.All"
+      ],
+      "commandesObligatoires": [
+        "Get-MgContext",
+        "Get-MgDirectoryRole",
+        "Get-MgDirectoryRoleMember"
+      ],
+      "commandesFacultatives": [],
+      "cmdletsDansLeScript": [
+        "Get-AzContext",
+        "Get-MgContext",
+        "Get-MgDirectoryRole",
+        "Get-MgDirectoryRoleMember"
+      ],
+      "actionsWhatIf": [],
+      "sources": [
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole",
+        "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrolemember",
+        "https://learn.microsoft.com/entra/identity/role-based-access-control/permissions-reference",
+        "https://learn.microsoft.com/azure/role-based-access-control/rbac-and-directory-admin-roles"
+      ],
+      "moteursAnnonces": "Compatibilité visée : Windows PowerShell 5.1 et PowerShell 7.x. Les scripts évitent la syntaxe propre à PowerShell 7 (ternaire, « ?? », « && »). Le moteur exact de chaque essai est consigné dans le rapport de lot."
+    }
+  ]
+}

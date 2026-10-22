@@ -503,6 +503,34 @@ jobs:
       # se comporte pas toujours en commentaire, et une commande copiee sur
       # une seule ligne perd tout ce qui le suit.
       # -----------------------------------------------------------------------
+      # -----------------------------------------------------------------------
+      # 10 quater. LOT 8 - assistants Azure et Entra ID
+      #
+      # Les scripts sont EXECUTES contre des DOUBLURES PowerShell (pwsh 7 sur
+      # ce runner) : aucune connexion, aucun tenant, aucune ressource. Les
+      # formes d'objets des doublures ne sont pas confrontees a un vrai
+      # tenant : essai reel NON EXECUTE. Windows PowerShell 5.1 est eprouve
+      # par le job Windows (validate.yml), pas ici.
+      # -----------------------------------------------------------------------
+      - name: Banc Azure et Entra ID (doublures PowerShell 7, contre-epreuves)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/azure-assistants.test.mjs
+
+      # 10 quater bis. RESEAU-CISCO-01 - assistants Cisco IOS
+      #
+      # Banc PUREMENT TEXTUEL : il lit les fichiers de commandes produits
+      # (ASCII, pas de point d'interrogation, aucune sauvegarde ni suppression
+      # de VLAN cachee, listes de VLAN jamais remplacees). Aucune commande IOS
+      # n'est executee ; Packet Tracer et commutateur reel : NON EXECUTE.
+      # -----------------------------------------------------------------------
+      - name: Banc des assistants Cisco IOS (validation, refus, contre-epreuves, analyseur)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cisco-assistants.test.mjs
+
+      - name: Sources Cisco (forme, registre, verification manuelle consignee)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sources-cisco.mjs
+
       - name: Contrat des commandes rapides
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/commandes-rapides.test.mjs
@@ -545,6 +573,14 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-identity.test.mjs
 
+      - name: Navigateur LOT 8 - 24 fiches Azure (routes, validation, confirmations, formats, copie, telechargement, 390 px)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-azure.test.mjs
+
+      - name: Navigateur RESEAU-CISCO-01 - 19 fiches Cisco (routes, .ios.txt sans BOM, validation, confirmations, 390 px)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-cisco.test.mjs
+
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-lot7.test.mjs
@@ -553,9 +589,21 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-lot7-contre-epreuves.test.mjs
 
+      - name: Navigateur integration Azure + Cisco (deux ordres, 10 cartes, encodages, 390 px)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-integration.test.mjs
+
+      - name: Matrices et catalogue Cisco (aucune derive)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrices-cisco.mjs --verifier
+
       - name: Matrices et catalogue du LOT 7 (aucune derive)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/matrices-lot7.mjs --verifier
+
+      - name: Matrices et catalogue du LOT 8 Azure (aucune derive)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrices-lot8.mjs --verifier
 
       # -----------------------------------------------------------------------
       # 11. Les workflows eux-mêmes

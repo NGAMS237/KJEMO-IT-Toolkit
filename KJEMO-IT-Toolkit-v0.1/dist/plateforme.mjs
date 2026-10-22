@@ -32,7 +32,7 @@
  */
 
 /** Les plateformes reconnues. `Multi` existe pour les outils à venir. */
-export const PLATEFORMES = ['Windows', 'Linux', 'Multi'];
+export const PLATEFORMES = ['Windows', 'Linux', 'Multi', 'Cisco'];
 
 /**
  * Les types de sortie reconnus.
@@ -43,7 +43,17 @@ export const PLATEFORMES = ['Windows', 'Linux', 'Multi'];
  * produire de fichier exécutable, et c'est une décision de sécurité, pas un
  * manque.
  */
-export const SORTIES = ['.ps1', '.sh', 'Documentation'];
+export const SORTIES = ['.ps1', '.sh', '.ios.txt', 'Documentation'];
+
+/**
+ * RESEAU-CISCO-01 — `.ios.txt` : une liste de commandes Cisco IOS, à coller
+ * dans la console d'un commutateur. Ce n'est NI du PowerShell NI du Bash : le
+ * double suffixe est voulu, pour qu'aucun explorateur de fichiers ne propose de
+ * l'« exécuter » et que le nom dise ce que le fichier est. Pas de BOM (la
+ * console n'en veut pas), LF strict, ASCII seul, jamais de point
+ * d'interrogation ni de tabulation (IOS les interprète à la frappe, y compris
+ * lors d'un collage).
+ */
 
 /** Plateforme d'un outil. Défaut : Windows — voir l'en-tête du module. */
 export function plateformeDe(outil) {
@@ -58,6 +68,11 @@ export function sortieDe(outil) {
 /** `true` si l'outil produit du Bash. */
 export function estBash(outil) {
   return sortieDe(outil) === '.sh';
+}
+
+/** `true` si l'outil produit des commandes Cisco IOS (`.ios.txt`). */
+export function estIOS(outil) {
+  return sortieDe(outil) === '.ios.txt';
 }
 
 /** `true` si l'outil ne produit aucun fichier exécutable. */
@@ -105,6 +120,7 @@ export function etiquetteSortie(outil) {
   const s = sortieDe(outil);
   if (s === '.sh') return 'Script Bash';
   if (s === '.ps1') return 'Script PowerShell';
+  if (s === '.ios.txt') return 'Commandes Cisco IOS';
   return 'Procédure documentée';
 }
 
@@ -125,6 +141,12 @@ export function commandesExecution(outil) {
   const s = sortieDe(outil);
   if (s === 'Documentation') return [];
   const nom = nomFichierDe(outil);
+  if (s === '.ios.txt') {
+    // Aucune commande d'exécution locale : ce fichier ne se lance pas. On ne
+    // propose donc ni « Unblock-File » ni « chmod ». L'étape utile est la
+    // console de l'équipement, et elle est décrite dans les notes de la fiche.
+    return [];
+  }
   if (s === '.sh') {
     const sudo = estLectureSeule(outil) ? '' : 'sudo ';
     return [
@@ -272,6 +294,8 @@ export function incoherencesPlateforme(outil) {
   if (!SORTIES.includes(s)) pb.push(`type de sortie inconnu : ${s}`);
   if (p === 'Windows' && s === '.sh') pb.push('plateforme Windows mais sortie .sh');
   if (p === 'Linux' && s === '.ps1') pb.push('plateforme Linux mais sortie .ps1');
+  if (p === 'Cisco' && s !== '.ios.txt') pb.push('plateforme Cisco mais sortie autre que .ios.txt');
+  if (s === '.ios.txt' && p !== 'Cisco') pb.push('sortie .ios.txt mais plateforme autre que Cisco');
   if (s === 'Documentation' && typeof outil.generate === 'function') {
     pb.push('sortie Documentation mais generate() existe : l’un des deux est faux');
   }

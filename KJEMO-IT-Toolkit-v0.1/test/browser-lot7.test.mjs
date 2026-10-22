@@ -44,6 +44,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve, extname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+// Azure + Cisco intégrés — 8 catégories au LOT 7 (« Tout » comprise) + « Azure et Entra ID » (LOT 8)
+// + « Réseau et Cisco » (RESEAU-CISCO-01) = 10. Le compte est explicite : un compte déduit du
+// catalogue ne détecterait pas une catégorie ajoutée ou perdue par erreur.
+const NB_CATEGORIES = 10;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
@@ -234,7 +238,7 @@ try {
     const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => ({
       nom: e.dataset.category, texte: e.textContent, presse: e.getAttribute('aria-pressed'),
     })));
-    verifier(cartes.length === 8, `A1 : 8 cartes de catégorie, « Tout » comprise (mesuré ${cartes.length})`);
+    verifier(cartes.length === NB_CATEGORIES, `A1 : ${NB_CATEGORIES} cartes de catégorie, « Tout » comprise (mesuré ${cartes.length})`);
     verifier(cartes.length === visibles.length + 1,
       `A2 : cartes = catégories pourvues du catalogue + « Tout » (${visibles.length} + 1)`);
     verifier(cartes[0].nom === 'Tout', 'A3 : la première carte est « Tout »');
@@ -259,7 +263,7 @@ try {
     const navigation = await page.$$eval('#navigation button', (els) => els.map((e) => ({
       nom: e.dataset.category, compte: e.querySelector('.nav-count')?.textContent,
     })));
-    verifier(navigation.length === 8, `A13 : la barre latérale propose 8 entrées (mesuré ${navigation.length})`);
+    verifier(navigation.length === NB_CATEGORIES, `A13 : la barre latérale propose ${NB_CATEGORIES} entrées (mesuré ${navigation.length})`);
     const navLinux = navigation.find((n) => n.nom === 'Linux et services réseau');
     verifier(navLinux?.compte === '43', `A14 : l'entrée latérale Linux annonce 43 (${navLinux?.compte})`);
     verifier(navigation.find((n) => n.nom === 'Tout')?.compte === String(tools.length),
@@ -604,7 +608,7 @@ try {
     }
     // Les huit catégories sont toutes atteignables, y compris Linux.
     const nbCartes = await page.locator('#categoryGrid .category-card').count();
-    verifier(nbCartes === 8, `E7 : les 8 cartes de catégorie existent à 390 px (${nbCartes})`);
+    verifier(nbCartes === NB_CATEGORIES, `E7 : les ${NB_CATEGORIES} cartes de catégorie existent à 390 px (${nbCartes})`);
     for (let i = 0; i < nbCartes; i++) {
       const nom = await page.locator('#categoryGrid .category-card').nth(i).getAttribute('data-category');
       const a = await atteignable(page, `#categoryGrid .category-card[data-category="${nom}"]`);
@@ -629,7 +633,7 @@ try {
     });
     verifier(panneau.gauche >= -1 && panneau.droite <= panneau.vw + 1, `E12 : le panneau ouvert tient dans l'écran (${Math.round(panneau.gauche)}..${Math.round(panneau.droite)})`);
     const entrees = await page.locator('#navigation button').count();
-    verifier(entrees === 8, `E13 : le panneau ouvert propose les 8 catégories (${entrees})`);
+    verifier(entrees === NB_CATEGORIES, `E13 : le panneau ouvert propose les ${NB_CATEGORIES} catégories (${entrees})`);
     const aLinux = await atteignable(page, '#navigation button[data-category="Linux et services réseau"]');
     verifier(aLinux.ok, 'E14 : « Linux et services réseau » est atteignable dans le panneau', aLinux.raison);
     // Échap ferme et rend le focus au bouton.

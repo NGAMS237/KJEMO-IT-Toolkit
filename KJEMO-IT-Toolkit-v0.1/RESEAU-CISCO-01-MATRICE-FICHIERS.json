@@ -1,0 +1,422 @@
+[
+  {
+    "id": "cisco-modes-ios",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 1735,
+    "sha256": "2936767fefcd3c77d330ec73ed6c7379e604977cf722270bdfe8af1971336441"
+  },
+  {
+    "id": "cisco-modes-ios",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 7,
+    "sha256": "27990f41a1eedfb26f7323bd1ae2b8ec411a44b1abcb5981f71e8389b8400c42"
+  },
+  {
+    "id": "cisco-identification",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2127,
+    "sha256": "0c7982320692fbbe046ea8fc5472754a103419822973fd4d6dda69848f8ef22a"
+  },
+  {
+    "id": "cisco-identification",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 119,
+    "sha256": "2659aad0287be4d93bccd12941d56379514b8ca9a6fe01236aaab68c1ed25919"
+  },
+  {
+    "id": "cisco-identification",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2059,
+    "sha256": "4a2b70e39f465bc525916df2c1a6ab82c4b62958f9cd7b39fe989d156f37b123"
+  },
+  {
+    "id": "cisco-identification",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 82,
+    "sha256": "800ce091423e45a1f13d163be6b03df649c4e35cb308123f2bf58a8acf37ddb9"
+  },
+  {
+    "id": "cisco-console-ssh",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 3083,
+    "sha256": "0215d092fcd528ec1888cbf025b383d18da55f07417df5f2a09b23732c7a8daf"
+  },
+  {
+    "id": "cisco-console-ssh",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 150,
+    "sha256": "7a5404ffb755e2b059c9c4c2c0297f1120d75e36eb12d3b830a84f37ae689c4a"
+  },
+  {
+    "id": "cisco-console-ssh",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 3009,
+    "sha256": "e6e4ef937a35ea7ac3b98694f98918229bfada30475e53297154542090ba7bf3"
+  },
+  {
+    "id": "cisco-console-ssh",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 127,
+    "sha256": "90aec30466e2c0d34f5dca42d26270d33a8d6a4c8b2441e92c4317c73f80a459"
+  },
+  {
+    "id": "cisco-config-sauvegarde",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2613,
+    "sha256": "efaae55eebf77280eed86e8a45019304b955e3b422182a99c70637a82e0e898c"
+  },
+  {
+    "id": "cisco-config-sauvegarde",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 289,
+    "sha256": "baf6bb736df26e4f26812299d955fab792caa0ddbd17139c1615f20847294727"
+  },
+  {
+    "id": "cisco-config-sauvegarde",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2576,
+    "sha256": "cedfc448c933828741e49dd98e9842052e9eee607412f29ccf9ccfb28c351788"
+  },
+  {
+    "id": "cisco-config-sauvegarde",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 110,
+    "sha256": "bd8a99a2d80369e5d2c474da9a9e67d3da0ca1e139db6fcb581066540f2f0e8b"
+  },
+  {
+    "id": "cisco-gestion-ip",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2571,
+    "sha256": "45a184f469b66a3e49ff055b22bb0ab252978c076c0bf31dfc3aaa45ddbc5bc5"
+  },
+  {
+    "id": "cisco-gestion-ip",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 144,
+    "sha256": "7ecd6248f6e8cbf30a5fcd73166af963295bb75c9382b3717894711182fd0693"
+  },
+  {
+    "id": "cisco-gestion-ip",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2479,
+    "sha256": "e57026998873799ed3d232d7da29d3161d3bdc46408a3129c5d17641da9965b1"
+  },
+  {
+    "id": "cisco-gestion-ip",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 173,
+    "sha256": "d2f87c2ce285da93bd1042981b15719a0eae6267210fb587a90f3cfc73573f3c"
+  },
+  {
+    "id": "cisco-interface-etat",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2456,
+    "sha256": "cebe360c18d4dbdd607ef755c8664d7559535a4fb5e43011fd7b5789212d7c10"
+  },
+  {
+    "id": "cisco-interface-etat",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 262,
+    "sha256": "2520bfc4c0ec1e04f796a45f995c382c1fedd52a6cee9f3c007c3bba6ec9b964"
+  },
+  {
+    "id": "cisco-interface-etat",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2382,
+    "sha256": "c59df2c1537d0aa554fc14184769325277c72c94e559e145d944eebd5de175d3"
+  },
+  {
+    "id": "cisco-interface-etat",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 160,
+    "sha256": "c6daaf1d194d6f1f790d808dc7a84666995797113ae51af38b6b9feef8c57714"
+  },
+  {
+    "id": "cisco-table-mac",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2532,
+    "sha256": "18f129fb43a7b0e9601e481d585dab0e31bcc98d8e4d7ca280a89007895648b2"
+  },
+  {
+    "id": "cisco-table-mac",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 141,
+    "sha256": "03958105828decef3d870254f01ea701f8084b428adb1a19c15ec2e2f8a6fff1"
+  },
+  {
+    "id": "cisco-table-mac",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2503,
+    "sha256": "fbf6b19a3eb6e6cfe42337b99978a9c031dbe8c5c070b6f93c085ad1607c63a1"
+  },
+  {
+    "id": "cisco-table-mac",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 87,
+    "sha256": "40399955681d96b8bffa071d07a4efb0437640f0ee04dd33786487f8b07346a8"
+  },
+  {
+    "id": "cisco-port-security-etat",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2436,
+    "sha256": "56da2f3ae97c6011d12b7822ee0449615879c88e65f8d3fe9b32aa05ab4c9ba0"
+  },
+  {
+    "id": "cisco-port-security-etat",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 228,
+    "sha256": "c07f803e639ac64f76caea05d012eff3716ed75238e085e85a2caca5e454be4d"
+  },
+  {
+    "id": "cisco-port-security-config",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2825,
+    "sha256": "0f2d6784b2e2b86b9e8566abfcdb1055955c918aa603cb0773ce0195f8c190d4"
+  },
+  {
+    "id": "cisco-port-security-config",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 265,
+    "sha256": "932a84db66991048e90f28dd4b912cc8953d477b0036abe79c6e8c0eb44a1fd7"
+  },
+  {
+    "id": "cisco-port-security-config",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2727,
+    "sha256": "ef437b1f969f394f0302cfd82929a7c24c26003a44fa5e8297b2b420af9931a5"
+  },
+  {
+    "id": "cisco-port-security-config",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 336,
+    "sha256": "bd0f754c07fb360a2e8f49cd925dc9b0512da07ee515aceb46e7c9bb692bca39"
+  },
+  {
+    "id": "cisco-vlan-inventaire",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 1171,
+    "sha256": "b3dd89ee89b47c3187fa8645399584a578bc26e3cf4ca0a2b4426cfaf1d71cac"
+  },
+  {
+    "id": "cisco-vlan-inventaire",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 38,
+    "sha256": "bb7d519dff2b7aee80209e98ca42ce51c161fc788665fde8eb5a256d741aafc7"
+  },
+  {
+    "id": "cisco-vlan-creation",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2065,
+    "sha256": "9ba370d454cc26f5d88a9775bc422c27b97fb801f50717ba60c26d0aed00b377"
+  },
+  {
+    "id": "cisco-vlan-creation",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 64,
+    "sha256": "a2a73550114f897e295892fe48a523a602b24544920688ba90f7ecd6a3a502e2"
+  },
+  {
+    "id": "cisco-vlan-creation",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 1991,
+    "sha256": "f5025ff9192eb5fac04c33cc3626cff42d2f09f7d7afcff78d02136e0e4913f3"
+  },
+  {
+    "id": "cisco-vlan-creation",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 72,
+    "sha256": "17f21878e4eba630d82afb8506e77d34676ce82ad6d906793329f5ff51d97073"
+  },
+  {
+    "id": "cisco-port-access",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2307,
+    "sha256": "f52dd3236baa52c77e2a9369970a3bc46c76809c376ab0dd396bdddc0117c508"
+  },
+  {
+    "id": "cisco-port-access",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 140,
+    "sha256": "f93923e742c3b7533ad5f54faf360c6a3ebf4f506787b237a8c00b21e56e50ad"
+  },
+  {
+    "id": "cisco-port-access",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2227,
+    "sha256": "1ae26976add9eb7e7168d00716846d4b8f683eb84f3cb4731bd7dae8efdf5796"
+  },
+  {
+    "id": "cisco-port-access",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 159,
+    "sha256": "209769f04761afd19131bf338e985cc5ea9d1d0243408c05e2ba9156bab98254"
+  },
+  {
+    "id": "cisco-trunk-preparation",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2300,
+    "sha256": "e914ee38173a8974ac808188321c3ca17af9295f93730ec6788e44be863ce69a"
+  },
+  {
+    "id": "cisco-trunk-preparation",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 165,
+    "sha256": "da88e91272458ba79819c72ca8833128cce4293a2ca1058965a018a2a67d62f1"
+  },
+  {
+    "id": "cisco-trunk-preparation",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2220,
+    "sha256": "5a02223dbbbb412d19608a9d30c05c93f56b449b9af291ec183f244989aa50a8"
+  },
+  {
+    "id": "cisco-trunk-preparation",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 181,
+    "sha256": "afa24cce7a4deb8b5bb84c9dab60522f4dae9a3fadb90593124df843ea3085c3"
+  },
+  {
+    "id": "cisco-trunk-diagnostic",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 1789,
+    "sha256": "b55d9ccb9be55edb66876e6023d92ab86f0c50c3c974c496704135308fcc4b95"
+  },
+  {
+    "id": "cisco-trunk-diagnostic",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 174,
+    "sha256": "2007ceec8266378b7634f6c4d5c56d71bcc4877177a33d9a087cfa1b113de83a"
+  },
+  {
+    "id": "cisco-dtp-simulation",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 1858,
+    "sha256": "dea2a51023b3347c1389bf1d958658b63f76b4307940d249e21c37633c32700d"
+  },
+  {
+    "id": "cisco-dtp-simulation",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 100,
+    "sha256": "575c9e641d543baa0437f80ebb6235054f519ede26118b4dc261f0e385f34574"
+  },
+  {
+    "id": "cisco-vtp-diagnostic",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 1358,
+    "sha256": "d685911e37be1618d6091dccf08619544d9c10655f92a613bb73ba241c083125"
+  },
+  {
+    "id": "cisco-vtp-diagnostic",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 54,
+    "sha256": "06c4aa33e7cf3a1d75cdd27016718a2ac13927dce69210619ad87ded459455d6"
+  },
+  {
+    "id": "cisco-vtp-configuration",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2298,
+    "sha256": "a1f51c7f1c5a7981bd4794c7a096d91a6792d4727f697a03094f79f7eb91f018"
+  },
+  {
+    "id": "cisco-vtp-configuration",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 86,
+    "sha256": "87e0d785132579221e96076d86940fc3f5dbecba8c112616ace836590ace910b"
+  },
+  {
+    "id": "cisco-vtp-configuration",
+    "mode": "Configuration",
+    "presentation": "Commente",
+    "octets": 2218,
+    "sha256": "15391a00317cfb088ea5389532b65cce5a5448622bb43565fb220360de27449c"
+  },
+  {
+    "id": "cisco-vtp-configuration",
+    "mode": "Configuration",
+    "presentation": "Commandes seules",
+    "octets": 105,
+    "sha256": "14acf081d57b5e3d20579bd211bd7f1306859d2a5288e91deba197695a855d1e"
+  },
+  {
+    "id": "cisco-vtp-raccordement",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 2266,
+    "sha256": "0667f6a03cc757a182bee8970103a8ad652e48ae8bc7e2db37a04648592538d8"
+  },
+  {
+    "id": "cisco-vtp-raccordement",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 48,
+    "sha256": "30e4dfbe8c94bf8547db24d1c47eec6157cf37b4ceaa67b5935b5a2c1573839b"
+  },
+  {
+    "id": "cisco-parcours-diagnostic",
+    "mode": "Lecture",
+    "presentation": "Commente",
+    "octets": 1741,
+    "sha256": "964ce062976fd9fe1c4ad5e22e2ba917f55f74aa78d70c8ab09769a3b97cb1a7"
+  },
+  {
+    "id": "cisco-parcours-diagnostic",
+    "mode": "Lecture",
+    "presentation": "Commandes seules",
+    "octets": 158,
+    "sha256": "adf474e90877a9654811067ff725072fb323cdec2c6827e81f09a3ef39d6a02d"
+  }
+]

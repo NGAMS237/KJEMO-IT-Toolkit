@@ -56,7 +56,10 @@ de référence. Le correctif réclame de nouvelles empreintes : c'est un lot à 
 
 ### LOT 8 — Azure et Entra ID
 Azure, Entra ID, machines virtuelles, réseau Azure, stockage, sauvegarde et
-diagnostics cloud.
+diagnostics cloud. **Mis à jour le 22 octobre 2026 : développé et testé
+localement sur la branche `claude/lot-8-azure-entra-id`** (24 assistants) ; voir
+la section « Actualisation du 22 octobre 2026 — LOT 8 » plus bas pour l'état
+exact. Non poussé, non testé en CI GitHub, non fusionné, non déployé.
 
 ### LOT 9 — Imprimantes
 Imprimantes.
@@ -142,7 +145,7 @@ Cette section est un état de coordination et **ne vaut ni fusion, ni déploieme
 - **Observabilité et coûts** : Azure Monitor, journaux, alertes, inventaire, budgets et prévention des dépenses involontaires.
 - **Scripts et pédagogie** : Azure CLI / Az PowerShell, prérequis, risques, modes simulation ou lecture seule lorsque possibles, fiches pas-à-pas et labs progressifs.
 - **Qualité** : tests des générateurs, validation statique, aucune commande destructive exécutée automatiquement, pas de secrets dans les scripts, vérifications sur compte de lab avant toute promesse de compatibilité réelle.
-- **Statut** : planifié, **non commencé, non fusionné, non déployé**.
+- **Statut (mis à jour le 22 octobre 2026)** : **développé et testé localement** sur `claude/lot-8-azure-entra-id`, **non fusionné, non déployé, non testé en CI GitHub**. Le paragraphe précédent est le périmètre initial ; ce qui est réellement livré est décrit dans `LOT-8-RAPPORT.md`.
 
 ### Lots suivants (maintenus)
 - LOT 9 : imprimantes.
@@ -255,3 +258,74 @@ Ne pas intégrer le mot de passe d’exemple du cours dans les modèles par déf
 livrés, tests exécutés avec preuves, puis revue et intégration distinctes.
 L’inscription à la roadmap seule ne constitue pas une livraison.
 
+## Actualisation du 22 octobre 2026 — LOT 8 : Azure et Microsoft Entra ID
+
+**Statut : développé localement, testé localement. NON poussé, NON testé en CI
+GitHub, NON fusionné, NON déployé.** Base : `78a2c8b` (roadmap RESEAU-CISCO-01) sur
+`reconciliation/lot7` @ `78a2c8b9` ; la PR n° 7 du LOT 7 est ouverte, non fusionnée.
+Les inscriptions Samba et RESEAU-CISCO-01 ci-dessus sont conservées telles quelles.
+
+- **Livré (localement)** : 24 assistants Azure / Entra ID en six familles
+  (Connexion, contexte et accès · Microsoft Entra ID · Machines virtuelles ·
+  Réseau Azure · Stockage et protection · Surveillance et coûts), catégorie
+  « Azure et Entra ID », sortie PowerShell `.ps1` pour Windows PowerShell 5.1 et
+  PowerShell 7. 21 en lecture seule ; 3 agissent (`azure-vm-demarrage`,
+  `azure-vm-arret`, `azure-sauvegarde-restauration`) après prévisualisation
+  `-WhatIf` et phrase de confirmation exacte.
+- **Jamais de connexion** : les scripts n'appellent ni `Connect-*`, ni
+  `Set-AzContext`, ni `Select-AzSubscription`. Aucune clé, aucun SAS, aucun secret.
+- **Testé localement** : banc Azure (scripts exécutés contre des doublures
+  PowerShell 7), banc navigateur Playwright dédié, identité des 177 outils,
+  matrices LOT 8, sources Microsoft vérifiées en ligne.
+- **NON exécuté** : Windows PowerShell 5.1 (analyse syntaxique seulement ; étape
+  ajoutée au job Windows de la CI, jamais jouée), tenant ou abonnement Azure réel,
+  CI GitHub. Les doublures ne valent pas validation sur un vrai tenant.
+- **Reste à faire** : revue, publication de la branche, CI distante, essai en
+  laboratoire sur un compte d'essai, PR et fusion distinctes.
+- **Garde historique** : les 440 scripts (SHA `4c37ce2`) et les 712 scripts
+  (SHA `803870c`) antérieurs sont identiques octet par octet ; la baseline des 856
+  scripts est inchangée ; les matrices LOT 7 gardent leur périmètre.
+- **Laboratoires** : `docs/labs-azure/` (trois guides, NON EXÉCUTÉS).
+
+
+## Actualisation du 22 octobre 2026 — RESEAU-CISCO-01 : développé localement
+
+**État : développé et testé LOCALEMENT sur la branche `claude/reseau-cisco-01` (base `78a2c8b`). Non poussé (accès GitHub refusé depuis la session), non testé en CI distante, non fusionné, non déployé. Packet Tracer et commutateur réel : NON EXÉCUTÉ.** Les numéros et périmètres des LOTS 9 à 12 sont inchangés ; le LOT 9 Imprimantes n’est pas commencé.
+
+### Socle Cisco (développé AVANT les VLAN)
+
+Neuf assistants qui précèdent tout travail VLAN/trunk/VTP :
+
+1. `cisco-modes-ios` — modes, invites, aide, complétion, erreurs de contexte ;
+2. `cisco-identification` — nom d’hôte, bannière, lecture matériel/version ;
+3. `cisco-console-ssh` — comptes locaux, prérequis SSH par matériel, lignes vty ; mots de passe et génération de clé à taper à la main ;
+4. `cisco-config-sauvegarde` — running/startup-config, différences, sauvegarde explicite et vérifiée ;
+5. `cisco-interface-etat` — état, description, activation ciblée d’UNE interface ;
+6. `cisco-gestion-ip` — adresse de gestion (SVI), passerelle niveau 2 ou routage, ping ;
+7. `cisco-table-mac` — lecture filtrée, effacement dynamique ciblé (jamais général) ;
+8. `cisco-port-security-etat` — état, adresses, violations, diagnostic d’un port bloqué ;
+9. `cisco-port-security-config` — configuration ciblée, remise en service d’UN port.
+
+### VLAN, trunks, DTP, VTP (dix assistants)
+
+`cisco-vlan-inventaire`, `cisco-vlan-creation`, `cisco-port-access`, `cisco-trunk-preparation` (add/remove seulement, jamais de remplacement de liste), `cisco-trunk-diagnostic`, `cisco-dtp-simulation`, `cisco-vtp-diagnostic`, `cisco-vtp-configuration` (v1/v2, mot de passe à la main), `cisco-vtp-raccordement` (liste de contrôle), `cisco-parcours-diagnostic` (quatre parcours + analyse de sorties collées).
+
+### Reste hors périmètre (volontairement)
+
+VTP v3 ; suppression de VLAN ; effacement de `vlan.dat` ; remise à zéro ; STP, EtherChannel, OSPF, ACL, routage inter-VLAN ; connexion ou exécution distante (LOT 12, sous étude préalable) ; LOT 9 Imprimantes.
+
+### Laboratoires
+
+Trois guides dans `docs/labs-cisco/` (manipulation de base ; VLAN, ports d’accès, trunks ; DTP, VTP et incidents). Aucun fichier `.pka`, aucun résultat observé : tout est **NON EXÉCUTÉ** et les résultats sont « attendus à vérifier ».
+
+### Condition de clôture (inchangée)
+
+Revue et intégration distinctes ; essai Packet Tracer puis, si possible, matériel réel ; CI distante. Voir `RESEAU-CISCO-01-RAPPORT.md`.
+
+
+## Actualisation du 22 octobre 2026 — Intégration Azure + Cisco
+
+- Branche d'intégration `claude/integration-azure-cisco` : LOT 8 (`8633b46`) + RESEAU-CISCO-01 (`5168d9e`), base commune `78a2c8b`. **Développé et testé localement ; non poussé, CI distante non exécutée, non fusionné dans main, non déployé.**
+- Catalogue : 196 assistants (153 + 24 + 19), 10 catégories canoniques, Imprimantes encore vide (LOT 9 non commencé au moment de ce checkpoint).
+- Le LOT 9 Imprimantes part de ce checkpoint sur une branche distincte ; il ne modifie pas ce checkpoint.
+- Rapport : `INTEGRATION-AZURE-CISCO-RAPPORT.md`.

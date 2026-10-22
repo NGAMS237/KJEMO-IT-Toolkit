@@ -1,0 +1,17 @@
+{
+  "_note": "Verification manuelle par lecture web le 2026-10-22 (outil de lecture, pas un test automatise). Le controle direct par script est refuse par cisco.com (403 Access Denied) : voir test/sources-cisco.mjs. 'confirmee' = la page existe et son titre correspond au sujet. 'non confirmee' = lecture refusee/non repondue pendant cette session ; l'URL provient d'une recherche web anterieure et n'a PAS ete reouverte.",
+  "sources": [
+    {"cle": "cli", "statut": "non confirmee", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/12-2_55_se/configuration/guide/scg_2960/swcli.html"},
+    {"cle": "systeme", "statut": "confirmee", "titre": "Administering the System (Catalyst 1000, 15.2(7)Ex)", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/sys_mgmt/b_1527e_sys_mgmt_c1000_cg/administering_the_system.html"},
+    {"cle": "interfaces", "statut": "confirmee", "titre": "Configuring Interface Characteristics", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/int_hw/b_1527e_int_and_hw_c1000_cg/configuring_interface_characteristics.html"},
+    {"cle": "ssh", "statut": "confirmee", "titre": "Configuring Secure Shell", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/sec/b_1527e_security_c1000_cg/configuring_ssh.html"},
+    {"cle": "portSecurity", "statut": "confirmee", "titre": "Port Security", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/sec/b_1527e_security_c1000_cg/port_security.html"},
+    {"cle": "vlan", "statut": "confirmee", "titre": "Configuring VLAN", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan.html"},
+    {"cle": "trunks", "statut": "confirmee", "titre": "Configuring VLAN Trunks", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan_trunks.html"},
+    {"cle": "vlanCommandes", "statut": "confirmee", "titre": "Consolidated Platform Command Reference - VLAN", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/command_reference/b_1527e_1000_cr/vlan_commands.html"},
+    {"cle": "layer2Commandes", "statut": "confirmee", "titre": "Consolidated Platform Command Reference - Layer 2 Commands", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/command_reference/b_1527e_1000_cr/layer_2_commands.html"},
+    {"cle": "vtpTechnote", "statut": "confirmee", "titre": "Configure VTP on Catalyst Switches", "url": "https://www.cisco.com/c/en/us/support/docs/lan-switching/vtp/98154-conf-vlan.html"},
+    {"cle": "vtp2960l", "statut": "confirmee", "titre": "Configuring VTP (Catalyst 2960-L, 15.2(7)E)", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960l/software/15-2_7_e/configuration_guide/vlan/b_1527e_vlan_2960l_cg/m_vlan_vtp_cg.html"},
+    {"cle": "vtp3850", "statut": "non confirmee", "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3850/software/release/3se/vlan/configuration_guide/b_vlan_3se_3850_cg/b_vlan_3se_3850_cg_chapter_011.html"}
+  ]
+}

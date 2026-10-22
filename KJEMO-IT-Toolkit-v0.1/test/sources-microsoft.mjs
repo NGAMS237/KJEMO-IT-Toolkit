@@ -33,7 +33,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const { tools } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { tools: catalogueComplet } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+// Les sources Cisco (cisco.com) ont leur propre banc : test/sources-cisco.mjs.
+const tools = catalogueComplet.filter((t) => t.category !== 'Réseau et Cisco');
 const { sourceLinuxValide, editeurDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'sources-linux.mjs')).href);
 const { CMDLETS_EXTERNES, BINAIRES_EXTERNES } =
   await import(pathToFileURL(resolve(ROOT, 'dist', 'cmdlets.mjs')).href);

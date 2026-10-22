@@ -3,13 +3,26 @@
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
 import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
-import { plateformeDe, sortieDe, estBash, estDocumentationSeule, estLectureSeule,
+import { plateformeDe, sortieDe, estBash, estIOS, estDocumentationSeule, estLectureSeule,
          extensionDe, nomFichierDe, etiquetteSortie, commandesExecution } from './plateforme.mjs';
 import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
+import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
          creerPreference } from './preferences.mjs';
 
 const CAT_TOUT = CATEGORIE_TOUT;
+
+// RESEAU-CISCO-01 — trois familles de sortie, trois normaliseurs. Un fichier de
+// commandes IOS n'est ni un script PowerShell ni un script Bash : ni backtick de
+// continuation, ni shebang, ni BOM ; LF, ASCII, aucune tabulation.
+function normaliserSortie(tool, texte) {
+  if (estIOS(tool)) return normalizeIos(texte);
+  return estBash(tool) ? normalizeScriptSh(texte) : normalizeScript(texte);
+}
+function notesDe(tool) {
+  if (estIOS(tool)) return EXECUTION_NOTES_IOS;
+  return estBash(tool) ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
+}
 // Catalogue filtré : une catégorie déclarée mais SANS outil n'est pas affichée.
 const categoriesAffichees = categoriesVisibles(tools);
 const categories = [CAT_TOUT, ...categoriesAffichees.map((c) => c.name)];
@@ -471,7 +484,9 @@ function compatMarkup(tool) {
   // tant qu'administrateur » ne veut rien dire sous Linux, et « sudo » ne veut
   // rien dire sous Windows. Un texte générique aurait été faux des deux côtés.
   let admin;
-  if (bash) {
+  if (estIOS(tool)) {
+    admin = `<p class="admin-flag admin-optional">Aucun droit système sur ton ordinateur : ce fichier se colle dans la <strong>console de l’équipement</strong>, en mode privilégié (invite se terminant par #). Le mot de passe enable se tape à la main.</p>`;
+  } else if (bash) {
     admin = tool.requiresAdmin
       ? `<p class="admin-flag admin-required">Privilèges <strong>root</strong> nécessaires (<code>sudo</code>).</p>`
       : `<p class="admin-flag admin-optional">Aucun privilège <strong>root</strong> n’est nécessaire : ce script lit seulement. Les droits de lecture listés ci-dessous restent requis.</p>`;
@@ -509,6 +524,56 @@ function compatMarkup(tool) {
     + ligne('Service concerné', tool.service)
     + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
     + bloc('Limites connues', tool.limites)
+    + cloudMarkup(tool, { bloc, ligne })
+    + ciscoMarkup(tool, { bloc })
+    + `</div>`;
+}
+
+/**
+ * Bloc « Dans Azure » (LOT 8). N'existe que pour les outils qui déclarent
+ * `cloud` : problème, exemple, ce qui est lu, écrit et facturé, permissions,
+ * licences, limites. Il répond à la question que toute personne se pose avant
+ * de lancer un script qui touche un abonnement : « qu'est-ce que ça lit, ça
+ * écrit, et ça coûte ? ». Aucune donnée n'est collectée ici : le texte vient
+ * de la fiche de l'outil.
+ */
+function cloudMarkup(tool, { bloc, ligne }) {
+  const c = tool.cloud;
+  if (!c) return '';
+  return `<div class="cloud-bloc" id="cloudBloc">`
+    + `<h3>Dans Azure : ce qui se passe</h3>`
+    + ligne('Le problème', c.probleme)
+    + ligne('Exemple en entreprise', c.exemple)
+    + bloc('Ce qui est lu', c.lit)
+    + bloc('Ce qui est écrit', c.ecrit)
+    + bloc('Ce qui peut être facturé', c.facture)
+    + bloc('Permissions nécessaires', c.permissions)
+    + bloc('Licences', c.licences)
+    + bloc('Limites de cet assistant', c.limites)
+    + (typeof c.moteurs === 'string' ? ligne('Compatibilité PowerShell', c.moteurs) : bloc('Compatibilité PowerShell', c.moteurs))
+    + (Array.isArray(c.validation) ? bloc('Ce qui a été validé — et ce qui ne l’a pas été', c.validation) : '')
+    + `</div>`;
+}
+
+/**
+ * RESEAU-CISCO-01 — contrat pédagogique d'une fiche Cisco : problème, utilité,
+ * exemple, lectures avant modification, effets, résultat attendu, limites et
+ * périmètre de validation. Absent des autres plateformes.
+ */
+function ciscoMarkup(tool, { bloc }) {
+  const c = tool.cisco;
+  if (!c) return '';
+  const p = (titre, v) => (v ? `<h3>${titre}</h3><p>${textToCode(String(v))}</p>` : '');
+  return `<div class="cisco-bloc" id="ciscoBloc">`
+    + p('Le problème', c.probleme)
+    + p('À quoi ça sert', c.utilite)
+    + p('Exemple en entreprise', c.exemple)
+    + bloc('À lire avant de modifier', c.lecture)
+    + bloc('Ce que les commandes changent', c.effets)
+    + bloc('Résultat attendu', c.attendu)
+    + bloc('Limites de cet assistant', c.limites)
+    + p('Ce qui a été validé', c.validation)
+    + p('Matériel de référence', c.materiel)
     + `</div>`;
 }
 
@@ -525,8 +590,9 @@ function execNotesMarkup(tool) {
   // d'exécution, un montage noexec, des fins de ligne CRLF, les privilèges.
   // Afficher la table PowerShell sur une fiche Bash serait une fausse piste,
   // et quelqu'un la suivrait.
-  const bash = estBash(tool);
-  const n = bash ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
+  const ios = estIOS(tool);
+  const bash = estBash(tool) || ios;
+  const n = notesDe(tool);
 
   const steps = n.steps.map((st) =>
     `<li><strong>${textToCode(st.label)}</strong><br />${textToCode(st.detail)}`
@@ -541,7 +607,7 @@ function execNotesMarkup(tool) {
     const lignes = n.obstacles.map((ob) =>
       `<tr><td>${textToCode(ob.name)}</td><td><code>${textToCode(ob.message)}</code></td>`
       + `<td>${textToCode(ob.fix)}</td></tr>`).join('');
-    tableau = `<h4>Ce qui empêche un script Bash de démarrer</h4>`
+    tableau = `<h4>${ios ? 'Ce qui fait refuser une commande par IOS' : 'Ce qui empêche un script Bash de démarrer'}</h4>`
       + `<table class="policy-table"><thead><tr><th>Obstacle</th><th>Message</th>`
       + `<th>Solution</th></tr></thead><tbody>${lignes}</tbody></table>`;
   } else {
@@ -575,7 +641,7 @@ function execNotesMarkup(tool) {
 
 /** Erreurs fréquentes — section 8, repliée par défaut. */
 function commonErrorsMarkup(tool) {
-  const n = estBash(tool) ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
+  const n = notesDe(tool);
   return `<details class="details common-errors" id="commonErrors">`
     + `<summary>Erreurs fréquentes</summary>`
     + `<h4>Propres à cet outil</h4>${tool.commonErrors.map(errorEntryMarkup).join('')}`
@@ -595,7 +661,7 @@ function guiMarkup(tool) {
 function sourcesMarkup(tool) {
   // Les sources communes suivent la plateforme : renvoyer une fiche Bash vers
   // la documentation PowerShell n'aiderait personne.
-  const n = estBash(tool) ? EXECUTION_NOTES_BASH : EXECUTION_NOTES;
+  const n = notesDe(tool);
   const liens = [`<a class="source-link" target="_blank" rel="noreferrer" href="${tool.source}">Documentation de l’outil</a>`]
     .concat(n.sources.map((so) =>
       `<a class="source-link" target="_blank" rel="noreferrer" href="${so.url}">${textToCode(so.label)}</a>`));
@@ -665,15 +731,26 @@ function modeBlockMarkup(tool) {
     // le formulaire hors de l'écran. Le détail reste accessible d'un clic.
     const etapes = [
       'Remplis le formulaire avec tes informations.',
-      'Génère le script, puis relis l\u2019aperçu.',
-      'Copie ou télécharge le fichier, puis exécute-le.',
+      estIOS(tool) ? 'Génère les commandes, puis relis l\u2019aperçu.' : 'Génère le script, puis relis l\u2019aperçu.',
+      estIOS(tool) ? 'Copie ou télécharge le fichier, puis colle les commandes dans la console, étape par étape.' : 'Copie ou télécharge le fichier, puis exécute-le.',
     ];
     // Le mode d'emploi suit la plateforme. En mode Débutant surtout : dire
     // « ouvre PowerShell » à quelqu'un qui tient un script Bash, c'est le
     // laisser devant une console qui refusera le fichier sans expliquer
     // pourquoi. Aucune information de sécurité n'est retirée ni allégée d'un
     // côté ou de l'autre — seul le chemin pratique change.
-    const modeEmploi = estBash(tool)
+    const modeEmploi = estIOS(tool)
+      ? [
+        'Ouvre la console du commutateur (câble console, SSH, ou l’onglet CLI de Packet Tracer) et vérifie que l’invite porte le nom indiqué dans l’en-tête du fichier.',
+        'Passe en mode privilégié avec « enable » : le mot de passe se tape à la main, il ne figure jamais dans le fichier.',
+        'Colle les étapes UNE PAR UNE : lis le résultat de chaque lecture avant de passer à la suivante.',
+        'Les lignes qui commencent par « ! » sont des commentaires, ignorés par IOS. Si ta console les refuse en mode utilisateur, régénère en « Commandes seules ».',
+        'Les modifications vivent en mémoire vive tant qu’elles ne sont pas sauvegardées : ce fichier ne sauvegarde rien de lui-même.',
+        'Fais les contrôles de la section 5 pour confirmer le résultat.',
+        'Si le résultat ne convient pas, la section 6 donne le retour en arrière.',
+        'Si tu préfères éviter le fichier, la section 7 donne la méthode pas à pas.',
+      ]
+      : estBash(tool)
       ? [
         'Ouvre un terminal sur la machine Linux concernée, en suivant les prérequis de la section 2.',
         'Rends le script exécutable avec « chmod +x », puis lance-le. Si le dossier refuse l’exécution, lance « bash nom-du-script.sh » : cela marche aussi.',
@@ -785,7 +862,7 @@ function renderTool() {
   // Toujours UN SEUL appel à generate() par site (la garde d'identité en compte
   // deux : aperçu initial, soumission).
   const scriptBrut = tool.generate(defaultValues);
-  const script = estBash(tool) ? normalizeScriptSh(scriptBrut) : normalizeScript(scriptBrut);
+  const script = normaliserSortie(tool, scriptBrut);
   const titreSection = (n, texte, id) =>
     `<h2 class="fiche-section-title" id="${id}">`
     + `<span class="fiche-step" aria-hidden="true">${n}</span>${textToCode(texte)}</h2>`;
@@ -798,8 +875,7 @@ function renderTool() {
     + `<section class="fiche-section" data-section="1" id="sectionProbleme" aria-labelledby="titreProbleme">`
       + titreSection(1, 'Problème et objectif', 'titreProbleme')
       + `<p class="fiche-lead">${textToCode(tool.summary)}</p>`
-      + `<p class="fiche-lead fiche-lead-note">Cet assistant prépare le script et l\u2019explique. `
-      + `Il ne l\u2019exécute pas : c\u2019est toi qui le lances, sur ta machine.</p>`
+      + `<p class="fiche-lead fiche-lead-note">${estIOS(tool) ? 'Cet assistant prépare des commandes Cisco IOS et les explique. Il ne se connecte à aucun équipement : c\u2019est toi qui les colles dans la console.' : 'Cet assistant prépare le script et l\u2019explique. Il ne l\u2019exécute pas : c\u2019est toi qui le lances, sur ta machine.'}</p>`
     + `</section>`
     + `<section class="fiche-section" data-section="2" id="sectionRisque" aria-labelledby="titreRisque">`
       + titreSection(2, 'Risque, compatibilité et prérequis', 'titreRisque')
@@ -812,7 +888,7 @@ function renderTool() {
       + `<section class="panel fiche-section" data-section="3" id="sectionFormulaire" aria-labelledby="titreFormulaire">`
         + titreSection(3, 'Tes informations', 'titreFormulaire')
         + `<form id="toolForm" novalidate>${formMarkup(tool)}`
-        + `<button class="primary-button" type="submit">Générer le script</button></form>`
+        + `<button class="primary-button" type="submit">${estIOS(tool) ? 'Générer les commandes' : 'Générer le script'}</button></form>`
       + `</section>`
       + `<section class="panel fiche-section" data-section="4" id="sectionScript" aria-labelledby="titreScript">`
         + titreSection(4, `${etiquetteSortie(tool)} généré`, 'titreScript')
@@ -907,7 +983,7 @@ function renderTool() {
       // un générateur appelé depuis plusieurs endroits finit par être appelé
       // différemment selon l'endroit.
       const brut = tool.generate(values);
-      output = estBash(tool) ? normalizeScriptSh(brut) : normalizeScript(brut);
+      output = normaliserSortie(tool, brut);
     } catch (err) {
       feedbackEl.textContent = `Erreur de génération : ${err.message}`;
       return;
@@ -924,8 +1000,8 @@ function renderTool() {
       // Même garantie qu'au téléchargement : un script Bash collé dans un
       // éditeur ne doit pas emporter de CR.
       await navigator.clipboard.writeText(
-        estBash(tool) ? normalizeScriptSh(preEl.textContent) : preEl.textContent);
-      feedbackEl.textContent = 'Script copié dans le presse-papiers.';
+        estIOS(tool) ? normalizeIos(preEl.textContent) : estBash(tool) ? normalizeScriptSh(preEl.textContent) : preEl.textContent);
+      feedbackEl.textContent = estIOS(tool) ? 'Commandes copiées dans le presse-papiers.' : 'Script copié dans le presse-papiers.';
     } catch {
       feedbackEl.textContent = 'Copie impossible : sélectionne le texte manuellement.';
     }
@@ -951,10 +1027,12 @@ function renderTool() {
     // ------------------------------------------------------------------------
     const ext    = extensionDe(tool);
     if (!ext) return;                       // outil documentaire : rien à livrer
-    const bash   = estBash(tool);
-    const texte  = bash ? normalizeScriptSh(preEl.textContent) : preEl.textContent;
+    // .ios.txt : ni BOM ni CRLF — la console IOS reçoit des octets ASCII, LF.
+    const sansBom = estBash(tool) || estIOS(tool);
+    const texte  = estIOS(tool) ? normalizeIos(preEl.textContent)
+      : (estBash(tool) ? normalizeScriptSh(preEl.textContent) : preEl.textContent);
     const octets = new TextEncoder().encode(texte);
-    const parts  = bash ? [octets] : [new Uint8Array([0xEF, 0xBB, 0xBF]), octets];
+    const parts  = sansBom ? [octets] : [new Uint8Array([0xEF, 0xBB, 0xBF]), octets];
     const blob   = new Blob(parts, { type: 'text/plain;charset=utf-8' });
     const link   = document.createElement('a');
     link.href = URL.createObjectURL(blob);

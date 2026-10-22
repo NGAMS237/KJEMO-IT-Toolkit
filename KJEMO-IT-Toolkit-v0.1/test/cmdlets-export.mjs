@@ -18,7 +18,9 @@ const ROOT = resolve(__dirname, '..');
 
 const { CMDLETS_EXTERNES, BINAIRES_EXTERNES, CMDLETS_INTERDITES } =
   await import(pathToFileURL(resolve(ROOT, 'dist', 'cmdlets.mjs')).href);
-const { tools } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { tools: catalogueComplet } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+// Les fichiers .ios.txt (RESEAU-CISCO-01) ne sont pas du PowerShell : hors inventaire.
+const tools = catalogueComplet.filter((t) => t.output !== '.ios.txt');
 
 const sortie = resolve(ROOT, process.argv[2] ?? 'test/generated/cmdlets-autorisees.json');
 mkdirSync(dirname(sortie), { recursive: true });

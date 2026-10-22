@@ -1,0 +1,1130 @@
+{
+ "genere": "2026-10-22T05:28:17.616Z",
+ "portee": "sources Azure/Entra/Graph (sous-ensemble du rapport complet test/sources-microsoft.mjs)",
+ "total": 81,
+ "verifiees": 81,
+ "sources": [
+  {
+   "url": "https://learn.microsoft.com/entra/identity/devices/troubleshoot-device-dsregcmd",
+   "labels": [
+    "dsregcmd — diagnostic de la jointure",
+    "dsregcmd.exe"
+   ],
+   "outils": [
+    "windows-access-recovery",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/identity/devices/troubleshoot-device-dsregcmd",
+   "titre": "Troubleshoot devices by using the dsregcmd command - Microsoft Entra ID | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/entra/identity/authentication/concept-sspr-howitworks",
+   "labels": [
+    "Réinitialisation de mot de passe en libre-service Entra ID"
+   ],
+   "outils": [
+    "windows-access-recovery"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/identity/authentication/concept-sspr-howitworks",
+   "titre": "Self-service password reset deep dive - Microsoft Entra ID | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.accounts/get-azcontext",
+   "labels": [
+    "Prérequis et contexte Azure : suis-je au bon endroit ?",
+    "Get-AzContext"
+   ],
+   "outils": [
+    "azure-contexte",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.accounts/get-azcontext?view=azps-16.4.0",
+   "titre": "Get-AzContext (Az.Accounts) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.resources/get-azresourcegroup",
+   "labels": [
+    "Inventaire des abonnements et des groupes de ressources",
+    "Get-AzResourceGroup"
+   ],
+   "outils": [
+    "azure-abonnements-rg",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.resources/get-azresourcegroup?view=azps-16.4.0",
+   "titre": "Get-AzResourceGroup (Az.Resources) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.accounts/get-azsubscription",
+   "labels": [
+    "Get-AzSubscription"
+   ],
+   "outils": [
+    "azure-abonnements-rg",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.accounts/get-azsubscription?view=azps-16.4.0",
+   "titre": "Get-AzSubscription (Az.Accounts) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.resources/get-azresource",
+   "labels": [
+    "Get-AzResource"
+   ],
+   "outils": [
+    "azure-abonnements-rg",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.resources/get-azresource?view=azps-16.4.0",
+   "titre": "Get-AzResource (Az.Resources) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/azure-resource-manager/management/overview",
+   "labels": [
+    "Organiser les ressources avec les groupes de ressources et les étiquettes"
+   ],
+   "outils": [
+    "azure-abonnements-rg"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/overview",
+   "titre": "What is Azure Resource Manager? - Azure Resource Manager | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.resources/get-azroleassignment",
+   "labels": [
+    "Affectations de rôles Azure (RBAC) et diagnostic des accès",
+    "Get-AzRoleAssignment"
+   ],
+   "outils": [
+    "azure-rbac",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.resources/get-azroleassignment?view=azps-16.4.0",
+   "titre": "Get-AzRoleAssignment (Az.Resources) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/role-based-access-control/overview",
+   "labels": [
+    "Qu’est-ce qu’Azure RBAC ?"
+   ],
+   "outils": [
+    "azure-rbac"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/role-based-access-control/overview",
+   "titre": "What is Azure role-based access control (Azure RBAC)? | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/role-based-access-control/rbac-and-directory-admin-roles",
+   "labels": [
+    "Rôles Entra et rôles Azure RBAC : les différences"
+   ],
+   "outils": [
+    "azure-rbac",
+    "entra-recherche",
+    "entra-roles"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/role-based-access-control/rbac-and-directory-admin-roles",
+   "titre": "Azure roles, Microsoft Entra roles, and classic subscription administrator roles | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/role-based-access-control/built-in-roles",
+   "labels": [
+    "Rôles intégrés Azure"
+   ],
+   "outils": [
+    "azure-rbac"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles",
+   "titre": "Azure built-in roles - Azure RBAC | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mguser",
+   "labels": [
+    "Rechercher des utilisateurs ou des groupes Microsoft Entra",
+    "Get-MgUser"
+   ],
+   "outils": [
+    "entra-recherche"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-1.0",
+   "titre": "Get-MgUser (Microsoft.Graph.Users) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroup",
+   "labels": [
+    "Get-MgGroup"
+   ],
+   "outils": [
+    "entra-recherche"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.groups/get-mggroup?view=graph-powershell-1.0",
+   "titre": "Get-MgGroup (Microsoft.Graph.Groups) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mgusermemberof",
+   "labels": [
+    "Appartenances Entra : groupes d’un utilisateur ou membres d’un groupe",
+    "Get-MgUserMemberOf"
+   ],
+   "outils": [
+    "entra-appartenances"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mgusermemberof?view=graph-powershell-1.0",
+   "titre": "Get-MgUserMemberOf (Microsoft.Graph.Users) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroupmember",
+   "labels": [
+    "Get-MgGroupMember"
+   ],
+   "outils": [
+    "entra-appartenances"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.groups/get-mggroupmember?view=graph-powershell-1.0",
+   "titre": "Get-MgGroupMember (Microsoft.Graph.Groups) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/entra/fundamentals/concept-learn-about-groups",
+   "labels": [
+    "Types de groupes et appartenance dans Microsoft Entra ID"
+   ],
+   "outils": [
+    "entra-appartenances"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/fundamentals/concept-learn-about-groups",
+   "titre": "Learn About Groups, Group Membership, and Access - Microsoft Entra | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole",
+   "labels": [
+    "Rôles Microsoft Entra actifs et permissions nécessaires",
+    "Get-MgDirectoryRole"
+   ],
+   "outils": [
+    "entra-roles"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole?view=graph-powershell-1.0",
+   "titre": "Get-MgDirectoryRole (Microsoft.Graph.Identity.DirectoryManagement) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrolemember",
+   "labels": [
+    "Get-MgDirectoryRoleMember"
+   ],
+   "outils": [
+    "entra-roles"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrolemember?view=graph-powershell-1.0",
+   "titre": "Get-MgDirectoryRoleMember (Microsoft.Graph.Identity.DirectoryManagement) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/entra/identity/role-based-access-control/permissions-reference",
+   "labels": [
+    "Rôles intégrés Microsoft Entra"
+   ],
+   "outils": [
+    "entra-roles"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference",
+   "titre": "Microsoft Entra Built-in Roles - Microsoft Entra ID | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.reports/get-mgreportauthenticationmethoduserregistrationdetail",
+   "labels": [
+    "Enregistrement de l’authentification multifacteur (MFA) : ce qui est lisible",
+    "Get-MgReportAuthenticationMethodUserRegistrationDetail"
+   ],
+   "outils": [
+    "entra-mfa"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.reports/get-mgreportauthenticationmethoduserregistrationdetail?view=graph-powershell-1.0",
+   "titre": "Get-MgReportAuthenticationMethodUserRegistrationDetail (Microsoft.Graph.Reports) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/entra/identity/authentication/concept-mfa-howitworks",
+   "labels": [
+    "Fonctionnement de l’authentification multifacteur Microsoft Entra"
+   ],
+   "outils": [
+    "entra-mfa"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/identity/authentication/concept-mfa-howitworks",
+   "titre": "Microsoft Entra multifactor authentication overview - Microsoft Entra ID | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/entra/identity/authentication/howto-authentication-methods-activity",
+   "labels": [
+    "Rapport d’activité d’inscription aux méthodes d’authentification"
+   ],
+   "outils": [
+    "entra-mfa"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-methods-activity",
+   "titre": "Authentication Methods Activity - Microsoft Entra ID | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/entra/fundamentals/security-defaults",
+   "labels": [
+    "Paramètres de sécurité par défaut"
+   ],
+   "outils": [
+    "entra-mfa"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/entra/fundamentals/security-defaults",
+   "titre": "Configure Security Defaults for Microsoft Entra ID - Microsoft Entra | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.compute/get-azvm",
+   "labels": [
+    "Inventaire des machines virtuelles Azure et de leur état réel",
+    "Get-AzVM",
+    "Configuration, état et éléments de dépannage d’une machine virtuelle"
+   ],
+   "outils": [
+    "azure-vm-inventaire",
+    "azure-vm-etat",
+    "azure-vm-demarrage",
+    "azure-vm-arret",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.compute/get-azvm?view=azps-16.4.0",
+   "titre": "Get-AzVM (Az.Compute) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-machines/states-billing",
+   "labels": [
+    "États et facturation des machines virtuelles Azure",
+    "États et facturation des machines virtuelles"
+   ],
+   "outils": [
+    "azure-vm-inventaire",
+    "azure-vm-demarrage",
+    "azure-vm-arret",
+    "azure-ressources-inutilisees"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-machines/states-billing",
+   "titre": "States and billing status - Azure Virtual Machines | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-machines/sizes/overview",
+   "labels": [
+    "Tailles des machines virtuelles dans Azure"
+   ],
+   "outils": [
+    "azure-vm-inventaire"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview",
+   "titre": "Virtual machine sizes overview - Azure Virtual Machines | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.monitor/get-azactivitylog",
+   "labels": [
+    "Get-AzActivityLog",
+    "Journal d’activité : qui a fait quoi, et ce qui a échoué"
+   ],
+   "outils": [
+    "azure-vm-etat",
+    "azure-journal-activite",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.monitor/get-azactivitylog?view=azps-16.4.0",
+   "titre": "Get-AzActivityLog (Az.Monitor) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-machines/boot-diagnostics",
+   "labels": [
+    "Diagnostics de démarrage"
+   ],
+   "outils": [
+    "azure-vm-etat"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-machines/boot-diagnostics",
+   "titre": "Azure boot diagnostics - Azure Virtual Machines | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-machines/extensions/agent-windows",
+   "labels": [
+    "Agent invité Azure pour Windows"
+   ],
+   "outils": [
+    "azure-vm-etat"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/agent-windows",
+   "titre": "Azure Windows VM Agent overview - Azure Virtual Machines | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.compute/get-azdisk",
+   "labels": [
+    "Diagnostic des disques managés et des interfaces réseau d’une machine",
+    "Get-AzDisk"
+   ],
+   "outils": [
+    "azure-vm-disques-interfaces",
+    "azure-ressources-inutilisees",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.compute/get-azdisk?view=azps-16.4.0",
+   "titre": "Get-AzDisk (Az.Compute) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.network/get-aznetworkinterface",
+   "labels": [
+    "Get-AzNetworkInterface"
+   ],
+   "outils": [
+    "azure-vm-disques-interfaces",
+    "azure-reseau-interfaces-ip",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.network/get-aznetworkinterface?view=azps-16.4.0",
+   "titre": "Get-AzNetworkInterface (Az.Network) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-machines/disks-understand-billing",
+   "labels": [
+    "Comprendre la facturation des disques managés"
+   ],
+   "outils": [
+    "azure-vm-disques-interfaces"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-machines/disks-understand-billing",
+   "titre": "Understand Azure Disk Storage billing - Azure Virtual Machines | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.compute/start-azvm",
+   "labels": [
+    "Démarrer une machine virtuelle Azure (prévisualisation, puis action confirmée)",
+    "Start-AzVM"
+   ],
+   "outils": [
+    "azure-vm-demarrage",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.compute/start-azvm?view=azps-16.4.0",
+   "titre": "Start-AzVM (Az.Compute) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.compute/stop-azvm",
+   "labels": [
+    "Arrêter et désallouer une machine virtuelle Azure (prévisualisation, puis action confirmée)",
+    "Stop-AzVM"
+   ],
+   "outils": [
+    "azure-vm-arret",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.compute/stop-azvm?view=azps-16.4.0",
+   "titre": "Stop-AzVM (Az.Compute) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.network/get-azvirtualnetwork",
+   "labels": [
+    "Réseaux virtuels (VNet) et sous-réseaux : plan d’adressage et diagnostic",
+    "Get-AzVirtualNetwork"
+   ],
+   "outils": [
+    "azure-reseau-vnets",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.network/get-azvirtualnetwork?view=azps-16.4.0",
+   "titre": "Get-AzVirtualNetwork (Az.Network) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-overview",
+   "labels": [
+    "Réseaux virtuels Azure : vue d’ensemble"
+   ],
+   "outils": [
+    "azure-reseau-vnets"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview",
+   "titre": "What is Azure Virtual Network? | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview",
+   "labels": [
+    "Appairage de réseaux virtuels"
+   ],
+   "outils": [
+    "azure-reseau-vnets"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-network/virtual-network-peering-overview",
+   "titre": "Azure Virtual Network Peering | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.network/get-azpublicipaddress",
+   "labels": [
+    "Interfaces réseau et adresses IP (privées et publiques)",
+    "Get-AzPublicIpAddress"
+   ],
+   "outils": [
+    "azure-reseau-interfaces-ip",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.network/get-azpublicipaddress?view=azps-16.4.0",
+   "titre": "Get-AzPublicIpAddress (Az.Network) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-addresses",
+   "labels": [
+    "Adresses IP publiques Azure"
+   ],
+   "outils": [
+    "azure-reseau-interfaces-ip",
+    "azure-ressources-inutilisees"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-addresses",
+   "titre": "Public IP addresses in Azure - Azure Virtual Network | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.network/get-aznetworksecuritygroup",
+   "labels": [
+    "Groupes de sécurité réseau (NSG) : règles et accès administratifs exposés",
+    "Get-AzNetworkSecurityGroup"
+   ],
+   "outils": [
+    "azure-reseau-nsg",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.network/get-aznetworksecuritygroup?view=azps-16.4.0",
+   "titre": "Get-AzNetworkSecurityGroup (Az.Network) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
+   "labels": [
+    "Vue d’ensemble des groupes de sécurité réseau"
+   ],
+   "outils": [
+    "azure-reseau-nsg"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview",
+   "titre": "Azure network security groups overview | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/bastion/bastion-overview",
+   "labels": [
+    "Qu’est-ce qu’Azure Bastion ?"
+   ],
+   "outils": [
+    "azure-reseau-nsg"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/bastion/bastion-overview",
+   "titre": "What is Azure Bastion? | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.privatedns/get-azprivatednszone",
+   "labels": [
+    "DNS Azure et diagnostic de connectivité depuis le poste",
+    "Get-AzPrivateDnsZone"
+   ],
+   "outils": [
+    "azure-reseau-dns",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.privatedns/get-azprivatednszone?view=azps-16.4.0",
+   "titre": "Get-AzPrivateDnsZone (Az.PrivateDns) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.privatedns/get-azprivatednsvirtualnetworklink",
+   "labels": [
+    "Get-AzPrivateDnsVirtualNetworkLink"
+   ],
+   "outils": [
+    "azure-reseau-dns",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.privatedns/get-azprivatednsvirtualnetworklink?view=azps-16.4.0",
+   "titre": "Get-AzPrivateDnsVirtualNetworkLink (Az.PrivateDns) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.dns/get-azdnszone",
+   "labels": [
+    "Get-AzDnsZone"
+   ],
+   "outils": [
+    "azure-reseau-dns",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.dns/get-azdnszone?view=azps-16.4.0",
+   "titre": "Get-AzDnsZone (Az.Dns) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-name-resolution-for-vms-and-role-instances",
+   "labels": [
+    "Résolution de noms pour les ressources des réseaux virtuels Azure"
+   ],
+   "outils": [
+    "azure-reseau-dns"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-name-resolution-for-vms-and-role-instances",
+   "titre": "Azure Virtual Network Name Resolution Guide | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.storage/get-azstorageaccount",
+   "labels": [
+    "Inventaire des comptes de stockage et de leurs réglages de sécurité",
+    "Get-AzStorageAccount"
+   ],
+   "outils": [
+    "azure-stockage-inventaire",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.storage/get-azstorageaccount?view=azps-16.4.0",
+   "titre": "Get-AzStorageAccount (Az.Storage) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/storage/common/storage-account-overview",
+   "labels": [
+    "Vue d’ensemble des comptes de stockage"
+   ],
+   "outils": [
+    "azure-stockage-inventaire"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/storage/common/storage-account-overview",
+   "titre": "Storage Account Overview - Azure Storage | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent",
+   "labels": [
+    "Empêcher l’accès anonyme en lecture aux blobs"
+   ],
+   "outils": [
+    "azure-stockage-inventaire"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-prevent",
+   "titre": "Remediate anonymous read access to blob data (Azure Resource Manager deployments) - Azure Storage | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage",
+   "labels": [
+    "Gérer les clés d’accès d’un compte de stockage (et pourquoi les éviter)"
+   ],
+   "outils": [
+    "azure-stockage-inventaire",
+    "azure-stockage-exposition"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage",
+   "titre": "Manage account access keys - Azure Storage | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.storage/get-azrmstoragecontainer",
+   "labels": [
+    "Exposition et accès d’UN compte de stockage (conteneurs, réseau, protection)",
+    "Get-AzRmStorageContainer"
+   ],
+   "outils": [
+    "azure-stockage-exposition",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.storage/get-azrmstoragecontainer?view=azps-16.4.0",
+   "titre": "Get-AzRmStorageContainer (Az.Storage) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.storage/get-azstorageblobserviceproperty",
+   "labels": [
+    "Get-AzStorageBlobServiceProperty"
+   ],
+   "outils": [
+    "azure-stockage-exposition",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.storage/get-azstorageblobserviceproperty?view=azps-16.4.0",
+   "titre": "Get-AzStorageBlobServiceProperty (Az.Storage) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/storage/blobs/security-recommendations",
+   "labels": [
+    "Aperçu de la sécurité du stockage Azure"
+   ],
+   "outils": [
+    "azure-stockage-exposition"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/storage/blobs/security-recommendations",
+   "titre": "Security Recommendations for Blob Storage - Azure Storage | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupitem",
+   "labels": [
+    "Coffres Recovery Services et état des sauvegardes de machines virtuelles",
+    "Get-AzRecoveryServicesBackupItem"
+   ],
+   "outils": [
+    "azure-sauvegarde-coffres",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupitem?view=azps-16.4.0",
+   "titre": "Get-AzRecoveryServicesBackupItem (Az.RecoveryServices) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesvault",
+   "labels": [
+    "Get-AzRecoveryServicesVault"
+   ],
+   "outils": [
+    "azure-sauvegarde-coffres",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.recoveryservices/get-azrecoveryservicesvault?view=azps-16.4.0",
+   "titre": "Get-AzRecoveryServicesVault (Az.RecoveryServices) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/backup/backup-azure-vms-introduction",
+   "labels": [
+    "Sauvegarde de machines virtuelles Azure : vue d’ensemble"
+   ],
+   "outils": [
+    "azure-sauvegarde-coffres"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-introduction",
+   "titre": "About Azure VM backup - Azure Backup | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/backup/backup-azure-arm-restore-vms",
+   "labels": [
+    "Restaurer une machine virtuelle Azure"
+   ],
+   "outils": [
+    "azure-sauvegarde-coffres",
+    "azure-sauvegarde-restauration"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/backup/backup-azure-arm-restore-vms",
+   "titre": "Restore VMs by using the Azure portal using Azure Backup - Azure Backup | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.recoveryservices/restore-azrecoveryservicesbackupitem",
+   "labels": [
+    "Restaurer les disques d’une machine sauvegardée vers une cible de laboratoire distincte",
+    "Restore-AzRecoveryServicesBackupItem"
+   ],
+   "outils": [
+    "azure-sauvegarde-restauration",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.recoveryservices/restore-azrecoveryservicesbackupitem?view=azps-16.4.0",
+   "titre": "Restore-AzRecoveryServicesBackupItem (Az.RecoveryServices) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackuprecoverypoint",
+   "labels": [
+    "Get-AzRecoveryServicesBackupRecoveryPoint"
+   ],
+   "outils": [
+    "azure-sauvegarde-restauration",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.recoveryservices/get-azrecoveryservicesbackuprecoverypoint?view=azps-16.4.0",
+   "titre": "Get-AzRecoveryServicesBackupRecoveryPoint (Az.RecoveryServices) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/backup/backup-azure-vms-automation",
+   "labels": [
+    "Restaurer des disques de machine virtuelle Azure avec PowerShell"
+   ],
+   "outils": [
+    "azure-sauvegarde-restauration"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-automation",
+   "titre": "Back up and recover Azure VMs with PowerShell - Azure Backup | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/azure-monitor/essentials/activity-log",
+   "labels": [
+    "Journal d’activité Azure"
+   ],
+   "outils": [
+    "azure-journal-activite"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/azure-monitor/fundamentals/activity-log",
+   "titre": "Activity Log in Azure Monitor - Azure Monitor | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/azure-monitor/alerts/alerts-overview",
+   "labels": [
+    "Alertes et paramètres de diagnostic : ce qui est surveillé",
+    "Vue d’ensemble des alertes Azure Monitor"
+   ],
+   "outils": [
+    "azure-alertes-diagnostics"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview",
+   "titre": "Overview of Azure Monitor alerts - Azure Monitor | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.monitor/get-azmetricalertrulev2",
+   "labels": [
+    "Get-AzMetricAlertRuleV2"
+   ],
+   "outils": [
+    "azure-alertes-diagnostics",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.monitor/get-azmetricalertrulev2?view=azps-16.4.0",
+   "titre": "Get-AzMetricAlertRuleV2 (Az.Monitor) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/azure-monitor/alerts/action-groups",
+   "labels": [
+    "Groupes d’actions"
+   ],
+   "outils": [
+    "azure-alertes-diagnostics"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/action-groups",
+   "titre": "Create and manage action groups in Azure Monitor - Azure Monitor | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings",
+   "labels": [
+    "Paramètres de diagnostic"
+   ],
+   "outils": [
+    "azure-alertes-diagnostics"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/diagnostic-settings",
+   "titre": "Diagnostic Settings in Azure Monitor - Azure Monitor | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/cost-management-billing/costs/tutorial-acm-create-budgets",
+   "labels": [
+    "Budgets Azure : lire les alertes de dépense (pas un plafond)",
+    "Créer et gérer des budgets"
+   ],
+   "outils": [
+    "azure-budgets"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-create-budgets",
+   "titre": "Tutorial - Create and manage budgets - Microsoft Cost Management | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.billing/get-azconsumptionbudget",
+   "labels": [
+    "Get-AzConsumptionBudget"
+   ],
+   "outils": [
+    "azure-budgets",
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.billing/get-azconsumptionbudget?view=azps-16.4.0",
+   "titre": "Get-AzConsumptionBudget (Az.Billing) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/azure/cost-management-billing/costs/cost-mgt-best-practices",
+   "labels": [
+    "Optimiser les coûts avec Cost Management",
+    "Ressources de laboratoire potentiellement inutilisées (inventaire)",
+    "Bonnes pratiques Cost Management"
+   ],
+   "outils": [
+    "azure-budgets",
+    "azure-ressources-inutilisees"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/cost-mgt-best-practices",
+   "titre": "Optimize your cloud investment with Cost Management - Microsoft Cost Management | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.compute/get-azsnapshot",
+   "labels": [
+    "Get-AzSnapshot"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.compute/get-azsnapshot?view=azps-16.4.0",
+   "titre": "Get-AzSnapshot (Az.Compute) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupcontainer",
+   "labels": [
+    "Get-AzRecoveryServicesBackupContainer"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupcontainer?view=azps-16.4.0",
+   "titre": "Get-AzRecoveryServicesBackupContainer (Az.RecoveryServices) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.monitor/get-azactivitylogalert",
+   "labels": [
+    "Get-AzActivityLogAlert"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.monitor/get-azactivitylogalert?view=azps-16.4.0",
+   "titre": "Get-AzActivityLogAlert (Az.Monitor) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.monitor/get-azactiongroup",
+   "labels": [
+    "Get-AzActionGroup"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.monitor/get-azactiongroup?view=azps-16.4.0",
+   "titre": "Get-AzActionGroup (Az.Monitor) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/az.monitor/get-azsubscriptiondiagnosticsetting",
+   "labels": [
+    "Get-AzSubscriptionDiagnosticSetting"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/az.monitor/get-azsubscriptiondiagnosticsetting?view=azps-16.4.0",
+   "titre": "Get-AzSubscriptionDiagnosticSetting (Az.Monitor) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/get-mgcontext?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgContext"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.authentication/get-mgcontext?view=graph-powershell-1.0",
+   "titre": "Get-MgContext (Microsoft.Graph.Authentication) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgUser"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-1.0",
+   "titre": "Get-MgUser (Microsoft.Graph.Users) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mgusermemberof?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgUserMemberOf"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mgusermemberof?view=graph-powershell-1.0",
+   "titre": "Get-MgUserMemberOf (Microsoft.Graph.Users) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroup?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgGroup"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.groups/get-mggroup?view=graph-powershell-1.0",
+   "titre": "Get-MgGroup (Microsoft.Graph.Groups) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroupmember?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgGroupMember"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.groups/get-mggroupmember?view=graph-powershell-1.0",
+   "titre": "Get-MgGroupMember (Microsoft.Graph.Groups) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgDirectoryRole"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole?view=graph-powershell-1.0",
+   "titre": "Get-MgDirectoryRole (Microsoft.Graph.Identity.DirectoryManagement) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrolemember?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgDirectoryRoleMember"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrolemember?view=graph-powershell-1.0",
+   "titre": "Get-MgDirectoryRoleMember (Microsoft.Graph.Identity.DirectoryManagement) | Microsoft Learn"
+  },
+  {
+   "url": "https://learn.microsoft.com/powershell/module/microsoft.graph.reports/get-mgreportauthenticationmethoduserregistrationdetail?view=graph-powershell-1.0",
+   "labels": [
+    "Get-MgReportAuthenticationMethodUserRegistrationDetail"
+   ],
+   "outils": [
+    "(inventaire des commandes)"
+   ],
+   "statut": "VÉRIFIÉE",
+   "code": 200,
+   "urlFinale": "https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.reports/get-mgreportauthenticationmethoduserregistrationdetail?view=graph-powershell-1.0",
+   "titre": "Get-MgReportAuthenticationMethodUserRegistrationDetail (Microsoft.Graph.Reports) | Microsoft Learn"
+  }
+ ]
+}

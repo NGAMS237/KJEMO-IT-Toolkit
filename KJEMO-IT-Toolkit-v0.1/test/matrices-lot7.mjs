@@ -30,7 +30,13 @@ const iSortie = args.indexOf('--sortie');
 const SORTIE = iSortie >= 0 ? resolve(args[iSortie + 1]) : ROOT;
 const VERIFIER = args.includes('--verifier');
 
-const { tools } = await import(pathToFileURL(resolve(ROOT, 'dist/generators.mjs')).href);
+const { tools: catalogueComplet } = await import(pathToFileURL(resolve(ROOT, 'dist/generators.mjs')).href);
+// Les matrices LOT 7 sont une photographie du catalogue tel que le LOT 7 l'a
+// livré. Les assistants du LOT 8 (Azure et Entra ID) et de RESEAU-CISCO-01
+// (Réseau et Cisco, commandes IOS) ont leurs propres matrices
+// (test/matrices-lot8.mjs, test/matrices-cisco.mjs) : on les exclut ICI, on ne
+// rafraichit PAS la photographie du LOT 7 pour absorber un autre lot.
+const tools = catalogueComplet.filter((t) => t.category !== 'Azure et Entra ID' && t.category !== 'Réseau et Cisco');
 const { estBash } = await import(pathToFileURL(resolve(ROOT, 'dist/plateforme.mjs')).href);
 const { commandesStockage } = await import(pathToFileURL(resolve(ROOT, 'dist/commandes-stockage.mjs')).href);
 const { commandesPermissions } = await import(pathToFileURL(resolve(ROOT, 'dist/commandes-permissions.mjs')).href);
@@ -68,7 +74,11 @@ const outils = tools.map((t) => ({
 const lot7 = outils.filter((o) => o.plateforme === 'Linux');
 
 // --- Scripts ----------------------------------------------------------------
-const fichiers = readdirSync(GEN).filter((f) => /\.(ps1|sh)$/.test(f)).sort();
+const idsAzure = new Set(catalogueComplet.filter((t) => t.category === 'Azure et Entra ID').map((t) => t.id));
+const fichiers = readdirSync(GEN)
+  .filter((f) => /\.(ps1|sh)$/.test(f))
+  .filter((f) => !idsAzure.has(f.split('__')[0])) // scripts du LOT 8 : matrices du LOT 8
+  .sort();
 const scripts = fichiers.map((f) => {
   const buf = readFileSync(join(GEN, f));
   const ext = f.endsWith('.sh') ? 'sh' : 'ps1';
