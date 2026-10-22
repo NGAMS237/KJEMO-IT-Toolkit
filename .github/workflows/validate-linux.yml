@@ -1,0 +1,586 @@
+# =============================================================================
+# validate-linux.yml — LOT 7 · KJEMO IT Toolkit
+# =============================================================================
+# Workflow réutilisable (workflow_call) : validation de la chaîne Bash.
+#
+# Pourquoi un workflow SÉPARÉ de validate.yml, et non quelques étapes ajoutées
+# à celui-ci : validate.yml tourne sur windows-latest. Bash, ShellCheck et
+# « bash -n » y existent (Git for Windows en fournit une version), mais ce
+# n'est pas le Bash qui exécutera ces scripts. Un script Bash destiné à Ubuntu
+# Server doit être validé sur un Linux, par le Bash de ce Linux. Sinon on
+# valide un interpréteur et on livre pour un autre — l'erreur exacte que le
+# LOT 6 a payée dans l'autre sens, en validant sous PowerShell 7 ce qui devait
+# tourner sous Windows PowerShell 5.1.
+#
+# CE QUE CE WORKFLOW PROUVE
+#   - les modules Linux sont du JavaScript valide ;
+#   - les 936 scripts se génèrent sans erreur, et les 856 .ps1 historiques
+#     restent identiques aux empreintes figées ;
+#   - les 80 .sh sont conformes à l'OCTET : pas de BOM, pas de CR, shebang
+#     exact, une seule fin de ligne finale ;
+#   - shQuote() transporte réellement les valeurs hostiles à travers un vrai
+#     bash, et refuse l'octet nul ;
+#   - « bash -n » accepte les 80 scripts ;
+#   - ShellCheck ne laisse aucune alerte sans origine prouvée.
+#
+# CE QUE CE WORKFLOW NE PROUVE PAS
+#   - il n'exécute AUCUN script sur un vrai serveur : pas de Samba, pas de NFS,
+#     pas de SSH, pas de Netplan appliqué. Un runner GitHub n'est pas un
+#     Ubuntu Server de production, et appliquer la configuration réseau d'un
+#     runner le déconnecterait ;
+#   - il ne remplace pas une recette sur machine réelle. Le rapport du lot dit
+#     explicitement quels niveaux de preuve sont atteints et lesquels ne le
+#     sont pas.
+#
+# Aucune continue-on-error, aucun `if` permissif : si une étape échoue, le
+# workflow échoue, et le déploiement Pages ne démarre pas.
+#
+# Contrainte : ne fusionner dans main et ne déployer qu'avec l'autorisation
+# explicite de Blaise ou du chef d'orchestre.
+# =============================================================================
+
+name: Validate Linux — LOT 7 (réutilisable)
+
+on:
+  workflow_call:
+    outputs:
+      status:
+        description: "OK ou FAIL"
+        value: ${{ jobs.validate-linux.outputs.status }}
+
+jobs:
+  validate-linux:
+    name: Chaîne Bash — hygiène octet, shQuote, bash -n, ShellCheck
+    # Playwright 1.44.1 declare les dependances Ubuntu 22.04.
+    # Figer cette image evite la migration implicite de ubuntu-latest.
+    runs-on: ubuntu-22.04
+    outputs:
+      status: ${{ steps.set-status.outputs.status }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # -----------------------------------------------------------------------
+      # 2. Node.js 20
+      #
+      # Note de dette : GitHub Actions signale que Node.js 20 approche sa fin
+      # de support pour les actions. Cette dette est consignée dans le rapport
+      # du LOT 7 et n'est PAS traitée ici : changer la version du moteur en
+      # même temps qu'on ajoute une validation rendrait illisible la cause d'un
+      # éventuel échec.
+      # -----------------------------------------------------------------------
+      - name: Configurer Node.js 20
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Installer les dépendances Node.js
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: npm ci
+
+      # -----------------------------------------------------------------------
+      # 3. ShellCheck — version affichée, et absence = échec
+      #
+      # Si ShellCheck manquait et que l'étape se contentait de passer, cette
+      # validation serait verte sans avoir rien analysé. Le banc refuse de
+      # tourner sans lui ; cette étape le dit tôt et clairement.
+      # -----------------------------------------------------------------------
+      - name: Installer ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      - name: Afficher la version de bash
+        run: bash --version
+
+      # -----------------------------------------------------------------------
+      # 4. Syntaxe des modules Linux
+      # -----------------------------------------------------------------------
+      - name: Vérification syntaxe Node.js (modules Linux)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: |
+          for f in dist/plateforme.mjs dist/noyau-bash.mjs dist/gardes-bash.mjs \
+                   dist/validateurs-linux.mjs dist/sources-linux.mjs \
+                   dist/commandes-rapides.mjs dist/commandes-stockage.mjs \
+                   dist/commandes-permissions.mjs dist/commandes-services.mjs \
+                   dist/outils-linux.mjs dist/outils-linux-b.mjs \
+                   dist/outils-linux-c.mjs dist/outils-linux-d.mjs \
+                   dist/outils-linux-e.mjs dist/outils-linux-f.mjs \
+                   dist/outils-linux-g.mjs dist/outils-linux-h.mjs \
+                   dist/generators.mjs dist/app.js; do
+            node --check "$f"
+            echo "  node --check OK : $f"
+          done
+
+      # -----------------------------------------------------------------------
+      # 5. Génération — 856 .ps1 + 80 .sh, et non-régression des 856
+      # -----------------------------------------------------------------------
+      - name: Générer les scripts (.ps1 + .sh)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/generate-ps1.mjs
+
+      # -----------------------------------------------------------------------
+      # 5 bis. Non-régression des 856 scripts PowerShell historiques
+      #
+      # La baseline a vécu dans /tmp pendant six commits : la non-régression la
+      # plus importante du dépôt dépendait d'un fichier temporaire de session.
+      # Elle est maintenant versionnée, et comparée ici.
+      #
+      # Oui, ce contrôle porte sur des .ps1 et tourne dans le workflow Linux.
+      # C'est voulu : la génération est la même des deux côtés, et un lot
+      # Linux qui casserait un script Windows doit l'apprendre dans SON
+      # workflow, pas seulement dans l'autre. Il tourne aussi côté Windows.
+      # -----------------------------------------------------------------------
+      - name: Non-régression des 856 scripts PowerShell
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/baseline-856.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 6. Hygiène à l'octet — les deux règles opposées
+      #
+      # .ps1 : BOM UTF-8 obligatoire.  .sh : BOM interdit, LF strict, shebang
+      # exact. Le même banc vérifie les deux, et refuse l'inverse de chacune.
+      # -----------------------------------------------------------------------
+      - name: Hygiène des scripts .sh et .ps1 (niveau octet)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sh-hygiene.test.mjs
+
+      - name: BOM UTF-8 des scripts .ps1
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/check-ps1-bom.mjs
+
+      # -----------------------------------------------------------------------
+      # 7. shQuote — transport réel à travers bash, comparaison sur les octets
+      # -----------------------------------------------------------------------
+      - name: Transport des valeurs par shQuote (bash réel)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/shquote.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 8. bash -n sur les 80 scripts
+      #
+      # Niveau de preuve : analyse syntaxique. « bash -n » ne détecte pas une
+      # vérification vide, ni un format dpkg invalide — ce lot en a fait
+      # l'expérience sur les deux. Elle reste nécessaire, pas suffisante.
+      # -----------------------------------------------------------------------
+      - name: Analyse syntaxique bash -n
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: |
+          echecs=0
+          total=0
+          for f in test/generated/*.sh; do
+            total=$((total + 1))
+            if ! bash -n "$f"; then
+              echo "[bash -n ECHEC] $f"
+              echecs=$((echecs + 1))
+            fi
+          done
+          echo "bash -n : $total script(s), $echecs echec(s)"
+          if [ "$total" -eq 0 ]; then
+            echo "ECHEC : aucun script .sh analyse — la generation n a rien produit."
+            exit 1
+          fi
+          if [ "$echecs" -ne 0 ]; then
+            exit 1
+          fi
+
+      # -----------------------------------------------------------------------
+      # 9. ShellCheck — chaque alerte doit avoir une origine prouvée
+      # -----------------------------------------------------------------------
+      - name: Porte ShellCheck (attribution de chaque alerte)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sh-shellcheck.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10. Identité des fiches — règles multiplateformes comprises
+      # -----------------------------------------------------------------------
+      - name: Tests d'identité (fiches, sources, verrous déclarés)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/identity.test.mjs
+
+      - name: Sources citées — contrôle de forme (hors ligne)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/sources-microsoft.mjs --hors-ligne
+
+      # -----------------------------------------------------------------------
+      # 9 bis. Scanner de surete des scripts Bash
+      #
+      # Trente-et-une familles de commandes dangereuses, cherchees dans le CODE
+      # REELLEMENT EXECUTE. Toute occurrence non couverte par une exception
+      # ecrite et justifiee fait echouer le workflow — et toute exception qui
+      # ne sert plus aussi.
+      # -----------------------------------------------------------------------
+      - name: Scanner de sûreté des scripts Bash
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/scanner-bash.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 ter. Banc Linux a mouchards
+      #
+      # Les assistants modifiants sont EXECUTES, dans un bac a sable, avec les
+      # commandes modifiantes remplacees par des doublures qui journalisent
+      # leur nom, leurs arguments et leur ordre. On compte les appels et on
+      # mesure les fichiers reellement ecrits.
+      #
+      # Aucun vrai `mkfs`, aucun vrai `systemctl`, aucun vrai disque : les
+      # commandes surveillees sont toutes doublees, et le banc verifie d'abord que
+      # chaque doublure fonctionne — un mouchard muet rendrait tout vert.
+      # -----------------------------------------------------------------------
+      - name: Banc Linux à mouchards (exécution réelle, doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/mouchards-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 quater. Banc du stockage — verrous de partitionnement et de fstab
+      #
+      # Ce banc tourne en ROOT, et ce n'est pas un raccourci. Deux tests du
+      # script eprouve ne peuvent pas etre doubles par le PATH, parce que ce ne
+      # sont pas des commandes : « [ -b ] » est une primitive du shell, et
+      # l'assistant exige root et sort sinon. Le banc cree donc deux faux
+      # noeuds de peripherique avec mknod, et sans root il ECHOUE au lieu de se
+      # declarer ignore — sa preuve centrale est que sfdisk et mkfs sont
+      # inatteignables sans confirmation, et un lot ou cette preuve ne tourne
+      # pas ne doit pas etre vert.
+      #
+      # Aucun vrai disque n'est touche : sfdisk, mkfs, wipefs, mount et les
+      # autres sont des doublures, et /etc/fstab est redirige vers le bac.
+      # -----------------------------------------------------------------------
+      - name: Banc du stockage (racine requise, doublures, faux périphériques)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/stockage-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 quinquies. Banc des quotas — sept scenarios de verrou
+      #
+      # Comme le banc du stockage : tourne en ROOT, parce que les deux
+      # assistants exigent root et sortent sinon. Aucun vrai quotaon, aucun
+      # systeme de fichiers reellement equipe, aucun /etc/fstab reel touche.
+      # -----------------------------------------------------------------------
+      - name: Banc des quotas (racine requise, doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/quotas-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 sexies. Banc du RAID — neuf scenarios, dont deux controles positifs
+      #
+      # Comme les deux bancs precedents : tourne en ROOT, parce que
+      # linux-raid1-create exige root et sort sinon, et parce que « [ -b ] »
+      # est une primitive du shell qu'aucun mouchard ne peut doubler — le banc
+      # cree cinq faux noeuds avec mknod.
+      #
+      # Ce qu'il prouve : confirmation absente, membre monte, membre porteur
+      # d'une signature, doublon de disque et spare confondu avec un membre
+      # donnent chacun ZERO `mdadm --create` et ZERO mkfs ; mkfs recoit
+      # /dev/mdX et jamais un membre ; l'ordre fail, remove, add est tenu avec
+      # une relecture apres CHAQUE commande ; et une relecture muette bloque
+      # la suite au lieu de la poursuivre.
+      #
+      # Aucun vrai ensemble RAID n'est cree : mdadm, mkfs, blkid, wipefs,
+      # lsblk, findmnt et mount sont des doublures, et fstab est redirige vers
+      # le bac.
+      # -----------------------------------------------------------------------
+      - name: Banc du RAID (racine requise, doublures, faux périphériques)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/raid-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 9 septies. Banc des permissions, des ACL et des comptes
+      #
+      # Tourne en ROOT, pour deux raisons : trois des quatre assistants exigent
+      # root et sortent sinon, et le banc cree des fichiers appartenant a
+      # d'autres comptes ainsi qu'un binaire setuid.
+      #
+      # Particularite de ce banc : chmod et chown sont doubles PUIS delegues
+      # aux vraies commandes, sur une arborescence jetable du bac. L'appel est
+      # enregistre ET l'effet a lieu, ce qui permet a la relecture par `stat` de
+      # dire la verite — et donc de prouver qu'elle n'est pas decorative.
+      #
+      # Ce qu'il prouve : confirmation absente, recursion sur une racine
+      # systeme, binaire setuid dans l'arborescence, proprietaire inconnu ou
+      # d'UID 0, releve de restauration impossible donnent chacun ZERO chmod et
+      # ZERO chown ; chown precede chmod ; les dossiers et les fichiers
+      # recoivent deux modes distincts, sans aucun chmod -R ; le masque d'une
+      # ACL est relu et l'ecart annonce ; et le script de creation de compte ne
+      # contient aucun mot de passe, ni commande qui en poserait un.
+      # -----------------------------------------------------------------------
+      - name: Banc des permissions, des ACL et des comptes (racine requise)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/permissions-linux.test.mjs
+        env:
+          # Sur le runner, chown doit marcher : son absence est un ECHEC, pas un NON EXECUTE.
+          KJEMO_CAPACITES_REQUISES: '1'
+
+      # -----------------------------------------------------------------------
+      # 9 octies. Banc des services, des paquets et de l'heure
+      #
+      # root est requis pour eprouver le controle positif des services et
+      # hwclock --show. Les commandes restent des doublures journalisees ;
+      # les gardes du produit ne sont pas contournees.
+      #
+      # Sa preuve centrale est une absence, et une absence se mesure : pour
+      # chacun des trois diagnostics, ZERO appel modifiant. Zero start, stop,
+      # restart, enable ou disable ; zero « apt-get install » sans le « -s » de
+      # simulation ; zero remove, purge, autoremove, upgrade ni meme update ;
+      # zero set-time, set-timezone ou set-ntp ; et hwclock uniquement avec
+      # --show. « Cet assistant est un diagnostic » est une intention — ces
+      # comptes en font un fait.
+      #
+      # Pour l'assistant qui agit : confirmation absente, unite inconnue, arret
+      # de SSH depuis une session SSH, verbe interdit injecte a la main donnent
+      # chacun zero action ; l'etat est lu avant, relu apres, et un ecart
+      # arrete le script en affichant le journal de l'unite.
+      # -----------------------------------------------------------------------
+      - name: Banc des services, des paquets et de l'heure (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/services-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 ter. Le banc du reseau, de Netplan, du DNS et du pare-feu
+      #
+      # Les trois diagnostics n'appellent AUCUNE commande modifiante : aucun
+      # « ip ... add/del/set/flush », aucun « ufw allow/deny/enable/reset »,
+      # aucun « nft add/delete/flush/-f », aucun « resolvectl flush-caches ».
+      # Ce ne sont pas des intentions mais des comptes mesures dans le journal
+      # des doublures.
+      #
+      # Pour Netplan : « netplan apply » est cherche dans le CODE NU —
+      # commentaires et chaines retires, pour ne pas accuser les commentaires
+      # qui expliquent justement pourquoi on ne l'emploie pas — et dans le
+      # journal, sur les huit jeux de donnees. La validation se fait sur une
+      # COPIE avec « netplan generate --root-dir », et sans confirmation aucun
+      # fichier n'est laisse sur le disque.
+      # -----------------------------------------------------------------------
+      - name: Banc du reseau, de Netplan, du DNS et du pare-feu (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/reseau-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 quater. Le banc de SSH
+      #
+      # Les trois outils en lecture n'appellent AUCUNE commande modifiante, et
+      # le quatrieme n'ecrit un fichier que si les SEPT conditions de sa porte
+      # finale sont reunies : configuration lue, ligne Include presente,
+      # durcissement demande, second acces administrateur PROUVE par le script,
+      # fichier prepare, « sshd -t » accepte, confirmation exacte. Il manque une
+      # condition, il ne reste aucun fichier.
+      #
+      # La preuve qui compte le plus : un faux fichier de cle privee portant un
+      # MARQUEUR unique est pose dans le bac, et le marqueur doit etre absent de
+      # la sortie comme du rapport JSON. Aucune cle privee n'est lue, affichee
+      # ni copiee, et c'est mesure plutot que promis.
+      #
+      # Ce banc a besoin du VRAI sshd : « sshd -T » et « sshd -t » tournent
+      # reellement. Sans openssh-server, il ECHOUE en annoncant NON EXECUTE —
+      # il ne se declare jamais vert sans avoir rien prouve.
+      # -----------------------------------------------------------------------
+      - name: Installer openssh-server pour le banc SSH
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq openssh-server openssh-client
+          sudo mkdir -p /run/sshd
+
+      - name: Banc de SSH (doublures, et le vrai sshd pour -T et -t)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/ssh-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 quinquies. Le banc de Cockpit
+      #
+      # Les deux assistants sont en lecture : zero paquet installe, zero unite
+      # demarree ou activee, zero port ouvert, zero certificat touche.
+      #
+      # La preuve centrale : ni « -k » ni « --insecure » ni aucune requete HTTP
+      # dans le code nu, sur chacun des jeux. Un avertissement de certificat
+      # autosigne est le comportement ATTENDU, et le « reparer » en desactivant
+      # la verification est la seule erreur vraiment grave de ce sujet.
+      #
+      # Le cas du cours est joue : socket actif, ecoute sur le BOUCLAGE. Le
+      # rapport doit nommer l'adresse d'ecoute et disculper le pare-feu — c'est
+      # la que le banc a trouve un defaut reel, un motif cherche dans la ligne
+      # entiere de « ss » accusant la colonne du PAIR.
+      # -----------------------------------------------------------------------
+      - name: Banc de Cockpit (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cockpit-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 sexies. Le banc du partage Samba
+      #
+      # /etc/samba/smb.conf est REDIRIGE vers le bac en reecrivant la seule
+      # ligne KJEMO_SMBCONF du script genere ; si la substitution ne
+      # s'applique pas, le banc ECHOUE — sans quoi il ecrirait dans le vrai
+      # fichier.
+      #
+      # testparm est le VRAI binaire : une doublure ne prouverait que la
+      # doublure. C'est lui qui a montre le defaut corrige dans ce commit —
+      # une directive mal orthographiee le fait sortir en 0 en ecrivant
+      # « Unknown parameter encountered », et un assistant qui se fierait au
+      # seul code de sortie installerait une configuration dont un reglage est
+      # ignore en silence.
+      #
+      # Le banc prouve aussi le retour arriere : quand la relecture echoue
+      # apres ecriture, la sauvegarde est RESTAUREE et aucun service n'est
+      # recharge. Et sans confirmation, il n'y a meme pas de .bak.
+      # -----------------------------------------------------------------------
+      - name: Installer samba-common-bin pour le banc Samba
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq samba-common-bin
+
+      - name: Banc du partage Samba (doublures, et le vrai testparm)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/samba-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 septies. Le banc de Samba AD
+      #
+      # DEUX redirections, chacune avec son garde-fou : KJEMO_SMBCONF pour
+      # /etc/samba/smb.conf, et KJEMO_PRIV1 pour /var/lib/samba/private. La
+      # seconde permet d'eprouver « un domaine existe deja » sans fabriquer un
+      # faux domaine sur la machine. Si une substitution ne s'applique pas, le
+      # banc ECHOUE.
+      #
+      # LA PREUVE CENTRALE : aucun des quatre assistants n'appelle samba-tool
+      # pour AGIR. Mesure dans le journal des doublures et dans le code nu :
+      # pas de domain provision, pas de user create, pas de setpassword, pas de
+      # getpassword, pas de syncpasswords, pas de user delete, pas de kinit, et
+      # aucune option de mot de passe.
+      #
+      # Le controle anti-secret du cahier de manoeuvre a sa contre-epreuve : on
+      # injecte une option de mot de passe dans le fichier prepare, et la
+      # remise doit etre annulee. Le banc a d'ailleurs trouve que la premiere
+      # version de ce controle accusait les COMMENTAIRES qui expliquent
+      # pourquoi --adminpass est refuse — le meme defaut qu'au commit 18/n pour
+      # « netplan apply ».
+      # -----------------------------------------------------------------------
+      - name: Banc de Samba AD (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/samba-ad-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 octies. Le banc de NFS
+      #
+      # /etc/exports est REDIRIGE vers le bac en reecrivant la seule ligne
+      # KJEMO_EXPORTS='/etc/exports' du script genere. Si la substitution ne
+      # s'applique pas, le banc ECHOUE : sans ce garde-fou il ecrirait dans le
+      # vrai fichier du coureur.
+      #
+      # IL N'Y A PAS DE VRAI BINAIRE A UTILISER ICI, ET C'EST LE SUJET. Le banc
+      # Samba se sert du VRAI testparm parce que testparm valide un fichier
+      # quelconque sans rien appliquer. NFS n'a pas d'equivalent : exportfs(8)
+      # pour Ubuntu 24.04 n'offre aucune option d'essai a blanc, et « -r »
+      # applique ET retire les entrees disparues du fichier. exportfs n'est
+      # donc present ici que comme DOUBLURE, et son journal sert a prouver que
+      # l'assistant ne l'appelle jamais pour agir.
+      #
+      # LA PREUVE CENTRALE : l'assistant ecrit la ligne, la relit, et n'applique
+      # pas. Zero appel a exportfs avec -r, -a, -u ou -o, dans les huit passes.
+      #
+      # Et la contre-epreuve du verrou : la ligne construite est trafiquee dans
+      # le script genere — « * », no_root_squash, /0, root_squash retire — et
+      # le script doit refuser d'ecrire alors meme que le formulaire a laisse
+      # passer. Un verrou qui ne se verifie qu'une fois est un verrou qu'on
+      # retire sans s'en apercevoir.
+      #
+      # Ce banc demande root : nfs-export-create s'arrete sans lui, et un banc
+      # qui ne mesurerait que huit refus de privileges se declarerait vert
+      # sans rien avoir eprouve. Il annonce NON EXECUTE plutot que de le faire.
+      # -----------------------------------------------------------------------
+      - name: Banc de NFS (doublures, aucune application)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/nfs-linux.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 bis. Le contrat des commandes rapides
+      #
+      # Neuf obligations par commande, dont celle qui compte le plus : aucun
+      # commentaire dans le bloc copiable. Un « # » colle dans un terminal ne
+      # se comporte pas toujours en commentaire, et une commande copiee sur
+      # une seule ligne perd tout ce qui le suit.
+      # -----------------------------------------------------------------------
+      - name: Contrat des commandes rapides
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/commandes-rapides.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
+      #
+      # Les scenarios positifs demandent root (sonde chown, Netplan et
+      # assistants proteges) ; les commandes surveillees restent doublees.
+      # Sequentiels, bloquants, sans continue-on-error. Chaque banc de
+      # contre-epreuves prouve que son banc devient ROUGE quand un verrou du
+      # produit saute. Ubuntu Server reel : NON EXECUTE (ces bancs tournent sur
+      # un runner ubuntu-latest avec des doublures, pas sur un serveur reel).
+      # -----------------------------------------------------------------------
+      - name: Sonde des capacites (chown, mknod) et sa contre-epreuve
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/capacites-linux.test.mjs
+
+      - name: Dette 6B - selecteur Format du rapport (detection sans modification)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/dette-6b-format.test.mjs
+
+      - name: Netplan v2 - passerelle et fichier cloud-init (refus, positif, contre-epreuve)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/netplan-v2.test.mjs
+
+      - name: Bancs negatifs LOT 7 (19 familles, refus + positif + contre-epreuve)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/negatifs-lot7.test.mjs
+
+      - name: Contre-epreuves du banc negatif (12 pannes produit)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: sudo -E env "PATH=$PATH" node test/negatifs-lot7-contre-epreuves.test.mjs
+
+      - name: Installer Chromium (Playwright)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: npx playwright install chromium --with-deps
+
+      - name: Navigateur - identite des 153 outils (Linux visible, Bash)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-identity.test.mjs
+
+      - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-lot7.test.mjs
+
+      - name: Contre-epreuves du banc navigateur LOT 7 (16 mutations)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-lot7-contre-epreuves.test.mjs
+
+      - name: Matrices et catalogue du LOT 7 (aucune derive)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrices-lot7.mjs --verifier
+
+      # -----------------------------------------------------------------------
+      # 11. Les workflows eux-mêmes
+      #
+      # Ce banc lit les fichiers YAML et prouve que la validation Linux est
+      # réellement branchée : sur push, sur pull_request, et comme dépendance
+      # du déploiement Pages. Sans lui, « le CI Linux est bloquant » serait une
+      # affirmation sur une intention.
+      # -----------------------------------------------------------------------
+      - name: Le CI Linux est-il réellement bloquant ?
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/ci-workflows.test.mjs
+
+      # -----------------------------------------------------------------------
+      # 12. Artefacts
+      # -----------------------------------------------------------------------
+      - name: Publier les scripts générés
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sh-generated-${{ github.sha }}
+          path: KJEMO-IT-Toolkit-v0.1/test/generated/
+          retention-days: 14
+
+      - name: Définir le statut de sortie
+        id: set-status
+        if: always()
+        run: echo "status=${{ job.status }}" >> $GITHUB_OUTPUT

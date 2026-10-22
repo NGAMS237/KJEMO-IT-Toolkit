@@ -134,6 +134,14 @@ import {
 } from '../dist/rapport-ps.mjs';
 
 import { psB64 as psB64Noyau, assertValid as assertValidNoyau } from '../dist/noyau.mjs';
+// LOT 7 — la plateforme d'un outil et la validite de ses sources.
+import { plateformeDe, sortieDe, estBash, estLectureSeule, extensionDe,
+         nomFichierDe, etiquetteSortie, commandesExecution,
+         incoherencesPlateforme, incoherencesPrivileges,
+         PRIVILEGES_REQUIS, privilegesRequisDe,
+         CHAMPS_LINUX } from '../dist/plateforme.mjs';
+import { sourceLinuxValide, editeurDe, PREFIXES_SOURCES_LINUX } from '../dist/sources-linux.mjs';
+import { SOUS_RUBRIQUES_LINUX } from '../dist/categories.mjs';
 
 // ---------------------------------------------------------------------------
 // Comptage
@@ -700,17 +708,125 @@ for (const t of tools) {
     `${t.id} : aucun texte vide ni marqueur TODO`,
   );
 
-  // La source officielle reste un lien Microsoft Learn
-  assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
-    `${t.id} : source officielle Microsoft Learn`);
+  // ------------------------------------------------------------------------
+  // LA SOURCE DOIT ÊTRE PRIMAIRE POUR SA PLATEFORME
+  //
+  // La règle était « la source commence par https://learn.microsoft.com/ ».
+  // Elle n'était pas trop permissive : elle était MONOPLATEFORME. Un outil
+  // Linux ne peut pas citer Microsoft Learn pour documenter sshd_config, et
+  // l'y contraindre produirait soit une source hors sujet, soit une exception
+  // générale — c'est-à-dire plus de règle du tout.
+  //
+  // La règle devient donc : la source doit être primaire POUR SA PLATEFORME.
+  // Windows garde Microsoft Learn, strictement. Linux doit citer l'un des
+  // éditeurs primaires énumérés et justifiés dans dist/sources-linux.mjs :
+  // les gens qui écrivent le logiciel ou maintiennent la distribution. Aucun
+  // blogue, aucun forum, aucun agrégateur de recettes.
+  //
+  // Elle est plus précise que l'ancienne, et au moins aussi protectrice : un
+  // outil Windows citant une manpage Ubuntu est désormais refusé, ce que
+  // l'ancienne règle attrapait aussi, mais un outil Linux citant un blogue est
+  // refusé également, ce qu'elle ne pouvait pas faire puisqu'elle n'envisageait
+  // pas Linux.
+  // ------------------------------------------------------------------------
+  if (plateformeDe(t) === 'Linux') {
+    assert(sourceLinuxValide(t.source),
+      `${t.id} : source primaire Linux reconnue (${editeurDe(t.source) ?? 'éditeur NON reconnu : ' + t.source})`);
+    for (const so of t.sources) {
+      assert(sourceLinuxValide(so.url),
+        `${t.id} : source « ${so.label} » vient d\u2019un éditeur primaire`);
+    }
+    assert(!/^https:\/\/learn\.microsoft\.com\//.test(t.source),
+      `${t.id} : un outil Linux ne cite pas Microsoft Learn comme source principale`);
+  } else {
+    assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
+      `${t.id} : source officielle Microsoft Learn`);
+    assert(!sourceLinuxValide(t.source),
+      `${t.id} : un outil Windows ne cite pas une manpage Linux comme source principale`);
+  }
 }
 
-// Cohérence risque / élévation : un outil ATTENTION ou DESTRUCTIF exige l'admin
+// ---------------------------------------------------------------------------
+// RISQUE, CONFIRMATION, ÉLÉVATION : TROIS NOTIONS, TROIS RÈGLES
+//
+// L'ancienne règle disait, pour TOUS les outils :
+//
+//     risque « caution » ou « destructive » hors AD/GPO  ⇒  requiresAdmin
+//
+// Elle confondait le risque et l'élévation, et elle a produit un vrai défaut :
+// `bash-backup-directory` déclarait `requiresAdmin: true` alors que sa propre
+// fiche écrivait « aucun [privilège] si la source et la destination sont
+// lisibles et inscriptibles par la session ». La fiche avait été rendue
+// incohérente POUR SATISFAIRE la règle.
+//
+// Sous Windows, l'implication tient : modifier l'état de la machine y demande
+// presque toujours l'admin. La règle Windows est donc conservée TELLE QUELLE —
+// aucun affaiblissement.
+//
+// Sous Linux, elle est fausse : écrire dans un dossier qu'on possède ne
+// demande pas root. L'élévation y est donc déclarée explicitement, par
+// `privilegesRequis`, et c'est la COHÉRENCE entre les deux champs qui est
+// vérifiée — pas une implication tirée du risque.
+//
+// Ce qui protège un outil Linux risqué n'est pas sudo, c'est son verrou de
+// confirmation : il est vérifié ailleurs, dans le SCRIPT GÉNÉRÉ, par la règle
+// qui y exige KJEMO_CONFIRMATION_OK=0, KJEMO_AGIR et « AUCUNE ECRITURE ».
+// ---------------------------------------------------------------------------
 for (const t of tools) {
+  if (plateformeDe(t) === 'Linux') continue;
   if (RISQUES_ADMIN.includes(t.risk) && t.category !== 'Active Directory' && t.category !== 'GPO') {
     assert(t.requiresAdmin === true,
       `${t.id} : risque « ${t.risk} » hors AD/GPO ⇒ requiresAdmin = true`);
   }
+}
+
+// Côté Linux : l'élévation est déclarée, et elle doit concorder.
+for (const t of tools) {
+  if (plateformeDe(t) !== 'Linux') continue;
+  const pr = privilegesRequisDe(t);
+  assert(PRIVILEGES_REQUIS.includes(pr),
+    `${t.id} : privilegesRequis déclaré parmi ${PRIVILEGES_REQUIS.join(', ')} (${pr})`);
+  const pb = incoherencesPrivileges(t);
+  assert(pb.length === 0,
+    `${t.id} : risque, confirmation et élévation ne se contredisent pas (${pb.join(' | ')})`);
+}
+
+// Contre-épreuve de la règle ci-dessus. Une règle de cohérence qu'on n'a
+// jamais vue refuser une incohérence ne prouve rien : les quatre cas fautifs
+// sont soumis à la fonction, et elle doit les voir.
+{
+  const basePropre = { requiresAdmin: false, privileges: 'aucun', privilegesRequis: 'aucun', readOnly: true };
+  assert(incoherencesPrivileges(basePropre).length === 0,
+    'contre-épreuve privilèges : une déclaration cohérente est acceptée');
+  assert(incoherencesPrivileges({ ...basePropre, privilegesRequis: undefined }).length > 0,
+    'contre-épreuve privilèges : privilegesRequis absent est refusé');
+  assert(incoherencesPrivileges({ ...basePropre, privilegesRequis: 'sudo' }).length > 0,
+    'contre-épreuve privilèges : une valeur hors énumération est refusée');
+  assert(incoherencesPrivileges({ ...basePropre, requiresAdmin: true }).length > 0,
+    'contre-épreuve privilèges : requiresAdmin sans privilegesRequis=root est refusé — '
+    + 'c’est exactement le défaut de bash-backup-directory');
+  assert(incoherencesPrivileges({ ...basePropre, requiresAdmin: true, privilegesRequis: 'root' }).length > 0,
+    'contre-épreuve privilèges : lecture seule exigeant root en totalité est refusée');
+  assert(incoherencesPrivileges({
+    requiresAdmin: false, privileges: 'root obligatoire', privilegesRequis: 'aucun', readOnly: false,
+  }).length > 0,
+    'contre-épreuve privilèges : la phrase qui dit « root » contre une énumération « aucun » est refusée');
+  assert(incoherencesPrivileges({
+    requiresAdmin: true, privileges: 'aucun si le dossier est à vous', privilegesRequis: 'root', readOnly: false,
+  }).length > 0,
+    'contre-épreuve privilèges : la phrase qui dit « aucun » contre une énumération « root » est refusée');
+  // Et « root-partiel » ne doit PAS entraîner requiresAdmin : élever tout le
+  // script parce qu'une seule vérification en a besoin est le défaut inverse.
+  assert(incoherencesPrivileges({
+    requiresAdmin: false, privileges: 'aucun pour l’essentiel ; root pour dmidecode',
+    privilegesRequis: 'root-partiel', readOnly: true,
+  }).length === 0,
+    'contre-épreuve privilèges : root-partiel sans requiresAdmin est accepté');
+  assert(incoherencesPrivileges({
+    requiresAdmin: true, privileges: 'aucun pour l’essentiel ; root pour dmidecode',
+    privilegesRequis: 'root-partiel', readOnly: true,
+  }).length > 0,
+    'contre-épreuve privilèges : root-partiel AVEC requiresAdmin est refusé');
 }
 
 section('LOT 1 — bloc commun EXECUTION_NOTES');
@@ -885,7 +1001,34 @@ for (const t of tools) {
 //
 // Aucun autre outil n'y a droit : toute addition a cette liste doit etre
 // justifiee dans le rapport du lot qui l'introduit.
-const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'process-hung', 'temp-cleanup'];
+// linux-disk-partition-mount — ajoute par le LOT 7, commit 13/n.
+//   mkfs n a pas d annulation. Aucune option, aucun outil et aucune
+//   manipulation ne redonne un systeme de fichiers formate : seule une
+//   sauvegarde des DONNEES faite avant le rend, et l assistant ne peut pas la
+//   faire a la place de l operateur. Ce qui s annule — la ligne de /etc/fstab
+//   et le montage — est decrit dans rollback.command, et la table de
+//   partitions precedente est restaurable depuis le fichier sfdisk --dump que
+//   l assistant ecrit et relit. Declarer l assistant reversible laisserait
+//   croire qu une commande defait le formatage. Elle n existe pas.
+// linux-raid1-create — ajoute par le LOT 7, commit 15/n.
+//   La creation d un RAID 1 ecrit un superbloc mdadm sur CHAQUE membre, puis
+//   l assistant formate l ensemble. Les deux actes sont sans retour : les
+//   donnees qui se trouvaient sur ces disques ne sont plus la, et aucune
+//   commande ne les ramene. Ce qui s annule — arreter l ensemble, retirer la
+//   ligne de /etc/fstab, effacer les superblocs pour rendre les disques
+//   reutilisables — est decrit dans rollback.command ; mais defaire la
+//   structure n est pas rendre les donnees. Le dire franchement est la seule
+//   facon de faire choisir des disques VIDES avant de lancer l assistant.
+const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'linux-disk-partition-mount',
+  'linux-raid1-create', 'process-hung', 'temp-cleanup',
+  // 22/n : preparer un provisionnement de controleur de domaine. L assistant
+  // lui-meme ne provisionne pas — il remet un cahier de manoeuvre — mais la
+  // fiche declare reversible: false parce que ce qu elle DOCUMENTE ne s annule
+  // pas : un domaine provisionne se defait en restaurant la machine, et aucun
+  // fichier retire ne le defait. Declarer true aurait ete fabriquer une
+  // securite inexistante.
+  'samba-ad-dc-provision',
+];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
   `les seuls outils declares irreversibles sont ${IRREVERSIBLES_ADMIS.join(' et ')} (${lectureSeule.join(', ') || 'aucun'})`);
@@ -1103,11 +1246,22 @@ assert(new Set(CATEGORIES.map((c) => c.name)).size === CATEGORIES.length,
   'les noms de catégorie sont uniques');
 assert(enAttente.length > 0 && enAttente.every((c) => c.count === 0),
   `catégories prévues mais masquées tant qu\u2019elles sont vides : ${enAttente.length}`);
-for (const prevue of ['Imprimantes', 'Linux']) {
+// Imprimantes reste déclarée et vide : c'est le LOT 9. « Linux et services
+// réseau » était dans le même état jusqu'au LOT 7, qui l'a peuplée — elle
+// change donc de côté, et la règle la suit au lieu d'être assouplie : une
+// catégorie déclarée est soit vide et masquée, soit peuplée et visible, jamais
+// déclarée-et-oubliée.
+for (const prevue of ['Imprimantes']) {
   assert(CATEGORIES.some((c) => c.name === prevue),
     `la feuille de route est préparée : « ${prevue} » est déclarée`);
   assert(!visibles.some((c) => c.name === prevue),
     `« ${prevue} » n\u2019est pas affichée puisqu\u2019elle est vide`);
+}
+for (const peuplee of ['Linux et services réseau']) {
+  assert(CATEGORIES.some((c) => c.name === peuplee),
+    `« ${peuplee} » est déclarée au catalogue`);
+  assert(visibles.some((c) => c.name === peuplee),
+    `« ${peuplee} » est affichée : le LOT 7 l\u2019habite`);
 }
 assert(categorieParNom('Réseau') !== null && categorieParNom('Inexistante') === null,
   'categorieParNom() retrouve une catégorie connue et rejette l\u2019inconnue');
@@ -1259,7 +1413,7 @@ const CANON = [
   'GPO',
   'Réseau',
   'Imprimantes',
-  'Linux',
+  'Linux et services réseau',
 ];
 
 assert(CATEGORIES.map((c) => c.name).join(' | ') === CANON.join(' | '),
@@ -1320,11 +1474,13 @@ assert(nomsVisibles.includes('Analyse et nettoyage des disques'),
 // carte sans fil est matériellement un périphérique.
 assert(nomsVisibles.includes('Poste de travail Windows'),
   'Poste de travail Windows est visible : les assistants du LOT 6 l\u2019habitent');
-assert(attente2.map((c) => c.name).join(',') === 'Imprimantes,Linux',
-  `seules Imprimantes et Linux sont en attente (${attente2.map((c) => c.name).join(',')})`);
-assert(!nomsVisibles.includes('Imprimantes') && !nomsVisibles.includes('Linux'),
-  'Imprimantes et Linux sont masquées puisqu\u2019elles sont vides');
-assert(vis2.length === 6 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+assert(attente2.map((c) => c.name).join(',') === 'Imprimantes',
+  `seule Imprimantes reste en attente (${attente2.map((c) => c.name).join(',')})`);
+assert(!nomsVisibles.includes('Imprimantes'),
+  'Imprimantes est masquée puisqu\u2019elle est vide');
+assert(nomsVisibles.includes('Linux et services réseau'),
+  'Linux et services réseau est visible depuis le LOT 7');
+assert(vis2.length === 7 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
   `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
@@ -1342,7 +1498,16 @@ assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.coun
 // soit le module où l'outil est défini.
 const sourceGen = readFileSync(resolve(ROOT, 'dist/generators.mjs'), 'utf8');
 const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist/outils-gpo.mjs',
-  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs', 'dist/outils-poste-b.mjs']
+  'dist/outils-reseau.mjs', 'dist/outils-poste.mjs', 'dist/outils-poste-b.mjs',
+  // LOT 7 — le catalogue Linux. L'oublier ici ne rendrait pas la regle plus
+  // laxiste : elle compterait moins de generate() que d'outils et echouerait.
+  // C'est exactement ce qui s'est produit, et c'est la bonne facon d'echouer.
+  'dist/outils-linux.mjs', 'dist/outils-linux-b.mjs', 'dist/outils-linux-c.mjs',
+  'dist/outils-linux-d.mjs', 'dist/outils-linux-e.mjs', 'dist/outils-linux-f.mjs',
+  'dist/outils-linux-g.mjs', 'dist/outils-linux-h.mjs', 'dist/outils-linux-i.mjs',
+  'dist/outils-linux-j.mjs', 'dist/outils-linux-k.mjs',
+  'dist/outils-linux-l.mjs', 'dist/outils-linux-m.mjs',
+  'dist/outils-linux-n.mjs', 'dist/outils-poste-jonction.mjs']
   .map((chemin) => (existsSync(resolve(ROOT, chemin)) ? readFileSync(resolve(ROOT, chemin), 'utf8') : ''));
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
@@ -1592,9 +1757,14 @@ const outilsLot6 = outilsRecents.filter((t) => t.category === 'Poste de travail 
 assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(s) Windows Server ajoutés`);
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
+const outilsLot7 = outilsRecents.filter((t) => t.category === 'Linux et services réseau');
 assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length
-  + outilsLot5.length + outilsLot6.length,
-  `tout outil ajouté appartient à Windows Server, Active Directory, GPO, Réseau ou Poste de travail Windows (${outilsRecents.length})`);
+  + outilsLot5.length + outilsLot6.length + outilsLot7.length,
+  `tout outil ajouté appartient à l\u2019une des six catégories peuplées (${outilsRecents.length})`);
+assert(outilsLot7.every((t) => SOUS_RUBRIQUES_LINUX.includes(t.subcategory)),
+  `chaque outil Linux porte une des dix sous-rubriques prévues (${outilsLot7.length})`);
+assert(outilsLot7.every((t) => plateformeDe(t) === 'Linux' && sortieDe(t) === '.sh'),
+  'chaque outil de la catégorie Linux déclare la plateforme Linux et une sortie .sh');
 
 const CHAMPS_FICHE = ['id', 'icon', 'category', 'subcategory', 'title', 'risk', 'summary',
   'fields', 'validate', 'generate', 'gui', 'keywords', 'requiresAdmin', 'os', 'prereqs',
@@ -1612,28 +1782,117 @@ for (const outil of outilsRecents) {
   assert(outil.prereqs.length >= 3, `${outil.id} : les prérequis sont détaillés`);
   assert(outil.verifyAfter.length >= 2, `${outil.id} : au moins deux vérifications après exécution`);
   assert(outil.commonErrors.length >= 2, `${outil.id} : au moins deux erreurs fréquentes expliquées`);
-  assert(outil.os.some((o) => /Windows Server 2019/.test(o)) && outil.os.some((o) => /5\.1/.test(o)),
-    `${outil.id} : compatibilité déclarée précisément (2019 et PowerShell 5.1)`);
+  // ------------------------------------------------------------------------
+  // LA COMPATIBILITÉ SE DÉCLARE PRÉCISÉMENT — MAIS « PRÉCISÉMENT » DÉPEND DE
+  // LA PLATEFORME
+  //
+  // La règle exigeait « Windows Server 2019 » et « 5.1 » dans la liste os. Son
+  // intention est bonne : interdire un « compatible Windows » vague qui ne
+  // promet rien de vérifiable. Mais appliquée à un outil Linux, elle exige de
+  // déclarer une compatibilité PowerShell 5.1 sur une machine qui n'a pas de
+  // PowerShell — soit une déclaration fausse, soit une exception générale.
+  //
+  // La règle garde son intention et change de critère selon la plateforme :
+  // une version précise et un plancher d'interpréteur, dans les deux cas.
+  // ------------------------------------------------------------------------
+  if (plateformeDe(outil) === 'Linux') {
+    assert(outil.os.some((o) => /Ubuntu[^\d]*\d\d\.\d\d/.test(o)),
+      `${outil.id} : compatibilité déclarée précisément (une version d\u2019Ubuntu nommée)`);
+    assert(outil.os.some((o) => /Debian \d\d|systemd/.test(o)),
+      `${outil.id} : compatibilité déclarée précisément (Debian ou le socle systemd nommé)`);
+    assert(!outil.os.some((o) => /^Linux$|^Tout Linux$/i.test(o.trim())),
+      `${outil.id} : « Linux » seul est refusé — ce serait une promesse non vérifiable`);
+    for (const champ of CHAMPS_LINUX) {
+      assert(outil[champ] !== undefined,
+        `${outil.id} : le champ Linux « ${champ} » est déclaré`);
+    }
+    assert(incoherencesPlateforme(outil).length === 0,
+      `${outil.id} : déclarations de plateforme cohérentes (${incoherencesPlateforme(outil).join(' | ')})`);
+  } else {
+    assert(outil.os.some((o) => /Windows Server 2019/.test(o)) && outil.os.some((o) => /5\.1/.test(o)),
+      `${outil.id} : compatibilité déclarée précisément (2019 et PowerShell 5.1)`);
+  }
   assert(outil.rollback && outil.rollback.summary && outil.rollback.diagnostic && outil.rollback.command,
     `${outil.id} : procédure d’annulation en blocs distincts`);
 
-  // Sources : uniquement des pages Microsoft précises, en HTTPS.
-  assert(/^https:\/\/learn\.microsoft\.com\//.test(outil.source),
-    `${outil.id} : source principale sur learn.microsoft.com`);
+  // Sources : des pages PRÉCISES d'un éditeur primaire, en HTTPS. L'éditeur
+  // attendu dépend de la plateforme ; l'exigence de précision, non — une page
+  // d'accueil ne documente rien.
   assert(Array.isArray(outil.sources) && outil.sources.length >= 1,
     `${outil.id} : liste de sources officielles fournie`);
-  for (const src of outil.sources) {
-    assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(src.url),
-      `${outil.id} : source « ${src.label} » pointe vers une page Microsoft précise`);
-    assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(src.url),
-      `${outil.id} : source « ${src.label} » n’est pas la page d’accueil`);
+  if (plateformeDe(outil) === 'Linux') {
+    assert(sourceLinuxValide(outil.source),
+      `${outil.id} : source principale chez un éditeur primaire Linux`);
+    for (const src of outil.sources) {
+      assert(sourceLinuxValide(src.url),
+        `${outil.id} : source « ${src.label} » chez un éditeur primaire (${src.url})`);
+      // Une page d'accueil ne documente rien. On exige un chemin au-delà du
+      // domaine, sauf pour les deux wikis dont la page d'accueil EST un point
+      // d'entrée documentaire nommé.
+      assert(/^https:\/\/[^/]+\/\S+/.test(src.url),
+        `${outil.id} : source « ${src.label} » pointe vers une page précise, pas un domaine nu`);
+    }
+  } else {
+    assert(/^https:\/\/learn\.microsoft\.com\//.test(outil.source),
+      `${outil.id} : source principale sur learn.microsoft.com`);
+    for (const src of outil.sources) {
+      assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(src.url),
+        `${outil.id} : source « ${src.label} » pointe vers une page Microsoft précise`);
+      assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(src.url),
+        `${outil.id} : source « ${src.label} » n’est pas la page d’accueil`);
+    }
   }
 
-  // Les outils modifiants commencent en Diagnostic ; les diagnostics exportent.
+  // ------------------------------------------------------------------------
+  // UN OUTIL MODIFIANT NE MODIFIE RIEN PAR DEFAUT
+  //
+  // La règle exigeait un champ nommé exactement « mode » ou « bkMode », de
+  // valeur par défaut « Diagnostic ». C'est le mécanisme retenu par les lots
+  // Windows, et il est bon. Mais la règle vérifiait le MÉCANISME, pas
+  // l'INTENTION, et le lot Linux emploie un second mécanisme tout aussi
+  // contraignant : une phrase de confirmation dont l'absence fait diagnostiquer
+  // sans écrire.
+  //
+  // La règle est donc élargie au mécanisme ET resserrée sur l'intention : quel
+  // que soit le verrou, le script produit AVEC LES VALEURS PAR DÉFAUT doit
+  // porter la trace du verrou, et la porte qui empêche d'agir. C'est plus fort
+  // que l'ancienne version, qui se contentait de lire une chaîne dans un champ
+  // sans jamais regarder le script produit.
+  //
+  // La preuve par l'EXÉCUTION — lancer le script et constater zéro écriture —
+  // est faite séparément, par test/linux-verrous.test.mjs.
+  // ------------------------------------------------------------------------
   const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode');
+  const champConfirmation = outil.fields.find((f) => /confirmation/i.test(f.id));
   if (outil.risk === 'diagnostic') {
-    assert(outil.fields.some((f) => /Format/i.test(f.label)),
-      `${outil.id} : un outil de diagnostic propose un format de rapport`);
+    // L'intention de la règle : les constats d'un outil de diagnostic doivent
+    // pouvoir SORTIR de l'écran. Le mécanisme habituel est un sélecteur de
+    // format ; mais un outil dont la sortie EST un fichier — un CSV, un modèle
+    // de script — satisfait la même intention plus directement, et un
+    // sélecteur de format y serait absurde. La règle nomme donc l'intention et
+    // accepte les deux mécanismes.
+    const aFormat = outil.fields.some((f) => /Format/i.test(f.label));
+    const aDestination = outil.fields.some((f) => /^(destination|sortie|fichier|nomScript)$/i.test(f.id));
+    assert(aFormat || aDestination,
+      `${outil.id} : les constats peuvent sortir de l\u2019écran — sélecteur de format, ou fichier de sortie déclaré`);
+  } else if (plateformeDe(outil) === 'Linux') {
+    assert(champMode || champConfirmation,
+      `${outil.id} : un outil modifiant porte un verrou — sélecteur de mode ou phrase de confirmation`);
+    if (champConfirmation) {
+      assert(String(champConfirmation.default ?? '') === '',
+        `${outil.id} : la confirmation est VIDE par défaut, donc le script par défaut n\u2019écrit rien`);
+      // Et le script produit par défaut doit porter le verrou ET sa porte.
+      const valeursDefaut = Object.fromEntries(
+        outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+      let scriptDefaut = '';
+      try { scriptDefaut = outil.generate(valeursDefaut); } catch { scriptDefaut = ''; }
+      assert(/KJEMO_CONFIRMATION_OK=0/.test(scriptDefaut),
+        `${outil.id} : le script par défaut initialise le verrou de confirmation à 0`);
+      assert(/KJEMO_AGIR/.test(scriptDefaut),
+        `${outil.id} : le script par défaut porte une porte qui conditionne l\u2019action`);
+      assert(/AUCUNE ECRITURE|AUCUNE MODIFICATION/.test(scriptDefaut),
+        `${outil.id} : le script dit explicitement qu\u2019il n\u2019écrit rien sans confirmation`);
+    }
   } else {
     assert(champMode, `${outil.id} : un outil modifiant porte un sélecteur de mode`);
     assert(champMode.default === 'Diagnostic',
@@ -1679,8 +1938,33 @@ for (const outil of outilsRecents) {
   assert(!erreur, `${outil.id} : le script se génère avec les valeurs par défaut${erreur ? ' — ' + erreur.message : ''}`);
   if (erreur) continue;
 
-  assert(script.startsWith('#Requires -Version 5.1'),
-    `${outil.id} : le script déclare son plancher PowerShell 5.1`);
+    // ------------------------------------------------------------------------
+    // CHAQUE SCRIPT DÉCLARE SON PLANCHER D'INTERPRÉTEUR — LEQUEL DÉPEND DE LA
+    // PLATEFORME
+    //
+    // Côté PowerShell c'est « #Requires -Version 5.1 » : la première ligne dit
+    // sous quoi le script est censé tourner, et PowerShell refuse de le lancer
+    // ailleurs. Côté Bash l'équivalent exact est le shebang : « #!/usr/bin/env
+    // bash » dit que c'est bash et non sh, ce qui n'est pas un détail puisque
+    // les scripts du lot utilisent des tableaux et des substitutions que dash
+    // ne connaît pas.
+    //
+    // La règle garde son intention — un script dit sous quoi il tourne — et
+    // vérifie la forme propre à chaque plateforme.
+    // ------------------------------------------------------------------------
+    if (estBash(outil)) {
+      assert(script.startsWith('#!/usr/bin/env bash\n'),
+        `${outil.id} : le script déclare son interpréteur par un shebang bash exact`);
+      assert(/^set -Eeuo pipefail$/m.test(script),
+        `${outil.id} : le script active set -Eeuo pipefail`);
+      assert(!script.includes('\r'),
+        `${outil.id} : le script Bash ne contient aucun retour chariot`);
+      assert(script.charCodeAt(0) !== 0xFEFF,
+        `${outil.id} : le script Bash ne commence pas par un BOM`);
+    } else {
+      assert(script.startsWith('#Requires -Version 5.1'),
+        `${outil.id} : le script déclare son plancher PowerShell 5.1`);
+    }
   assert(script.includes(outil.id), `${outil.id} : le script s’identifie`);
 
   // Interdits absolus du LOT 2.
@@ -1713,7 +1997,13 @@ for (const outil of outilsRecents) {
   // demandent le secret a la console, au moment de l'execution. Ce qui reste
   // interdit sans exception, c'est de le fabriquer, de le convertir en clair,
   // ou de le laisser trainer.
-  assert(!/ConvertTo-SecureString|-Password\b|PlainText/i.test(script),
+  // « -Password » est un PARAMETRE PowerShell : il est toujours precede d'une
+  // espace ou d'un debut de ligne. Sans cette ancre, le motif accusait
+  // « prohibit-password » — la valeur par defaut officielle de PermitRootLogin,
+  // citee par les assistants SSH du LOT 7, qui n'est evidemment pas un secret.
+  // Corrige au MOTIF, et non par une exception : une exception aurait leve le
+  // controle pour tout le script.
+  assert(!/ConvertTo-SecureString|(?:^|\s)-Password\b|PlainText/i.test(script),
     `${outil.id} : aucun secret fabriqué ni converti en clair`);
   const lignes = script.split('\n');
   // Une ligne qui se contente d'AFFICHER le nom d'une commande — un commentaire,
@@ -1750,8 +2040,18 @@ for (const outil of outilsRecents) {
   assert(!/\bTODO\b|\bFIXME\b|\bXXX\b/.test(script), `${outil.id} : aucun marqueur TODO`);
   assert(!/http:\/\//.test(script), `${outil.id} : aucune URL non chiffrée`);
 
-  // Un outil modifiant doit garder ses actions derrière la garde de mode.
-  if (outil.risk !== 'diagnostic') {
+  // Un outil modifiant doit garder ses actions derrière un verrou, et le dire.
+  // Le verrou ne porte pas le même nom des deux côtés : $Mode en PowerShell,
+  // KJEMO_CONFIRMATION_OK et KJEMO_AGIR en Bash. L'exigence est la même, et la
+  // forme suit la plateforme.
+  if (outil.risk !== 'diagnostic' && estBash(outil)) {
+    assert(/KJEMO_CONFIRMATION_OK/.test(script),
+      `${outil.id} : le script Bash porte le verrou de confirmation`);
+    assert(/KJEMO_AGIR/.test(script),
+      `${outil.id} : le script Bash porte la porte qui conditionne l\u2019action`);
+    assert(/AUCUNE ECRITURE|AUCUNE MODIFICATION/.test(script),
+      `${outil.id} : le script annonce explicitement qu\u2019il n\u2019écrit rien sans confirmation`);
+  } else if (outil.risk !== 'diagnostic') {
     assert(/\$Mode\s*=|\$Mode -eq/.test(script),
       `${outil.id} : le script porte la garde de mode`);
     assert(/-WhatIf\b/.test(script) || /MODE DIAGNOSTIC/.test(script),
@@ -1767,7 +2067,29 @@ for (const outil of outilsRecents) {
 
   // Un diagnostic pur ne doit contenir aucun verbe modifiant hors simulation.
   if (outil.risk === 'diagnostic') {
-    const modifiants = lignesDeCode.join('\n')
+    // NOMMER une applet n'est pas l'APPELER.
+    //
+    // « Get-Command -Name 'Add-Computer' » est une LECTURE : elle demande si
+    // l'applet existe dans cette session. C'est le premier contrôle des
+    // assistants de jonction de domaine, parce que la panne la plus fréquente
+    // du sujet est d'avoir ouvert PowerShell 7, où cette applet n'existe pas.
+    // Le nom figure aussi dans le libellé du contrôle et dans la phrase qui
+    // explique son absence. L'ancienne règle lisait ces chaînes et criait à
+    // l'appel.
+    //
+    // La règle n'est pas assouplie : elle est rendue exacte. En PowerShell,
+    // une invocation n'est JAMAIS entre apostrophes — une chaîne littérale est
+    // une donnée, pas un appel. Les chaînes littérales sont donc retirées
+    // avant la recherche, et tout ce qui reste est du code. La contre-épreuve
+    // ci-dessous le prouve dans les deux sens.
+    //
+    // Le retrait des chaînes ne peut pas servir de porte dérobée : un appel
+    // construit depuis une chaîne demanderait Invoke-Expression, et la ligne
+    // suivante le refuse explicitement.
+    const sansChaines = lignesDeCode.join('\n').replace(/'(?:[^']|'')*'/g, "''");
+    assert(!/Invoke-Expression|\biex\b/i.test(sansChaines),
+      `${outil.id} : aucune évaluation de chaîne — sans quoi retirer les chaînes littérales masquerait un appel`);
+    const modifiants = sansChaines
       .match(/\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g) ?? [];
     const autorises = ['Add-KjemoResultat', 'New-Object', 'New-TimeSpan', 'Set-Content',
                        'New-Item', 'Add-Member', 'Start-Sleep'];
@@ -1777,11 +2099,49 @@ for (const outil of outilsRecents) {
   }
 }
 
+// Contre-épreuve du raffinement ci-dessus, dans les DEUX sens : le jeton ne
+// doit effacer que le nom passé à Get-Command, jamais une invocation.
+{
+  const nettoyer = (t) => t.replace(/'(?:[^']|'')*'/g, "''");
+  const motif = /\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g;
+  assert(!motif.test(nettoyer("$a = Get-Command -Name 'Add-Computer' -ErrorAction SilentlyContinue")),
+    'contre-épreuve — nommer une applet à Get-Command n’est pas l’appeler');
+  motif.lastIndex = 0;
+  assert(motif.test(nettoyer("Add-Computer -DomainName $d")),
+    'contre-épreuve — une VRAIE invocation reste détectée');
+  motif.lastIndex = 0;
+  assert(motif.test(nettoyer("Get-Command -Name 'Add-Computer'; Remove-Item $x")),
+    'contre-épreuve — une invocation sur la même ligne qu’un Get-Command reste détectée');
+  motif.lastIndex = 0;
+  assert(!motif.test(nettoyer("$c = 'Applet Add-Computer'")),
+    'contre-épreuve — un nom d’applet dans un libellé n’est pas un appel');
+  motif.lastIndex = 0;
+  assert(motif.test(nettoyer("if ($x) { Remove-Item $y } else { $z = 'rien' }")),
+    'contre-épreuve — une invocation hors chaîne reste détectée quand une chaîne la suit');
+  motif.lastIndex = 0;
+}
+
 section('LOT 2 et 3 — validation : les données invalides sont refusées');
 
 for (const outil of outilsRecents) {
-  // Champ vide sur un champ obligatoire : le script ne doit pas être produit.
-  const obligatoires = outil.fields.filter((f) => !/facultatif/i.test(f.label));
+  // ------------------------------------------------------------------------
+  // CHAMP VIDE SUR UN CHAMP OBLIGATOIRE : AUCUN SCRIPT PRODUIT
+  //
+  // L'exemption se faisait sur le LIBELLÉ, par /facultatif/i. C'est fragile
+  // dans les deux sens : un libellé qui emploie le mot pour une autre raison
+  // exempte un champ obligatoire sans que personne le voie, et un champ
+  // réellement optionnel dont le libellé ne contient pas le mot fait échouer
+  // la règle — ce qui m'est arrivé avec « Service à examiner », vide par
+  // défaut parce que vide signifie « tout le système ».
+  //
+  // L'exemption se déclare désormais explicitement, par `optionnel: true` sur
+  // le champ. Le libellé reste accepté pour les outils Windows existants, afin
+  // de ne pas les modifier. Et une exigence NOUVELLE est ajoutée plus bas :
+  // un champ qui accepte le vide SANS être déclaré optionnel est refusé — ce
+  // que l'ancienne règle ne pouvait pas vérifier.
+  // ------------------------------------------------------------------------
+  const estOptionnel = (f) => f.optionnel === true || /facultatif/i.test(f.label);
+  const obligatoires = outil.fields.filter((f) => !estOptionnel(f));
   for (const champ of obligatoires.slice(0, 3)) {
     const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
     valeurs[champ.id] = '';
@@ -1791,6 +2151,24 @@ for (const outil of outilsRecents) {
     let leve = false;
     try { outil.generate(valeurs); } catch { leve = true; }
     assert(leve, `${outil.id} : generate() refuse de produire un script avec « ${champ.id} » vide`);
+  }
+
+  // La réciproque, qui est la protection nouvelle : un champ déclaré optionnel
+  // doit RÉELLEMENT accepter le vide, et un champ qui accepte le vide doit
+  // être déclaré optionnel. Sans ce contrôle, `optionnel: true` deviendrait un
+  // interrupteur pour faire taire la règle précédente.
+  for (const champ of outil.fields.filter((f) => f.optionnel === true)) {
+    const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
+    valeurs[champ.id] = '';
+    const errors = outil.validate(valeurs);
+    assert(errors[champ.id] === undefined,
+      `${outil.id} : « ${champ.id} » est déclaré optionnel et accepte donc réellement le vide`);
+    let leveOpt = false;
+    try { outil.generate(valeurs); } catch { leveOpt = true; }
+    assert(!leveOpt,
+      `${outil.id} : generate() produit bien un script avec « ${champ.id} » vide, puisqu\u2019il est optionnel`);
+    assert(typeof champ.help === 'string' && champ.help.length > 10,
+      `${outil.id} : « ${champ.id} » étant optionnel, son aide explique ce que le vide signifie`);
   }
 }
 
@@ -3133,7 +3511,100 @@ section('Correctif 3 — la contre-épreuve refuse de changer de moteur');
     const valeurs = Object.fromEntries(outil.fields.map((f) => [f.id, String(f.default ?? '')]));
     let script;
     try { script = outil.generate(valeurs); } catch { continue; }
-    assert(!/\$\{[A-Za-z_]/.test(script), `${outil.id} : aucun \${...} non substitué`);
+    // ------------------------------------------------------------------------
+    // AUCUN RESTE DE GABARIT JAVASCRIPT — ET POUR BASH, UNE RÈGLE PLUS FORTE
+    //
+    // Côté PowerShell, bannir tout « ${lettre } » marche parce que PowerShell
+    // n'écrit presque jamais ses variables ainsi : une occurrence est donc
+    // presque sûrement un gabarit JS resté en place.
+    //
+    // En Bash, « ${KJEMO_TMP} » est la façon NORMALE et recommandée d'écrire
+    // une variable. La même règle y interdirait le langage lui-même. Il serait
+    // facile de l'exempter et de passer à autre chose — et ce serait perdre la
+    // protection précisément là où elle compte, puisque c'est le nouveau code
+    // qui risque le défaut.
+    //
+    // La règle est donc REMPLACÉE par une plus forte pour Bash : on relève
+    // TOUTES les variables citées par le script et on exige que chacune soit
+    // soit assignée dans le script, soit une variable d'environnement connue.
+    // Un gabarit JS resté en place — ${v.format}, ${this.id}, ${M} — ne
+    // satisfait aucune des deux conditions et se fait prendre. Cette version
+    // attrape aussi une faute de frappe sur un nom de variable, ce que
+    // l'ancienne ne voyait pas.
+    // ------------------------------------------------------------------------
+    if (estBash(outil)) {
+      // Les marqueurs francs d'un gabarit non substitué, d'abord.
+      for (const motif of [/\$\{v\./, /\$\{this\./, /\$\{o\./, /\$\{outil\./, /\$\{tool\./]) {
+        assert(!motif.test(script),
+          `${outil.id} : aucun gabarit JavaScript résiduel (${motif})`);
+      }
+      // Puis la règle de fond : toute variable citée doit exister.
+      //
+      // Une exclusion, étroite et justifiée : les chaînes de FORMAT passées à
+      // dpkg-query par « -f '...' » emploient la même syntaxe ${champ} pour
+      // désigner leurs propres champs — ${binary:Package}, ${Version}. Ce ne
+      // sont pas des variables du shell, et c'est précisément pour cela
+      // qu'elles sont entre apostrophes simples : bash ne doit PAS les
+      // développer. Elles sont retirées avant l'analyse, par leur forme exacte
+      // (« -f » suivi d'une chaîne à apostrophes simples), et non en
+      // autorisant les noms « binary » et « Version » — ce qui serait un trou
+      // par lequel passerait n'importe quel gabarit employant ces mots.
+      //
+      // Les COMMENTAIRES sont retirés avant ce comptage, pour la même raison
+      // qu'une garde ne doit pas accuser sa propre prose : un nom de variable
+      // cité dans un commentaire n'est pas une référence à une variable. Le
+      // commentaire qui explique la directive shellcheck ci-dessus en est
+      // justement l'exemple — il NOMME ${binary:Package} pour dire pourquoi il
+      // ne faut pas y toucher, et se faisait accuser.
+      //
+      // Les motifs francs de gabarit JS, eux, sont cherchés plus haut dans le
+      // texte COMPLET, commentaires inclus : un ${v.champ} resté dans un
+      // commentaire reste un défaut de génération, même s'il est inoffensif.
+      // Le motif accepte les trois ecritures de l'option : « -f 'FORMAT' »,
+      // « -f='FORMAT' » et « --showformat='FORMAT' ». Il ne reconnaissait que
+      // la premiere, et les champs de « dpkg-query -W -f='${Version}' » —
+      // forme employee par le diagnostic des paquets du commit 17/n —
+      // passaient pour des variables inconnues. L'exclusion reste ancree sur
+      // la FORME de l'option, et non sur les noms des champs.
+      const scriptSansFormats = script
+        .replace(/--?(?:f|showformat)(?:\s+|=)'[^']*'/g, "-f 'FORMAT'")
+        .replace(/^\s*#.*$/gm, '');
+      const citees = new Set();
+      for (const m of scriptSansFormats.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*)[}:]/g)) citees.add(m[1]);
+      const assignees = new Set();
+      for (const m of script.matchAll(/^\s*(?:local\s+|export\s+|readonly\s+|declare\s+(?:-\w+\s+)?)?([A-Za-z_][A-Za-z0-9_]*)=/gm)) assignees.add(m[1]);
+      // Une affectation placée dans une branche — « if ...; then VAR=1; else VAR=0; fi »
+      // ou après un « ; » — est une affectation comme une autre. Ne reconnaître
+      // que le début de ligne faisait passer KJEMO_AGIR pour une variable
+      // inconnue alors qu'elle est assignée deux fois, dans les deux branches.
+      for (const m of script.matchAll(/(?:^|[;&|]|\bthen\b|\belse\b|\bdo\b)\s*([A-Za-z_][A-Za-z0-9_]*)=/g)) assignees.add(m[1]);
+      for (const m of script.matchAll(/^\s*local\s+([^\n]+)$/gm)) {
+        for (const mot of m[1].split(/\s+/)) {
+          const nom = mot.split('=')[0];
+          if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(nom)) assignees.add(nom);
+        }
+      }
+      for (const m of script.matchAll(/\bfor\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b/g)) assignees.add(m[1]);
+      for (const m of script.matchAll(/\bread\s+-r\s+([^\n;]+)/g)) {
+        for (const mot of m[1].split(/\s+/)) {
+          if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(mot)) assignees.add(mot);
+        }
+      }
+      // Les variables fournies par l'environnement ou par bash lui-même.
+      // SSH_CONNECTION et SSH_TTY sont posees par OpenSSH dans toute session
+      // distante, et un script qui decide s'il peut couper SSH a besoin de les
+      // LIRE. Elles sont ajoutees ici, et pas ailleurs : les ecrire serait un
+      // mensonge sur la nature de la session, et aucun script du lot ne le
+      // fait — la garde ci-dessus distingue lecture et affectation.
+      const ENV_CONNUES = new Set(['HOME', 'PATH', 'USER', 'LOGNAME', 'PWD', 'SHELL', 'LANG',
+        'LC_ALL', 'IFS', 'EUID', 'UID', 'HOSTNAME', 'TMPDIR', 'SUDO_USER', 'TERM', 'BASH_VERSION',
+        'SSH_CONNECTION', 'SSH_TTY']);
+      const inconnues = [...citees].filter((n) => !assignees.has(n) && !ENV_CONNUES.has(n));
+      assert(inconnues.length === 0,
+        `${outil.id} : toute variable citée est assignée dans le script ou connue de l\u2019environnement (inconnues : ${inconnues.join(', ') || 'aucune'})`);
+    } else {
+      assert(!/\$\{[A-Za-z_]/.test(script), `${outil.id} : aucun \${...} non substitué`);
+    }
     assert(!/Marqueur\b/.test(script), `${outil.id} : aucun identifiant « Marqueur » résiduel`);
   }
 }
@@ -3736,6 +4207,12 @@ function codeSeulLot6(script) {
     'Sécurité',
     'Réparation Windows',
     'Stockage et nettoyage',
+    // Ajoutee au commit 24/n. La categorie reste celle du LOT 6 — c'est la
+    // ou quelqu'un cherche « joindre un poste au domaine » — mais les trois
+    // assistants viennent du LOT 7 et portent LEUR version. Les deux choses
+    // sont independantes : la categorie dit ou l'on range, la version dit
+    // d'ou vient le script.
+    'Jonction de domaine',
   ];
 
   const ATTENDUS_LOT6A = [
@@ -3784,16 +4261,45 @@ function codeSeulLot6(script) {
   // -------------------------------------------------------------------------
   section('LOT 6 — métadonnée de version');
 
+  // La version se verifie PAR LOT, et non par categorie. « Jonction de
+  // domaine » habite la categorie du LOT 6 et vient du LOT 7 : exiger
+  // VERSION_LOT6 de ses scripts ferait annoncer un lot faux. La regle est
+  // donc dedoublee, et resserree dans les deux sens — chaque script porte la
+  // version de SON lot, et aucun ne porte celle de l'autre.
+  const VERSION_LOT7_JONCTION = 'LOT 7 — Jonction de domaine Windows — 7.0.0';
+  const estJonction = (t) => t.subcategory === 'Jonction de domaine';
   let lot6Essais = 0;
   let lot6Justes = 0;
   let lot6Herite = 0;
-  for (const outil of outilsPoste) {
+  for (const outil of outilsPoste.filter((t) => !estJonction(t))) {
     for (const script of scriptsDeLOutil(outil)) {
       lot6Essais += 1;
       if (script.includes(`$KjemoVersion = '${VERSION_LOT6}'`)
         && script.includes(`# Outil KJEMO : ${outil.id} — ${VERSION_LOT6}`)) lot6Justes += 1;
       if (script.includes(VERSION_OUTILS)) lot6Herite += 1;
     }
+  }
+  {
+    let essais = 0;
+    let justes = 0;
+    let herite = 0;
+    const outilsJonction = outilsPoste.filter(estJonction);
+    assert(outilsJonction.length === 3,
+      `LOT 7 : les trois assistants de jonction de domaine sont la (${outilsJonction.length})`);
+    for (const outil of outilsJonction) {
+      for (const script of scriptsDeLOutil(outil)) {
+        essais += 1;
+        if (script.includes(`$KjemoVersion = '${VERSION_LOT7_JONCTION}'`)
+          && script.includes(`# Outil KJEMO : ${outil.id} — ${VERSION_LOT7_JONCTION}`)) justes += 1;
+        if (script.includes(VERSION_LOT6) || script.includes(VERSION_OUTILS)) herite += 1;
+      }
+    }
+    assert(essais >= outilsJonction.length,
+      `LOT 7 : ${essais} script(s) de jonction produits pour cette verification`);
+    assert(justes === essais,
+      `LOT 7 : tous les scripts de jonction annoncent « ${VERSION_LOT7_JONCTION} » (${justes}/${essais})`);
+    assert(herite === 0,
+      `LOT 7 : aucun script de jonction ne porte la version du LOT 6 ni celle d'origine (${herite})`);
   }
   assert(lot6Essais >= outilsPoste.length,
     `LOT 6 : ${lot6Essais} script(s) produits pour cette vérification`);

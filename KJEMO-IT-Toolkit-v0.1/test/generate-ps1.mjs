@@ -11,6 +11,7 @@
  */
 
 import { writeFileSync, readFileSync, mkdirSync, rmSync, readdirSync, existsSync } from 'node:fs';
+import { openSync, readSync, closeSync } from 'node:fs';
 import { createHash }                                  from 'node:crypto';
 import { dirname, resolve }                               from 'node:path';
 import { fileURLToPath, pathToFileURL }                   from 'node:url';
@@ -20,6 +21,8 @@ const ROOT      = resolve(__dirname, '..');
 const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
 const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { estBash, extensionDe, plateformeDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
+const { normalizeScriptSh } = await import(pathToFileURL(resolve(ROOT, 'dist', 'noyau-bash.mjs')).href);
 
 // BOM UTF-8 : requis pour PowerShell 5.1 (lit les fichiers comme UTF-8)
 const BOM = Buffer.from([0xEF, 0xBB, 0xBF]);
@@ -29,7 +32,7 @@ mkdirSync(OUT_DIR, { recursive: true });
 try {
   const existing = readdirSync(OUT_DIR);
   for (const f of existing) {
-    if (f.endsWith('.ps1') || f === 'report.json') {
+    if (f.endsWith('.ps1') || f.endsWith('.sh') || f === 'report.json') {
       rmSync(resolve(OUT_DIR, f));
     }
   }
@@ -1972,6 +1975,526 @@ const VALEURS_POSTE_B = {
   }
 };
 
+// ---------------------------------------------------------------------------
+// LOT 7 — valeurs Linux pour les huit jeux de données.
+//
+// MESURE AVANT CORRECTION : les 80 fichiers .sh produits par les dix
+// assistants Linux ne portaient que DIX empreintes SHA-256 distinctes. Les
+// huit jeux d'un même assistant étaient rigoureusement identiques octet pour
+// octet : aucune valeur saisie n'atteignait le script, et le corpus .sh ne
+// prouvait RIEN sur le transport des valeurs. Le dépôt avait déjà payé cette
+// erreur deux fois (LOT 4, LOT 5) ; c'est la troisième.
+//
+// Ces valeurs ne sont PAS fusionnées dans DATASETS.values comme celles des
+// lots précédents, et c'est volontaire : le champ « source » existe aussi sur
+// un assistant Windows. Le fusionner globalement changerait un script figé et
+// casserait la non-régression des 856. L'application est donc faite outil par
+// outil, et seulement quand plateformeDe(tool) === 'Linux' (voir plus bas).
+//
+// Le champ « confirmation » EST surchargé : blocConfirmation() pose
+// KJEMO_CONFIRMATION_OK=0 à l'écriture du script quelle que soit la phrase,
+// et la comparaison a lieu à l'exécution. Le surcharger teste donc le
+// transport d'une phrase accentuée sans désarmer le verrou.
+// ---------------------------------------------------------------------------
+const VALEURS_LINUX = {
+  "apostrophe-ascii": {
+    cible: "/dev/sdb", inclureSignatures: "Oui", inclureRaid: "Oui", tailleMiniGio: "5",
+    joursJournal: "3", seuilDisque: "80", nbUnites: "8", lignes: "40",
+    profondeur: "2", nbProcessus: "5", heure: "4", seuilInactif: "45",
+    format: "JSON", inclurePaquets: "Tous", inclureMateriel: "Non",
+    inclureChaine: "Non", priorite: "warning", periode: "6 hours ago",
+    demarrage: "Actuel", avecJournal: "Non", avecSimulation: "Oui",
+    avecVerrou: "Oui", compression: "zstd", sections: "Systemes",
+    frequence: "Horaire", portee: "Tous",
+    unite: "nginx.service", motif: "O'Brien",
+    nomScript: "traitement-d-adam", description: "Traite les fichiers de D'Adam et ecrit un rapport.",
+    source: "/srv/donnees/D'Adam", destination: "/srv/sauvegardes/D'Adam",
+    etiquette: "donnees-dadam", confirmation: "SAUVEGARDER donnees-dadam",
+    script: "/srv/scripts/traitement-d'adam.sh", journal: "/srv/scripts/journaux/d'adam.log",
+  },
+  "apostrophe-typographique": {
+    cible: "", inclureSignatures: "Non", inclureRaid: "Oui", tailleMiniGio: "1",
+    joursJournal: "5", seuilDisque: "90", nbUnites: "20", lignes: "120",
+    profondeur: "3", nbProcessus: "15", heure: "22", seuilInactif: "120",
+    format: "CSV", inclurePaquets: "Aucun", inclureMateriel: "Oui",
+    inclureChaine: "Oui", priorite: "crit", periode: "7 days ago",
+    demarrage: "Precedent", avecJournal: "Oui", avecSimulation: "Non",
+    avecVerrou: "Oui", compression: "aucune", sections: "Services",
+    frequence: "Hebdomadaire", portee: "Systeme",
+    unite: "ssh.service", motif: "D\u2019Arcy",
+    nomScript: "traitement-typo", description: "Traite les fichiers de D\u2019Adam \u2014 accueil.",
+    source: "/srv/donnees/D\u2019Adam", destination: "/srv/sauvegardes/D\u2019Adam",
+    etiquette: "donnees-typo", confirmation: "",
+    script: "/srv/scripts/traitement-d\u2019adam.sh", journal: "/srv/scripts/journaux/d\u2019adam.log",
+  },
+  "dollar-backtick-guillemets": {
+    cible: "/dev/nvme0n1", inclureSignatures: "Oui", inclureRaid: "Non", tailleMiniGio: "0",
+    joursJournal: "1", seuilDisque: "70", nbUnites: "30", lignes: "200",
+    profondeur: "4", nbProcessus: "20", heure: "0", seuilInactif: "365",
+    format: "JSON", inclurePaquets: "Principaux", inclureMateriel: "Non",
+    inclureChaine: "Oui", priorite: "emerg", periode: "15 min ago",
+    demarrage: "Periode", avecJournal: "Oui", avecSimulation: "Oui",
+    avecVerrou: "Non", compression: "gzip", sections: "Complet",
+    frequence: "Mensuel", portee: "Humains",
+    unite: "cockpit.socket", motif: "$(id -u)",
+    nomScript: "traitement-dollar", description: "Ecrit dans $HOME puis lit `pwd` et \"cite\" le resultat.",
+    source: "/srv/donnees/$HOME-et-`pwd`", destination: "/srv/sauvegardes/\"guillemets\"",
+    etiquette: "dollar-backtick", confirmation: "SAUVEGARDER dollar-backtick",
+    script: "/srv/scripts/$(whoami).sh", journal: "/srv/scripts/journaux/`date`.log",
+  },
+  "espaces-et-accents": {
+    cible: "/dev/sdc", inclureSignatures: "Non", inclureRaid: "Non", tailleMiniGio: "10",
+    joursJournal: "7", seuilDisque: "95", nbUnites: "12", lignes: "60",
+    profondeur: "1", nbProcessus: "8", heure: "12", seuilInactif: "30",
+    format: "CSV", inclurePaquets: "Tous", inclureMateriel: "Oui",
+    inclureChaine: "Non", priorite: "notice", periode: "1 hour ago",
+    demarrage: "Actuel", avecJournal: "Non", avecSimulation: "Non",
+    avecVerrou: "Non", compression: "zstd", sections: "Complet",
+    frequence: "Quotidien", portee: "Tous",
+    unite: "systemd-journald.service", motif: "\u00e9chec de d\u00e9marrage",
+    nomScript: "traitement-accentue", description: "Traite les donn\u00e9es partag\u00e9es du service r\u00e9seau.",
+    source: "/srv/Donn\u00e9es partag\u00e9es/Hiver 2026", destination: "/srv/Sauvegardes archiv\u00e9es",
+    etiquette: "donnees-partagees", confirmation: "",
+    script: "/srv/scripts/mon traitement accentu\u00e9.sh", journal: "/srv/scripts/journaux/\u00e9tat r\u00e9seau.log",
+  },
+  "virgule-et-point-virgule": {
+    cible: "/dev/mapper/vg0-lv0", inclureSignatures: "Oui", inclureRaid: "Oui", tailleMiniGio: "3",
+    joursJournal: "2", seuilDisque: "60", nbUnites: "25", lignes: "90",
+    profondeur: "2", nbProcessus: "12", heure: "6", seuilInactif: "60",
+    format: "JSON", inclurePaquets: "Aucun", inclureMateriel: "Non",
+    inclureChaine: "Oui", priorite: "alert", periode: "2 days ago",
+    demarrage: "Periode", avecJournal: "Oui", avecSimulation: "Oui",
+    avecVerrou: "Oui", compression: "gzip", sections: "Systemes",
+    frequence: "Horaire", portee: "Systeme",
+    unite: "smbd.service", motif: "err,warn;crit",
+    nomScript: "traitement-ponctuation", description: "Traite A, puis B ; enfin C.",
+    source: "/srv/donnees/A, B et C", destination: "/srv/sauvegardes/lot1;lot2",
+    etiquette: "a-b_c", confirmation: "SAUVEGARDER a-b_c",
+    script: "/srv/scripts/etape1;etape2.sh", journal: "/srv/scripts/journaux/a,b.log",
+  },
+  "chemin-racine-c": {
+    cible: "/dev/sdd1", inclureSignatures: "Non", inclureRaid: "Oui", tailleMiniGio: "7",
+    joursJournal: "4", seuilDisque: "75", nbUnites: "10", lignes: "30",
+    profondeur: "3", nbProcessus: "6", heure: "18", seuilInactif: "180",
+    format: "JSON", inclurePaquets: "Aucun", inclureMateriel: "Oui",
+    inclureChaine: "Non", priorite: "info", periode: "30 days ago",
+    demarrage: "Precedent", avecJournal: "Non", avecSimulation: "Oui",
+    avecVerrou: "Non", compression: "aucune", sections: "Services",
+    frequence: "Mensuel", portee: "Systeme",
+    unite: "nfs-server.service", motif: "C:\\Windows",
+    nomScript: "traitement-voisin-protege", description: "Recoit un chemin voisin d une racine protegee.",
+    source: "/srv/etc-sauvegarde/donnees", destination: "/srv/gitlab-archives",
+    etiquette: "voisin-protege", confirmation: "",
+    script: "/srv/scripts/sous-dossier/traitement.sh", journal: "/srv/scripts/journaux/cron.log",
+  },
+  "chemin-avec-apostrophe": {
+    cible: "", inclureSignatures: "Oui", inclureRaid: "Non", tailleMiniGio: "64",
+    joursJournal: "6", seuilDisque: "88", nbUnites: "18", lignes: "150",
+    profondeur: "5", nbProcessus: "25", heure: "2", seuilInactif: "15",
+    format: "CSV", inclurePaquets: "Tous", inclureMateriel: "Non",
+    inclureChaine: "Oui", priorite: "err", periode: "1 day ago",
+    demarrage: "Actuel", avecJournal: "Oui", avecSimulation: "Non",
+    avecVerrou: "Oui", compression: "zstd", sections: "Complet",
+    frequence: "Hebdomadaire", portee: "Tous",
+    unite: "cron.service", motif: "l'\u00e9chec d'hier",
+    nomScript: "traitement-apostrophe", description: "Traite l'export d'hier et l'archive.",
+    source: "/srv/d'adam/projet d'\u00e9t\u00e9", destination: "/srv/sauvegardes/d'adam",
+    etiquette: "export-d-hier", confirmation: "SAUVEGARDER export-d-hier",
+    script: "/srv/scripts/l'export d'hier.sh", journal: "/srv/scripts/journaux/l'echec.log",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// LOT 7 — VALEURS PAR OUTIL
+//
+// VALEURS_LINUX est indexee par IDENTIFIANT DE CHAMP, et plusieurs assistants
+// partagent des noms de champ : « confirmation », « etiquette », « source ».
+// Le premier essai a donc donne a linux-disk-partition-mount la phrase de
+// confirmation de bash-backup-directory — et la generation a echoue, a juste
+// titre, puisque ce champ-la doit contenir le peripherique exact.
+//
+// Cette table-ci est indexee par OUTIL puis par champ, et elle est appliquee
+// APRES les deux autres. Elle sert aux champs dont la valeur n a de sens que
+// pour un assistant : une confirmation qui nomme sa cible, une etiquette dont
+// la longueur depend du systeme de fichiers choisi juste au-dessus.
+// ---------------------------------------------------------------------------
+const VALEURS_PAR_OUTIL = {
+  // Reseau. « cible » et « interface » sont des identifiants de champ partages
+  // avec des assistants de stockage, dont les valeurs globales sont des
+  // peripheriques : d'ou cette table par outil.
+  'linux-dns-diagnostic': {
+    'apostrophe-ascii':          { nom: 'archive.ubuntu.com', domaineAd: 'kjemo.local' },
+    'apostrophe-typographique':  { nom: 'documentation.ubuntu.com', domaineAd: '' },
+    'dollar-backtick-guillemets':{ nom: '1.1.1.1', domaineAd: 'labo.interne' },
+    'espaces-et-accents':        { nom: 'srv-fichiers.labo.local', domaineAd: '' },
+    'virgule-et-point-virgule':  { nom: 'dc01.kjemo.local', domaineAd: 'kjemo.local' },
+    'chemin-racine-c':           { nom: 'localhost', domaineAd: '' },
+    'chemin-avec-apostrophe':    { nom: 'd-adam.labo.local', domaineAd: 'd-adam.local' },
+  },
+  'linux-firewall-audit': {
+    'apostrophe-ascii':          { portVerifie: '22', lireIptables: 'Non' },
+    'apostrophe-typographique':  { portVerifie: '', lireIptables: 'Oui' },
+    'dollar-backtick-guillemets':{ portVerifie: '9090', lireIptables: 'Non' },
+    'espaces-et-accents':        { portVerifie: '445', lireIptables: 'Oui' },
+    'virgule-et-point-virgule':  { portVerifie: '2049', lireIptables: 'Non' },
+    'chemin-racine-c':           { portVerifie: '65535', lireIptables: 'Non' },
+    'chemin-avec-apostrophe':    { portVerifie: '389', lireIptables: 'Oui' },
+  },
+  'linux-network-diagnostic': {
+    'apostrophe-ascii':          { interface: 'enp0s3', cible: 'archive.ubuntu.com', testerConnectivite: 'Oui' },
+    'apostrophe-typographique':  { interface: '', cible: '1.1.1.1', testerConnectivite: 'Non' },
+    'dollar-backtick-guillemets':{ interface: 'ens18', cible: '192.168.30.1', testerConnectivite: 'Oui' },
+    'espaces-et-accents':        { interface: 'wlp2s0', cible: 'documentation.ubuntu.com', testerConnectivite: 'Non' },
+    'virgule-et-point-virgule':  { interface: 'eth0.30', cible: 'srv-fichiers.labo.local', testerConnectivite: 'Oui' },
+    'chemin-racine-c':           { interface: 'lo', cible: '127.0.0.1', testerConnectivite: 'Non' },
+    'chemin-avec-apostrophe':    { interface: 'br-lan', cible: 'dc01.kjemo.local', testerConnectivite: 'Oui' },
+  },
+  'netplan-readiness': {
+    'apostrophe-ascii':          { confirmation: 'enp0s3', interface: 'enp0s3', methode: 'Adresse statique', adresseCidr: '192.168.30.10/24', passerelle: '192.168.30.1', dns: '192.168.30.1 1.1.1.1', nomFichier: '99-kjemo-reseau.yaml' },
+    'apostrophe-typographique':  { confirmation: '', interface: 'ens18', methode: 'DHCP', adresseCidr: '', passerelle: '', dns: '', nomFichier: '99-dhcp.yaml' },
+    'dollar-backtick-guillemets':{ confirmation: 'enp1s0', interface: 'enp1s0', methode: 'Adresse statique', adresseCidr: '10.10.0.5/16', passerelle: '10.10.0.1', dns: '10.10.0.1', nomFichier: '70-labo.yaml' },
+    'espaces-et-accents':        { confirmation: '', interface: 'eth0.30', methode: 'Adresse statique', adresseCidr: '172.16.8.20/22', passerelle: '172.16.8.1', dns: '172.16.8.1 9.9.9.9', nomFichier: '60-vlan30.yaml' },
+    'virgule-et-point-virgule':  { confirmation: 'br-lan', interface: 'br-lan', methode: 'DHCP', adresseCidr: '', passerelle: '', dns: '', nomFichier: '99-pont.yaml' },
+    'chemin-racine-c':           { confirmation: '', interface: 'enx001122334455', methode: 'Adresse statique', adresseCidr: '192.168.1.200/24', passerelle: '192.168.1.254', dns: '192.168.1.254', nomFichier: '80-usb.yaml' },
+    'chemin-avec-apostrophe':    { confirmation: 'wlp2s0', interface: 'wlp2s0', methode: 'DHCP', adresseCidr: '', passerelle: '', dns: '', nomFichier: '99-sansfil.yaml' },
+  },
+  // Services et journaux. Les champs « unite », « periode » et « priorite »
+  // sont partages avec des assistants plus anciens dont le vocabulaire n'est
+  // pas le meme : les valeurs globales de VALEURS_LINUX ne conviennent donc
+  // pas, et c'est exactement la raison d'etre de cette table par outil.
+  'linux-package-diagnostic': {
+    'apostrophe-ascii':          { paquets: 'quota acl', verifierIntegrite: 'Non', simulerInstallation: 'Oui' },
+    'apostrophe-typographique':  { paquets: '', verifierIntegrite: 'Oui', simulerInstallation: 'Non' },
+    'dollar-backtick-guillemets':{ paquets: 'mdadm', verifierIntegrite: 'Non', simulerInstallation: 'Oui' },
+    'espaces-et-accents':        { paquets: 'samba winbind krb5-user', verifierIntegrite: 'Non', simulerInstallation: 'Non' },
+    'virgule-et-point-virgule':  { paquets: 'nfs-kernel-server,nfs-common', verifierIntegrite: 'Oui', simulerInstallation: 'Oui' },
+    'chemin-racine-c':           { paquets: 'cockpit', verifierIntegrite: 'Non', simulerInstallation: 'Non' },
+    'chemin-avec-apostrophe':    { paquets: 'openssh-server', verifierIntegrite: 'Oui', simulerInstallation: 'Oui' },
+  },
+  'linux-time-sync-diagnostic': {
+    'apostrophe-ascii':          { lireHorlogeMaterielle: 'Oui', lignesJournal: '20' },
+    'apostrophe-typographique':  { lireHorlogeMaterielle: 'Non', lignesJournal: '0' },
+    'dollar-backtick-guillemets':{ lireHorlogeMaterielle: 'Oui', lignesJournal: '200' },
+    'espaces-et-accents':        { lireHorlogeMaterielle: 'Non', lignesJournal: '50' },
+    'virgule-et-point-virgule':  { lireHorlogeMaterielle: 'Oui', lignesJournal: '5' },
+    'chemin-racine-c':           { lireHorlogeMaterielle: 'Non', lignesJournal: '120' },
+    'chemin-avec-apostrophe':    { lireHorlogeMaterielle: 'Oui', lignesJournal: '75' },
+  },
+  'systemd-service-control': {
+    'apostrophe-ascii':          { unite: 'nginx.service', action: 'Redemarrer', confirmation: 'nginx.service' },
+    'apostrophe-typographique':  { unite: 'cron.service', action: 'Demarrer', confirmation: '' },
+    'dollar-backtick-guillemets':{ unite: 'chrony.service', action: 'Arreter', confirmation: 'chrony.service' },
+    'espaces-et-accents':        { unite: 'smbd.service', action: 'Activer au demarrage', confirmation: '' },
+    'virgule-et-point-virgule':  { unite: 'nfs-server.service', action: 'Desactiver au demarrage', confirmation: 'nfs-server.service' },
+    'chemin-racine-c':           { unite: 'cockpit.socket', action: 'Recharger', confirmation: '' },
+    'chemin-avec-apostrophe':    { unite: 'mdmonitor.service', action: 'Redemarrer', confirmation: 'mdmonitor.service' },
+  },
+  'systemd-service-diagnostic': {
+    'apostrophe-ascii':          { unite: 'ssh.service', periode: 'Depuis ce demarrage', priorite: 'Erreurs et pires', lignes: '200' },
+    'apostrophe-typographique':  { unite: '', periode: '7 jours', priorite: 'Critiques seulement', lignes: '50' },
+    'dollar-backtick-guillemets':{ unite: 'smbd.service', periode: '15 minutes', priorite: 'Tout', lignes: '1000' },
+    'espaces-et-accents':        { unite: 'nfs-server.service', periode: '1 heure', priorite: 'Avertissements et pires', lignes: '300' },
+    'virgule-et-point-virgule':  { unite: 'cron.service', periode: '24 heures', priorite: 'Erreurs et pires', lignes: '75' },
+    'chemin-racine-c':           { unite: '', periode: 'Depuis ce demarrage', priorite: 'Tout', lignes: '5000' },
+    'chemin-avec-apostrophe':    { unite: 'cockpit.service', periode: '7 jours', priorite: 'Avertissements et pires', lignes: '120' },
+  },
+  // Les quatre assistants de comptes et permissions. Les huit jeux doivent
+  // produire huit scripts DISTINCTS : sans valeurs propres, « recursif » et
+  // « format » suffisent rarement, et plusieurs jeux retombent sur le meme
+  // fichier. C'est le defaut que les LOTS 4, 5 et 7 ont deja paye, et que le
+  // Plan 3 de sh-hygiene refuse desormais.
+  'linux-permission-audit': {
+    'apostrophe-ascii':          { chemin: '/srv/donnees-dadam', recursif: 'Oui', chercherRisques: 'Oui' },
+    'apostrophe-typographique':  { chemin: '/srv/donnees-typo', recursif: 'Non', chercherRisques: 'Non' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/dollar', recursif: 'Oui', chercherRisques: 'Non' },
+    'espaces-et-accents':        { chemin: '/srv/Donnees partagees', recursif: 'Non', chercherRisques: 'Oui' },
+    'virgule-et-point-virgule':  { chemin: '/srv/a-b_c', recursif: 'Oui', chercherRisques: 'Oui' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', recursif: 'Non', chercherRisques: 'Non' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/d-adam/projet', recursif: 'Oui', chercherRisques: 'Non' },
+  },
+  'linux-permission-change': {
+    'apostrophe-ascii':          { chemin: '/srv/donnees-dadam', proprietaire: 'o-brien', groupe: 'partage', mode: '2770', recursif: 'Non', confirmation: '/srv/donnees-dadam' },
+    'apostrophe-typographique':  { chemin: '/srv/donnees-typo', proprietaire: '', groupe: 'gg-typo', mode: '750', recursif: 'Oui', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/dollar', proprietaire: 'dadam', groupe: '', mode: '', recursif: 'Non', confirmation: '/srv/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/Donnees partagees', proprietaire: 'partage-admin', groupe: 'partage', mode: '2750', recursif: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/a-b_c', proprietaire: '', groupe: '', mode: '1770', recursif: 'Non', confirmation: '/srv/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', proprietaire: 'voisin', groupe: 'voisins', mode: '700', recursif: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/d-adam/projet', proprietaire: 'd-adam', groupe: 'projet', mode: '770', recursif: 'Oui', confirmation: '/srv/d-adam/projet' },
+  },
+  'linux-permission-acl': {
+    'apostrophe-ascii':          { chemin: '/srv/donnees-dadam', typeEntree: 'Utilisateur', nomEntree: 'o-brien', droits: 'rwx', appliquerDefaut: 'Oui', recursif: 'Non', confirmation: '/srv/donnees-dadam' },
+    'apostrophe-typographique':  { chemin: '/srv/donnees-typo', typeEntree: 'Groupe', nomEntree: 'gg-typo', droits: 'r-x', appliquerDefaut: 'Non', recursif: 'Oui', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/dollar', typeEntree: 'Utilisateur', nomEntree: 'dadam', droits: 'rw-', appliquerDefaut: 'Non', recursif: 'Non', confirmation: '/srv/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/Donnees partagees', typeEntree: 'Groupe', nomEntree: 'partage', droits: 'rwx', appliquerDefaut: 'Oui', recursif: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/a-b_c', typeEntree: 'Utilisateur', nomEntree: 'a-b_c', droits: 'r--', appliquerDefaut: 'Non', recursif: 'Non', confirmation: '/srv/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', typeEntree: 'Groupe', nomEntree: 'voisins', droits: 'rw-', appliquerDefaut: 'Oui', recursif: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/d-adam/projet', typeEntree: 'Utilisateur', nomEntree: 'd-adam', droits: 'rwx', appliquerDefaut: 'Oui', recursif: 'Oui', confirmation: '/srv/d-adam/projet' },
+  },
+  'linux-user-create': {
+    'apostrophe-ascii':          { nomUtilisateur: 'o-brien', commentaire: 'O Brien (apostrophe ASCII dans le nom)', groupePrincipal: '', groupesSecondaires: 'partage', shell: '/bin/bash', creerHome: 'Oui', confirmation: 'o-brien' },
+    'apostrophe-typographique':  { nomUtilisateur: 'gg-typo', commentaire: 'Nom avec apostrophe typographique \u2019 au milieu', groupePrincipal: 'etudiants', groupesSecondaires: '', shell: '/usr/sbin/nologin', creerHome: 'Non', confirmation: '' },
+    'dollar-backtick-guillemets':{ nomUtilisateur: 'dadam', commentaire: 'Valeur avec $HOME et `date` et "guillemets"', groupePrincipal: '', groupesSecondaires: 'partage,projet', shell: '/bin/bash', creerHome: 'Oui', confirmation: 'dadam' },
+    'espaces-et-accents':        { nomUtilisateur: 'partage-admin', commentaire: 'Donnees partagees, equipe reseau', groupePrincipal: 'partage', groupesSecondaires: '', shell: '/bin/bash', creerHome: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { nomUtilisateur: 'a-b_c', commentaire: 'a, b; c - separateurs dans le commentaire', groupePrincipal: '', groupesSecondaires: 'projet', shell: '/usr/sbin/nologin', creerHome: 'Non', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { nomUtilisateur: 'voisin', commentaire: 'Compte de service, aucune session', groupePrincipal: 'voisins', groupesSecondaires: '', shell: '/usr/sbin/nologin', creerHome: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { nomUtilisateur: 'd-adam', commentaire: 'D Adam, projet /srv/d-adam', groupePrincipal: '', groupesSecondaires: 'projet,partage', shell: '/bin/bash', creerHome: 'Oui', confirmation: 'd-adam' },
+  },
+  'linux-raid1-create': {
+    'apostrophe-ascii':          { ensemble: '/dev/md1', membre1: '/dev/sdb', membre2: '/dev/sdc', spare: '/dev/sdd', pointMontage: '/srv/raid-dadam', systemeFichiers: 'ext4', confirmation: '/dev/md1' },
+    'apostrophe-typographique':  { ensemble: '/dev/md2', membre1: '/dev/sdb', membre2: '/dev/sdc', spare: '', pointMontage: '/srv/raid-typo', systemeFichiers: 'xfs', confirmation: '' },
+    'dollar-backtick-guillemets':{ ensemble: '/dev/md3', membre1: '/dev/nvme0n1', membre2: '/dev/nvme1n1', spare: '/dev/nvme2n1', pointMontage: '/srv/raid-dollar', systemeFichiers: 'ext4', confirmation: '/dev/md3' },
+    'espaces-et-accents':        { ensemble: '/dev/md4', membre1: '/dev/vdb', membre2: '/dev/vdc', spare: '', pointMontage: '/srv/raid partage', systemeFichiers: 'ext4', confirmation: '' },
+    'virgule-et-point-virgule':  { ensemble: '/dev/md5', membre1: '/dev/sdd', membre2: '/dev/sde', spare: '/dev/sdf', pointMontage: '/srv/a-b_c-raid', systemeFichiers: 'xfs', confirmation: '/dev/md5' },
+    'chemin-racine-c':           { ensemble: '/dev/md6', membre1: '/dev/sdg', membre2: '/dev/sdh', spare: '', pointMontage: '/mnt/raid-voisin', systemeFichiers: 'ext4', confirmation: '' },
+    'chemin-avec-apostrophe':    { ensemble: '/dev/md7', membre1: '/dev/sdi', membre2: '/dev/sdj', spare: '/dev/sdk', pointMontage: '/srv/d-adam/raid', systemeFichiers: 'ext4', confirmation: '/dev/md7' },
+  },
+  'linux-raid-member-manage': {
+    'apostrophe-ascii':          { ensemble: '/dev/md1', membreSortant: '/dev/sdc', membreEntrant: '/dev/sdd', confirmation: '/dev/md1' },
+    'apostrophe-typographique':  { ensemble: '/dev/md2', membreSortant: '/dev/sdc', membreEntrant: '', confirmation: '' },
+    'dollar-backtick-guillemets':{ ensemble: '/dev/md3', membreSortant: '', membreEntrant: '/dev/nvme2n1', confirmation: '/dev/md3' },
+    'espaces-et-accents':        { ensemble: '/dev/md4', membreSortant: '/dev/vdc', membreEntrant: '/dev/vdd', confirmation: '' },
+    'virgule-et-point-virgule':  { ensemble: '/dev/md5', membreSortant: '/dev/sde', membreEntrant: '', confirmation: '/dev/md5' },
+    'chemin-racine-c':           { ensemble: '/dev/md6', membreSortant: '', membreEntrant: '/dev/sdh', confirmation: '' },
+    'chemin-avec-apostrophe':    { ensemble: '/dev/md7', membreSortant: '/dev/sdj', membreEntrant: '/dev/sdk', confirmation: '/dev/md7' },
+  },
+  'linux-quota-enable': {
+    'apostrophe-ascii':          { pointMontage: '/srv/donnees-dadam', portee: 'Utilisateurs', confirmation: '/srv/donnees-dadam' },
+    'apostrophe-typographique':  { pointMontage: '/srv/donnees-typo', portee: 'Groupes', confirmation: '' },
+    'dollar-backtick-guillemets':{ pointMontage: '/srv/dollar', portee: 'Les deux', confirmation: '/srv/dollar' },
+    'espaces-et-accents':        { pointMontage: '/srv/Donnees partagees', portee: 'Les deux', confirmation: '' },
+    'virgule-et-point-virgule':  { pointMontage: '/srv/a-b_c', portee: 'Utilisateurs', confirmation: '/srv/a-b_c' },
+    'chemin-racine-c':           { pointMontage: '/mnt/voisin', portee: 'Groupes', confirmation: '' },
+    'chemin-avec-apostrophe':    { pointMontage: "/srv/d-adam/projet", portee: 'Les deux', confirmation: "/srv/d-adam/projet" },
+  },
+  'linux-quota-limits': {
+    'apostrophe-ascii':          { pointMontage: '/srv/donnees-dadam', typeCible: 'Utilisateur', nomCible: 'o-brien', unite: 'Mio', espaceSoft: '900', espaceHard: '1000', inodesSoft: '0', inodesHard: '0', confirmation: 'o-brien' },
+    'apostrophe-typographique':  { pointMontage: '/srv/donnees-typo', typeCible: 'Groupe', nomCible: 'gg-typo', unite: 'Gio', espaceSoft: '5', espaceHard: '10', inodesSoft: '1000', inodesHard: '2000', confirmation: '' },
+    'dollar-backtick-guillemets':{ pointMontage: '/srv/dollar', typeCible: 'Utilisateur', nomCible: 'dadam', unite: 'Kio', espaceSoft: '0', espaceHard: '0', inodesSoft: '0', inodesHard: '0', confirmation: 'dadam' },
+    'espaces-et-accents':        { pointMontage: '/srv/Donnees partagees', typeCible: 'Groupe', nomCible: 'partage', unite: 'Mio', espaceSoft: '2048', espaceHard: '4096', inodesSoft: '0', inodesHard: '0', confirmation: '' },
+    'virgule-et-point-virgule':  { pointMontage: '/srv/a-b_c', typeCible: 'Utilisateur', nomCible: 'a-b_c', unite: 'Mio', espaceSoft: '100', espaceHard: '0', inodesSoft: '50', inodesHard: '0', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { pointMontage: '/mnt/voisin', typeCible: 'Utilisateur', nomCible: 'voisin', unite: 'Gio', espaceSoft: '1', espaceHard: '2', inodesSoft: '0', inodesHard: '0', confirmation: '' },
+    'chemin-avec-apostrophe':    { pointMontage: "/srv/d-adam/projet", typeCible: 'Groupe', nomCible: 'export-hier', unite: 'Mio', espaceSoft: '512', espaceHard: '512', inodesSoft: '10', inodesHard: '20', confirmation: 'export-hier' },
+  },
+  'linux-disk-partition-mount': {
+    'apostrophe-ascii': {
+      peripherique: '/dev/sdb', pointMontage: '/srv/donnees-dadam', systemeFichiers: 'ext4',
+      etiquette: 'dadam', optionsMontage: 'defaults,nofail', confirmation: '/dev/sdb',
+    },
+    'apostrophe-typographique': {
+      peripherique: '/dev/sdc', pointMontage: '/srv/donnees-typo', systemeFichiers: 'xfs',
+      etiquette: 'typo', optionsMontage: 'defaults', confirmation: '',
+    },
+    'dollar-backtick-guillemets': {
+      peripherique: '/dev/nvme0n1', pointMontage: '/srv/dollar', systemeFichiers: 'ext4',
+      etiquette: '', optionsMontage: 'defaults,noatime,nofail', confirmation: '/dev/nvme0n1',
+    },
+    'espaces-et-accents': {
+      peripherique: '/dev/vdb', pointMontage: '/srv/Donnees partagees', systemeFichiers: 'ext4',
+      etiquette: 'partage', optionsMontage: 'defaults,nofail', confirmation: '',
+    },
+    'virgule-et-point-virgule': {
+      peripherique: '/dev/sdd', pointMontage: '/srv/a-b_c', systemeFichiers: 'xfs',
+      etiquette: 'a-b_c', optionsMontage: 'defaults', confirmation: '/dev/sdd',
+    },
+    'chemin-racine-c': {
+      peripherique: '/dev/mmcblk0', pointMontage: '/mnt/voisin', systemeFichiers: 'ext4',
+      etiquette: 'voisin', optionsMontage: 'defaults,nofail', confirmation: '',
+    },
+    'chemin-avec-apostrophe': {
+      peripherique: '/dev/sde', pointMontage: '/srv/d-adam/projet', systemeFichiers: 'ext4',
+      etiquette: 'export', optionsMontage: 'defaults,noatime,nofail', confirmation: '/dev/sde',
+    },
+  },
+  // Les quatre assistants SSH. « port », « confirmation » et « nomFichier »
+  // sont partages avec le reseau et le stockage, dont les valeurs globales
+  // n'ont rien a voir : d'ou cette table par outil. Pour
+  // ssh-hardening-audit, les jeux ou un durcissement est demande doivent
+  // nommer un compte — le formulaire refuse l'inverse, et c'est voulu.
+  // Samba AD. « realm », « netbios » et « adresseIp » sont propres a ce
+  // module ; « confirmation » et « compte » sont partages avec presque tout le
+  // lot, et leurs valeurs globales n'ont rien a voir avec un domaine.
+  'samba-ad-dc-readiness': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', netbios: 'KJEMO' },
+    'apostrophe-typographique':  { realm: 'labo.interne', netbios: 'LABO' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', netbios: 'DOLLAR' },
+    'espaces-et-accents':        { realm: 'partage.lan', netbios: 'PARTAGE' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', netbios: 'A-B-C' },
+    'chemin-racine-c':           { realm: 'voisin.lan', netbios: 'VOISIN' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', netbios: 'D-ADAM' },
+  },
+  'samba-ad-dc-provision': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', netbios: 'KJEMO', adresseIp: '192.168.30.10', nomFichier: 'kjemo-provision-ad.txt', confirmation: 'kjemo.lan' },
+    'apostrophe-typographique':  { realm: 'labo.interne', netbios: 'LABO', adresseIp: '10.10.0.5', nomFichier: 'labo-provision.txt', confirmation: '' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', netbios: 'DOLLAR', adresseIp: '172.16.8.20', nomFichier: '70-dollar-ad.txt', confirmation: 'dollar.lan' },
+    'espaces-et-accents':        { realm: 'partage.lan', netbios: 'PARTAGE', adresseIp: '192.168.1.200', nomFichier: 'partage-ad.txt', confirmation: '' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', netbios: 'A-B-C', adresseIp: '192.168.30.11', nomFichier: 'a-b_c-ad.txt', confirmation: 'a-b-c.lan' },
+    'chemin-racine-c':           { realm: 'voisin.lan', netbios: 'VOISIN', adresseIp: '10.0.0.9', nomFichier: 'voisin-ad.txt', confirmation: '' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', netbios: 'D-ADAM', adresseIp: '192.168.30.12', nomFichier: 'd-adam-ad.txt', confirmation: 'd-adam.lan' },
+  },
+  'samba-ad-health': {
+    'apostrophe-ascii':          { realm: 'kjemo.lan', verifierReplication: 'Oui' },
+    'apostrophe-typographique':  { realm: 'labo.interne', verifierReplication: 'Non' },
+    'dollar-backtick-guillemets':{ realm: 'dollar.lan', verifierReplication: 'Oui' },
+    'espaces-et-accents':        { realm: 'partage.lan', verifierReplication: 'Non' },
+    'virgule-et-point-virgule':  { realm: 'a-b-c.lan', verifierReplication: 'Oui' },
+    'chemin-racine-c':           { realm: 'voisin.lan', verifierReplication: 'Non' },
+    'chemin-avec-apostrophe':    { realm: 'd-adam.lan', verifierReplication: 'Oui' },
+  },
+  'samba-ad-user-manage': {
+    'apostrophe-ascii':          { action: 'Lister les comptes', compte: '' },
+    'apostrophe-typographique':  { action: 'Examiner un compte', compte: 'o-brien' },
+    'dollar-backtick-guillemets':{ action: 'Préparer une création', compte: 'dadam' },
+    'espaces-et-accents':        { action: 'Préparer une désactivation', compte: 'partage-admin' },
+    'virgule-et-point-virgule':  { action: 'Préparer une réactivation', compte: 'a-b_c' },
+    'chemin-racine-c':           { action: 'Préparer une création', compte: 'voisin' },
+    'chemin-avec-apostrophe':    { action: 'Examiner un compte', compte: 'd-adam' },
+  },
+  // Samba. « chemin », « groupe » et « confirmation » sont partages avec les
+  // assistants de permissions, dont les valeurs globales designent d'autres
+  // cibles : d'ou cette table par outil.
+  'samba-readiness': {
+    'apostrophe-ascii':          { cheminEnvisage: '/srv/partage', compteEnvisage: 'o-brien' },
+    'apostrophe-typographique':  { cheminEnvisage: '', compteEnvisage: '' },
+    'dollar-backtick-guillemets':{ cheminEnvisage: '/srv/dollar', compteEnvisage: 'dadam' },
+    'espaces-et-accents':        { cheminEnvisage: '/srv/Donnees partagees', compteEnvisage: '' },
+    'virgule-et-point-virgule':  { cheminEnvisage: '/srv/a-b_c', compteEnvisage: 'a-b_c' },
+    'chemin-racine-c':           { cheminEnvisage: '', compteEnvisage: 'voisin' },
+    'chemin-avec-apostrophe':    { cheminEnvisage: '/srv/d-adam/projet', compteEnvisage: 'd-adam' },
+  },
+  'samba-share-create': {
+    'apostrophe-ascii':          { nomPartage: 'partage', chemin: '/srv/partage', groupe: 'partage', ecriture: 'Oui', hotesAutorises: '192.168.30.0/24', confirmation: 'partage' },
+    'apostrophe-typographique':  { nomPartage: 'archives', chemin: '/srv/archives', groupe: 'gg-typo', ecriture: 'Non', hotesAutorises: '', confirmation: '' },
+    'dollar-backtick-guillemets':{ nomPartage: 'dollar', chemin: '/srv/dollar', groupe: 'dollar', ecriture: 'Oui', hotesAutorises: '10.10.0.0/16', confirmation: 'dollar' },
+    'espaces-et-accents':        { nomPartage: 'donnees', chemin: '/srv/Donnees partagees', groupe: 'partage', ecriture: 'Oui', hotesAutorises: '', confirmation: '' },
+    'virgule-et-point-virgule':  { nomPartage: 'a-b_c', chemin: '/srv/a-b_c', groupe: 'a-b_c', ecriture: 'Non', hotesAutorises: '172.16.8.0/22 192.168.1.5', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { nomPartage: 'voisin', chemin: '/mnt/voisin', groupe: 'voisins', ecriture: 'Non', hotesAutorises: '', confirmation: '' },
+    'chemin-avec-apostrophe':    { nomPartage: 'd-adam', chemin: '/srv/d-adam/projet', groupe: 'projet', ecriture: 'Oui', hotesAutorises: '192.168.30.50', confirmation: 'd-adam' },
+  },
+  'samba-diagnostic': {
+    'apostrophe-ascii':          { nomPartage: 'partage', compteTeste: 'o-brien', hoteTeste: '192.168.30.50' },
+    'apostrophe-typographique':  { nomPartage: '', compteTeste: '', hoteTeste: '' },
+    'dollar-backtick-guillemets':{ nomPartage: 'dollar', compteTeste: 'dadam', hoteTeste: '10.10.0.7' },
+    'espaces-et-accents':        { nomPartage: 'donnees', compteTeste: 'partage-admin', hoteTeste: '' },
+    'virgule-et-point-virgule':  { nomPartage: 'a-b_c', compteTeste: 'a-b_c', hoteTeste: '172.16.8.9' },
+    'chemin-racine-c':           { nomPartage: 'voisin', compteTeste: '', hoteTeste: '192.168.1.200' },
+    'chemin-avec-apostrophe':    { nomPartage: 'd-adam', compteTeste: 'd-adam', hoteTeste: '' },
+  },
+  // Cockpit. « port » est partage avec SSH et le pare-feu, dont les valeurs
+  // globales n'ont rien a voir avec 9090.
+  'cockpit-install-readiness': {
+    'apostrophe-ascii':          { port: '9090', verifierCertificat: 'Oui' },
+    'apostrophe-typographique':  { port: '9091', verifierCertificat: 'Non' },
+    'dollar-backtick-guillemets':{ port: '9090', verifierCertificat: 'Non' },
+    'espaces-et-accents':        { port: '8443', verifierCertificat: 'Oui' },
+    'virgule-et-point-virgule':  { port: '10090', verifierCertificat: 'Oui' },
+    'chemin-racine-c':           { port: '443', verifierCertificat: 'Non' },
+    'chemin-avec-apostrophe':    { port: '19090', verifierCertificat: 'Oui' },
+  },
+  'cockpit-connection-diagnostic': {
+    'apostrophe-ascii':          { adresseNavigateur: '192.168.30.10', port: '9090', lireJournal: 'Oui' },
+    'apostrophe-typographique':  { adresseNavigateur: '', port: '9090', lireJournal: 'Non' },
+    'dollar-backtick-guillemets':{ adresseNavigateur: '10.10.0.5', port: '9091', lireJournal: 'Oui' },
+    'espaces-et-accents':        { adresseNavigateur: 'srv-labo.kjemo.local', port: '8443', lireJournal: 'Non' },
+    'virgule-et-point-virgule':  { adresseNavigateur: 'dc01.kjemo.local', port: '10090', lireJournal: 'Oui' },
+    'chemin-racine-c':           { adresseNavigateur: '', port: '443', lireJournal: 'Oui' },
+    'chemin-avec-apostrophe':    { adresseNavigateur: 'd-adam.labo.local', port: '19090', lireJournal: 'Non' },
+  },
+  'ssh-server-readiness': {
+    'apostrophe-ascii':          { port: '22', lireJournal: 'Oui' },
+    'apostrophe-typographique':  { port: '2222', lireJournal: 'Non' },
+    'dollar-backtick-guillemets':{ port: '22', lireJournal: 'Non' },
+    'espaces-et-accents':        { port: '2022', lireJournal: 'Oui' },
+    'virgule-et-point-virgule':  { port: '65535', lireJournal: 'Oui' },
+    'chemin-racine-c':           { port: '1', lireJournal: 'Non' },
+    'chemin-avec-apostrophe':    { port: '8022', lireJournal: 'Oui' },
+  },
+  'ssh-client-diagnostic': {
+    'apostrophe-ascii':          { hote: 'srv-labo.kjemo.local', utilisateur: 'o-brien', port: '22', interrogerServeur: 'Oui' },
+    'apostrophe-typographique':  { hote: 'dc01.kjemo.local', utilisateur: '', port: '22', interrogerServeur: 'Non' },
+    'dollar-backtick-guillemets':{ hote: '192.168.30.10', utilisateur: 'dadam', port: '2222', interrogerServeur: 'Oui' },
+    'espaces-et-accents':        { hote: 'srv-fichiers.labo.local', utilisateur: 'partage-admin', port: '22', interrogerServeur: 'Non' },
+    'virgule-et-point-virgule':  { hote: 'srv-a-b-c.labo.local', utilisateur: 'a-b_c', port: '2022', interrogerServeur: 'Oui' },
+    'chemin-racine-c':           { hote: 'localhost', utilisateur: '', port: '22', interrogerServeur: 'Non' },
+    'chemin-avec-apostrophe':    { hote: 'd-adam.labo.local', utilisateur: 'd-adam', port: '8022', interrogerServeur: 'Oui' },
+  },
+  'ssh-key-readiness': {
+    'apostrophe-ascii':          { compte: 'o-brien' },
+    'apostrophe-typographique':  { compte: '' },
+    'dollar-backtick-guillemets':{ compte: 'dadam' },
+    'espaces-et-accents':        { compte: 'partage-admin' },
+    'virgule-et-point-virgule':  { compte: 'a-b_c' },
+    'chemin-racine-c':           { compte: 'voisin' },
+    'chemin-avec-apostrophe':    { compte: 'd-adam' },
+  },
+  'ssh-hardening-audit': {
+    'apostrophe-ascii':          { compteAdminProuve: 'o-brien', desactiverMotDePasse: 'Oui', interdireRoot: 'Oui', nomFichier: '99-kjemo-durcissement.conf', confirmation: 'o-brien' },
+    'apostrophe-typographique':  { compteAdminProuve: '', desactiverMotDePasse: 'Non', interdireRoot: 'Non', nomFichier: '99-audit-seul.conf', confirmation: '' },
+    'dollar-backtick-guillemets':{ compteAdminProuve: 'dadam', desactiverMotDePasse: 'Oui', interdireRoot: 'Non', nomFichier: '70-labo-ssh.conf', confirmation: 'dadam' },
+    'espaces-et-accents':        { compteAdminProuve: 'partage-admin', desactiverMotDePasse: 'Non', interdireRoot: 'Oui', nomFichier: '60-sans-root.conf', confirmation: '' },
+    'virgule-et-point-virgule':  { compteAdminProuve: 'a-b_c', desactiverMotDePasse: 'Oui', interdireRoot: 'Oui', nomFichier: '80-a-b_c.conf', confirmation: 'a-b_c' },
+    'chemin-racine-c':           { compteAdminProuve: '', desactiverMotDePasse: 'Non', interdireRoot: 'Non', nomFichier: '90-voisin.conf', confirmation: '' },
+    'chemin-avec-apostrophe':    { compteAdminProuve: 'd-adam', desactiverMotDePasse: 'Non', interdireRoot: 'Oui', nomFichier: '99-d-adam.conf', confirmation: 'd-adam' },
+  },
+  // NFS. Aucun jeu ne porte de joker, de « * » ni de /0 : le formulaire les
+  // refuse, et un jeu qui en contiendrait ferait echouer la generation. Les
+  // cas refuses sont eprouves par le banc, qui les ATTEND.
+  //
+  // « chemin » n a pas d espace pour nfs-export-create : exports(5) exige des
+  // guillemets autour d un nom d export qui en contient, et l assistant refuse
+  // plutot que de les ecrire.
+  'nfs-server-readiness': {
+    'apostrophe-ascii':          { cheminEnvisage: '/srv/nfs/partage', clientEnvisage: '192.168.30.0/24' },
+    'apostrophe-typographique':  { cheminEnvisage: '', clientEnvisage: '' },
+    'dollar-backtick-guillemets':{ cheminEnvisage: '/srv/nfs/dollar', clientEnvisage: '10.10.0.7' },
+    'espaces-et-accents':        { cheminEnvisage: '/srv/nfs/Donnees partagees', clientEnvisage: 'poste-labo.kjemo.local' },
+    'virgule-et-point-virgule':  { cheminEnvisage: '/srv/nfs/a-b_c', clientEnvisage: '172.16.8.0/22' },
+    'chemin-racine-c':           { cheminEnvisage: '/mnt/voisin', clientEnvisage: '' },
+    'chemin-avec-apostrophe':    { cheminEnvisage: '/srv/nfs/d-adam/projet', clientEnvisage: 'd-adam.labo.local' },
+  },
+  'nfs-export-create': {
+    'apostrophe-ascii':          { chemin: '/srv/nfs/partage', client: '192.168.30.0/24', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/partage' },
+    'apostrophe-typographique':  { chemin: '/srv/nfs/archives', client: '192.168.30.50', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
+    'dollar-backtick-guillemets':{ chemin: '/srv/nfs/dollar', client: '10.10.0.0/16', ecriture: 'Oui', squashTous: 'Oui', confirmation: '/srv/nfs/dollar' },
+    'espaces-et-accents':        { chemin: '/srv/nfs/donnees-partagees', client: 'poste-labo.kjemo.local', ecriture: 'Non', squashTous: 'Oui', confirmation: '' },
+    'virgule-et-point-virgule':  { chemin: '/srv/nfs/a-b_c', client: '172.16.8.0/22', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/a-b_c' },
+    'chemin-racine-c':           { chemin: '/mnt/voisin', client: '192.168.1.200', ecriture: 'Non', squashTous: 'Non', confirmation: '' },
+    'chemin-avec-apostrophe':    { chemin: '/srv/nfs/d-adam/projet', client: 'd-adam.labo.local', ecriture: 'Oui', squashTous: 'Non', confirmation: '/srv/nfs/d-adam/projet' },
+  },
+  // Jonction de domaine Windows. Ces trois assistants vivent dans la
+  // categorie du LOT 6 et viennent du LOT 7 : leurs champs portent des
+  // identifiants a eux, et aucune valeur commune ne les atteint.
+  //
+  // Aucun jeu ne contient de mot de passe : il n'y a aucun champ pour en
+  // recevoir, et c'est le point du module.
+  'windows-domain-join-readiness': {
+    'apostrophe-ascii':          { jrDomaine: 'kjemo.local', jrControleur: 'dc01.kjemo.local' },
+    'apostrophe-typographique':  { jrDomaine: 'labo.kjemo.local', jrControleur: '' },
+    'dollar-backtick-guillemets':{ jrDomaine: 'dollar.local', jrControleur: '10.10.0.5' },
+    'espaces-et-accents':        { jrDomaine: 'ecole.kjemo.local', jrControleur: 'dc-ecole.kjemo.local' },
+    'virgule-et-point-virgule':  { jrDomaine: 'a-b-c.local', jrControleur: '172.16.8.10' },
+    'chemin-racine-c':           { jrDomaine: 'voisin.local', jrControleur: '' },
+    'chemin-avec-apostrophe':    { jrDomaine: 'd-adam.labo.local', jrControleur: 'dc-d-adam.labo.local' },
+  },
+  'windows-domain-join': {
+    'apostrophe-ascii':          { mode: 'Appliquer', jdDomaine: 'kjemo.local', jdControleur: 'dc01.kjemo.local', jdUniteOrg: 'OU=Postes,DC=kjemo,DC=local', jdJournal: 'C:\\Kjemo\\Journaux', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'apostrophe-typographique':  { mode: 'Diagnostic', jdDomaine: 'labo.kjemo.local', jdControleur: '', jdUniteOrg: '', jdJournal: 'C:\\Kjemo\\Jonction', jdConfirmation: '' },
+    'dollar-backtick-guillemets':{ mode: 'Appliquer', jdDomaine: 'dollar.local', jdControleur: '10.10.0.5', jdUniteOrg: '', jdJournal: 'D:\\Journaux\\Kjemo', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'espaces-et-accents':        { mode: 'Diagnostic', jdDomaine: 'ecole.kjemo.local', jdControleur: 'dc-ecole.kjemo.local', jdUniteOrg: 'OU=Salle 204,OU=Postes,DC=ecole,DC=kjemo,DC=local', jdJournal: 'C:\\Kjemo\\Journaux ecole', jdConfirmation: '' },
+    'virgule-et-point-virgule':  { mode: 'Appliquer', jdDomaine: 'a-b-c.local', jdControleur: '172.16.8.10', jdUniteOrg: 'OU=a-b_c,DC=a-b-c,DC=local', jdJournal: 'C:\\Kjemo\\a-b_c', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+    'chemin-racine-c':           { mode: 'Diagnostic', jdDomaine: 'voisin.local', jdControleur: '', jdUniteOrg: '', jdJournal: 'C:\\Journaux', jdConfirmation: '' },
+    'chemin-avec-apostrophe':    { mode: 'Appliquer', jdDomaine: 'd-adam.labo.local', jdControleur: 'dc-d-adam.labo.local', jdUniteOrg: 'CN=Computers,DC=d-adam,DC=labo,DC=local', jdJournal: 'C:\\Kjemo\\d-adam', jdConfirmation: 'JE JOINS CE POSTE AU DOMAINE' },
+  },
+  'windows-domain-join-diagnostic': {
+    'apostrophe-ascii':          { jgDomaine: 'kjemo.local', jgControleur: 'dc01.kjemo.local', jgJours: '7' },
+    'apostrophe-typographique':  { jgDomaine: '', jgControleur: '', jgJours: '1' },
+    'dollar-backtick-guillemets':{ jgDomaine: 'dollar.local', jgControleur: '10.10.0.5', jgJours: '14' },
+    'espaces-et-accents':        { jgDomaine: 'ecole.kjemo.local', jgControleur: '', jgJours: '30' },
+    'virgule-et-point-virgule':  { jgDomaine: 'a-b-c.local', jgControleur: '172.16.8.10', jgJours: '3' },
+    'chemin-racine-c':           { jgDomaine: '', jgControleur: 'dc-voisin.voisin.local', jgJours: '60' },
+    'chemin-avec-apostrophe':    { jgDomaine: 'd-adam.labo.local', jgControleur: '', jgJours: '21' },
+  },
+};
+
 for (const jeu of DATASETS) {
   const ajout = VALEURS_POSTE[jeu.name];
   if (ajout) Object.assign(jeu.values, ajout);
@@ -1980,45 +2503,95 @@ for (const jeu of DATASETS) {
 }
 
 const report = { generated: [], errors: [] };
+const valeursLinuxUtilisees = {};
 
 for (const tool of tools) {
   const defaults = Object.fromEntries(tool.fields.map((f) => [f.id, String(f.default ?? '')]));
 
   for (const dataset of DATASETS) {
     // Merge defaults + dataset overrides (uniquement les fields que l'outil a)
+    //
+    // Les valeurs Linux sont appliquées ICI, par outil, et APRÈS les valeurs
+    // communes. Raison : « source » est un champ partagé avec un assistant
+    // Windows figé. Une fusion globale dans DATASETS.values changerait son
+    // script et casserait la non-régression des 856.
+    const linux = plateformeDe(tool) === 'Linux' ? (VALEURS_LINUX[dataset.name] ?? {}) : {};
+    const propres = (VALEURS_PAR_OUTIL[tool.id] ?? {})[dataset.name] ?? {};
     const values = {};
     for (const f of tool.fields) {
+      if (propres[f.id] !== undefined) { values[f.id] = propres[f.id]; continue; }
+      if (linux[f.id] !== undefined) { values[f.id] = linux[f.id]; continue; }
       values[f.id] = dataset.values[f.id] !== undefined ? dataset.values[f.id] : defaults[f.id];
     }
 
+    // ------------------------------------------------------------------------
+    // DEUX PLATEFORMES, DEUX RÈGLES D'ÉCRITURE OPPOSÉES
+    //
+    // .ps1 : BOM UTF-8 obligatoire. Sans lui, Windows PowerShell 5.1 relit le
+    //        fichier en CP1252 et l'analyse déraille sur le premier tiret
+    //        cadratin. Le LOT 6 l'a payé.
+    // .sh  : BOM interdit, LF strict. Les trois octets du BOM se placeraient
+    //        avant « #! » et masqueraient le shebang.
+    //
+    // Et deux NORMALISEURS distincts : normalizeScript() remplace « antislash +
+    // saut de ligne » par « backtick + saut de ligne », ce qui est la
+    // continuation de ligne PowerShell. Appliqué à du Bash, il remplacerait des
+    // continuations valides par des substitutions de commande.
+    // ------------------------------------------------------------------------
+    const bash = estBash(tool);
     let content;
     try {
-      content = normalizeScript(tool.generate(values));
+      const brut = tool.generate(values);
+      content = bash ? normalizeScriptSh(brut) : normalizeScript(brut);
     } catch (err) {
       report.errors.push({ tool: tool.id, dataset: dataset.name, error: String(err) });
       console.error(`[ERR] ${tool.id} / ${dataset.name} : ${err}`);
       continue;
     }
 
-    const filename = `${tool.id}__${dataset.name}.ps1`;
+    const filename = `${tool.id}__${dataset.name}${extensionDe(tool)}`;
     const outPath  = resolve(OUT_DIR, filename);
-    // Écriture avec BOM UTF-8 (EF BB BF) pour PS 5.1
     const contentBuf = Buffer.from(content, 'utf-8');
-    writeFileSync(outPath, Buffer.concat([BOM, contentBuf]));
-    // Vérification des 3 premiers octets
-    const written = Buffer.alloc(3);
-    const fd = (await import('node:fs')).openSync(outPath, 'r');
-    (await import('node:fs')).readSync(fd, written, 0, 3, 0);
-    (await import('node:fs')).closeSync(fd);
-    if (!written.equals(BOM)) {
-      console.error(`[BOM FAIL] ${filename} : premiers octets ${written.toString('hex')} ≠ efbbbf`);
+    writeFileSync(outPath, bash ? contentBuf : Buffer.concat([BOM, contentBuf]));
+
+    // Relecture des premiers octets, dans les DEUX sens. On ne se contente pas
+    // d'avoir écrit ce qu'il fallait : on vérifie ce qui est sur le disque.
+    const tete = Buffer.alloc(3);
+    const fd = openSync(outPath, 'r');
+    readSync(fd, tete, 0, 3, 0);
+    closeSync(fd);
+    if (bash) {
+      if (tete.equals(BOM)) {
+        console.error(`[BOM INTERDIT] ${filename} : un .sh ne doit JAMAIS commencer par EF BB BF — le shebang serait masqué.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM présent sur un .sh' });
+      }
+      if (!content.startsWith('#!/usr/bin/env bash\n')) {
+        console.error(`[SHEBANG] ${filename} : première ligne incorrecte.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'shebang incorrect' });
+      }
+      if (content.includes('\r')) {
+        console.error(`[CRLF] ${filename} : le fichier contient un retour chariot.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'CR présent dans un .sh' });
+      }
+    } else if (!tete.equals(BOM)) {
+      console.error(`[BOM FAIL] ${filename} : premiers octets ${tete.toString('hex')} ≠ efbbbf`);
       report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM manquant' });
     }
-    report.generated.push({ tool: tool.id, dataset: dataset.name, file: filename, bytes: contentBuf.length + 3 });
+    report.generated.push({
+      tool: tool.id, dataset: dataset.name, file: filename,
+      bytes: contentBuf.length + (bash ? 0 : 3), sortie: bash ? '.sh' : '.ps1',
+    });
+    if (plateformeDe(tool) === 'Linux') valeursLinuxUtilisees[filename] = values;
   }
 }
 
 writeFileSync(resolve(OUT_DIR, 'report.json'), JSON.stringify(report, null, 2), 'utf-8');
+
+// Les valeurs REELLEMENT transmises a chaque script Bash, ecrites telles
+// quelles. test/sh-shellcheck.test.mjs s en sert pour decider si une alerte
+// ShellCheck porte sur une valeur saisie par l utilisateur ou sur du code
+// ecrit par nous. Sans ce fichier, la tolerance serait une affirmation.
+writeFileSync(resolve(OUT_DIR, '_valeurs-linux.json'), JSON.stringify(valeursLinuxUtilisees, null, 2), 'utf-8');
 
 
 
@@ -2128,7 +2701,12 @@ if (ecarts712.length === 0) {
 // Chaque lot annonce SA version. La correspondance se fait par la categorie
 // de l'outil, lue dans le catalogue : c'est elle qui dit de quel lot vient un
 // script, et non son nom de fichier.
+// La correspondance se fait par la categorie, et — depuis le commit 24/n —
+// par la SOUS-RUBRIQUE quand une categorie heberge deux lots. « Jonction de
+// domaine » vit dans la categorie du LOT 6 parce que c'est la qu'on la
+// cherche, et vient du LOT 7. La regle la plus precise passe en premier.
 const VERSIONS_PAR_LOT = [
+  { lot: 'LOT 7', categorie: 'Poste de travail Windows', sousRubrique: 'Jonction de domaine', version: 'LOT 7 — Jonction de domaine Windows — 7.0.0' },
   { lot: 'LOT 5', categorie: 'Réseau', version: 'LOT 5 — Réseau avancé — 5.0.0' },
   { lot: 'LOT 6', categorie: 'Poste de travail Windows', version: 'LOT 6 — Poste de travail Windows — 6.0.0' },
 ];
@@ -2139,7 +2717,8 @@ const VERSION_HERITEE = 'LOT 2 — 2.0.0';
 // font pas partie des « nouveaux ».
 const versionAttendue = new Map();
 for (const t of tools) {
-  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category);
+  const regle = VERSIONS_PAR_LOT.find((r) => r.categorie === t.category
+    && (!r.sousRubrique || r.sousRubrique === t.subcategory));
   if (regle) versionAttendue.set(t.id, regle);
 }
 

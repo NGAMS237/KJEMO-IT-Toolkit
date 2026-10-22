@@ -1,0 +1,2951 @@
+{
+  "lot": "LOT 7",
+  "total": 368,
+  "hotes": {
+    "docs.cockpit-project.org": 2,
+    "documentation.ubuntu.com": 3,
+    "learn.microsoft.com": 239,
+    "manpages.ubuntu.com": 117,
+    "netplan.readthedocs.io": 1,
+    "pubs.opengroup.org": 1,
+    "web.mit.edu": 1,
+    "wiki.samba.org": 3,
+    "www.gnu.org": 1
+  },
+  "sources": [
+    {
+      "url": "https://docs.cockpit-project.org/cockpit-guide/latest/guide/https.html",
+      "hote": "docs.cockpit-project.org",
+      "citePar": [
+        "cockpit-connection-diagnostic",
+        "cockpit-install-readiness",
+        "commande:cr-cockpit-certificats"
+      ]
+    },
+    {
+      "url": "https://docs.cockpit-project.org/cockpit-guide/latest/guide/startup.html",
+      "hote": "docs.cockpit-project.org",
+      "citePar": [
+        "cockpit-connection-diagnostic",
+        "cockpit-install-readiness",
+        "commande:cr-cockpit-socket"
+      ]
+    },
+    {
+      "url": "https://documentation.ubuntu.com/server/how-to/networking/install-nfs/",
+      "hote": "documentation.ubuntu.com",
+      "citePar": [
+        "nfs-export-create",
+        "nfs-server-readiness"
+      ]
+    },
+    {
+      "url": "https://documentation.ubuntu.com/server/how-to/networking/serve-ntp-with-chrony/",
+      "hote": "documentation.ubuntu.com",
+      "citePar": [
+        "linux-time-sync-diagnostic"
+      ]
+    },
+    {
+      "url": "https://documentation.ubuntu.com/server/how-to/software/package-management/",
+      "hote": "documentation.ubuntu.com",
+      "citePar": [
+        "linux-package-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/defender-endpoint/configure-exclusions-microsoft-defender-antivirus",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/defender-endpoint/microsoft-defender-antivirus-compatibility",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/defender-endpoint/run-scan-microsoft-defender-antivirus",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-scan"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/deployedge/microsoft-edge-policies",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "browser-cache-diagnostic",
+        "gpo-software-shortcuts-browser"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.io.fileattributes",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "browser-cache-diagnostic",
+        "temp-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.net.ipaddress",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ipv4-subnet-calculator"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.net.security.sslstream",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "http-https-tls-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/api/system.security.cryptography.x509certificates.x509certificate2",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "http-https-tls-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-childitem",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "disk-scan"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/entra/identity/authentication/concept-sspr-howitworks",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-access-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/entra/identity/devices/troubleshoot-device-dsregcmd",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-access-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/add-adgroupmember",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-group-members-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/clear-adaccountexpiration",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/disable-adaccount",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-computer-cleanup",
+        "ad-users-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/enable-adaccount",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adcomputer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-computer-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-addomain",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-domain-full-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-addomaincontroller",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dns-health"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adforest",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-domain-full-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adgroup",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-groups"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adgroupmember",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-health",
+        "ad-group-members-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adobject",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-object-search-move"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adorganizationalunit",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-ou-hierarchy"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adreplicationpartnermetadata",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-domain-full-report",
+        "ad-repadmin-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-adrootdse",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-delegation-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/get-aduser",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-health",
+        "ad-home-profile-paths",
+        "ad-users-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/move-adobject",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-computer-cleanup",
+        "ad-object-search-move"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/new-adgroup",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-groups"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/new-adorganizationalunit",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-ou",
+        "ad-ou-hierarchy"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/new-aduser",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-user",
+        "ad-users-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adcomputer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-computer-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroup",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-groups"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adgroupmember",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-group-members-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/remove-adorganizationalunit",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-ou-hierarchy"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-adaccountpassword",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-addefaultdomainpasswordpolicy",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-password"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-adorganizationalunit",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-ou-hierarchy"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/set-aduser",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-home-profile-paths"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/activedirectory/unlock-adaccount",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/addsdeployment/install-addsdomaincontroller",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "second-dc"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/bitlocker/get-bitlockervolume",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "safe-mode-preparation",
+        "windows-access-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/cimcmdlets/get-ciminstance",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "display-diagnostic",
+        "gpo-wmi-filter-readiness",
+        "workstation-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/defender/get-mpcomputerstatus",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-audit",
+        "defender-scan",
+        "gpo-firewall-defender",
+        "workstation-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/defender/get-mppreference",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-audit",
+        "gpo-firewall-defender"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/defender/get-mpthreatdetection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-audit",
+        "defender-scan"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/defender/start-mpscan",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "defender-scan"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverindc",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-install-authorize"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4exclusionrange",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-scope-options"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4reservation",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-reservation"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/add-dhcpserverv4scope",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-scope-options"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/backup-dhcpserver",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-backup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverindc",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-install-authorize"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4lease",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-leases-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4reservation",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-reservation"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/get-dhcpserverv4scopestatistics",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-leases-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverindc",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-install-authorize"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverv4reservation",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-reservation"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/remove-dhcpserverv4scope",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-scope-options"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/restore-dhcpserver",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-backup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dhcpserver/set-dhcpserverv4optionvalue",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-scope-options"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/clear-dnsclientcache",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-cache-reset",
+        "dns-client-change"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclient",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-client-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientcache",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-cache-reset",
+        "dns-client-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientserveraddress",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-client-change",
+        "dns-client-diagnostic",
+        "network-baseline",
+        "windows-domain-join-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dns-health",
+        "dns-client-diagnostic",
+        "dns-diagnostic",
+        "internet-client-diagnostic",
+        "ldap-ldaps-connectivity",
+        "windows-domain-join-diagnostic",
+        "windows-domain-join-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsclient/set-dnsclientserveraddress",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-client-change"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverprimaryzone",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-zone"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecorda",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-record"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordaaaa",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-record"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordcname",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-record"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/add-dnsserverresourcerecordptr",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-record"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverresourcerecord",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-zone"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/get-dnsserverzone",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dns-health",
+        "dns-diagnostic",
+        "dns-zone"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/dnsserver/remove-dnsserverresourcerecord",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-record"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-inventory-report",
+        "gpo-logon-startup-scripts"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/backup-gpo",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-backup-restore-compare"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpinheritance",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-link-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpo",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-health-report",
+        "gpo-inventory-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gporeport",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-backup-restore-compare",
+        "gpo-inventory-report",
+        "gpo-logon-startup-scripts"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gppermission",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-security-filter"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/get-gpresultantsetofpolicy",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-resultant-set"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/new-gplink",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-create-link"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/new-gpo",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-create-link"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/remove-gpo",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-create-link"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/remove-gpregistryvalue",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-session-desktop"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/restore-gpo",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-backup-restore-compare"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpinheritance",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-link-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gplink",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-create-link",
+        "gpo-link-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gppermission",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-security-filter"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/grouppolicy/set-gpregistryvalue",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-device-restrictions",
+        "gpo-session-desktop",
+        "gpo-software-shortcuts-browser",
+        "gpo-windows-update-services"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.core/get-command",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dcdiag-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.diagnostics/get-winevent",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "application-wont-start",
+        "bluescreen-diagnostic",
+        "ip-conflict-detection",
+        "server-health-report",
+        "slow-boot-diagnostic",
+        "webcam-diagnostic",
+        "workstation-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.localaccounts/get-localgroupmember",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "local-accounts-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.localaccounts/get-localuser",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "local-accounts-audit",
+        "windows-access-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/add-computer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join",
+        "windows-domain-join-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/checkpoint-computer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "restore-point-create"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/clear-recyclebin",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "recycle-bin-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/enable-computerrestore",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "restore-point-create"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-childitem",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "browser-cache-diagnostic",
+        "recycle-bin-cleanup",
+        "temp-cleanup",
+        "workstation-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-computerrestorepoint",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "restore-point-create"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-content",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dism-repair",
+        "sfc-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-hotfix",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-update-diagnostic",
+        "workstation-health-report",
+        "workstation-inventory"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-itemproperty",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "microphone-diagnostic",
+        "user-profile-diagnostic",
+        "workstation-inventory"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-process",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "application-wont-start",
+        "browser-cache-diagnostic",
+        "process-hung"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-service",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "audio-diagnostic",
+        "bluetooth-diagnostic",
+        "microphone-diagnostic",
+        "restore-point-create",
+        "webcam-diagnostic",
+        "windows-service-control",
+        "windows-update-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/remove-computer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/remove-item",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "temp-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/rename-computer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/rename-item",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-update-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/reset-computermachinepassword",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-secure-channel",
+        "windows-domain-join-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/restart-service",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "audio-diagnostic",
+        "windows-service-control"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/start-service",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-service-control"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/stop-process",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "process-hung"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/stop-service",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-service-control",
+        "windows-update-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-computersecurechannel",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-secure-channel",
+        "windows-domain-join",
+        "windows-domain-join-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/test-connection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "latency-packet-loss",
+        "ping-traceroute"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-acl",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-delegation-audit",
+        "ad-home-profile-paths",
+        "file-permissions-audit",
+        "gpo-logon-startup-scripts",
+        "network-share-diagnostic",
+        "user-profile-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-authenticodesignature",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "application-wont-start"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.security/get-credential",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-secure-channel",
+        "windows-domain-join"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/import-csv",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-users-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/invoke-webrequest",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "http-https-tls-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/read-host",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-recovery",
+        "ad-users-csv"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/unblock-file",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "application-wont-start"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netadapter/get-netadapter",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "adapter-metric-multihoming",
+        "ics-readiness",
+        "network-full-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netconnection/get-netconnectionprofile",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "firewall-audit",
+        "internet-client-diagnostic",
+        "network-full-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallportfilter",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "firewall-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallprofile",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "firewall-audit",
+        "gpo-firewall-defender",
+        "server-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/netsecurity/get-netfirewallrule",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "firewall-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipaddress",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-client-diagnostic",
+        "ics-readiness",
+        "ipv4-subnet-calculator",
+        "network-baseline"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipconfiguration",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gateway-diagnostic",
+        "internet-client-diagnostic",
+        "network-full-report",
+        "server-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netipinterface",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "adapter-metric-multihoming",
+        "dhcp-client-diagnostic",
+        "network-baseline",
+        "route-table-diagnostic",
+        "rras-nat-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "arp-neighbor-diagnostic",
+        "gateway-diagnostic",
+        "ip-conflict-detection"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netroute",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "adapter-metric-multihoming",
+        "gateway-diagnostic",
+        "ics-readiness",
+        "internet-client-diagnostic",
+        "network-full-report",
+        "route-manager",
+        "route-table-diagnostic",
+        "wifi-vpn-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-nettcpconnection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "rpc-connectivity-test",
+        "tcp-port-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/new-netipaddress",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "static-ip"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/new-netroute",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "route-manager"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/remove-netneighbor",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "arp-neighbor-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/remove-netroute",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "route-manager"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-diagnostic",
+        "internet-client-diagnostic",
+        "ldap-ldaps-connectivity",
+        "ping-traceroute",
+        "rpc-connectivity-test",
+        "smb-sessions-diagnostic",
+        "tcp-port-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/pnpdevice/get-pnpdevice",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "bluetooth-diagnostic",
+        "gpo-device-restrictions"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/printmanagement/get-printer",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-printer-deployment"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/remoteaccess/install-remoteaccess",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "rras-nat-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/scheduledtasks/get-scheduledtask",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "slow-boot-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/servermanager/get-windowsfeature",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "rras-nat-readiness",
+        "server-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/servermanager/install-windowsfeature",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-install-authorize"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbclientconfiguration",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "smb-connectivity-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbconnection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "network-share-diagnostic",
+        "smb-connectivity-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbmapping",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "network-share-diagnostic",
+        "smb-connectivity-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbopenfile",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "smb-sessions-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbsession",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "smb-sessions-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbshare",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "file-permissions-audit",
+        "smb-sessions-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/get-smbshareaccess",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-home-profile-paths",
+        "file-permissions-audit",
+        "gpo-drive-mapping",
+        "gpo-folder-redirection"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/smbshare/new-smbshare",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "shared-folder"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/storage/get-physicaldisk",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "workstation-inventory",
+        "workstation-performance-report",
+        "workstation-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/storage/get-volume",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "server-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/powershell/module/vpnclient/get-vpnconnection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "wifi-vpn-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/desktop/legacy/ee886409(v=vs.85)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "user-profile-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/desktop/whqlprov/win32-pnpsigneddriver",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "driver-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2003/cc779036(v=ws.10)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-wmi-filter-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc733022(v=ws.10)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-drive-mapping"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc754699(v=ws.11)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-printer-deployment"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc772540(v=ws.10)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-device-restrictions"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc770963(v=ws.11)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-repadmin-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/dn789196(v=ws.11)",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-drive-mapping",
+        "gpo-logon-startup-scripts"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/active-directory/config-firewall-for-ad-domains-and-trusts",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ldap-ldaps-connectivity"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/active-directory/replication-error-1722-rpc-server-unavailable",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-repadmin-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/applying-group-policy-troubleshooting-guidance",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-health-report",
+        "gpo-refresh-diagnostic",
+        "gpo-resultant-set",
+        "gpo-security-filter"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/force-authoritative-non-authoritative-synchronization",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-domain-full-report",
+        "gpo-health-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/group-policy/use-group-policy-to-install-software",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-software-shortcuts-browser"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/net-commands-on-operating-systems",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "local-accounts-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "rpc-connectivity-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/set-up-internet-connection-sharing",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ics-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/set-up-routing-remote-access-intranet",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "rras-nat-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/networking/troubleshoot-dns-event-id-4013",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dns-health"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/troubleshoot/windows-server/printing/event-ids-associated-point-print-restrictions",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-printer-deployment"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/debugger/bug-check-code-reference2",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "bluescreen-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/debugger/crash-dump-files",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "bluescreen-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/devtest/pnputil-command-syntax",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "wifi-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/install/device-manager-error-messages",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "driver-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/manufacture/desktop/bcdedit-command-line-options",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "safe-mode-preparation"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-image-management-command-line-options-s14",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dism-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-operating-system-package-servicing-command-line-options",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dism-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/manufacture/desktop/repair-a-windows-image",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dism-repair",
+        "sfc-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/manufacture/desktop/windows-recovery-environment--windows-re--technical-reference",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "safe-mode-preparation"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/arp",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "arp-neighbor-diagnostic",
+        "ip-conflict-detection"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/cleanmgr",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "recycle-bin-cleanup",
+        "workstation-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/dcdiag",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dcdiag-report",
+        "dns-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/gpresult",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-refresh-diagnostic",
+        "gpo-resultant-set"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/gpupdate",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-refresh-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-client-diagnostic",
+        "dns-cache-reset"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/netsh-wlan",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "wifi-vpn-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/netstat",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "tcp-port-test"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/pathping",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "latency-packet-loss"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ping",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "latency-packet-loss"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/route_ws2008",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "route-table-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/sfc",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "sfc-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/tracert",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ping-traceroute"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/get-started/adac/introduction-to-active-directory-administrative-center-enhancements--level-100-",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-domain-full-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/manage/troubleshoot/troubleshooting-active-directory-replication-problems",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-dcdiag-report",
+        "ad-repadmin-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/manage/understand-security-identifiers",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-account-health",
+        "local-accounts-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-ds/plan/delegating-administration-of-account-ous-and-resource-ous",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-delegation-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/identity/ad-fs/deployment/join-a-computer-to-a-domain",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join",
+        "windows-domain-join-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/core-network-guide/core-network-guide",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ipv4-subnet-calculator"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/dns/dns-top",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dns-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/technologies/dhcp/dhcp-top",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "dhcp-install-authorize"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/technologies/netsh/netsh-contexts",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "firewall-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-secure-channel"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/networking/windows-time-service/windows-time-service-top",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/storage/folder-redirection/deploy-folder-redirection",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-folder-redirection"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-server/storage/folder-redirection/folder-redirection-rup-overview",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-folder-redirection"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/deployment/update/waas-manage-updates-wufb",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-windows-update-services"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/deployment/update/waas-wu-settings",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-windows-update-services"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/deployment/update/windows-update-error-reference",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-update-diagnostic",
+        "windows-update-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/deployment/update/windows-update-troubleshooting",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-update-diagnostic",
+        "windows-update-repair"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/operating-system-security/data-protection/bitlocker/recovery-overview",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-access-recovery"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/operating-system-security/network-security/windows-firewall/",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-firewall-defender"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/threat-protection/security-policy-settings/interactive-logon-machine-inactivity-limit",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-session-desktop"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/threat-protection/security-policy-settings/maximum-tolerance-for-computer-clock-synchronization",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/ad/object-names-and-identities",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "ad-object-search-move"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-computersystem",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "windows-domain-join",
+        "windows-domain-join-diagnostic",
+        "windows-domain-join-readiness"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-logicaldisk",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "recycle-bin-cleanup",
+        "user-profile-diagnostic",
+        "workstation-performance-report",
+        "workstation-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-networkadapter",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "workstation-performance-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-operatingsystem",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-wmi-filter-readiness",
+        "slow-boot-diagnostic",
+        "workstation-performance-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-osrecoveryconfiguration",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "bluescreen-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-physicalmemory",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "bluescreen-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-pnpentity",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "audio-diagnostic",
+        "bluetooth-diagnostic",
+        "driver-audit",
+        "microphone-diagnostic",
+        "webcam-diagnostic",
+        "workstation-inventory"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-process",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "process-hung"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-processor",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "workstation-performance-report"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-service",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "slow-boot-diagnostic",
+        "windows-service-control"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-sounddevice",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "audio-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-startupcommand",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "slow-boot-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-useraccount",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "local-accounts-audit"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/cimwin32prov/win32-videocontroller",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "display-diagnostic"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/fileio/hard-links-and-junctions",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "temp-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/fileio/reparse-points",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "temp-cleanup"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/msi/installer-object",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "gpo-software-shortcuts-browser"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/sr/systemrestore",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "restore-point-create"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/sr/systemrestoreconfig",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "restore-point-create"
+      ]
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/wmicoreprov/wmimonitorid",
+      "hote": "learn.microsoft.com",
+      "citePar": [
+        "display-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/bash.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-umask"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/chage.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/chgrp.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-permission-change"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/chmod.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-permission-change"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/chown.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-permission-change"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/chronyc.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-time-sync-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/crontab.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cron-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/df.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-backup-directory",
+        "bash-csv-report",
+        "commande:cr-df-hT",
+        "linux-health-report",
+        "linux-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/dpkg-query.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-system-inventory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/dpkg.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-dpkg-etat",
+        "linux-package-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/du.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-backup-directory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/find.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-file-batch",
+        "bash-script-starter",
+        "commande:cr-find-inscriptible",
+        "commande:cr-find-setuid",
+        "linux-permission-audit",
+        "linux-permission-change"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/free.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-csv-report",
+        "linux-health-report"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/getent.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-getent-hosts",
+        "commande:cr-getent-passwd",
+        "linux-dns-diagnostic",
+        "linux-permission-change",
+        "linux-quota-limits",
+        "linux-user-audit",
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/getfacl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-getfacl",
+        "commande:cr-getfacl-releve",
+        "linux-permission-acl",
+        "linux-permission-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/id.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-id-compte",
+        "linux-permission-audit",
+        "linux-user-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/install.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "ssh-hardening-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/journalctl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cockpit-connection-diagnostic",
+        "commande:cr-cockpit-journal",
+        "commande:cr-journalctl-erreurs",
+        "commande:cr-journalctl-place",
+        "commande:cr-journalctl-unite",
+        "commande:cr-samba-journal",
+        "commande:cr-ssh-journal",
+        "linux-boot-diagnostic",
+        "linux-health-report",
+        "linux-log-diagnostic",
+        "ssh-server-readiness",
+        "systemd-service-control",
+        "systemd-service-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/ls.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ls-contenu",
+        "linux-permission-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/lscpu.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-system-inventory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/mktemp.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-script-starter"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/namei.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-namei-parents",
+        "linux-permission-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/networkctl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-network-diagnostic",
+        "netplan-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/passwd.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-passwd-etat"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/quota.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-quota-utilisateur",
+        "linux-quota-limits"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/resolvectl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-resolvectl-query",
+        "commande:cr-resolvectl-srv",
+        "commande:cr-resolvectl-status",
+        "linux-dns-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/setfacl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-permission-acl",
+        "linux-permission-change"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/sha256sum.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-backup-directory",
+        "bash-file-batch"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/smbclient.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-samba-liste-client",
+        "samba-ad-health",
+        "samba-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/smbcontrol.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "samba-share-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/ssh-copy-id.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "ssh-key-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/ssh-keygen.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ssh-cle-hote",
+        "commande:cr-ssh-connu",
+        "commande:cr-ssh-empreintes-autorisees",
+        "ssh-client-diagnostic",
+        "ssh-key-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/ssh.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ssh-config-effective",
+        "commande:cr-ssh-methodes",
+        "ssh-client-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/stat.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-file-batch",
+        "commande:cr-samba-permissions",
+        "commande:cr-ssh-permissions",
+        "commande:cr-stat-mode",
+        "linux-permission-acl",
+        "linux-permission-audit",
+        "linux-permission-change"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/systemctl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-csv-report",
+        "cockpit-install-readiness",
+        "commande:cr-cockpit-listen",
+        "commande:cr-ssh-unites",
+        "commande:cr-systemctl-cat",
+        "commande:cr-systemctl-failed",
+        "commande:cr-systemctl-is-active",
+        "commande:cr-systemctl-is-enabled",
+        "linux-boot-diagnostic",
+        "linux-health-report",
+        "linux-log-diagnostic",
+        "samba-ad-dc-provision",
+        "ssh-hardening-audit",
+        "ssh-server-readiness",
+        "systemd-service-control",
+        "systemd-service-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/systemd-analyze.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-boot-diagnostic",
+        "linux-health-report",
+        "systemd-service-control"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/systemd-detect-virt.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-system-inventory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/tar.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "bash-backup-directory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/testparm.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-samba-acces-hote",
+        "commande:cr-samba-sections",
+        "commande:cr-samba-testparm",
+        "samba-diagnostic",
+        "samba-readiness",
+        "samba-share-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man1/timedatectl.1.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-timedatectl-show",
+        "linux-time-sync-diagnostic",
+        "samba-ad-dc-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man4/md.4.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-mdadm-reconstruction",
+        "commande:cr-mdstat",
+        "linux-raid-member-manage",
+        "linux-raid1-create",
+        "linux-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/acl.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-permission-acl",
+        "linux-permission-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/apt.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-package-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/chrony.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-time-sync-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/crontab.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cron-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/exports.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-audit-ouverts",
+        "commande:cr-nfs-fichier",
+        "nfs-export-create",
+        "nfs-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/ext4.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-permission-acl"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/fstab.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-disk-partition-mount",
+        "linux-quota-enable",
+        "linux-raid1-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/journald.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-journalctl-persistance",
+        "systemd-service-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/krb5.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "samba-ad-dc-provision",
+        "samba-ad-dc-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/login.defs.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/netplan.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "netplan-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/nfs.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-options-effectives",
+        "nfs-export-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/passwd.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-audit",
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/resolv.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-dns-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/shadow.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/smb.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-samba-section-detail",
+        "samba-ad-dc-provision",
+        "samba-ad-dc-readiness",
+        "samba-ad-user-manage",
+        "samba-diagnostic",
+        "samba-readiness",
+        "samba-share-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/ssh_config.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "ssh-client-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/sshd_config.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ssh-include",
+        "ssh-client-diagnostic",
+        "ssh-hardening-audit",
+        "ssh-key-readiness",
+        "ssh-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/sudoers.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/systemd.unit.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-boot-diagnostic",
+        "linux-log-diagnostic",
+        "systemd-service-control",
+        "systemd-service-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man5/timesyncd.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-time-sync-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man7/samba.7.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "samba-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/adduser.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/apt-cache.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-apt-cache-policy"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/apt-get.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-apt-simulation",
+        "linux-package-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/apt-mark.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-apt-mark-hold"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/apt.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-apt-upgradable",
+        "linux-package-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/blkid.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-blkid",
+        "linux-disk-partition-mount",
+        "linux-raid1-create",
+        "linux-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/cron.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cron-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/dmidecode.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-system-inventory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/edquota.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-quota-limits"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/exportfs.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-appliquer",
+        "commande:cr-nfs-table",
+        "nfs-export-create",
+        "nfs-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/fdisk.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-fdisk-l",
+        "linux-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/findmnt.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-findmnt",
+        "commande:cr-nfs-montages-client",
+        "linux-disk-partition-mount",
+        "linux-quota-enable",
+        "linux-raid1-create",
+        "linux-storage-diagnostic",
+        "linux-system-inventory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/groupadd.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/hwclock.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-hwclock-show"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ip-address.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-cockpit-adresses",
+        "commande:cr-ip-adresse",
+        "linux-network-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ip-neighbour.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ip-neigh",
+        "linux-network-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ip-route.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ip-route",
+        "linux-network-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ip.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cockpit-connection-diagnostic",
+        "commande:cr-ip-link",
+        "linux-firewall-audit",
+        "linux-network-diagnostic",
+        "netplan-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/iptables-save.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-firewall-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/lastlog.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/lsblk.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-lsblk-f",
+        "linux-raid-member-manage",
+        "linux-storage-diagnostic",
+        "linux-system-inventory"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/mdadm.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-mdadm-detail",
+        "commande:cr-mdadm-detail-scan",
+        "commande:cr-mdadm-examine",
+        "linux-raid-member-manage",
+        "linux-raid1-create",
+        "linux-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/mke2fs.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-disk-partition-mount",
+        "linux-raid1-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/mkfs.xfs.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-disk-partition-mount"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/mount.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-mount",
+        "commande:cr-mount-a",
+        "linux-disk-partition-mount",
+        "linux-permission-acl",
+        "linux-quota-enable"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/mount.nfs.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-montage-essai",
+        "nfs-export-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/netplan-generate.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-netplan-generate",
+        "netplan-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/netplan-try.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-netplan-try",
+        "netplan-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/nft.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nft-ruleset",
+        "linux-firewall-audit"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/pdbedit.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-samba-comptes",
+        "samba-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ping.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ping",
+        "linux-network-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/quotacheck.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-quota-enable"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/quotaon.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-quotaoff",
+        "commande:cr-quotaon",
+        "linux-quota-enable"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/repquota.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-quota-grace",
+        "commande:cr-repquota",
+        "linux-quota-enable",
+        "linux-quota-limits"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/rpc.mountd.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "nfs-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/rpc.nfsd.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-service",
+        "nfs-export-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/rpcinfo.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-rpcinfo",
+        "nfs-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/samba-tool.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ad-comptes",
+        "commande:cr-ad-niveau",
+        "commande:cr-ad-replication",
+        "samba-ad-dc-provision",
+        "samba-ad-dc-readiness",
+        "samba-ad-health",
+        "samba-ad-user-manage"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/setquota.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-setquota-retirer",
+        "linux-quota-limits"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/sfdisk.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-disk-partition-mount"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/showmount.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-nfs-showmount",
+        "nfs-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/smbd.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "samba-diagnostic",
+        "samba-readiness",
+        "samba-share-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ss.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cockpit-connection-diagnostic",
+        "cockpit-install-readiness",
+        "commande:cr-ad-ports",
+        "commande:cr-cockpit-ecoute",
+        "commande:cr-nfs-clients-connectes",
+        "commande:cr-nfs-ecoute",
+        "commande:cr-samba-ecoute",
+        "commande:cr-ss-ecoute",
+        "commande:cr-ssh-ecoute",
+        "linux-firewall-audit",
+        "linux-network-diagnostic",
+        "samba-ad-health",
+        "ssh-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/sshd.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-ssh-effective",
+        "commande:cr-ssh-test-config",
+        "ssh-hardening-audit",
+        "ssh-key-readiness",
+        "ssh-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/systemd-journald.service.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-log-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/systemd-resolved.service.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-dns-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/systemd-timesyncd.service.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-timedatectl-timesync",
+        "linux-time-sync-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/tracepath.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-tracepath",
+        "linux-network-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/ufw.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cockpit-install-readiness",
+        "commande:cr-ufw-allow",
+        "commande:cr-ufw-delete",
+        "commande:cr-ufw-status",
+        "linux-firewall-audit",
+        "ssh-server-readiness"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/umount.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "commande:cr-umount"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/useradd.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/usermod.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-user-create"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/en/man8/wipefs.8.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "linux-disk-partition-mount",
+        "linux-raid-member-manage",
+        "linux-storage-diagnostic"
+      ]
+    },
+    {
+      "url": "https://manpages.ubuntu.com/manpages/noble/man5/cockpit.conf.5.html",
+      "hote": "manpages.ubuntu.com",
+      "citePar": [
+        "cockpit-connection-diagnostic",
+        "cockpit-install-readiness"
+      ]
+    },
+    {
+      "url": "https://netplan.readthedocs.io/en/stable/netplan-generate/",
+      "hote": "netplan.readthedocs.io",
+      "citePar": [
+        "netplan-readiness"
+      ]
+    },
+    {
+      "url": "https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html",
+      "hote": "pubs.opengroup.org",
+      "citePar": [
+        "bash-script-starter"
+      ]
+    },
+    {
+      "url": "https://web.mit.edu/Kerberos/krb5-devel/doc/user/user_commands/klist.html",
+      "hote": "web.mit.edu",
+      "citePar": [
+        "commande:cr-ad-klist",
+        "samba-ad-health"
+      ]
+    },
+    {
+      "url": "https://wiki.samba.org/index.php/Setting_up_RFC2307_in_AD",
+      "hote": "wiki.samba.org",
+      "citePar": [
+        "samba-ad-user-manage"
+      ]
+    },
+    {
+      "url": "https://wiki.samba.org/index.php/Setting_up_Samba_as_a_Standalone_Server",
+      "hote": "wiki.samba.org",
+      "citePar": [
+        "samba-readiness",
+        "samba-share-create"
+      ]
+    },
+    {
+      "url": "https://wiki.samba.org/index.php/Setting_up_Samba_as_an_Active_Directory_Domain_Controller",
+      "hote": "wiki.samba.org",
+      "citePar": [
+        "commande:cr-ad-a",
+        "commande:cr-ad-hosts",
+        "commande:cr-ad-partages",
+        "commande:cr-ad-srv-kerberos",
+        "commande:cr-ad-srv-ldap",
+        "samba-ad-dc-provision",
+        "samba-ad-dc-readiness",
+        "samba-ad-health",
+        "samba-ad-user-manage"
+      ]
+    },
+    {
+      "url": "https://www.gnu.org/software/bash/manual/bash.html",
+      "hote": "www.gnu.org",
+      "citePar": [
+        "bash-csv-report",
+        "bash-file-batch",
+        "bash-script-starter",
+        "cron-readiness"
+      ]
+    }
+  ]
+}

@@ -36,3 +36,14 @@ jobs:
   validate:
     name: Validation complète (syntaxe PS + tests)
     uses: ./.github/workflows/validate.yml
+
+  # ---------------------------------------------------------------------------
+  # LOT 7 — validation de la chaîne Bash, sur un vrai Linux.
+  #
+  # Ce job est INDÉPENDANT du précédent, et c'est volontaire : les deux doivent
+  # tourner, et l'échec de l'un ne doit pas masquer le résultat de l'autre.
+  # Le déploiement, lui, exige les DEUX (voir deploy-pages.yml).
+  # ---------------------------------------------------------------------------
+  validate-linux:
+    name: Validation Linux (hygiène .sh, shQuote, bash -n, ShellCheck)
+    uses: ./.github/workflows/validate-linux.yml

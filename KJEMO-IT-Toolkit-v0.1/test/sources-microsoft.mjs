@@ -34,6 +34,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const { tools } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+const { sourceLinuxValide, editeurDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'sources-linux.mjs')).href);
 const { CMDLETS_EXTERNES, BINAIRES_EXTERNES } =
   await import(pathToFileURL(resolve(ROOT, 'dist', 'cmdlets.mjs')).href);
 
@@ -149,13 +150,42 @@ if (!args.includes('--sans-cmdlets')) {
   for (const [nom, d] of Object.entries(BINAIRES_EXTERNES)) ajoute(d.doc, nom);
 }
 
-console.log(`--- Sources Microsoft : ${sources.size} URL distinctes, ${tools.length} outils ---`);
+console.log(`--- Sources officielles : ${sources.size} URL distinctes, ${tools.length} outils ---`);
 console.log('');
 
+// ---------------------------------------------------------------------------
 // Contrôles de forme, toujours effectués.
+//
+// LOT 7 — le dépôt devient multiplateforme, et ce contrôle avec lui.
+//
+// La règle était « toute source commence par https://learn.microsoft.com/ ».
+// Elle convenait à un dépôt dont tous les outils visaient Windows. Linux n'a
+// pas d'éditeur unique, et exiger Microsoft Learn pour documenter sshd_config
+// obligerait soit à citer une page hors sujet, soit à exempter les sources
+// Linux du contrôle — c'est-à-dire à ne plus les contrôler du tout.
+//
+// La règle devient : toute source doit venir d'un éditeur PRIMAIRE reconnu —
+// Microsoft Learn pour Windows, ou l'un des éditeurs énumérés et justifiés un
+// par un dans dist/sources-linux.mjs pour Linux. Dans les deux cas elle doit
+// désigner une page PRÉCISE, et non un domaine nu.
+//
+// Elle est plus précise que l'ancienne et refuse strictement plus : un blogue,
+// un forum ou un agrégateur de recettes est refusé des deux côtés, alors que
+// l'ancienne ne pouvait rien dire d'une URL non-Microsoft sinon « refusée »,
+// ce qui rendait tout ajout de plateforme impossible sans la désactiver.
+// ---------------------------------------------------------------------------
 for (const url of sources.keys()) {
-  assert(/^https:\/\/learn\.microsoft\.com\/\S+/.test(url), `forme HTTPS Microsoft Learn — ${url}`);
+  const microsoft = /^https:\/\/learn\.microsoft\.com\/\S+/.test(url);
+  const linux = sourceLinuxValide(url);
+  assert(microsoft || linux,
+    `éditeur primaire reconnu (Microsoft Learn, ou l'un des éditeurs de sources-linux.mjs) — ${url}`);
   assert(!/^https:\/\/learn\.microsoft\.com\/?$/.test(url), `n'est pas la page d'accueil — ${url}`);
+  // Une page précise : un chemin au-delà du domaine. Un domaine nu ne
+  // documente rien et se périme sans qu'on le voie.
+  assert(/^https:\/\/[^/]+\/\S+/.test(url), `désigne une page précise, pas un domaine nu — ${url}`);
+  if (linux) {
+    assert(editeurDe(url) !== null, `éditeur Linux identifié — ${url}`);
+  }
 }
 
 const rapport = {

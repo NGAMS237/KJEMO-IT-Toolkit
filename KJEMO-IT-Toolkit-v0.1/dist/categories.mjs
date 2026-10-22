@@ -63,10 +63,44 @@ export const CATEGORIES = [
   },
   {
     id: 'linux',
-    name: 'Linux',
+    name: 'Linux et services réseau',
     icon: '△',
-    description: 'Debian, Ubuntu, Rocky : réseau, services et permissions.',
+    description: 'Ubuntu et Debian : diagnostic, Bash, permissions, services, réseau, SSH, Cockpit, Samba, NFS et stockage.',
   },
+];
+
+/**
+ * Sous-rubriques canoniques de « Linux et services réseau », dans l'ordre
+ * d'affichage voulu.
+ *
+ * Cet ordre n'est pas alphabétique : il suit la façon dont on dépanne. On
+ * commence par constater l'état de la machine, puis on outille (Bash), puis on
+ * remonte les couches dans l'ordre où elles cassent — permissions, services,
+ * réseau — avant d'arriver aux services exposés, qui dépendent tous des
+ * précédentes. Le stockage ferme la liste parce qu'il renvoie au LOT 10.
+ *
+ * Les quatre sujets qui réclameraient une catégorie à eux — SSH, Cockpit,
+ * Samba, NFS — restent des SOUS-RUBRIQUES. Une catégorie principale par
+ * service produirait une page d'accueil à quinze entrées où l'on ne trouve
+ * plus rien ; et aucun de ces services ne se dépanne sans toucher aux
+ * permissions, au réseau et aux journaux, qui sont ici.
+ */
+export const SOUS_RUBRIQUES_LINUX = [
+  'Diagnostic Linux',
+  'Bash et automatisation',
+  'Utilisateurs et permissions',
+  'Services et journaux',
+  'Réseau Linux',
+  'SSH et accès distant',
+  'Cockpit',
+  'Samba',
+  // Nouvelle sous-rubrique canonique du commit 22/n. Samba AD et Samba
+  // partage ne se melangent pas : un controleur de domaine fait tourner UN
+  // processus « samba » qui contient son propre serveur SMB, et laisser smbd
+  // actif a cote donne deux serveurs sur le port 445.
+  'Samba AD',
+  'NFS',
+  'Stockage Linux',
 ];
 
 /** Identifiant technique de la pseudo-catégorie « toutes ». */

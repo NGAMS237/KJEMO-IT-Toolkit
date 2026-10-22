@@ -40,6 +40,12 @@ const ROOT      = resolve(__dirname, '..');
 // Importer les générateurs depuis le module source (pas depuis dist/app.js)
 // ---------------------------------------------------------------------------
 const { tools, normalizeScript, EXECUTION_NOTES, searchTools, searchCommonErrors, auditerAnnulation } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
+// LOT 7 (25/n) — les règles de sortie suivent la PLATEFORME de l'outil. Le banc
+// avait été écrit quand tout était du PowerShell : il exigeait un BOM, une
+// extension .ps1 et la table des stratégies d'exécution sur des fiches Bash,
+// pour lesquelles ces trois exigences sont fausses (un BOM casse le shebang).
+const { estBash, extensionDe, nomFichierDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
+const { EXECUTION_NOTES_BASH, normalizeScriptSh } = await import(pathToFileURL(resolve(ROOT, 'dist', 'noyau-bash.mjs')).href);
 
 // ---------------------------------------------------------------------------
 // Serveur HTTP statique minimal pour dist/
@@ -214,7 +220,15 @@ for (const tool of tools) {
 
   // Valeur canonique attendue (référence côté Node.js)
   const defaultVals = Object.fromEntries(tool.fields.map((f) => [f.id, String(f.default ?? '')]));
-  const expected    = normalizeScript(tool.generate(defaultVals));
+  // LOT 7 (25/n) — le normaliseur suit la PLATEFORME. normalizeScript() remplace
+  // « antislash + saut de ligne » par « backtick + saut de ligne » : juste pour
+  // la continuation de ligne PowerShell, FAUX pour Bash, où cela transforme 42
+  // continuations en substitutions de commande. Ce banc attendait la sortie du
+  // normaliseur PowerShell pour les assistants Bash : il validait le défaut au
+  // lieu de le voir. Il compare maintenant à ce qu'un script Bash doit être.
+  const expected    = estBash(tool)
+    ? normalizeScriptSh(tool.generate(defaultVals))
+    : normalizeScript(tool.generate(defaultVals));
 
   const context = await browser.newContext({
     permissions: ['clipboard-read', 'clipboard-write'],
@@ -339,7 +353,8 @@ for (const tool of tools) {
     page.click('#downloadButton'),
   ]);
 
-  const downloadPath = join(tmpdir(), `kjemo-dl-${tool.id}-${Date.now()}.ps1`);
+  const bashTool = estBash(tool);
+  const downloadPath = join(tmpdir(), `kjemo-dl-${tool.id}-${Date.now()}${extensionDe(tool)}`);
   await download.saveAs(downloadPath);
 
   let downloadContent;
@@ -358,7 +373,17 @@ for (const tool of tools) {
   }
 
   if (downloadContent !== null) {
-    assert(downloadHasBom, `Télécharger : BOM UTF-8 (EF BB BF) présent — requis pour PS 5.1`);
+    if (bashTool) {
+      // Bash : la règle est l'INVERSE de PowerShell. Un BOM avant « #! » masque
+      // le shebang ; un CR le transforme en « bash^M ». Les deux sont refusés.
+      assert(!downloadHasBom, `Télécharger (.sh) : aucun BOM UTF-8 — il masquerait le shebang`);
+      const brut = readFileSync(downloadPath);
+      assert(!brut.includes(0x0D), `Télécharger (.sh) : aucun CR — LF strict`);
+      assert(brut.subarray(0, 19).toString('latin1') === '#!/usr/bin/env bash',
+        `Télécharger (.sh) : la première ligne est exactement « #!/usr/bin/env bash »`);
+    } else {
+      assert(downloadHasBom, `Télécharger : BOM UTF-8 (EF BB BF) présent — requis pour PS 5.1`);
+    }
     assert(
       bytesEqual(downloadContent, expected),
       `Télécharger (fichier sans BOM) === normalizeScript(generate(defaults))`,
@@ -368,8 +393,8 @@ for (const tool of tools) {
       `Télécharger (sans BOM) === <pre> textContent — identité parfaite`,
     );
     assert(
-      download.suggestedFilename() === `${tool.id}.ps1`,
-      `Nom du fichier : "${download.suggestedFilename()}" === "${tool.id}.ps1"`,
+      download.suggestedFilename() === nomFichierDe(tool),
+      `Nom du fichier : "${download.suggestedFilename()}" === "${nomFichierDe(tool)}"`,
     );
   }
 
@@ -397,7 +422,8 @@ for (const tool of tools) {
       tool.prereqs.every((r) => prereqTexte.includes(r)),
       `${tool.id} : les ${tool.prereqs.length} prérequis sont affichés`,
     );
-    const mentionAdmin = /administrateur/i.test(prereqTexte);
+    // L'élévation se dit « administrateur » sous Windows, « root / sudo » sous Linux.
+    const mentionAdmin = bashTool ? /root|sudo/i.test(prereqTexte) : /administrateur/i.test(prereqTexte);
     assert(mentionAdmin, `${tool.id} : le niveau d'élévation requis est indiqué`);
     const classeAdmin = await page.$eval('.admin-flag', (el) => el.className);
     assert(
@@ -409,7 +435,20 @@ for (const tool of tools) {
   const execTexte = await page.$eval('#execNotes', (el) => el.textContent).catch(() => null);
   assert(execTexte !== null, `${tool.id} : bloc « Avant d'exécuter » présent`);
 
-  if (execTexte !== null) {
+  if (execTexte !== null && bashTool) {
+    // Fiche Bash : les obstacles Linux, et SURTOUT l'absence de la table
+    // PowerShell — la montrer serait une fausse piste que quelqu'un suivrait.
+    assert(execTexte.includes('bash -n'), `${tool.id} : la commande « bash -n » est affichée`);
+    assert(execTexte.includes('chmod +x'), `${tool.id} : la commande « chmod +x » est affichée`);
+    assert(
+      EXECUTION_NOTES_BASH.obstacles.every((ob) => execTexte.includes(ob.name)),
+      `${tool.id} : les ${EXECUTION_NOTES_BASH.obstacles.length} obstacles Linux sont dans le tableau`,
+    );
+    assert(
+      !/Unblock-File|Get-ExecutionPolicy|Set-ExecutionPolicy/.test(execTexte),
+      `${tool.id} : aucune commande de stratégie d'exécution PowerShell sur une fiche Bash`,
+    );
+  } else if (execTexte !== null) {
     assert(execTexte.includes('Unblock-File'), `${tool.id} : la commande Unblock-File est affichée`);
     assert(
       execTexte.includes('Get-ExecutionPolicy -List'),
@@ -434,10 +473,19 @@ for (const tool of tools) {
       tool.commonErrors.every((e) => errTexte.includes(e.message) && errTexte.includes(e.fix)),
       `${tool.id} : les ${tool.commonErrors.length} erreurs propres à l'outil, avec leur correction`,
     );
-    assert(
-      errTexte.includes('signé numériquement'),
-      `${tool.id} : l'erreur de signature numérique est expliquée`,
-    );
+    if (bashTool) {
+      assert(
+        EXECUTION_NOTES_BASH.errors.every((e) => errTexte.includes(e.message)),
+        `${tool.id} : les ${EXECUTION_NOTES_BASH.errors.length} erreurs communes Bash sont expliquées`,
+      );
+      assert(!errTexte.includes('signé numériquement'),
+        `${tool.id} : l'erreur de signature numérique PowerShell n'apparaît pas sur une fiche Bash`);
+    } else {
+      assert(
+        errTexte.includes('signé numériquement'),
+        `${tool.id} : l'erreur de signature numérique est expliquée`,
+      );
+    }
   }
 
   // Les deux sections repliables doivent être fermées par défaut, pour ne pas
@@ -884,10 +932,15 @@ console.log('\n[accueil 1B] — structure d’accueil et navigation par catégor
     `la grille affiche « Tout » + les ${utilisees.length} catégories pourvues (${cartes.length})`);
   assert(utilisees.every((c) => cartes.some((k) => k.nom === c)),
     'chaque catégorie réellement utilisée a sa carte');
-  for (const vide of ['Imprimantes', 'Linux']) {
-    assert(!cartes.some((k) => k.nom === vide),
-      `aucune catégorie vide affichée : « ${vide} » est absente`);
-  }
+  // LOT 7 (25/n) : « Linux et services réseau » n'est PLUS vide — 43 assistants
+  // depuis le commit 1/n. L'ancienne assertion cherchait le nom « Linux », qui
+  // n'existe plus : elle passait sans rien mesurer. Seule « Imprimantes » reste vide.
+  assert(!cartes.some((k) => k.nom === 'Imprimantes'),
+    'aucune catégorie vide affichée : « Imprimantes » est absente');
+  assert(!cartes.some((k) => k.nom === 'Linux'),
+    'l’ancien nom « Linux » n’existe plus à l’écran');
+  assert(cartes.some((k) => k.nom === 'Linux et services réseau'),
+    'LOT 7 : « Linux et services réseau » est affichée, peuplée et visible');
   assert(cartes.every((k) => k.presse === 'true' || k.presse === 'false'),
     'chaque carte de catégorie porte aria-pressed');
   assert(cartes.filter((k) => k.presse === 'true').length === 1,
@@ -1511,17 +1564,23 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
     assert(!noms.includes(interdite),
       `catégorie abandonnée absente de l’écran : « ${interdite} »`);
   }
-  // Imprimantes et Linux restent déclarées mais vides : elles doivent rester
-  // masquées. « Poste de travail Windows », elle, est habitée par le LOT 6.
-  for (const vide of ['Imprimantes', 'Linux']) {
-    assert(!noms.includes(vide), `catégorie vide masquée : « ${vide} »`);
-  }
+  // « Imprimantes » reste déclarée mais vide : elle doit rester masquée.
+  // « Poste de travail Windows » est habitée par le LOT 6, et « Linux et
+  // services réseau » par le LOT 7 — elle doit être VISIBLE, pas masquée pour
+  // faire passer un ancien décompte.
+  assert(!noms.includes('Imprimantes'), 'catégorie vide masquée : « Imprimantes »');
+  assert(noms.includes('Linux et services réseau'),
+    'LOT 7 : « Linux et services réseau » est visible dans la grille');
   assert(!noms.includes('Windows poste de travail'),
     'l’ancien libellé « Windows poste de travail » a disparu de l’écran');
-  // Six catégories pourvues : les cinq d'avant, plus « Poste de travail
-  // Windows » que le LOT 6 remplit.
-  assert(noms.length === 7,
-    `« Tout » + six catégories pourvues (${noms.length})`);
+  // Sept catégories pourvues + « Tout » = 8 : les six d'avant, plus
+  // « Linux et services réseau » que le LOT 7 remplit. Le nombre attendu est
+  // MESURÉ sur le catalogue, pas recopié : un 8 écrit en dur serait le prochain
+  // 7 périmé.
+  const pourvues = new Set(tools.map((t) => t.category));
+  assert(noms.length === pourvues.size + 1,
+    `« Tout » + ${pourvues.size} catégories pourvues (${noms.length})`);
+  assert(noms.length === 8, `LOT 7 : 8 catégories à l’écran, « Tout » comprise (${noms.length})`);
 
   // Windows Server réunit shared-folder et les outils du LOT 2.
   const attendusWs = tools.filter((t) => t.category === 'Windows Server').length;

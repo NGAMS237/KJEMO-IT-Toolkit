@@ -37,11 +37,25 @@ jobs:
     uses: ./.github/workflows/validate.yml
 
   # ---------------------------------------------------------------------------
-  # 2. Déploiement GitHub Pages (uniquement si validate est OK)
+  # 1 bis. Validation de la chaîne Bash — LOT 7
+  # ---------------------------------------------------------------------------
+  validate-linux:
+    name: Validation Linux (hygiène .sh, shQuote, bash -n, ShellCheck)
+    uses: ./.github/workflows/validate-linux.yml
+
+  # ---------------------------------------------------------------------------
+  # 2. Déploiement GitHub Pages — uniquement si les DEUX validations sont OK
+  #
+  # « needs » liste les deux jobs. GitHub ne démarre « deploy » que si TOUS les
+  # jobs listés ont réussi : un échec Windows OU un échec Linux arrête le
+  # déploiement. Il n'y a volontairement aucune condition `if` sur ce job :
+  # une condition du genre « if: always() » ou « if: success() || ... » le
+  # ferait démarrer malgré un échec, ce qui est exactement ce qu'on refuse.
+  # test/ci-workflows.test.mjs relit ce fichier et le vérifie.
   # ---------------------------------------------------------------------------
   deploy:
     name: Déployer sur GitHub Pages
-    needs: validate
+    needs: [validate, validate-linux]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -49,7 +63,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v5

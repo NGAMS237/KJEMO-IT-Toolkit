@@ -29,6 +29,21 @@ import { toolsGpo } from './outils-gpo.mjs';
 import { toolsReseau } from './outils-reseau.mjs';
 import { toolsPoste } from './outils-poste.mjs';
 import { toolsPosteB } from './outils-poste-b.mjs';
+import { toolsLinux } from './outils-linux.mjs';
+import { toolsLinuxB } from './outils-linux-b.mjs';
+import { toolsLinuxC } from './outils-linux-c.mjs';
+import { toolsLinuxD } from './outils-linux-d.mjs';
+import { toolsLinuxE } from './outils-linux-e.mjs';
+import { toolsLinuxF } from './outils-linux-f.mjs';
+import { toolsLinuxG } from './outils-linux-g.mjs';
+import { toolsLinuxH } from './outils-linux-h.mjs';
+import { toolsLinuxI } from './outils-linux-i.mjs';
+import { toolsLinuxJ } from './outils-linux-j.mjs';
+import { toolsLinuxK } from './outils-linux-k.mjs';
+import { toolsLinuxL } from './outils-linux-l.mjs';
+import { toolsLinuxM } from './outils-linux-m.mjs';
+import { toolsLinuxN } from './outils-linux-n.mjs';
+import { toolsPosteJonction } from './outils-poste-jonction.mjs';
 
 export { psB64, assertValid, validateIPv4, validateShareName, escapeLdapRdn, domainToDn,
          validateSamAccountName, validateGroupName, validateOuName };
@@ -1576,4 +1591,32 @@ for (const outil of toolsGpo) tools.push(outil);
 for (const outil of toolsReseau) tools.push(outil);
 for (const outil of toolsPoste) tools.push(outil);
 for (const outil of toolsPosteB) tools.push(outil);
+
+// ---------------------------------------------------------------------------
+// LOT 7 — catalogue Linux et services reseau
+//
+// Premier lot multiplateforme du depot. Ces outils produisent du Bash, et non
+// du PowerShell : ils declarent `platform: 'Linux'` et `output: '.sh'`, que
+// `plateforme.mjs` lit pour choisir l'extension, l'encodage du telechargement
+// (jamais de BOM sur un .sh) et les commandes d'execution.
+//
+// L'ordre suit les dix sous-rubriques canoniques de `SOUS_RUBRIQUES_LINUX`,
+// parce que `sousRubriques()` restitue l'ordre du catalogue : ranger ici, c'est
+// ranger a l'ecran.
+// ---------------------------------------------------------------------------
+for (const outil of toolsLinux) tools.push(outil);
+for (const outil of toolsLinuxB) tools.push(outil);
+for (const outil of toolsLinuxC) tools.push(outil);
+for (const outil of toolsLinuxD) tools.push(outil);
+for (const outil of toolsLinuxE) tools.push(outil);
+for (const outil of toolsLinuxF) tools.push(outil);
+for (const outil of toolsLinuxG) tools.push(outil);
+for (const outil of toolsLinuxH) tools.push(outil);
+for (const outil of toolsLinuxI) tools.push(outil);
+for (const outil of toolsLinuxJ) tools.push(outil);
+for (const outil of toolsLinuxK) tools.push(outil);
+for (const outil of toolsLinuxL) tools.push(outil);
+for (const outil of toolsLinuxM) tools.push(outil);
+for (const outil of toolsLinuxN) tools.push(outil);
+for (const outil of toolsPosteJonction) tools.push(outil);
 

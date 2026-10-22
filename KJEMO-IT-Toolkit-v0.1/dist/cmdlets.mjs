@@ -57,6 +57,8 @@ export const CMDLETS_EXTERNES = {
   'Write-Verbose': { module: 'Microsoft.PowerShell.Utility', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-verbose' },
   'Write-Warning': { module: 'Microsoft.PowerShell.Utility', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-warning' },
   // --- Microsoft.PowerShell.Management — PowerShell
+  'Add-Computer': { module: 'Microsoft.PowerShell.Management', fourniPar: 'Windows PowerShell', os: 'Windows PowerShell 5.1 uniquement', editions: ['Desktop'], doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/add-computer?view=powershell-5.1' },
+  'Get-TimeZone': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-timezone' },
   'Convert-Path': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/convert-path' },
   'Get-ChildItem': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-childitem' },
   'Get-Content': { module: 'Microsoft.PowerShell.Management', fourniPar: 'PowerShell', os: 'Windows PowerShell 5.1 et PowerShell 7', doc: 'https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-content' },
@@ -274,6 +276,7 @@ export const BINAIRES_EXTERNES = {
   'repadmin.exe': { fourniPar: 'Outils AD DS (repadmin.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc770963(v=ws.11)' },
   'route': { fourniPar: 'Windows (route.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/route_ws2008' },
   'tracert': { fourniPar: 'Windows (tracert.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/administration/windows-commands/tracert' },
+  'w32tm': { fourniPar: 'Windows (w32tm.exe, extension implicite)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings' },
   'w32tm.exe': { fourniPar: 'Windows (w32tm.exe)', os: 'Windows', doc: 'https://learn.microsoft.com/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings' },
 };
 

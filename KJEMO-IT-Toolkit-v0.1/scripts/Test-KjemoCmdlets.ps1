@@ -201,8 +201,16 @@ if ($VerifierPresence) {
   $verifiees = 0
   $absentes = 0
   $sautees = 0
+  $horsEdition = 0
   foreach ($nom in ($autorisees.Keys | Sort-Object)) {
     $decl = $autorisees[$nom]
+    # Add-Computer est declaree et analysee, mais fournie par Desktop 5.1
+    # seulement. Sous Desktop, Get-Command reste obligatoire si le module existe.
+    if ($decl.PSObject.Properties['editions'] -and @($decl.editions) -notcontains $PSVersionTable.PSEdition) {
+      $horsEdition++
+      Write-Host "  [INFO]  $nom : hors edition $($PSVersionTable.PSEdition), non verifiee sur ce moteur."
+      continue
+    }
     if (-not $modulesPresents.ContainsKey($decl.module)) { $sautees++; continue }
     $trouvee = Get-Command -Name $nom -ErrorAction SilentlyContinue
     if ($trouvee) {
@@ -214,6 +222,7 @@ if ($VerifierPresence) {
     }
   }
   Write-Host "  Verifiees : $verifiees · Absentes : $absentes · Modules non installes (ignores) : $sautees"
+  Write-Host "  Commandes reservees a une autre edition : $horsEdition"
   if ($verifiees -eq 0) {
     Write-Host '  [INFO]  Aucun module declare n''est installe sur cet agent : la verification de presence n''a rien prouve.'
   }
