@@ -1,0 +1,177 @@
+[
+  {
+    "id": "imp-win-inventaire",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 22607,
+    "sha256": "1e126adbde2e4340e02f621a8599b8c8623b7a95d6523bbf75b3669d2321f0b0"
+  },
+  {
+    "id": "imp-win-diagnostic-file",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 25753,
+    "sha256": "d3dcbacee81d5f8219fe84ff233036a6b348ba60698e323bda6f4111b1f84907"
+  },
+  {
+    "id": "imp-win-spouleur",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 22490,
+    "sha256": "766aed62a86285d0701f8825d24ebe3609f8a10220363d841b384d7b66604f87"
+  },
+  {
+    "id": "imp-win-reseau",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 20021,
+    "sha256": "9d92c03d4e7afac7d46f5ad1c1c26be6a9f0b1fb7d9bab82f18145e36d399684"
+  },
+  {
+    "id": "imp-win-partage-unc",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 21164,
+    "sha256": "4b428fa77bdb9f767e1d1e520b54972723909eaa2e813ca07815a49a1186e330"
+  },
+  {
+    "id": "imp-win-config-reseau",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 28836,
+    "sha256": "51a2bf4cf61c4014c2a5a56636b80aadcc61d9a7657bd9e3d2a5da4d77fa2495"
+  },
+  {
+    "id": "imp-win-config-reseau",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 28896,
+    "sha256": "5a3303240a3ce1940f6dd56a5d2c0a1a2ab8f1d5d9b9a0ae3b6c79b60d5d92cc"
+  },
+  {
+    "id": "imp-win-connexion-partage",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 25143,
+    "sha256": "13788fb683c0fcbae1371d912dce90c6e235d9ffb5b2d886b897ffe6632ed5a1"
+  },
+  {
+    "id": "imp-win-connexion-partage",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 25179,
+    "sha256": "c991c7eaf50d6c9ab6972691231887cd9c5bebd35dacf78e502694bc30c87a57"
+  },
+  {
+    "id": "imp-win-defaut",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 24022,
+    "sha256": "795157dfd7a3e4eb5563427fbb2a54d9f950920b6903dcf56eec8f3c567b0e34"
+  },
+  {
+    "id": "imp-win-defaut",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 24070,
+    "sha256": "d5599c8e47b4d5f9b8345ab38f5bee1f4e86051ac1693e5413c092a0dc5671e5"
+  },
+  {
+    "id": "imp-win-page-test",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 23529,
+    "sha256": "72538d89ff59fb6cf6b650b9c8baac8b4f054e772c8e2cc52d9e94b0ba7d7536"
+  },
+  {
+    "id": "imp-win-page-test",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 23593,
+    "sha256": "8ceaa8c221426b186ece38443fa5bb82d80d13920c855317be1d5a9c7edc7e74"
+  },
+  {
+    "id": "imp-win-annuler-travail",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 24280,
+    "sha256": "6b23249ec2af7f1d463070407a74235717322cb1a29c86c81ef0f999227c03bf"
+  },
+  {
+    "id": "imp-win-annuler-travail",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 24336,
+    "sha256": "19faef568aeaf2bfeedf2bdd95d190a83c0187cfe12e107670313787678f5eb9"
+  },
+  {
+    "id": "imp-win-spouleur-redemarrer",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 27000,
+    "sha256": "ad3723768b4fe9cf98845ee72ae9950ca9e7a81692323744674f1df0680973d8"
+  },
+  {
+    "id": "imp-win-spouleur-redemarrer",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 27048,
+    "sha256": "2ba8ab5b73d16daa019a24c83ee00b70da76e9b46516476910efaa0f0f6ef3d4"
+  },
+  {
+    "id": "imp-cups-inventaire",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 19038,
+    "sha256": "faf4849c0a052869e84ac9441c325991debc5bbd6b7bd026b78c68163203c81f"
+  },
+  {
+    "id": "imp-cups-diagnostic-file",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 19964,
+    "sha256": "74750aba017ab7b5580cdeb597710fb782f4fcbe84eec60f1dfab2f6188d4758"
+  },
+  {
+    "id": "imp-cups-annuler-travail",
+    "variante": "-",
+    "mode": "Diagnostic",
+    "octets": 22858,
+    "sha256": "f7de1be0d151b75ca117839b1d798860a5499acf59cd2bec971136f54c9dbd3a"
+  },
+  {
+    "id": "imp-cups-annuler-travail",
+    "variante": "-",
+    "mode": "Appliquer",
+    "octets": 22898,
+    "sha256": "c86e9282db0b139fd3db87258b21ee25dbd091deeeb30a55043e537807cdeb99"
+  },
+  {
+    "id": "imp-cups-reactiver-file",
+    "variante": "Reactiver",
+    "mode": "Diagnostic",
+    "octets": 23294,
+    "sha256": "c50bdc65db1d482bc14d9d020c82e06ef923c9fec29146fb27efb62bc239c44d"
+  },
+  {
+    "id": "imp-cups-reactiver-file",
+    "variante": "Reactiver",
+    "mode": "Appliquer",
+    "octets": 23323,
+    "sha256": "8cffd39198e165b1b114ba24d64a347bb4fc63e5d70a3ba2d797fe49332e0b3d"
+  },
+  {
+    "id": "imp-cups-reactiver-file",
+    "variante": "Accepter",
+    "mode": "Diagnostic",
+    "octets": 23322,
+    "sha256": "ffd8ecfdd0d3c59bdc0a58be7e81121e7c75713f693c4184513d52445c349bca"
+  },
+  {
+    "id": "imp-cups-reactiver-file",
+    "variante": "Accepter",
+    "mode": "Appliquer",
+    "octets": 23365,
+    "sha256": "3c1aece4b3dbad9f9ca91c0b0d73066bab9e8ff6ddc0116d5ac6e2bf15d752c6"
+  }
+]

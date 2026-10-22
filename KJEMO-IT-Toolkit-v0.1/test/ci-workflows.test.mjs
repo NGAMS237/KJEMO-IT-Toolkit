@@ -361,6 +361,23 @@ verifier(/total.*-eq 0/s.test(code['validate-linux.yml']),
 // est rejoué. S'il reste vert, c'est le contrôle qui est en cause.
 // ===========================================================================
 console.log('');
+console.log('Plan 5 bis — LOT 9 Imprimantes réellement câblé');
+{
+  const lin = texte['validate-linux.yml'];
+  const pkg = JSON.parse(readFileSync(join(RACINE, 'KJEMO-IT-Toolkit-v0.1', 'package.json'), 'utf8'));
+  for (const [cmd, script] of [
+    ['node test/impression-assistants.test.mjs', 'test:impression'],
+    ['node test/browser-impression.test.mjs', 'test:browser:impression'],
+    ['node test/sources-impression.mjs', 'test:sources:9'],
+    ['node test/matrices-lot9.mjs --verifier', 'test:matrices:lot9'],
+  ]) {
+    verifier(lin.includes(`run: ${cmd}`), `validate-linux.yml lance « ${cmd} »`);
+    verifier(pkg.scripts[script] === cmd, `package.json : « ${script} » = « ${cmd} »`);
+  }
+  verifier(pkg.scripts['matrices:lot9'] === 'node test/matrices-lot9.mjs', 'package.json : « matrices:lot9 »');
+}
+
+console.log('');
 console.log('Plan 6 — contre-épreuves');
 
 // 6.1 — un continue-on-error ajouté

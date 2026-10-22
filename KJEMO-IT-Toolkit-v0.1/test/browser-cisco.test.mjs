@@ -107,7 +107,7 @@ assert(cisco.length === 19, '19 fiches Cisco dans le catalogue', String(cisco.le
   assert(await page.locator('#toolGrid .open-tool').count() === tools.length, 'la grille affiche tous les outils du catalogue');
   const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => e.dataset.category));
   assert(cartes.includes(CAT), 'la carte « Réseau et Cisco » est proposée');
-  assert(cartes.length === 10, `10 cartes de catégorie avec Azure intégré, « Tout » comprise (${cartes.length})`);
+  assert(cartes.length === 11, `11 cartes de catégorie (Azure et Imprimantes intégrés), « Tout » comprise (${cartes.length})`);
   await page.click(`#categoryGrid .category-card[data-category="${CAT}"]`);
   await page.waitForTimeout(300);
   assert(await page.locator('#toolGrid .open-tool').count() === 19, 'la catégorie affiche ses 19 outils');

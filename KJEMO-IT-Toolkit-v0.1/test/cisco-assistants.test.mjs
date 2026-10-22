@@ -107,7 +107,10 @@ section('Catalogue : 19 assistants Cisco ; 153 historiques (+ 24 Azure une fois 
 assert(cisco.length === 19, `19 assistants Cisco (${cisco.length})`);
 const nbAzure = tools.filter((t) => t.category === 'Azure et Entra ID').length;
 assert(nbAzure === 0 || nbAzure === 24, `Azure absent (branche Cisco seule) ou complet : 24 (${nbAzure})`);
-assert(tools.length === 153 + nbAzure + 19, `catalogue = 153 historiques + ${nbAzure} Azure + 19 Cisco (${tools.length})`);
+const nbImpression = tools.filter((t) => t.category === 'Imprimantes').length;
+assert(nbImpression === 0 || nbImpression === 15, `Imprimantes absent (branches Azure/Cisco) ou complet : 15 (${nbImpression})`);
+assert(tools.length === 153 + nbAzure + 19 + nbImpression,
+  `catalogue = 153 historiques + ${nbAzure} Azure + 19 Cisco + ${nbImpression} Imprimantes (${tools.length})`);
 assert(tools.filter((t) => t.category !== 'Réseau et Cisco').every((t) => P.plateformeDe(t) !== 'Cisco'),
   'aucun outil historique ne déclare la plateforme Cisco');
 assert(new Set(cisco.map((t) => t.id)).size === 19, 'identifiants uniques');

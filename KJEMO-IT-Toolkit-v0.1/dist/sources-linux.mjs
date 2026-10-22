@@ -52,6 +52,12 @@ export const PREFIXES_SOURCES_LINUX = [
   // declares, et ce sont bien deux adresses du MEME editeur.
   { prefixe: 'https://cockpit-project.org/', editeur: 'Projet Cockpit' },
   { prefixe: 'https://docs.cockpit-project.org/', editeur: 'Projet Cockpit' },
+  // CUPS (LOT 9). Le projet OpenPrinting maintient CUPS : sa documentation
+  // (openprinting.github.io/cups) et ses pages de manuel sont la source
+  // primaire pour lpstat, cancel, cupsenable et cupsaccept ; cups.org est
+  // l'ancien site du meme projet.
+  { prefixe: 'https://openprinting.github.io/', editeur: 'OpenPrinting — CUPS' },
+  { prefixe: 'https://www.cups.org/', editeur: 'OpenPrinting — CUPS (ancien site)' },
   // Kerberos, en amont. La page klist(1) n'est PAS publiee pour noble sur
   // manpages.ubuntu.com — verifie : elle rend un vrai 404 — alors que
   // krb5.conf(5) l'est. Plutot que de citer une version d'Ubuntu plus ancienne

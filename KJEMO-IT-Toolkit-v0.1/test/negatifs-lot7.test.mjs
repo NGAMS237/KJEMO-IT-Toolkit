@@ -96,7 +96,9 @@ const famille = (id, titre, niveau) => {
 // ---------------------------------------------------------------------------
 // Les assistants du lot
 // ---------------------------------------------------------------------------
-const linux = tools.filter((t) => t.platform === 'Linux');
+// Les assistants CUPS du LOT 9 (catégorie Imprimantes) ont leur propre banc,
+// test/impression-assistants.test.mjs : ce banc reste celui du LOT 7.
+const linux = tools.filter((t) => t.platform === 'Linux' && t.category !== 'Imprimantes');
 const MODIFIANTS = linux.filter((t) => t.risk !== 'diagnostic');
 const DIAGNOSTICS = linux.filter((t) => t.risk === 'diagnostic');
 const outil = (id) => {

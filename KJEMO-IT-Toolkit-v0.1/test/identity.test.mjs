@@ -141,7 +141,7 @@ import { plateformeDe, sortieDe, estBash, estLectureSeule, extensionDe,
          PRIVILEGES_REQUIS, privilegesRequisDe,
          CHAMPS_LINUX } from '../dist/plateforme.mjs';
 import { sourceLinuxValide, editeurDe, PREFIXES_SOURCES_LINUX } from '../dist/sources-linux.mjs';
-import { SOUS_RUBRIQUES_LINUX, SOUS_RUBRIQUES_AZURE } from '../dist/categories.mjs';
+import { SOUS_RUBRIQUES_LINUX, SOUS_RUBRIQUES_AZURE, SOUS_RUBRIQUES_IMPRESSION } from '../dist/categories.mjs';
 
 // ---------------------------------------------------------------------------
 // Comptage
@@ -798,6 +798,25 @@ for (const t of tools) {
       `${t.id} : un assistant Cisco ne demande PAS l’élévation locale (requiresAdmin = false)`);
     continue;
   }
+  if (t.category === 'Imprimantes') {
+    // LOT 9 : sous Windows, la règle « risque ⇒ administrateur » est FAUSSE pour
+    // quatre actions qui n'agissent que dans le compte qui lance le script
+    // (connexion à une file partagée, imprimante par défaut, page de test,
+    // annulation d'UN travail). Les rendre « administrateur » inciterait à lancer
+    // une console élevée, et la connexion serait alors créée pour le MAUVAIS compte.
+    // La règle n'est pas supprimée : elle est remplacée, pour cette catégorie, par
+    // une liste NOMMÉE et fermée des deux assistants qui modifient l'état de la
+    // machine (port + imprimante, redémarrage du spouleur) et DOIVENT être élevés.
+    const ELEVES = ['imp-win-config-reseau', 'imp-win-spouleur-redemarrer'];
+    if (plateformeDe(t) === 'Linux') {
+      assert(t.requiresAdmin === false,
+        `${t.id} : un assistant CUPS déclare son élévation par privilegesRequis (root-partiel ou aucun), pas par requiresAdmin`);
+    } else {
+      assert(t.requiresAdmin === ELEVES.includes(t.id),
+        `${t.id} : requiresAdmin = ${ELEVES.includes(t.id)} (seuls ${ELEVES.join(' et ')} modifient l\u2019état de la machine)`);
+    }
+    continue;
+  }
   if (RISQUES_ADMIN.includes(t.risk) && t.category !== 'Active Directory' && t.category !== 'GPO') {
     assert(t.requiresAdmin === true,
       `${t.id} : risque « ${t.risk} » hors AD/GPO ⇒ requiresAdmin = true`);
@@ -1056,6 +1075,12 @@ const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'linux-disk-partition
   // configuration de démarrage ; aucune commande ne la restaure. Déclarer
   // reversible: true aurait fabriqué une sécurité inexistante.
   'cisco-config-sauvegarde',
+  // LOT 9 : une page imprimée, un travail annulé et un spouleur redémarré ne se
+  // défont pas. Les déclarer réversibles fabriquerait une sécurité inexistante.
+  'imp-win-page-test',
+  'imp-win-annuler-travail',
+  'imp-win-spouleur-redemarrer',
+  'imp-cups-annuler-travail',
 ];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
@@ -1272,24 +1297,22 @@ assert(new Set(CATEGORIES.map((c) => c.id)).size === CATEGORIES.length,
   'les identifiants de catégorie sont uniques');
 assert(new Set(CATEGORIES.map((c) => c.name)).size === CATEGORIES.length,
   'les noms de catégorie sont uniques');
-assert(enAttente.length > 0 && enAttente.every((c) => c.count === 0),
-  `catégories prévues mais masquées tant qu\u2019elles sont vides : ${enAttente.length}`);
-// Imprimantes reste déclarée et vide : c'est le LOT 9. « Linux et services
-// réseau » était dans le même état jusqu'au LOT 7, qui l'a peuplée — elle
-// change donc de côté, et la règle la suit au lieu d'être assouplie : une
-// catégorie déclarée est soit vide et masquée, soit peuplée et visible, jamais
+// Une catégorie en attente est vide ET masquée. Depuis le LOT 9 il n'en reste
+// aucune : Imprimantes a rejoint Linux et services réseau, Azure et Cisco du
+// côté des catégories peuplées. La règle n'est pas assouplie, elle est resserrée :
+// ce qui était « au moins une catégorie en attente, toutes vides » devient
+// « toute catégorie en attente est vide, et il n'en reste plus » — une catégorie
+// déclarée est soit vide et masquée, soit peuplée et visible, jamais
 // déclarée-et-oubliée.
-for (const prevue of ['Imprimantes']) {
-  assert(CATEGORIES.some((c) => c.name === prevue),
-    `la feuille de route est préparée : « ${prevue} » est déclarée`);
-  assert(!visibles.some((c) => c.name === prevue),
-    `« ${prevue} » n\u2019est pas affichée puisqu\u2019elle est vide`);
-}
-for (const peuplee of ['Linux et services réseau']) {
+assert(enAttente.every((c) => c.count === 0),
+  `toute catégorie en attente est vide et masquée (${enAttente.length} restante(s))`);
+assert(enAttente.length === 0,
+  'plus aucune catégorie déclarée n\u2019est en attente : le LOT 9 a peuplé Imprimantes');
+for (const peuplee of ['Linux et services réseau', 'Imprimantes']) {
   assert(CATEGORIES.some((c) => c.name === peuplee),
     `« ${peuplee} » est déclarée au catalogue`);
   assert(visibles.some((c) => c.name === peuplee),
-    `« ${peuplee} » est affichée : le LOT 7 l\u2019habite`);
+    `« ${peuplee} » est affichée : un lot l\u2019habite`);
 }
 assert(categorieParNom('Réseau') !== null && categorieParNom('Inexistante') === null,
   'categorieParNom() retrouve une catégorie connue et rejette l\u2019inconnue');
@@ -1504,17 +1527,17 @@ assert(nomsVisibles.includes('Analyse et nettoyage des disques'),
 // carte sans fil est matériellement un périphérique.
 assert(nomsVisibles.includes('Poste de travail Windows'),
   'Poste de travail Windows est visible : les assistants du LOT 6 l\u2019habitent');
-assert(attente2.map((c) => c.name).join(',') === 'Imprimantes',
-  `seule Imprimantes reste en attente (${attente2.map((c) => c.name).join(',')})`);
-assert(!nomsVisibles.includes('Imprimantes'),
-  'Imprimantes est masquée puisqu\u2019elle est vide');
+assert(attente2.length === 0,
+  `aucune catégorie ne reste en attente (${attente2.map((c) => c.name).join(',')})`);
+assert(nomsVisibles.includes('Imprimantes'),
+  'Imprimantes est visible depuis le LOT 9');
 assert(nomsVisibles.includes('Linux et services réseau'),
   'Linux et services réseau est visible depuis le LOT 7');
 assert(nomsVisibles.includes('Azure et Entra ID'),
   'Azure et Entra ID est visible depuis le LOT 8');
 assert(nomsVisibles.includes('Réseau et Cisco'),
   'Réseau et Cisco est visible depuis RESEAU-CISCO-01');
-assert(vis2.length === 9 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+assert(vis2.length === 10 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
   `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
@@ -1523,8 +1546,8 @@ const sousAD = sousRubriques(tools, 'Active Directory').map((x) => x.name);
 // ajoutent — le test vérifie la présence et l'ordre, pas un nombre figé.
 assert(sousAD.slice(0, 3).join(' | ') === 'Unités organisationnelles | Utilisateurs | Contrôleurs de domaine',
   `Active Directory conserve ses trois sous-rubriques historiques en tête (${sousAD.slice(0, 3).join(', ')})`);
-assert(sousRubriques(tools, 'Imprimantes').length === 0,
-  'une catégorie vide n\u2019expose aucune sous-rubrique');
+assert(sousRubriques(tools, 'Imprimantes').map((x) => x.name).join(' | ') === SOUS_RUBRIQUES_IMPRESSION.join(' | '),
+  'Imprimantes expose ses cinq sous-rubriques canoniques, dans l\u2019ordre');
 assert(vis2.every((c) => c.sous.length > 0 && c.sous.reduce((n, x) => n + x.count, 0) === c.count),
   'les décomptes des sous-rubriques correspondent au décompte de la catégorie');
 
@@ -1551,7 +1574,9 @@ assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
 // expression régulière ne les voit pas. Ils sont exclus de CE décompte (et seulement de lui)
 // et contrôlés par leurs propres bancs, test/azure-assistants.test.mjs et
 // test/cisco-assistants.test.mjs, qui exigent les mêmes contrats.
-const horsFabriques = tools.filter((t) => t.category !== 'Azure et Entra ID' && t.category !== 'Réseau et Cisco');
+// LOT 9 : les 15 assistants Imprimantes (fabriques outilImpression() et outilCups()) sont dans
+// le même cas ; ils sont contrôlés par test/impression-assistants.test.mjs.
+const horsFabriques = tools.filter((t) => t.category !== 'Azure et Entra ID' && t.category !== 'Réseau et Cisco' && t.category !== 'Imprimantes');
 assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === horsFabriques.length,
   `une fonction generate() par outil du catalogue hors fabriques Azure et Cisco (${horsFabriques.length})`);
 assert((sourcesCatalogue.match(/^\s*subcategory: '/gm) ?? []).length === horsFabriques.length,
@@ -1809,9 +1834,10 @@ assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
 const outilsLot7 = outilsRecents.filter((t) => t.category === 'Linux et services réseau');
 const outilsLot8 = outilsRecents.filter((t) => t.category === 'Azure et Entra ID');
+const outilsLot9 = outilsRecents.filter((t) => t.category === 'Imprimantes');
 assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length
-  + outilsLot5.length + outilsLot6.length + outilsLot7.length + outilsLot8.length,
-  `tout outil ajouté appartient à l\u2019une des sept catégories peuplées (hors Cisco, compté à part) (${outilsRecents.length})`);
+  + outilsLot5.length + outilsLot6.length + outilsLot7.length + outilsLot8.length + outilsLot9.length,
+  `tout outil ajouté appartient à l\u2019une des huit catégories peuplées (hors Cisco, compté à part) (${outilsRecents.length})`);
 assert(outilsLot8.length === 24 && outilsLot8.every((t) => SOUS_RUBRIQUES_AZURE.includes(t.subcategory)),
   `les ${outilsLot8.length} outils Azure portent une des six sous-rubriques prévues`);
 assert(outilsLot8.every((t) => plateformeDe(t) === 'Multi' && sortieDe(t) === '.ps1'),
@@ -1919,7 +1945,7 @@ for (const outil of outilsRecents) {
   // La preuve par l'EXÉCUTION — lancer le script et constater zéro écriture —
   // est faite séparément, par test/linux-verrous.test.mjs.
   // ------------------------------------------------------------------------
-  const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode' || f.id === 'azMode');
+  const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode' || f.id === 'azMode' || f.id === 'impMode');
   const champConfirmation = outil.fields.find((f) => /confirmation/i.test(f.id));
   if (outil.risk === 'diagnostic') {
     // L'intention de la règle : les constats d'un outil de diagnostic doivent
@@ -2148,7 +2174,7 @@ for (const outil of outilsRecents) {
       `${outil.id} : aucune évaluation de chaîne — sans quoi retirer les chaînes littérales masquerait un appel`);
     const modifiants = sansChaines
       .match(/\b(Set|Add|Remove|New|Install|Uninstall|Start|Stop|Restart|Clear|Restore)-[A-Z][A-Za-z0-9]*/g) ?? [];
-    const autorises = ['Add-KjemoResultat', 'New-Object', 'New-TimeSpan', 'Set-Content',
+    const autorises = ['Add-KjemoResultat', 'Add-KjemoContexte', 'Add-KjemoCibleImprimante', 'New-Object', 'New-TimeSpan', 'Set-Content',
                        'New-Item', 'Add-Member', 'Start-Sleep'];
     const interdits = [...new Set(modifiants.filter((c) => !autorises.includes(c)))];
     assert(interdits.length === 0,

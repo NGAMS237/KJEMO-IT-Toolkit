@@ -311,3 +311,5 @@ nav button{max-width:100%}
 /* RESEAU-CISCO-01 — bloc pédagogique des fiches Cisco */
 .cisco-bloc,.cisco-bloc li,.cisco-bloc p{overflow-wrap:anywhere}
 .badge-cisco{background:#0b5cad;color:#fff}
+/* LOT 9 — bloc pédagogique des fiches Imprimantes : noms de files, chemins UNC et URI n’ont aucun point de coupure */
+.impression-bloc,.impression-bloc li,.impression-bloc p{overflow-wrap:anywhere}

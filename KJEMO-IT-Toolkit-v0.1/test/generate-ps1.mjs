@@ -2350,6 +2350,49 @@ const VALEURS_PAR_OUTIL = {
     'chemin-racine-c':           { action: 'Préparer une création', compte: 'voisin' },
     'chemin-avec-apostrophe':    { action: 'Examiner un compte', compte: 'd-adam' },
   },
+  // LOT 9 - CUPS. « impDest » et « impFormat » sont propres aux assistants d'impression ;
+  // les destinations sont des noms CUPS valides (lettres, chiffres, . _ -), les cas
+  // difficiles (espaces, guillemets) sont couverts par les tests de validation.
+  // Inventaire : filtre facultatif.
+  'imp-cups-inventaire': {
+    'apostrophe-ascii':            { impDest: '', impFormat: 'JSON' },
+    'apostrophe-typographique':    { impDest: 'Canon_Compta', impFormat: 'CSV' },
+    'dollar-backtick-guillemets':  { impDest: 'HP.LaserJet-2', impFormat: 'Console' },
+    'espaces-et-accents':          { impDest: 'PDF_Virtuel', impFormat: 'JSON' },
+    'virgule-et-point-virgule':    { impDest: '', impFormat: 'CSV' },
+    'chemin-racine-c':             { impDest: 'Accueil2', impFormat: 'Console' },
+    'chemin-avec-apostrophe':      { impDest: 'd-adam_Epson', impFormat: 'JSON' },
+  },
+  // Diagnostic d'une file.
+  'imp-cups-diagnostic-file': {
+    'apostrophe-ascii':            { impDest: 'Canon_Compta', impFormat: 'JSON' },
+    'apostrophe-typographique':    { impDest: 'PDF_Virtuel', impFormat: 'CSV' },
+    'dollar-backtick-guillemets':  { impDest: 'HP.LaserJet-2', impFormat: 'Console' },
+    'espaces-et-accents':          { impDest: 'Etage_3', impFormat: 'JSON' },
+    'virgule-et-point-virgule':    { impDest: 'Labo.A_B-1', impFormat: 'CSV' },
+    'chemin-racine-c':             { impDest: 'Accueil2', impFormat: 'Console' },
+    'chemin-avec-apostrophe':      { impDest: 'd-adam_Epson', impFormat: 'JSON' },
+  },
+  // Annulation d'un travail : phrase exacte dans trois jeux, vide dans les autres.
+  'imp-cups-annuler-travail': {
+    'apostrophe-ascii':            { impDest: 'Canon_Compta', impJob: '12', impProprio: '', impConfirmation: 'ANNULER LE TRAVAIL Canon_Compta-12', impFormat: 'JSON' },
+    'apostrophe-typographique':    { impDest: 'PDF_Virtuel', impJob: '7', impProprio: 'o-brien', impConfirmation: '', impFormat: 'CSV' },
+    'dollar-backtick-guillemets':  { impDest: 'HP.LaserJet-2', impJob: '1', impProprio: '', impConfirmation: '', impFormat: 'Console' },
+    'espaces-et-accents':          { impDest: 'Etage_3', impJob: '99', impProprio: 'dadam', impConfirmation: 'ANNULER LE TRAVAIL Etage_3-99', impFormat: 'JSON' },
+    'virgule-et-point-virgule':    { impDest: 'Labo.A_B-1', impJob: '305', impProprio: '', impConfirmation: '', impFormat: 'CSV' },
+    'chemin-racine-c':             { impDest: 'Accueil2', impJob: '4', impProprio: 'voisin', impConfirmation: '', impFormat: 'Console' },
+    'chemin-avec-apostrophe':      { impDest: 'd-adam_Epson', impJob: '28', impProprio: 'd-adam', impConfirmation: 'ANNULER LE TRAVAIL d-adam_Epson-28', impFormat: 'JSON' },
+  },
+  // Reactivation : action et phrase.
+  'imp-cups-reactiver-file': {
+    'apostrophe-ascii':            { impDest: 'Canon_Compta', impAction: 'Reactiver', impConfirmation: 'REACTIVER Canon_Compta', impFormat: 'JSON' },
+    'apostrophe-typographique':    { impDest: 'PDF_Virtuel', impAction: 'Accepter', impConfirmation: '', impFormat: 'CSV' },
+    'dollar-backtick-guillemets':  { impDest: 'HP.LaserJet-2', impAction: 'Reactiver', impConfirmation: '', impFormat: 'Console' },
+    'espaces-et-accents':          { impDest: 'Etage_3', impAction: 'Accepter', impConfirmation: 'ACCEPTER LES TRAVAUX DE Etage_3', impFormat: 'JSON' },
+    'virgule-et-point-virgule':    { impDest: 'Labo.A_B-1', impAction: 'Reactiver', impConfirmation: '', impFormat: 'CSV' },
+    'chemin-racine-c':             { impDest: 'Accueil2', impAction: 'Accepter', impConfirmation: '', impFormat: 'Console' },
+    'chemin-avec-apostrophe':      { impDest: 'd-adam_Epson', impAction: 'Reactiver', impConfirmation: 'REACTIVER d-adam_Epson', impFormat: 'JSON' },
+  },
   // Samba. « chemin », « groupe » et « confirmation » sont partages avec les
   // assistants de permissions, dont les valeurs globales designent d'autres
   // cibles : d'ou cette table par outil.
@@ -2722,6 +2765,7 @@ if (ecarts712.length === 0) {
 // domaine » vit dans la categorie du LOT 6 parce que c'est la qu'on la
 // cherche, et vient du LOT 7. La regle la plus precise passe en premier.
 const VERSIONS_PAR_LOT = [
+  { lot: 'LOT 9', categorie: 'Imprimantes', version: 'LOT 9 — Imprimantes — 9.0.0' },
   { lot: 'LOT 8', categorie: 'Azure et Entra ID', version: 'LOT 8 — Azure et Entra ID — 8.0.0' },
   { lot: 'LOT 7', categorie: 'Poste de travail Windows', sousRubrique: 'Jonction de domaine', version: 'LOT 7 — Jonction de domaine Windows — 7.0.0' },
   { lot: 'LOT 5', categorie: 'Réseau', version: 'LOT 5 — Réseau avancé — 5.0.0' },

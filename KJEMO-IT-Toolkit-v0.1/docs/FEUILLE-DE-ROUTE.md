@@ -62,7 +62,7 @@ la section « Actualisation du 22 octobre 2026 — LOT 8 » plus bas pour l'éta
 exact. Non poussé, non testé en CI GitHub, non fusionné, non déployé.
 
 ### LOT 9 — Imprimantes
-Imprimantes.
+Développé localement sur la branche `claude/lot-9-imprimantes` (15 assistants : 11 Windows, 4 CUPS) ; voir « Actualisation du 22 octobre 2026 — LOT 9 » plus bas. Non poussé, CI distante non exécutée, non fusionné, non déployé.
 
 ### LOT 10 — Disques, analyse avancée
 Analyse et nettoyage avancés des disques. Prolonge `disk-scan`, qui reste
@@ -329,3 +329,31 @@ Revue et intégration distinctes ; essai Packet Tracer puis, si possible, matér
 - Catalogue : 196 assistants (153 + 24 + 19), 10 catégories canoniques, Imprimantes encore vide (LOT 9 non commencé au moment de ce checkpoint).
 - Le LOT 9 Imprimantes part de ce checkpoint sur une branche distincte ; il ne modifie pas ce checkpoint.
 - Rapport : `INTEGRATION-AZURE-CISCO-RAPPORT.md`.
+
+## Actualisation du 22 octobre 2026 — LOT 9 : Imprimantes
+
+- Branche `claude/lot-9-imprimantes`, partie du checkpoint d'intégration `0c4aa86` (Azure + Cisco), sans le modifier. **Développé et testé localement ; non poussé (GitHub a refusé l'écriture), CI distante non exécutée, non fusionné dans main, non déployé.**
+- 15 assistants : 11 Windows PowerShell (PrintManagement, CIM, Spooler) et 4 Linux/CUPS (Bash). Catalogue : 211 assistants (196 + 15), 10 catégories visibles (11 cartes avec « Tout ») ; « Imprimantes » n'est plus masquée.
+- Quatre parcours : **A** inventaire et diagnostic en lecture seule ; **B** configuration Windows guidée (port TCP/IP + imprimante avec un pilote déjà installé, connexion à une file partagée, imprimante par défaut du compte, page de test explicite) ; **C** déblocage ciblé (un travail identifié, redémarrage du spouleur avec avertissement) ; **D** Linux/CUPS (inventaire, diagnostic, annulation d'un travail, réactivation d'une file).
+- Garde-fous : aucun téléchargement ni installation de pilote ; aucun remplacement silencieux ; aucune purge générale du spool ; phrase de confirmation exacte embarquée dans le script ; lecture avant action, relecture après ; `-WhatIf` seulement là où la documentation Microsoft le supporte (`Add-PrinterPort`, `Remove-PrintJob`, `Restart-Service`) ; jamais « réparé » ni « l'imprimante fonctionne » déduit d'un code de sortie.
+- Laboratoires `docs/labs-imprimantes/` : trois guides **NON EXÉCUTÉS**.
+- Non fait / hors périmètre : pilotes, serveur d'impression complet, files Samba, `lpadmin` (création de files CUPS), administration réseau de CUPS, essai sur matériel réel, Windows PowerShell 5.1.
+## Traçabilité Samba — SAMBA-ADV-01 et demandes du 20 octobre 2026 (relue le 22 octobre 2026 contre le code réel)
+
+Méthode : relecture de la section « LOT 7 — SAMBA-ADV-01 » ci-dessus, puis recherche dans `dist/` (`outils-linux-l.mjs`, `outils-linux-m.mjs`, `commandes-samba.mjs`, `commandes-samba-ad.mjs`, `commandes-permissions.mjs`, `outils-linux-g.mjs`) et dans `test/` (`samba-linux`, `samba-ad-linux`, `raid-linux`). Aucun doublon n'est créé par cette section ; développer les compléments n'est pas obligatoire.
+
+| # | Exigence | État | Preuve (fichiers) / écart précis |
+|---|---|---|---|
+| 1 | Inventaire préalable des modules | **Déjà couvert** | Le présent tableau ; les tâches Samba existent (`samba-readiness`, `samba-share-create`, `samba-diagnostic`, `samba-ad-dc-*`, `samba-ad-user-manage`). La note du 20 octobre (« aucun fichier nommé Samba ») est **périmée**. |
+| 2 | Diagnostic Samba (services selon le rôle, `testparm`, `smbstatus`, réseau/pare-feu, lecture seule) | **Partiellement couvert** | `samba-readiness` et `samba-diagnostic` (`outils-linux-l.mjs`) : smbd/nmbd séparés, `testparm`, ports 445/139, pare-feu, base de comptes Samba. **Écart : aucune occurrence de `smbstatus` dans `dist/`** (sessions et fichiers ouverts côté Linux non couverts). Rôle AD-DC : `samba-ad-dc-readiness`, `samba-ad-health`. |
+| 3 | Partages sécurisés (`smb.conf`, utilisateurs/groupes autorisés, lecture/écriture, droits POSIX/ACL, sauvegarde préalable, tests) | **Partiellement couvert** | `samba-share-create` (`valid users`, `read only`, setgid, validation `testparm` avant mise en service, sauvegarde) ; tests `test/samba-linux.test.mjs`. **Écart** : la vérification des ACL (`getfacl`) existe dans les outils de permissions (`outils-linux-g.mjs`, `commandes-permissions.mjs`) mais n'est pas reliée au parcours de partage Samba. |
+| 4a | Samba AD : comptes (lister, afficher) | **Déjà couvert** | `samba-ad-user-manage` : `samba-tool user list/show`, `computer list` (`outils-linux-m.mjs`) ; test `test/samba-ad-linux.test.mjs`. |
+| 4b | Samba AD : création, désactivation, réactivation de compte | **Partiellement couvert** | Commandes seulement **affichées** (`samba-tool user create/disable/enable`), jamais exécutées par le script ; mot de passe saisi à la console (voulu). Écart : pas de script qui agit avec confirmation. |
+| 4c | Samba AD : groupes et appartenances (`samba-tool group …`) | **Restant** | Aucune commande `samba-tool group` dans `dist/`. Les assistants `ad-groups` / `ad-group-members-csv` sont Windows (module ActiveDirectory), non Samba. |
+| 5a | Client SMB : découverte (`smbclient -L`) | **Déjà couvert (affichage)** | `commandes-samba.mjs`, `samba-diagnostic` : commande affichée, jamais exécutée (mot de passe demandé à la console). |
+| 5b | Client SMB : `get`, `mget`, `put`, `mput`, récursivité | **Restant** | Aucune occurrence dans `dist/`. À concevoir avec avertissements (écrasement, récursion, `prompt`/`recurse`). |
+| 6 | Scénario transversal RAID1 + montage + droits + partage | **Partiellement couvert** | RAID : `linux-raid1-create`, `linux-raid-member-manage`, test `test/raid-linux.test.mjs` ; partage : `samba-share-create`. **Écart** : aucun assistant ne vérifie la chaîne complète (état RAID → point de montage → propriétaire/ACL → partage) ; pas de référence à `/dev/md127` fixe (garde-fou respecté). |
+| 7 | Validation (génération, ShellCheck, sécurité, négatifs, CI Linux, lab Ubuntu/Windows) | **Partiellement couvert** | Génération, ShellCheck, négatifs et CI Linux : en place (`sh-shellcheck`, `negatifs-lot7`, `samba-linux`, `samba-ad-linux`). **Lab Ubuntu/Windows : NON EXÉCUTÉ** ; exécution réelle non revérifiée. |
+
+Garde-fous Samba inchangés : le site génère sans exécuter ; pas de `chmod 777`, de partage invité, de mot de passe d'exemple ni d'ouverture générale du pare-feu ; pas de `/dev/md127` ni d'UID/GID fixes ; aucun test non exécuté n'est déclaré PASS.
+
