@@ -21,8 +21,9 @@ const ROOT      = resolve(__dirname, '..');
 const OUT_DIR   = resolve(ROOT, 'test', 'generated');
 
 const { tools, normalizeScript } = await import(pathToFileURL(resolve(ROOT, 'dist', 'generators.mjs')).href);
-const { estBash, extensionDe, plateformeDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
+const { estBash, estIOS, extensionDe, plateformeDe } = await import(pathToFileURL(resolve(ROOT, 'dist', 'plateforme.mjs')).href);
 const { normalizeScriptSh } = await import(pathToFileURL(resolve(ROOT, 'dist', 'noyau-bash.mjs')).href);
+const { normalizeIos } = await import(pathToFileURL(resolve(ROOT, 'dist', 'noyau-cisco.mjs')).href);
 
 // BOM UTF-8 : requis pour PowerShell 5.1 (lit les fichiers comme UTF-8)
 const BOM = Buffer.from([0xEF, 0xBB, 0xBF]);
@@ -2538,11 +2539,15 @@ for (const tool of tools) {
     // continuation de ligne PowerShell. Appliqué à du Bash, il remplacerait des
     // continuations valides par des substitutions de commande.
     // ------------------------------------------------------------------------
+    // RESEAU-CISCO-01 : un fichier .ios.txt est un TROISIÈME cas — ni BOM, ni
+    // shebang, ASCII seul, LF, aucune tabulation, aucun « ? » (la console IOS
+    // le prend pour l'aide contextuelle, même collé).
+    const ios = estIOS(tool);
     const bash = estBash(tool);
     let content;
     try {
       const brut = tool.generate(values);
-      content = bash ? normalizeScriptSh(brut) : normalizeScript(brut);
+      content = ios ? normalizeIos(brut) : (bash ? normalizeScriptSh(brut) : normalizeScript(brut));
     } catch (err) {
       report.errors.push({ tool: tool.id, dataset: dataset.name, error: String(err) });
       console.error(`[ERR] ${tool.id} / ${dataset.name} : ${err}`);
@@ -2552,7 +2557,7 @@ for (const tool of tools) {
     const filename = `${tool.id}__${dataset.name}${extensionDe(tool)}`;
     const outPath  = resolve(OUT_DIR, filename);
     const contentBuf = Buffer.from(content, 'utf-8');
-    writeFileSync(outPath, bash ? contentBuf : Buffer.concat([BOM, contentBuf]));
+    writeFileSync(outPath, (bash || ios) ? contentBuf : Buffer.concat([BOM, contentBuf]));
 
     // Relecture des premiers octets, dans les DEUX sens. On ne se contente pas
     // d'avoir écrit ce qu'il fallait : on vérifie ce qui est sur le disque.
@@ -2560,7 +2565,18 @@ for (const tool of tools) {
     const fd = openSync(outPath, 'r');
     readSync(fd, tete, 0, 3, 0);
     closeSync(fd);
-    if (bash) {
+    if (ios) {
+      if (tete.equals(BOM)) {
+        console.error(`[BOM INTERDIT] ${filename} : un fichier IOS ne doit JAMAIS commencer par EF BB BF.`);
+        report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM présent sur un .ios.txt' });
+      }
+      for (const [re, nom] of [[/[^\x00-\x7f]/, 'caractère non ASCII'], [/\?/, 'point d’interrogation (aide IOS)'], [/\t/, 'tabulation'], [/\r/, 'retour chariot']]) {
+        if (re.test(content)) {
+          console.error(`[IOS] ${filename} : ${nom}.`);
+          report.errors.push({ tool: tool.id, dataset: dataset.name, error: `${nom} dans un .ios.txt` });
+        }
+      }
+    } else if (bash) {
       if (tete.equals(BOM)) {
         console.error(`[BOM INTERDIT] ${filename} : un .sh ne doit JAMAIS commencer par EF BB BF — le shebang serait masqué.`);
         report.errors.push({ tool: tool.id, dataset: dataset.name, error: 'BOM présent sur un .sh' });
@@ -2579,7 +2595,7 @@ for (const tool of tools) {
     }
     report.generated.push({
       tool: tool.id, dataset: dataset.name, file: filename,
-      bytes: contentBuf.length + (bash ? 0 : 3), sortie: bash ? '.sh' : '.ps1',
+      bytes: contentBuf.length + ((bash || ios) ? 0 : 3), sortie: ios ? '.ios.txt' : (bash ? '.sh' : '.ps1'),
     });
     if (plateformeDe(tool) === 'Linux') valeursLinuxUtilisees[filename] = values;
   }
@@ -2706,6 +2722,7 @@ if (ecarts712.length === 0) {
 // domaine » vit dans la categorie du LOT 6 parce que c'est la qu'on la
 // cherche, et vient du LOT 7. La regle la plus precise passe en premier.
 const VERSIONS_PAR_LOT = [
+  { lot: 'LOT 8', categorie: 'Azure et Entra ID', version: 'LOT 8 — Azure et Entra ID — 8.0.0' },
   { lot: 'LOT 7', categorie: 'Poste de travail Windows', sousRubrique: 'Jonction de domaine', version: 'LOT 7 — Jonction de domaine Windows — 7.0.0' },
   { lot: 'LOT 5', categorie: 'Réseau', version: 'LOT 5 — Réseau avancé — 5.0.0' },
   { lot: 'LOT 6', categorie: 'Poste de travail Windows', version: 'LOT 6 — Poste de travail Windows — 6.0.0' },

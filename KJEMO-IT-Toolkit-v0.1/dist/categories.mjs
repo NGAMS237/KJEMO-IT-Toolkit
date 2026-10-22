@@ -67,6 +67,18 @@ export const CATEGORIES = [
     icon: '△',
     description: 'Ubuntu et Debian : diagnostic, Bash, permissions, services, réseau, SSH, Cockpit, Samba, NFS et stockage.',
   },
+  {
+    id: 'azure-entra',
+    name: 'Azure et Entra ID',
+    icon: '☁',
+    description: 'Lecture et diagnostic d’un abonnement Azure et d’un tenant Microsoft Entra ID : accès, identités, machines virtuelles, réseau, stockage, sauvegarde et coûts. Aucune connexion n’est faite par le Toolkit.',
+  },
+  {
+    id: 'reseau-cisco',
+    name: 'Réseau et Cisco',
+    icon: '⇄',
+    description: 'Commutateurs Cisco IOS : modes, accès, configuration, interfaces, MAC, port-security, VLAN, trunks, DTP et VTP. Des commandes à coller par étapes dans la console : le Toolkit ne se connecte à rien.',
+  },
 ];
 
 /**
@@ -101,6 +113,34 @@ export const SOUS_RUBRIQUES_LINUX = [
   'Samba AD',
   'NFS',
   'Stockage Linux',
+];
+
+/**
+ * Sous-rubriques canoniques de « Azure et Entra ID » (LOT 8), dans l'ordre
+ * où l'on s'en sert : d'abord savoir OÙ l'on est connecté et avec quels
+ * droits, puis les identités, puis les ressources, puis la surveillance.
+ */
+export const SOUS_RUBRIQUES_AZURE = [
+  'Connexion, contexte et accès',
+  'Microsoft Entra ID',
+  'Machines virtuelles',
+  'Réseau Azure',
+  'Stockage et protection',
+  'Surveillance et coûts',
+];
+
+/**
+ * Sous-rubriques canoniques de « Réseau et Cisco » (RESEAU-CISCO-01), dans
+ * l'ordre d'apprentissage : on apprend à naviguer et à lire avant de modifier,
+ * puis les interfaces, puis les VLAN, puis les trunks, enfin VTP.
+ */
+export const SOUS_RUBRIQUES_CISCO = [
+  'Modes, identification et accès',
+  'Configuration et sauvegarde',
+  'Interfaces, MAC et port-security',
+  'VLAN et ports d’accès',
+  'Trunks et DTP',
+  'VTP et diagnostic',
 ];
 
 /** Identifiant technique de la pseudo-catégorie « toutes ». */

@@ -1,0 +1,242 @@
+[
+  {
+    "forme": "clear mac address-table",
+    "occurrences": 2
+  },
+  {
+    "forme": "configure terminal",
+    "occurrences": 18
+  },
+  {
+    "forme": "copy running-config startup-config",
+    "occurrences": 2
+  },
+  {
+    "forme": "description PC-COMPTA-01",
+    "occurrences": 2
+  },
+  {
+    "forme": "enable",
+    "occurrences": 2
+  },
+  {
+    "forme": "end",
+    "occurrences": 18
+  },
+  {
+    "forme": "exit",
+    "occurrences": 2
+  },
+  {
+    "forme": "hostname SW-LAB-02",
+    "occurrences": 2
+  },
+  {
+    "forme": "interface FastEthernet0/7",
+    "occurrences": 4
+  },
+  {
+    "forme": "interface FastEthernet0/9",
+    "occurrences": 4
+  },
+  {
+    "forme": "interface vlan 99",
+    "occurrences": 2
+  },
+  {
+    "forme": "ip address <ip>",
+    "occurrences": 2
+  },
+  {
+    "forme": "ip default-gateway <ip>",
+    "occurrences": 2
+  },
+  {
+    "forme": "ip domain-name lab.local",
+    "occurrences": 2
+  },
+  {
+    "forme": "ip ssh version",
+    "occurrences": 2
+  },
+  {
+    "forme": "name RH",
+    "occurrences": 2
+  },
+  {
+    "forme": "no shutdown",
+    "occurrences": 2
+  },
+  {
+    "forme": "ping <ip>",
+    "occurrences": 4
+  },
+  {
+    "forme": "show archive config",
+    "occurrences": 7
+  },
+  {
+    "forme": "show cdp neighbors",
+    "occurrences": 7
+  },
+  {
+    "forme": "show clock",
+    "occurrences": 3
+  },
+  {
+    "forme": "show crypto key",
+    "occurrences": 3
+  },
+  {
+    "forme": "show dtp interface",
+    "occurrences": 6
+  },
+  {
+    "forme": "show errdisable recovery",
+    "occurrences": 2
+  },
+  {
+    "forme": "show interfaces FastEthernet0/7",
+    "occurrences": 22
+  },
+  {
+    "forme": "show interfaces FastEthernet0/9",
+    "occurrences": 24
+  },
+  {
+    "forme": "show interfaces status",
+    "occurrences": 5
+  },
+  {
+    "forme": "show interfaces trunk",
+    "occurrences": 23
+  },
+  {
+    "forme": "show inventory",
+    "occurrences": 3
+  },
+  {
+    "forme": "show ip default-gateway",
+    "occurrences": 3
+  },
+  {
+    "forme": "show ip interface",
+    "occurrences": 10
+  },
+  {
+    "forme": "show ip ssh",
+    "occurrences": 7
+  },
+  {
+    "forme": "show line",
+    "occurrences": 3
+  },
+  {
+    "forme": "show logging |",
+    "occurrences": 2
+  },
+  {
+    "forme": "show mac address-table",
+    "occurrences": 13
+  },
+  {
+    "forme": "show port-security",
+    "occurrences": 2
+  },
+  {
+    "forme": "show port-security address",
+    "occurrences": 9
+  },
+  {
+    "forme": "show port-security interface",
+    "occurrences": 9
+  },
+  {
+    "forme": "show running-config",
+    "occurrences": 3
+  },
+  {
+    "forme": "show running-config |",
+    "occurrences": 14
+  },
+  {
+    "forme": "show running-config interface",
+    "occurrences": 10
+  },
+  {
+    "forme": "show startup-config |",
+    "occurrences": 6
+  },
+  {
+    "forme": "show users",
+    "occurrences": 7
+  },
+  {
+    "forme": "show version",
+    "occurrences": 3
+  },
+  {
+    "forme": "show version |",
+    "occurrences": 3
+  },
+  {
+    "forme": "show vlan brief",
+    "occurrences": 25
+  },
+  {
+    "forme": "show vlan id",
+    "occurrences": 17
+  },
+  {
+    "forme": "show vtp status",
+    "occurrences": 13
+  },
+  {
+    "forme": "switchport access vlan",
+    "occurrences": 2
+  },
+  {
+    "forme": "switchport mode access",
+    "occurrences": 4
+  },
+  {
+    "forme": "switchport mode trunk",
+    "occurrences": 2
+  },
+  {
+    "forme": "switchport port-security",
+    "occurrences": 2
+  },
+  {
+    "forme": "switchport port-security mac-address",
+    "occurrences": 2
+  },
+  {
+    "forme": "switchport port-security maximum",
+    "occurrences": 2
+  },
+  {
+    "forme": "switchport port-security violation",
+    "occurrences": 2
+  },
+  {
+    "forme": "switchport trunk allowed",
+    "occurrences": 2
+  },
+  {
+    "forme": "vlan 10",
+    "occurrences": 2
+  },
+  {
+    "forme": "vtp domain CCNA-LAB",
+    "occurrences": 2
+  },
+  {
+    "forme": "vtp mode client",
+    "occurrences": 2
+  },
+  {
+    "forme": "vtp version 2",
+    "occurrences": 2
+  }
+]

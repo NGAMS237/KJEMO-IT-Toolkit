@@ -1,0 +1,488 @@
+{
+  "lot": "LOT 8 — Azure et Entra ID — 8.0.0",
+  "total": 38,
+  "toutesDeclarees": true,
+  "aucuneInterdite": true,
+  "commandes": [
+    {
+      "commande": "Get-AzActionGroup",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Monitor",
+      "doc": "https://learn.microsoft.com/powershell/module/az.monitor/get-azactiongroup",
+      "utiliseePar": [
+        "azure-alertes-diagnostics"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzActivityLog",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Monitor",
+      "doc": "https://learn.microsoft.com/powershell/module/az.monitor/get-azactivitylog",
+      "utiliseePar": [
+        "azure-journal-activite",
+        "azure-vm-etat"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzActivityLogAlert",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Monitor",
+      "doc": "https://learn.microsoft.com/powershell/module/az.monitor/get-azactivitylogalert",
+      "utiliseePar": [
+        "azure-alertes-diagnostics"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzConsumptionBudget",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Billing",
+      "doc": "https://learn.microsoft.com/powershell/module/az.billing/get-azconsumptionbudget",
+      "utiliseePar": [
+        "azure-budgets"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzContext",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Accounts",
+      "doc": "https://learn.microsoft.com/powershell/module/az.accounts/get-azcontext",
+      "utiliseePar": [
+        "azure-abonnements-rg",
+        "azure-alertes-diagnostics",
+        "azure-budgets",
+        "azure-contexte",
+        "azure-journal-activite",
+        "azure-rbac",
+        "azure-reseau-dns",
+        "azure-reseau-interfaces-ip",
+        "azure-reseau-nsg",
+        "azure-reseau-vnets",
+        "azure-ressources-inutilisees",
+        "azure-sauvegarde-coffres",
+        "azure-sauvegarde-restauration",
+        "azure-stockage-exposition",
+        "azure-stockage-inventaire",
+        "azure-vm-arret",
+        "azure-vm-demarrage",
+        "azure-vm-disques-interfaces",
+        "azure-vm-etat",
+        "azure-vm-inventaire",
+        "entra-appartenances",
+        "entra-mfa",
+        "entra-recherche",
+        "entra-roles"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzDisk",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Compute",
+      "doc": "https://learn.microsoft.com/powershell/module/az.compute/get-azdisk",
+      "utiliseePar": [
+        "azure-ressources-inutilisees",
+        "azure-vm-disques-interfaces"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzDnsZone",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Dns",
+      "doc": "https://learn.microsoft.com/powershell/module/az.dns/get-azdnszone",
+      "utiliseePar": [
+        "azure-reseau-dns"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzNetworkInterface",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Network",
+      "doc": "https://learn.microsoft.com/powershell/module/az.network/get-aznetworkinterface",
+      "utiliseePar": [
+        "azure-reseau-interfaces-ip",
+        "azure-ressources-inutilisees",
+        "azure-vm-disques-interfaces"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzNetworkSecurityGroup",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Network",
+      "doc": "https://learn.microsoft.com/powershell/module/az.network/get-aznetworksecuritygroup",
+      "utiliseePar": [
+        "azure-reseau-nsg"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzPrivateDnsVirtualNetworkLink",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.PrivateDns",
+      "doc": "https://learn.microsoft.com/powershell/module/az.privatedns/get-azprivatednsvirtualnetworklink",
+      "utiliseePar": [
+        "azure-reseau-dns"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzPrivateDnsZone",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.PrivateDns",
+      "doc": "https://learn.microsoft.com/powershell/module/az.privatedns/get-azprivatednszone",
+      "utiliseePar": [
+        "azure-reseau-dns"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzPublicIpAddress",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Network",
+      "doc": "https://learn.microsoft.com/powershell/module/az.network/get-azpublicipaddress",
+      "utiliseePar": [
+        "azure-reseau-interfaces-ip",
+        "azure-ressources-inutilisees"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzRecoveryServicesBackupContainer",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.RecoveryServices",
+      "doc": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupcontainer",
+      "utiliseePar": [
+        "azure-sauvegarde-restauration"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzRecoveryServicesBackupItem",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.RecoveryServices",
+      "doc": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackupitem",
+      "utiliseePar": [
+        "azure-sauvegarde-coffres",
+        "azure-sauvegarde-restauration"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzRecoveryServicesBackupRecoveryPoint",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.RecoveryServices",
+      "doc": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesbackuprecoverypoint",
+      "utiliseePar": [
+        "azure-sauvegarde-restauration"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzRecoveryServicesVault",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.RecoveryServices",
+      "doc": "https://learn.microsoft.com/powershell/module/az.recoveryservices/get-azrecoveryservicesvault",
+      "utiliseePar": [
+        "azure-sauvegarde-coffres",
+        "azure-sauvegarde-restauration"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzResource",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Resources",
+      "doc": "https://learn.microsoft.com/powershell/module/az.resources/get-azresource",
+      "utiliseePar": [
+        "azure-abonnements-rg"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzResourceGroup",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Resources",
+      "doc": "https://learn.microsoft.com/powershell/module/az.resources/get-azresourcegroup",
+      "utiliseePar": [
+        "azure-abonnements-rg",
+        "azure-rbac",
+        "azure-sauvegarde-restauration"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzRmStorageContainer",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Storage",
+      "doc": "https://learn.microsoft.com/powershell/module/az.storage/get-azrmstoragecontainer",
+      "utiliseePar": [
+        "azure-stockage-exposition"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzRoleAssignment",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Resources",
+      "doc": "https://learn.microsoft.com/powershell/module/az.resources/get-azroleassignment",
+      "utiliseePar": [
+        "azure-rbac"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzSnapshot",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Compute",
+      "doc": "https://learn.microsoft.com/powershell/module/az.compute/get-azsnapshot",
+      "utiliseePar": [
+        "azure-ressources-inutilisees"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzStorageAccount",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Storage",
+      "doc": "https://learn.microsoft.com/powershell/module/az.storage/get-azstorageaccount",
+      "utiliseePar": [
+        "azure-sauvegarde-restauration",
+        "azure-stockage-exposition",
+        "azure-stockage-inventaire"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzStorageBlobServiceProperty",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Storage",
+      "doc": "https://learn.microsoft.com/powershell/module/az.storage/get-azstorageblobserviceproperty",
+      "utiliseePar": [
+        "azure-stockage-exposition"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzSubscription",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Accounts",
+      "doc": "https://learn.microsoft.com/powershell/module/az.accounts/get-azsubscription",
+      "utiliseePar": [
+        "azure-abonnements-rg"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzSubscriptionDiagnosticSetting",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Monitor",
+      "doc": "https://learn.microsoft.com/powershell/module/az.monitor/get-azsubscriptiondiagnosticsetting",
+      "utiliseePar": [
+        "azure-alertes-diagnostics"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzVM",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Compute",
+      "doc": "https://learn.microsoft.com/powershell/module/az.compute/get-azvm",
+      "utiliseePar": [
+        "azure-ressources-inutilisees",
+        "azure-sauvegarde-coffres",
+        "azure-vm-arret",
+        "azure-vm-demarrage",
+        "azure-vm-etat",
+        "azure-vm-inventaire"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-AzVirtualNetwork",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Network",
+      "doc": "https://learn.microsoft.com/powershell/module/az.network/get-azvirtualnetwork",
+      "utiliseePar": [
+        "azure-reseau-vnets"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgContext",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Authentication",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.authentication/get-mgcontext?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "azure-abonnements-rg",
+        "azure-alertes-diagnostics",
+        "azure-budgets",
+        "azure-contexte",
+        "azure-journal-activite",
+        "azure-rbac",
+        "azure-reseau-dns",
+        "azure-reseau-interfaces-ip",
+        "azure-reseau-nsg",
+        "azure-reseau-vnets",
+        "azure-ressources-inutilisees",
+        "azure-sauvegarde-coffres",
+        "azure-sauvegarde-restauration",
+        "azure-stockage-exposition",
+        "azure-stockage-inventaire",
+        "azure-vm-arret",
+        "azure-vm-demarrage",
+        "azure-vm-disques-interfaces",
+        "azure-vm-etat",
+        "azure-vm-inventaire",
+        "entra-appartenances",
+        "entra-mfa",
+        "entra-recherche",
+        "entra-roles"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgDirectoryRole",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Identity.DirectoryManagement",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrole?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-roles"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgDirectoryRoleMember",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Identity.DirectoryManagement",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.identity.directorymanagement/get-mgdirectoryrolemember?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-roles"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgGroup",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Groups",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroup?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-recherche"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgGroupMember",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Groups",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.groups/get-mggroupmember?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-appartenances"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgReportAuthenticationMethodUserRegistrationDetail",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Reports",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.reports/get-mgreportauthenticationmethoduserregistrationdetail?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-mfa"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgUser",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Users",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-recherche"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Get-MgUserMemberOf",
+      "declaree": true,
+      "interdite": false,
+      "module": "Microsoft.Graph.Users",
+      "doc": "https://learn.microsoft.com/powershell/module/microsoft.graph.users/get-mgusermemberof?view=graph-powershell-1.0",
+      "utiliseePar": [
+        "entra-appartenances"
+      ],
+      "supporteWhatIf": false
+    },
+    {
+      "commande": "Restore-AzRecoveryServicesBackupItem",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.RecoveryServices",
+      "doc": "https://learn.microsoft.com/powershell/module/az.recoveryservices/restore-azrecoveryservicesbackupitem",
+      "utiliseePar": [
+        "azure-sauvegarde-restauration"
+      ],
+      "supporteWhatIf": true
+    },
+    {
+      "commande": "Start-AzVM",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Compute",
+      "doc": "https://learn.microsoft.com/powershell/module/az.compute/start-azvm",
+      "utiliseePar": [
+        "azure-vm-demarrage"
+      ],
+      "supporteWhatIf": true
+    },
+    {
+      "commande": "Stop-AzVM",
+      "declaree": true,
+      "interdite": false,
+      "module": "Az.Compute",
+      "doc": "https://learn.microsoft.com/powershell/module/az.compute/stop-azvm",
+      "utiliseePar": [
+        "azure-vm-arret"
+      ],
+      "supporteWhatIf": true
+    }
+  ]
+}

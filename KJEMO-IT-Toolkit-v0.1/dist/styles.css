@@ -305,3 +305,9 @@ nav button{max-width:100%}
 /* LOT 3 — champ multiligne (liste d'OU, blocs de noms copiés d'un tableau). */
 .field textarea{font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--text);background:var(--input-bg);border:1px solid var(--border);border-radius:7px;padding:10px;width:100%;max-width:100%;box-sizing:border-box;resize:vertical;min-height:80px}
 .field textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* LOT 8 — les noms d’actions Azure (Microsoft.Compute/virtualMachines/deallocate/action) n’ont aucun point de coupure : sans cela ils débordent sur mobile. */
+.cloud-bloc,.cloud-bloc li,.cloud-bloc p{overflow-wrap:anywhere}
+/* RESEAU-CISCO-01 — bloc pédagogique des fiches Cisco */
+.cisco-bloc,.cisco-bloc li,.cisco-bloc p{overflow-wrap:anywhere}
+.badge-cisco{background:#0b5cad;color:#fff}

@@ -51,7 +51,18 @@
     "test:jonction-domaine": "node test/jonction-domaine.test.mjs --powershell pwsh",
     "test:fiches-poste-b": "node test/fiches-poste-b.test.mjs --powershell pwsh",
     "test:browser:poste-b": "node test/browser-poste-b.test.mjs",
-    "test:sources:6b": "node test/sources-microsoft.mjs --json LOT-6B-SOURCES.json"
+    "test:sources:6b": "node test/sources-microsoft.mjs --json LOT-6B-SOURCES.json",
+    "test:azure": "node test/azure-assistants.test.mjs",
+    "test:browser:azure": "node test/browser-azure.test.mjs",
+    "test:sources:8": "node test/sources-microsoft.mjs --json LOT-8-SOURCES.json",
+    "matrices:lot8": "node test/matrices-lot8.mjs",
+    "test:matrices:lot8": "node test/matrices-lot8.mjs --verifier",
+    "test:browser:integration": "node test/browser-integration.test.mjs",
+    "test:cisco": "node test/cisco-assistants.test.mjs",
+    "test:browser:cisco": "node test/browser-cisco.test.mjs",
+    "test:sources:cisco": "node test/sources-cisco.mjs",
+    "matrices:cisco": "node test/matrices-cisco.mjs",
+    "test:matrices:cisco": "node test/matrices-cisco.mjs --verifier"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1"

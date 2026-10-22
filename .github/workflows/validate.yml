@@ -523,6 +523,28 @@ jobs:
           }
 
       # -----------------------------------------------------------------------
+      # 12 bis. LOT 8 - banc Azure et Entra ID sous Windows PowerShell 5.1 ET 7
+      #
+      # C'est ICI que les scripts Azure sont executes (contre des doublures,
+      # sans aucune connexion) par le vrai moteur 5.1 : le moteur effectivement
+      # utilise est affiche par le banc. Tant que ce job n'a pas tourne, le
+      # comportement sous 5.1 reste NON EXECUTE.
+      # -----------------------------------------------------------------------
+      - name: Banc Azure - Windows PowerShell 5.1 (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: bash
+        env:
+          KJEMO_POWERSHELL: powershell.exe
+        run: node test/azure-assistants.test.mjs
+
+      - name: Banc Azure - PowerShell 7 (doublures)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        shell: bash
+        env:
+          KJEMO_POWERSHELL: pwsh
+        run: node test/azure-assistants.test.mjs
+
+      # -----------------------------------------------------------------------
       # 13. Installer Playwright/Chromium et exécuter les tests navigateur
       # -----------------------------------------------------------------------
       - name: Installer les navigateurs Playwright

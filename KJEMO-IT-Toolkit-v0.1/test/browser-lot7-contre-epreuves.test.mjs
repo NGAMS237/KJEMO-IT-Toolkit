@@ -51,7 +51,7 @@ const PASSES_COMMUNES = 'A,B,C,D,E,F';
  */
 const PANNES = [
   { id: 'M01', nom: 'aperçu initial Bash normalisé comme du PowerShell (le défaut trouvé par ce commit)',
-    fichier: 'app.js', de: 'const script = estBash(tool) ? normalizeScriptSh(scriptBrut) : normalizeScript(scriptBrut);',
+    fichier: 'app.js', de: 'const script = normaliserSortie(tool, scriptBrut);',
     vers: 'const script = normalizeScript(scriptBrut);', passes: 'B,F', attendues: ['B5', 'B6', 'B7', 'F15'] },
   { id: 'M02', nom: 'le formulaire force une largeur de 620 px',
     fichier: 'styles.css', ajout: '@media(max-width:820px){#toolForm{min-width:620px}}', passes: 'F', attendues: ['F1', 'F2'] },

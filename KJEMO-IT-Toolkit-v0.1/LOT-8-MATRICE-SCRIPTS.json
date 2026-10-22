@@ -1,0 +1,1543 @@
+{
+  "lot": "LOT 8 — Azure et Entra ID — 8.0.0",
+  "total": 192,
+  "tousAvecBom": true,
+  "scripts": [
+    {
+      "fichier": "azure-abonnements-rg__apostrophe-ascii.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__apostrophe-typographique.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__chemin-avec-apostrophe.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__chemin-racine-c.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__default.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "default",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__dollar-backtick-guillemets.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__espaces-et-accents.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-abonnements-rg__virgule-et-point-virgule.ps1",
+      "outil": "azure-abonnements-rg",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19974,
+      "sha256": "8d22bc38a4fda432c6402fa646367a3e04c2e952b06598477181c5f43ab604a2",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__apostrophe-ascii.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__apostrophe-typographique.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__chemin-avec-apostrophe.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__chemin-racine-c.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__default.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "default",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__dollar-backtick-guillemets.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__espaces-et-accents.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-alertes-diagnostics__virgule-et-point-virgule.ps1",
+      "outil": "azure-alertes-diagnostics",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 21950,
+      "sha256": "d07b92e533feec0194555b0d8e64581b1cef269e5d937351b07521a96927498d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__apostrophe-ascii.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__apostrophe-typographique.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__chemin-avec-apostrophe.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__chemin-racine-c.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__default.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "default",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__dollar-backtick-guillemets.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__espaces-et-accents.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-budgets__virgule-et-point-virgule.ps1",
+      "outil": "azure-budgets",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19869,
+      "sha256": "5571c5a90c66e98fea3ebe38e71756e12d8c49797db575e90486be9e85b525c5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__apostrophe-ascii.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__apostrophe-typographique.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__chemin-avec-apostrophe.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__chemin-racine-c.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__default.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "default",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__dollar-backtick-guillemets.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__espaces-et-accents.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-contexte__virgule-et-point-virgule.ps1",
+      "outil": "azure-contexte",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19753,
+      "sha256": "10e4ef198e9ad6fdfd46f6c0fc1247db3f733ac2f87741529d5be4104ed91ab6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__apostrophe-ascii.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__apostrophe-typographique.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__chemin-avec-apostrophe.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__chemin-racine-c.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__default.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "default",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__dollar-backtick-guillemets.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__espaces-et-accents.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-journal-activite__virgule-et-point-virgule.ps1",
+      "outil": "azure-journal-activite",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20528,
+      "sha256": "2e91fc959036aa15affc30d92f128dccb302f7bb5cd0e438f632f69f1087aec1",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__apostrophe-ascii.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__apostrophe-typographique.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__chemin-avec-apostrophe.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__chemin-racine-c.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__default.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "default",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__dollar-backtick-guillemets.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__espaces-et-accents.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-rbac__virgule-et-point-virgule.ps1",
+      "outil": "azure-rbac",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20581,
+      "sha256": "18e3114eda19e1d09d33419d409dbb39b8ae5788a5a992042c11242ee515b3a9",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__apostrophe-ascii.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__apostrophe-typographique.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__chemin-avec-apostrophe.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__chemin-racine-c.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__default.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "default",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__dollar-backtick-guillemets.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__espaces-et-accents.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-dns__virgule-et-point-virgule.ps1",
+      "outil": "azure-reseau-dns",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 23867,
+      "sha256": "c066981328e3e96eaee445c2dd7e50a83675b88f554cc2ef1d2879d0f0c3e7e5",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__apostrophe-ascii.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__apostrophe-typographique.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__chemin-avec-apostrophe.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__chemin-racine-c.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__default.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "default",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__dollar-backtick-guillemets.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__espaces-et-accents.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-interfaces-ip__virgule-et-point-virgule.ps1",
+      "outil": "azure-reseau-interfaces-ip",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20248,
+      "sha256": "ddc9144e0edae62bb0f885b18b8711541779c0d56553453e6608d0a24a2a5831",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__apostrophe-ascii.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__apostrophe-typographique.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__chemin-avec-apostrophe.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__chemin-racine-c.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__default.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "default",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__dollar-backtick-guillemets.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__espaces-et-accents.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-nsg__virgule-et-point-virgule.ps1",
+      "outil": "azure-reseau-nsg",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 21525,
+      "sha256": "4ea064a3232964909c298c63a070ec1e9bf9738ef472a17e70dc9c08dcd19995",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__apostrophe-ascii.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__apostrophe-typographique.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__chemin-avec-apostrophe.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__chemin-racine-c.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__default.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "default",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__dollar-backtick-guillemets.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__espaces-et-accents.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-reseau-vnets__virgule-et-point-virgule.ps1",
+      "outil": "azure-reseau-vnets",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 21827,
+      "sha256": "2ced9715ac4f7681ac0f4a26312f8b647c3bbc3e96cb9c697f47fccc48065077",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__apostrophe-ascii.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__apostrophe-typographique.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__chemin-avec-apostrophe.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__chemin-racine-c.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__default.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "default",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__dollar-backtick-guillemets.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__espaces-et-accents.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-ressources-inutilisees__virgule-et-point-virgule.ps1",
+      "outil": "azure-ressources-inutilisees",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 23926,
+      "sha256": "efb60600d824377b79cb93fd3eaf16bdedd082a344a803ee05ffbf57f2aeffa4",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__apostrophe-ascii.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__apostrophe-typographique.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__chemin-avec-apostrophe.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__chemin-racine-c.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__default.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "default",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__dollar-backtick-guillemets.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__espaces-et-accents.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-coffres__virgule-et-point-virgule.ps1",
+      "outil": "azure-sauvegarde-coffres",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 22420,
+      "sha256": "961dd9f3a7a78e6d695e1d5a593dfb293215113194e6427a15b8a1ce29ba71f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__apostrophe-ascii.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__apostrophe-typographique.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__chemin-avec-apostrophe.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__chemin-racine-c.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__default.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "default",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__dollar-backtick-guillemets.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__espaces-et-accents.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-sauvegarde-restauration__virgule-et-point-virgule.ps1",
+      "outil": "azure-sauvegarde-restauration",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 26126,
+      "sha256": "c13cb7c46e211c59250a4d88db5ff99e9e17dce131c53d6c3c747a08ba0ed4bb",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__apostrophe-ascii.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__apostrophe-typographique.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__chemin-avec-apostrophe.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__chemin-racine-c.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__default.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "default",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__dollar-backtick-guillemets.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__espaces-et-accents.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-exposition__virgule-et-point-virgule.ps1",
+      "outil": "azure-stockage-exposition",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 22106,
+      "sha256": "11cfa79c4e002b220afd935567976b41a0a352f49751921ea84eb885eefed7f6",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__apostrophe-ascii.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__apostrophe-typographique.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__chemin-avec-apostrophe.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__chemin-racine-c.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__default.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "default",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__dollar-backtick-guillemets.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__espaces-et-accents.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-stockage-inventaire__virgule-et-point-virgule.ps1",
+      "outil": "azure-stockage-inventaire",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20064,
+      "sha256": "75ea2f3f7ae857aa0c101370ad0da0b88835dde8ef036e647c144dd93e58054c",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__apostrophe-ascii.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__apostrophe-typographique.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__chemin-avec-apostrophe.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__chemin-racine-c.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__default.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "default",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__dollar-backtick-guillemets.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__espaces-et-accents.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-arret__virgule-et-point-virgule.ps1",
+      "outil": "azure-vm-arret",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 21759,
+      "sha256": "bc8b661997a34add7340edc09e9f663ab74bc85e230b2b19cf7ae1906c0b262a",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__apostrophe-ascii.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__apostrophe-typographique.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__chemin-avec-apostrophe.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__chemin-racine-c.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__default.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "default",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__dollar-backtick-guillemets.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__espaces-et-accents.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-demarrage__virgule-et-point-virgule.ps1",
+      "outil": "azure-vm-demarrage",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 21177,
+      "sha256": "17d4a45833a141da0452e34d744cc101c194a776e08ca8805be2b88eca9124f3",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__apostrophe-ascii.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__apostrophe-typographique.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__chemin-avec-apostrophe.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__chemin-racine-c.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__default.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "default",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__dollar-backtick-guillemets.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__espaces-et-accents.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-disques-interfaces__virgule-et-point-virgule.ps1",
+      "outil": "azure-vm-disques-interfaces",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19985,
+      "sha256": "d08dd797c5ea288d42f3ec8af90f961c0bc2a4c2ef7ce15bac39cddc2884d1b7",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__apostrophe-ascii.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__apostrophe-typographique.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__chemin-avec-apostrophe.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__chemin-racine-c.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__default.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "default",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__dollar-backtick-guillemets.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__espaces-et-accents.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-etat__virgule-et-point-virgule.ps1",
+      "outil": "azure-vm-etat",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 23833,
+      "sha256": "74257b6eb7de04d0f10adda18beb423c40522cfa317d6ef8b3bfda8cebe40850",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__apostrophe-ascii.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__apostrophe-typographique.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__chemin-avec-apostrophe.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__chemin-racine-c.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__default.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "default",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__dollar-backtick-guillemets.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__espaces-et-accents.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "azure-vm-inventaire__virgule-et-point-virgule.ps1",
+      "outil": "azure-vm-inventaire",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20594,
+      "sha256": "1d637020213484874241b37ceee917952bc590ccb93b657dc9274096b752bc7d",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__apostrophe-ascii.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__apostrophe-typographique.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__chemin-avec-apostrophe.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__chemin-racine-c.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__default.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "default",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__dollar-backtick-guillemets.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__espaces-et-accents.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-appartenances__virgule-et-point-virgule.ps1",
+      "outil": "entra-appartenances",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19829,
+      "sha256": "6bd9076d2bdfe353906468bf7260ad0d126cf3a918e1f0cb9948ae8440e4fe21",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__apostrophe-ascii.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__apostrophe-typographique.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__chemin-avec-apostrophe.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__chemin-racine-c.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__default.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "default",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__dollar-backtick-guillemets.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__espaces-et-accents.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-mfa__virgule-et-point-virgule.ps1",
+      "outil": "entra-mfa",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19879,
+      "sha256": "4b8936670ffa49d728a38a602a80acd775c32367478937a7f087f2bb939acf82",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__apostrophe-ascii.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__apostrophe-typographique.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__chemin-avec-apostrophe.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__chemin-racine-c.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__default.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "default",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__dollar-backtick-guillemets.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__espaces-et-accents.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-recherche__virgule-et-point-virgule.ps1",
+      "outil": "entra-recherche",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 19797,
+      "sha256": "cba89ae635d2e39ae0641f72ca6ff941084dcf750bd277e63b9531f791834e39",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__apostrophe-ascii.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "apostrophe-ascii",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__apostrophe-typographique.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "apostrophe-typographique",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__chemin-avec-apostrophe.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "chemin-avec-apostrophe",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__chemin-racine-c.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "chemin-racine-c",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__default.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "default",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__dollar-backtick-guillemets.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "dollar-backtick-guillemets",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__espaces-et-accents.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "espaces-et-accents",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    },
+    {
+      "fichier": "entra-roles__virgule-et-point-virgule.ps1",
+      "outil": "entra-roles",
+      "jeuDeDonnees": "virgule-et-point-virgule",
+      "octets": 20218,
+      "sha256": "d0cf1bb33a3e216cc7b4b2046248d50e7ec2380f0c45d41a359161efbbbfb8ac",
+      "bom": true
+    }
+  ]
+}

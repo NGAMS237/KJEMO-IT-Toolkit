@@ -1,0 +1,321 @@
+[
+  {
+    "id": "cisco-modes-ios",
+    "sousRubrique": "Modes, identification et accès",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoModeDepart",
+      "ciscoErreurVue",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-identification",
+    "sousRubrique": "Modes, identification et accès",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoNouveauNom",
+      "ciscoBanniere",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-console-ssh",
+    "sousRubrique": "Modes, identification et accès",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoEtapeSsh",
+      "ciscoDomaine",
+      "ciscoUtilisateur",
+      "ciscoVty",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-config-sauvegarde",
+    "sousRubrique": "Configuration et sauvegarde",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": false,
+    "champs": [
+      "ciscoCible",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-gestion-ip",
+    "sousRubrique": "Modes, identification et accès",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoVlanGestion",
+      "ciscoIp",
+      "ciscoMasque",
+      "ciscoPasserelle",
+      "ciscoNiveau",
+      "ciscoPing",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-interface-etat",
+    "sousRubrique": "Interfaces, MAC et port-security",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoInterface",
+      "ciscoActionInterface",
+      "ciscoDescription",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-table-mac",
+    "sousRubrique": "Interfaces, MAC et port-security",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoTypeMac",
+      "ciscoInterface",
+      "ciscoVlanFiltre",
+      "ciscoMacFiltre",
+      "ciscoEffacement",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-port-security-etat",
+    "sousRubrique": "Interfaces, MAC et port-security",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoInterface",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-port-security-config",
+    "sousRubrique": "Interfaces, MAC et port-security",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoInterface",
+      "ciscoActionPs",
+      "ciscoMaxMac",
+      "ciscoSticky",
+      "ciscoViolation",
+      "ciscoMacFixe",
+      "ciscoNettoyage",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-vlan-inventaire",
+    "sousRubrique": "VLAN et ports d’accès",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoVlanFiltre",
+      "ciscoVlan",
+      "ciscoInterface",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-vlan-creation",
+    "sousRubrique": "VLAN et ports d’accès",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoVlan",
+      "ciscoVlanNom",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-port-access",
+    "sousRubrique": "VLAN et ports d’accès",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoInterface",
+      "ciscoVlan",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-trunk-preparation",
+    "sousRubrique": "Trunks et DTP",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoInterface",
+      "ciscoTrunkAction",
+      "ciscoVlans",
+      "ciscoNatif",
+      "ciscoNonegotiate",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-trunk-diagnostic",
+    "sousRubrique": "Trunks et DTP",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoInterface",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-dtp-simulation",
+    "sousRubrique": "Trunks et DTP",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoDtpLocal",
+      "ciscoDtpDistant",
+      "ciscoInterface",
+      "ciscoPresentation"
+    ],
+    "sources": 2
+  },
+  {
+    "id": "cisco-vtp-diagnostic",
+    "sousRubrique": "VTP et diagnostic",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoSortieVtp",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-vtp-configuration",
+    "sousRubrique": "VTP et diagnostic",
+    "risque": "caution",
+    "modifie": true,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoVtpMode",
+      "ciscoVtpDomaine",
+      "ciscoVtpVersion",
+      "ciscoVtpRevisionLue",
+      "ciscoVtpMotDePasse",
+      "ciscoMode",
+      "ciscoConfirmation",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-vtp-raccordement",
+    "sousRubrique": "VTP et diagnostic",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoDomaineCible",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  },
+  {
+    "id": "cisco-parcours-diagnostic",
+    "sousRubrique": "VTP et diagnostic",
+    "risque": "diagnostic",
+    "modifie": false,
+    "reversible": true,
+    "champs": [
+      "ciscoCible",
+      "ciscoMateriel",
+      "ciscoScenario",
+      "ciscoVlan",
+      "ciscoInterface",
+      "ciscoSortieVlan",
+      "ciscoSortieTrunk",
+      "ciscoSortieVtp",
+      "ciscoPresentation"
+    ],
+    "sources": 3
+  }
+]

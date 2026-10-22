@@ -141,7 +141,7 @@ import { plateformeDe, sortieDe, estBash, estLectureSeule, extensionDe,
          PRIVILEGES_REQUIS, privilegesRequisDe,
          CHAMPS_LINUX } from '../dist/plateforme.mjs';
 import { sourceLinuxValide, editeurDe, PREFIXES_SOURCES_LINUX } from '../dist/sources-linux.mjs';
-import { SOUS_RUBRIQUES_LINUX } from '../dist/categories.mjs';
+import { SOUS_RUBRIQUES_LINUX, SOUS_RUBRIQUES_AZURE } from '../dist/categories.mjs';
 
 // ---------------------------------------------------------------------------
 // Comptage
@@ -738,6 +738,13 @@ for (const t of tools) {
     }
     assert(!/^https:\/\/learn\.microsoft\.com\//.test(t.source),
       `${t.id} : un outil Linux ne cite pas Microsoft Learn comme source principale`);
+  } else if (t.category === 'Réseau et Cisco') {
+    assert(/^https:\/\/www\.cisco\.com\/c\/en\/us\/\S+/.test(t.source),
+      `${t.id} : source principale sur cisco.com (page précise)`);
+    for (const so of t.sources) {
+      assert(/^https:\/\/www\.cisco\.com\/c\/en\/us\/\S+/.test(so.url),
+        `${t.id} : source « ${so.label} » sur une page cisco.com précise`);
+    }
   } else {
     assert(/^https:\/\/learn\.microsoft\.com\//.test(t.source),
       `${t.id} : source officielle Microsoft Learn`);
@@ -774,6 +781,23 @@ for (const t of tools) {
 // ---------------------------------------------------------------------------
 for (const t of tools) {
   if (plateformeDe(t) === 'Linux') continue;
+  if (t.category === 'Azure et Entra ID') {
+    // Un assistant Azure agit avec la session Azure/Entra de l'utilisateur,
+    // pas avec les droits locaux de Windows : exiger « administrateur » serait
+    // faux et encouragerait à lancer PowerShell élevé sans raison.
+    assert(t.requiresAdmin === false,
+      `${t.id} : un assistant Azure ne demande PAS l’élévation locale (requiresAdmin = false)`);
+    continue;
+  }
+  if (t.category === 'Réseau et Cisco') {
+    // Un assistant Cisco produit des commandes pour la console d'un équipement :
+    // il n'exige AUCUNE élévation sur l'ordinateur de l'étudiant. Demander
+    // « administrateur » serait faux et inciterait à ouvrir une console élevée
+    // sans raison. Le mot de passe enable se tape à la main sur l'équipement.
+    assert(t.requiresAdmin === false,
+      `${t.id} : un assistant Cisco ne demande PAS l’élévation locale (requiresAdmin = false)`);
+    continue;
+  }
   if (RISQUES_ADMIN.includes(t.risk) && t.category !== 'Active Directory' && t.category !== 'GPO') {
     assert(t.requiresAdmin === true,
       `${t.id} : risque « ${t.risk} » hors AD/GPO ⇒ requiresAdmin = true`);
@@ -1028,6 +1052,10 @@ const IRREVERSIBLES_ADMIS = ['defender-scan', 'disk-scan', 'linux-disk-partition
   // fichier retire ne le defait. Declarer true aurait ete fabriquer une
   // securite inexistante.
   'samba-ad-dc-provision',
+  // RESEAU-CISCO-01 : « copy running-config startup-config » ÉCRASE la
+  // configuration de démarrage ; aucune commande ne la restaure. Déclarer
+  // reversible: true aurait fabriqué une sécurité inexistante.
+  'cisco-config-sauvegarde',
 ];
 const lectureSeule = tools.filter((t) => t.reversible === false).map((t) => t.id).sort();
 assert(lectureSeule.join(',') === IRREVERSIBLES_ADMIS.slice().sort().join(','),
@@ -1414,10 +1442,12 @@ const CANON = [
   'Réseau',
   'Imprimantes',
   'Linux et services réseau',
+  'Azure et Entra ID',
+  'Réseau et Cisco',
 ];
 
 assert(CATEGORIES.map((c) => c.name).join(' | ') === CANON.join(' | '),
-  'le catalogue contient exactement les huit catégories canoniques, dans l\u2019ordre');
+  'le catalogue contient exactement les dix catégories canoniques (huit historiques + Azure et Entra ID du LOT 8 + Réseau et Cisco de RESEAU-CISCO-01), dans l\u2019ordre');
 
 const INTERDITES = ['Dépannage Windows', 'Fichiers & imprimantes', 'Stockage'];
 for (const morte of INTERDITES) {
@@ -1480,7 +1510,11 @@ assert(!nomsVisibles.includes('Imprimantes'),
   'Imprimantes est masquée puisqu\u2019elle est vide');
 assert(nomsVisibles.includes('Linux et services réseau'),
   'Linux et services réseau est visible depuis le LOT 7');
-assert(vis2.length === 7 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
+assert(nomsVisibles.includes('Azure et Entra ID'),
+  'Azure et Entra ID est visible depuis le LOT 8');
+assert(nomsVisibles.includes('Réseau et Cisco'),
+  'Réseau et Cisco est visible depuis RESEAU-CISCO-01');
+assert(vis2.length === 9 && vis2.reduce((n, c) => n + c.count, 0) === tools.length,
   `${vis2.length} catégories visibles couvrant les ${tools.length} outils`);
 
 // Sous-rubriques agrégées
@@ -1512,10 +1546,16 @@ const modulesCatalogue = ['dist/outils-serveur.mjs', 'dist/outils-ad.mjs', 'dist
 const sourcesCatalogue = [sourceGen, ...modulesCatalogue].join('\n');
 assert((sourceGen.match(/^\s*generate\(/gm) ?? []).length === 8,
   'les huit generate() historiques sont toujours dans generators.mjs');
-assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === tools.length,
-  `une fonction generate() par outil du catalogue (${tools.length})`);
-assert((sourcesCatalogue.match(/^\s*subcategory: '/gm) ?? []).length === tools.length,
-  `chaque outil déclare sa sous-rubrique (${tools.length})`);
+// Les 24 outils Azure (fabrique outilAzure()) et les 19 assistants Cisco (fabrique
+// outilCisco()) ne s'écrivent pas littéralement dans les modules : la comptabilité par
+// expression régulière ne les voit pas. Ils sont exclus de CE décompte (et seulement de lui)
+// et contrôlés par leurs propres bancs, test/azure-assistants.test.mjs et
+// test/cisco-assistants.test.mjs, qui exigent les mêmes contrats.
+const horsFabriques = tools.filter((t) => t.category !== 'Azure et Entra ID' && t.category !== 'Réseau et Cisco');
+assert((sourcesCatalogue.match(/^\s*generate\(/gm) ?? []).length === horsFabriques.length,
+  `une fonction generate() par outil du catalogue hors fabriques Azure et Cisco (${horsFabriques.length})`);
+assert((sourcesCatalogue.match(/^\s*subcategory: '/gm) ?? []).length === horsFabriques.length,
+  `chaque outil déclare sa sous-rubrique (${horsFabriques.length}, hors fabriques Azure et Cisco)`);
 assert(tools.every((t) => typeof t.generate === 'function' && typeof t.validate === 'function'),
   'chaque outil expose bien generate() et validate()');
 
@@ -1747,7 +1787,17 @@ const REQUETE_WEB_AUTORISEE = {
   'http-https-tls-test': 'Éprouve une adresse HTTP/HTTPS : la requête EST le test. Aucune réponse n’est écrite sur disque ni exécutée.',
 };
 
-const outilsRecents = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+const outilsRecentsTous = tools.filter((t) => !IDS_HISTORIQUES.includes(t.id));
+// RESEAU-CISCO-01 : les assistants Cisco produisent des commandes IOS, pas un
+// script PowerShell ni Bash. Les règles de CONTENU de script de cette boucle
+// (garde $Mode, -WhatIf, shebang, set -u...) ne leur sont pas applicables : ils
+// sont contrôlés par LEUR banc, test/cisco-assistants.test.mjs, qui exige les
+// mêmes champs de fiche (CHAMPS_FICHE) et des règles propres à IOS. Ils sont
+// exclus de CETTE boucle seulement, et comptés ci-dessous pour qu'aucun outil
+// ne disparaisse du décompte.
+const estCiscoId = (t) => t.category === 'Réseau et Cisco';
+const outilsCisco = outilsRecentsTous.filter(estCiscoId);
+const outilsRecents = outilsRecentsTous.filter((t) => !estCiscoId(t));
 const outilsLot2 = outilsRecents.filter((t) => t.category === 'Windows Server');
 const outilsLot3 = outilsRecents.filter((t) => t.category === 'Active Directory');
 const outilsLot4 = outilsRecents.filter((t) => t.category === 'GPO');
@@ -1758,9 +1808,16 @@ assert(outilsLot2.length > 0, `le catalogue contient ${outilsLot2.length} outil(
 assert(outilsLot2.every((t) => SOUS_RUBRIQUES_LOT2.includes(t.subcategory)),
   'chaque outil Windows Server porte une des cinq sous-rubriques prévues');
 const outilsLot7 = outilsRecents.filter((t) => t.category === 'Linux et services réseau');
+const outilsLot8 = outilsRecents.filter((t) => t.category === 'Azure et Entra ID');
 assert(outilsRecents.length === outilsLot2.length + outilsLot3.length + outilsLot4.length
-  + outilsLot5.length + outilsLot6.length + outilsLot7.length,
-  `tout outil ajouté appartient à l\u2019une des six catégories peuplées (${outilsRecents.length})`);
+  + outilsLot5.length + outilsLot6.length + outilsLot7.length + outilsLot8.length,
+  `tout outil ajouté appartient à l\u2019une des sept catégories peuplées (hors Cisco, compté à part) (${outilsRecents.length})`);
+assert(outilsLot8.length === 24 && outilsLot8.every((t) => SOUS_RUBRIQUES_AZURE.includes(t.subcategory)),
+  `les ${outilsLot8.length} outils Azure portent une des six sous-rubriques prévues`);
+assert(outilsLot8.every((t) => plateformeDe(t) === 'Multi' && sortieDe(t) === '.ps1'),
+  'chaque outil Azure déclare la plateforme Multi et une sortie .ps1');
+assert(outilsCisco.length === 19 && outilsRecents.length + outilsCisco.length === outilsRecentsTous.length,
+  `les ${outilsCisco.length} assistants Cisco sont comptés à part, sans en perdre aucun`);
 assert(outilsLot7.every((t) => SOUS_RUBRIQUES_LINUX.includes(t.subcategory)),
   `chaque outil Linux porte une des dix sous-rubriques prévues (${outilsLot7.length})`);
 assert(outilsLot7.every((t) => plateformeDe(t) === 'Linux' && sortieDe(t) === '.sh'),
@@ -1862,7 +1919,7 @@ for (const outil of outilsRecents) {
   // La preuve par l'EXÉCUTION — lancer le script et constater zéro écriture —
   // est faite séparément, par test/linux-verrous.test.mjs.
   // ------------------------------------------------------------------------
-  const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode');
+  const champMode = outil.fields.find((f) => f.id === 'mode' || f.id === 'bkMode' || f.id === 'azMode');
   const champConfirmation = outil.fields.find((f) => /confirmation/i.test(f.id));
   if (outil.risk === 'diagnostic') {
     // L'intention de la règle : les constats d'un outil de diagnostic doivent
@@ -2052,7 +2109,7 @@ for (const outil of outilsRecents) {
     assert(/AUCUNE ECRITURE|AUCUNE MODIFICATION/.test(script),
       `${outil.id} : le script annonce explicitement qu\u2019il n\u2019écrit rien sans confirmation`);
   } else if (outil.risk !== 'diagnostic') {
-    assert(/\$Mode\s*=|\$Mode -eq/.test(script),
+    assert(/\$(?:Kjemo)?Mode\s*=|\$(?:Kjemo)?Mode -eq/.test(script),
       `${outil.id} : le script porte la garde de mode`);
     assert(/-WhatIf\b/.test(script) || /MODE DIAGNOSTIC/.test(script),
       `${outil.id} : le mode Diagnostic simule ou annonce explicitement qu’il n’écrit rien`);

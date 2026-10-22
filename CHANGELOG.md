@@ -1,5 +1,69 @@
 # Journal des changements
 
+## Intégration Azure + Cisco (branche claude/integration-azure-cisco)
+
+Réunit LOT 8 (`8633b46`, Azure et Entra ID, 24 assistants) et RESEAU-CISCO-01 (`5168d9e`, Réseau et Cisco, 19 assistants) sur la base commune `78a2c8b`. Aucun lot n'est écrasé.
+
+- Catalogue : 196 assistants = 153 historiques + 24 Azure + 19 Cisco ; 10 catégories canoniques ; 9 visibles, 10 cartes avec « Tout », Imprimantes masquée tant qu'elle est vide.
+- 12 fichiers en conflit résolus à la main (voir `INTEGRATION-AZURE-CISCO-RAPPORT.md`) ; les blocs pédagogiques `cloud` ET `cisco`, les trois formats de téléchargement (.ps1 BOM, .sh, .ios.txt sans BOM) sont conservés.
+- Le lien `KJEMO-IT-Toolkit-v0.1/node_modules`, suivi par erreur par le checkpoint Cisco, est retiré du suivi ; `.gitignore` protège `node_modules` (dossier ET lien).
+- Matrices : LOT 7 inchangées (153 / 1 224 / 368), LOT 8 et Cisco vérifiées séparément.
+- Nouveau banc navigateur d'intégration (Azure puis Cisco, Cisco puis Azure, sans rechargement).
+- Corrections de bancs : compte d'outils du banc Cisco calculé ; contre-épreuve LOT 7 M01 re-ciblée sur le site d'appel initial après le refactor `normaliserSortie` ; compteurs de catégories 9 → 10 (LOT 7 navigateur, Cisco navigateur, identité).
+- Non fait : push, CI distante, Windows PowerShell 5.1, essai sur tenant Azure ou équipement Cisco réels.
+
+## LOT 8 — Azure et Microsoft Entra ID (branche claude/lot-8-azure-entra-id)
+
+**Etat : developpe localement, teste localement. NON pousse, NON teste en CI
+GitHub, NON fusionne, NON deploye. Windows PowerShell 5.1 : NON EXECUTE.
+Tenant / abonnement Azure reel : NON EXECUTE.** Base `78a2c8b`.
+
+- **24 assistants** dans la nouvelle categorie « Azure et Entra ID » (6 familles,
+  `.ps1`, 5.1 et 7). 21 en lecture seule ; 3 agissent apres `-WhatIf` et phrase
+  exacte (`DEMARRER <vm>`, `ARRETER <vm>`, `RESTAURER <vm> VERS <groupe>`), sans `-Force`.
+- Aucune connexion, aucun changement de contexte, aucune cle / SAS / secret.
+  Identifiants tronques dans les rapports. Une donnee illisible rend le rapport
+  INCOMPLET : jamais « sain ». Sortie Console / JSON / CSV (CSV neutralise contre les formules).
+- Garde de secrets en champ : filet commun (heuristique, pas une garantie).
+- Defaut mobile corrige : les noms d'actions Azure sans point de coupure
+  debordaient a 390 px (`overflow-wrap` sur `.cloud-bloc`).
+- Bancs : `test/azure-assistants.test.mjs` (doublures PowerShell, contre-epreuves),
+  `test/browser-azure.test.mjs` (Playwright), `test/matrices-lot8.mjs`. Branches dans
+  `package.json` et dans les deux workflows (job Windows : 5.1 et 7).
+- Matrices `LOT-8-*.json`, `docs/CATALOGUE-24-ASSISTANTS-AZURE.md`,
+  `LOT-8-SOURCES.json` (81 sources Azure/Entra/Graph verifiees en ligne),
+  `docs/labs-azure/` (3 guides NON EXECUTES), `LOT-8-RAPPORT.md`.
+- Les 440 / 712 / 856 scripts historiques et les matrices LOT 7 sont inchanges.
+## RESEAU-CISCO-01 — Réseau et Cisco : socle IOS, VLAN, trunks, DTP, VTP
+
+**Etat : developpe localement, teste localement. NON pousse (acces GitHub refuse
+depuis la session), NON teste en CI distante, NON fusionne, NON deploye.
+Packet Tracer et commutateur reel : NON EXECUTE.** Branche `claude/reseau-cisco-01`,
+base `78a2c8b`, sans dependance au code Azure du LOT 8.
+
+- 19 assistants (nouvelle categorie « Reseau et Cisco », 6 sous-rubriques) : socle
+  (modes IOS, identification, console/SSH, sauvegarde, interface, gestion IP, table
+  MAC, port-security x2) puis VLAN, port d'acces, trunks, DTP (simulation), VTP
+  (diagnostic, configuration v1/v2, raccordement) et parcours de diagnostic.
+- Sortie `.ios.txt` : plateforme `Cisco`, ni BOM, ni CRLF, ASCII, aucun « ? » ni
+  tabulation ; lecture seule par defaut ; mode Configuration = phrase exacte.
+- Garde-fous : aucune connexion ; aucun mot de passe en champ (lignes « a taper a
+  la main ») ; liste de VLAN d'un trunk jamais remplacee (add/remove) ; aucune
+  suppression de VLAN, aucun `vlan.dat`, aucun reset, aucune plage d'interfaces ;
+  sauvegarde persistante seulement dans son assistant ; VTP v3 refuse.
+- Analyseur de sorties collees (`show vlan brief`, `show interfaces trunk`,
+  `show vtp status`) : formats declares, « NON RECONNU » sinon, jamais un diagnostic
+  execute. Echantillons ecrits a la main, non captures.
+- Tests : `cisco-assistants` (3 009 controles), `browser-cisco` (1 028), matrices,
+  sources (10 URL cisco.com confirmees par lecture web, 2 non confirmees).
+- Bancs historiques recadres sans toucher a leurs perimetres (matrices LOT 7 : 153
+  outils / 1 224 scripts / 368 sources ; sources Microsoft ; cmdlets).
+- Corrige pendant le developpement : un saut de ligne final passait dans plusieurs
+  validateurs ; les notes de commentaire n'etaient pas protegees d'un « \n ».
+- Limites : syntaxe IOS rapprochee de la documentation, jamais essayee ; detection
+  de secrets = heuristique ; `!` en mode utilisateur incertain (option
+  « Commandes seules »).
+
 ## LOT 7 (27/n) — Netplan : passerelle et fichier cloud-init
 
 **Etat inchange : developpe localement, teste localement. NON pousse, NON teste
