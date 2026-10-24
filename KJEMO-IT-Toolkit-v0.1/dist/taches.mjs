@@ -26,6 +26,8 @@ import { PROCEDURES_PILOTES } from './procedures-pilotes.mjs';
 import { PROCEDURES_VAGUE2 } from './procedures-vague2.mjs';
 import { PROCEDURES_VAGUE3 } from './procedures-vague3.mjs';
 import { SCENARIOS } from './scenarios.mjs';
+import { CATEGORIES } from './categories.mjs';
+import { initialiser as initialiserClassement } from './classement.mjs';
 import { commandesReseau } from './commandes-reseau.mjs';
 import { commandesServices } from './commandes-services.mjs';
 import { commandesStockage } from './commandes-stockage.mjs';
@@ -165,6 +167,7 @@ function entreeProcedure(p) {
     doc: '',
     route: `#/tache/${p.id}`,
     assistant: p.assistant ?? null,
+    hote: p.assistant ?? null,
     procedure: p,
   };
 }
@@ -294,6 +297,7 @@ function entreeCommande(c) {
     doc: '',
     route: `#/tache/${c.id}`,
     assistant: c.assistant ?? null,
+    hote: c.assistant ?? c.notion ?? null,
     procedure: p,
   };
 }
@@ -313,7 +317,7 @@ function entreeAssistant(t) {
     kind: 'assistant',
     titre: t.title,
     categorie: t.category,
-    plateformes: [plateformeDe(t) === 'Multi' ? 'Windows' : plateformeDe(t)],
+    plateformes: [plateformeDe(t) === 'Multi' ? 'Azure' : plateformeDe(t)],
     effet: effetDeOutil(t),
     resume: t.summary,
     intentions: [],
@@ -346,6 +350,7 @@ export const TOUTES_LES_ENTREES = [...procedures, ...commandes, ...assistants];
 export const ENTREES_LISTEES = [...procedures, ...commandes, ...assistants.filter((a) => !ASSISTANTS_REPLIES.has(a.id))];
 
 const PAR_ID = new Map(TOUTES_LES_ENTREES.map((e) => [e.id, e]));
+initialiserClassement(CATEGORIES, TOUTES_LES_ENTREES);
 export function entreeParId(id) { return PAR_ID.get(id) ?? null; }
 export function procedureParId(id) {
   const e = PAR_ID.get(id);
@@ -354,6 +359,18 @@ export function procedureParId(id) {
 /** La fiche qui prolonge cet assistant, s'il y en a une. */
 export function ficheDeAssistant(assistantId) {
   return procedures.find((p) => p.assistant === assistantId) ?? null;
+}
+
+/**
+ * Tout ce qui prolonge un assistant : fiches rédigées et commandes rapides.
+ * Sert au lien réciproque assistant → version courte (le lien inverse existe
+ * déjà : fiche → assistant complet).
+ */
+export function liensDeAssistant(assistantId) {
+  return {
+    procedures: procedures.filter((p) => p.assistant === assistantId),
+    commandes: commandes.filter((c) => c.assistant === assistantId),
+  };
 }
 
 /** Statistiques de couverture : pour le rapport et pour le banc. */
@@ -462,8 +479,9 @@ function noter(e, jetons, requeteNorm) {
  * pertinence. Une requête dont seuls des mots de plateforme sont présents
  * retourne toute la plateforme.
  */
-export function chercher(requete, { categorie = 'Tout', plateforme = null, kinds = null, liste = ENTREES_LISTEES } = {}) {
+export function chercher(requete, { categorie = 'Tout', plateforme = null, kinds = null, liste = ENTREES_LISTEES, garde = null } = {}) {
   const base = liste.filter((e) => (categorie === 'Tout' || e.categorie === categorie)
+    && (!garde || garde(e))
     && (!plateforme || e.plateformes.includes(plateforme))
     && (!kinds || kinds.includes(e.kind)));
   const jetons = jetonsDe(requete);

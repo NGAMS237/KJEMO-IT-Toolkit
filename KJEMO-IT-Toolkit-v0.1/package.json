@@ -36,6 +36,8 @@
     "test:taches": "node test/taches.test.mjs",
     "test:scenarios": "node test/scenarios.test.mjs",
     "test:cmd": "node test/cmd-methodes.test.mjs",
+    "test:coherence": "node test/coherence.test.mjs",
+    "test:classement": "node test/classement.test.mjs",
     "test:capacites": "node test/capacites-linux.test.mjs",
     "test:dette-6b": "node test/dette-6b-format.test.mjs",
     "test:netplan-v2": "node test/netplan-v2.test.mjs",
@@ -70,6 +72,8 @@
     "test:browser:impression": "node test/browser-impression.test.mjs",
     "test:browser:taches": "node test/browser-taches.test.mjs",
     "test:browser:scenarios": "node test/browser-scenarios.test.mjs",
+    "test:browser:coherence": "node test/browser-coherence.test.mjs",
+    "test:browser:navigation": "node test/browser-navigation.test.mjs",
     "test:sources:9": "node test/sources-impression.mjs",
     "matrices:lot9": "node test/matrices-lot9.mjs",
     "test:matrices:lot9": "node test/matrices-lot9.mjs --verifier"
