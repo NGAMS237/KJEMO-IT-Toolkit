@@ -362,3 +362,10 @@ Garde-fous Samba inchangés : le site génère sans exécuter ; pas de `chmod 77
 ## UX-COMMANDES-PROCEDURES-02 (hors numérotation des lots)
 
 Vue rapide / pas à pas, scénarios multi-équipements, copie par équipement, filtre de contenu : livrés localement (voir `docs/UX-COMMANDES-PROCEDURES-02.md`). Suite possible, non engagée : fiches courtes pour les 155 assistants restants selon la demande, variante commutateur L3, essai en laboratoire réel.
+
+
+## Décision du 24 octobre 2026 — navigation de toutes les cartes
+
+**UX-NAVIGATION-CATALOGUE-01 : planifié, non développé.** Classement navigable par groupes et sous-groupes (trois niveaux maximum avant la fiche), d'abord Linux/Samba puis toutes les cartes Windows, serveurs, AD/GPO, réseau, Cisco, Azure et imprimantes.
+Conserver recherche, méthodes CMD/PowerShell/Bash/IOS/GUI pertinentes, contenus et routes ; signaler les résultats masqués par les filtres. À coordonner avec UX-COHERENCE-03.
+Décision, constats de visite et critères : [UX-NAVIGATION-CATALOGUE-01.md](UX-NAVIGATION-CATALOGUE-01.md). UX-02b est déployée (PR #10, main `9c8a9be`, run `40093797235` réussi) ; ce nouveau classement reste à réaliser.
