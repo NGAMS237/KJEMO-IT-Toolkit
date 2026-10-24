@@ -112,7 +112,10 @@ jobs:
                    dist/outils-linux-c.mjs dist/outils-linux-d.mjs \
                    dist/outils-linux-e.mjs dist/outils-linux-f.mjs \
                    dist/outils-linux-g.mjs dist/outils-linux-h.mjs \
-                   dist/generators.mjs dist/app.js; do
+                   dist/generators.mjs dist/procedures.mjs \
+                   dist/procedures-pilotes.mjs dist/procedures-vague2.mjs \
+                   dist/procedures-vague3.mjs dist/scenarios.mjs \
+                   dist/taches.mjs dist/vue-taches.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
           done
@@ -550,6 +553,18 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/commandes-rapides.test.mjs
 
+      - name: Taches et procedures (moteur, recherche, contrat des fiches - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/taches.test.mjs
+
+      - name: Scenarios multi-equipements (contrat, vues, copie, persistance VLAN - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/scenarios.test.mjs
+
+      - name: Methodes CMD (inventaire, syntaxe, metacaracteres, copie propre, retours - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cmd-methodes.test.mjs
+
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #
@@ -599,6 +614,14 @@ jobs:
       - name: Navigateur LOT 9 - 15 fiches Imprimantes (routes, validation, phrase, .ps1 BOM, .sh sans BOM, 390 px)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-impression.test.mjs
+
+      - name: Navigateur UX - recherche, fiches tache, copie par etape, 390 px, clavier, themes
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-taches.test.mjs
+
+      - name: Navigateur UX V2 - vue rapide / pas a pas, scenarios, copie par bloc, secrets, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-scenarios.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

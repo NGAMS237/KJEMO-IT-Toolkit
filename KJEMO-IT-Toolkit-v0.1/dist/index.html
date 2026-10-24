@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="KJEMO IT Toolkit — assistants et scripts de dépannage Windows, Active Directory et stockage." />
+    <meta name="description" content="KJEMO IT Toolkit — commandes et procédures IT : Linux, Windows, Cisco, Azure. Cherche une tâche, copie la commande, vérifie le résultat." />
     <title>KJEMO IT Toolkit</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
@@ -39,16 +39,18 @@
         <section id="home" class="home-view">
           <!-- Hero compact : la recherche est l'action principale, pas un accessoire -->
           <div class="hero">
-            <h1>Résoudre un problème Windows, pas à pas.</h1>
-            <p class="intro">Décris ton problème ou colle le message d’erreur que tu vois. L’assistant prépare un script PowerShell avec tes informations, explique les risques et montre comment revenir en arrière.</p>
-            <label class="search search-hero" for="search">
+            <h1>Commandes et procédures IT</h1>
+            <p class="intro">Trouve la tâche, copie la commande, vérifie le résultat. Linux, Windows, Cisco et Azure.</p>
+            <label class="search-label" for="search">Quelle commande ou procédure cherches-tu ?</label>
+            <div class="search search-hero">
               <span class="search-icon" aria-hidden="true">⌕</span>
-              <span class="sr-only">Rechercher un outil ou un message d’erreur</span>
               <input id="search" type="search" autocomplete="off"
-                     placeholder="Ex. : wifi, ip fixe, disque plein, « n’est pas signé numériquement »" />
+                     placeholder="Ex. : créer un VLAN, vider le cache DNS, état d’un service" />
               <button type="button" id="searchClear" class="search-clear" hidden aria-label="Effacer la recherche">✕</button>
-            </label>
-            <p class="notice notice-compact"><b>Avant de lancer :</b> lis l’aperçu, teste en laboratoire, et utilise <code>-WhatIf</code> quand il est proposé.</p>
+            </div>
+            <div id="platFilters" class="plat-filters"></div>
+            <div id="natureFilters" class="plat-filters"></div>
+            <p class="notice notice-compact"><b>Le Toolkit n’exécute rien :</b> il te montre les commandes, c’est toi qui les lances. Lis chaque effet avant de copier, et teste en laboratoire.</p>
           </div>
 
           <div id="commonErrorZone"></div>
@@ -60,10 +62,12 @@
             <div class="category-grid" id="categoryGrid" role="list"></div>
           </section>
 
-          <div class="section-heading"><h2 class="section-title" id="toolsTitle">Outils</h2><span id="toolCount"></span></div>
+          <div class="section-heading"><h2 class="section-title" id="toolsTitle">Tâches courantes</h2><span id="toolCount"></span></div>
           <div id="toolGrid" class="tool-grid" role="list" aria-labelledby="toolsTitle"></div>
+          <div id="catalogueFooter" class="catalogue-footer"></div>
         </section>
         <section id="toolView" class="tool-view" hidden></section>
+        <section id="taskView" class="tool-view task-view" hidden aria-live="off"></section>
       </main>
     </div>
     <template id="toolTemplate">

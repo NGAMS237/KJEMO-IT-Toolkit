@@ -247,7 +247,7 @@ for (const tool of tools.filter((t) => t.category !== 'Réseau et Cisco')) {
     origin: `http://127.0.0.1:${port}`,
   });
 
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
 
   // Attendre que la grille soit rendue
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
@@ -557,7 +557,7 @@ for (const tool of tools.filter((t) => t.category !== 'Réseau et Cisco')) {
   const uni = UNICODE_INPUTS[tool.id];
   if (uni) {
     // Repartir d'un état propre
-    await page.goto(BASE_URL);
+    await page.goto(BASE_URL + '/#/assistants');
     await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
     await page.locator('#toolGrid .open-tool').nth(toolIndex).click();
     await page.waitForSelector('#scriptOutput', { timeout: 5000 });
@@ -654,7 +654,7 @@ for (const tool of tools.filter((t) => t.category !== 'Réseau et Cisco')) {
   // -------------------------------------------------------------------------
   const invalidSpec = INVALID_INPUTS[tool.id];
   if (invalidSpec) {
-    await page.goto(BASE_URL);
+    await page.goto(BASE_URL + '/#/assistants');
     await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
     await page.locator('#toolGrid .open-tool').nth(toolIndex).click();
     await page.waitForSelector('#scriptOutput', { timeout: 5000 });
@@ -738,7 +738,7 @@ console.log('\n[recherche] — moteur de recherche et bandeau d\u2019erreur comm
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
 
   const nbCartes = () => page.locator('#toolGrid .open-tool').count();
@@ -846,7 +846,7 @@ console.log('\n[routes] — liens directs, favoris et historique local');
   assert(accueilVisible, 'identifiant inconnu dans l\u2019URL : accueil affiché, aucune erreur');
 
   // --- 4. Ouvrir depuis une carte met l'URL à jour ---
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
   const idx = tools.indexOf(autre);
   await page.locator('#toolGrid .open-tool').nth(idx).click();
@@ -871,7 +871,9 @@ console.log('\n[routes] — liens directs, favoris et historique local');
   await page.click('#backButton');
   await page.waitForFunction(() => document.querySelector('#home')?.hidden === false, { timeout: 8000 });
   const hashRetour = await page.evaluate(() => location.hash);
-  assert(hashRetour === '#/', `bouton « Tous les outils » -> URL ${hashRetour} === #/`);
+  // La session a commencé dans le catalogue des assistants (#/assistants) : le
+  // bouton Retour y ramène, comme avant il ramenait à la liste d'où l'on venait.
+  assert(hashRetour === '#/assistants', `bouton « Tous les outils » -> URL ${hashRetour} === #/assistants`);
 
   // --- 8. Historique : les outils visités apparaissent en raccourci ---
   await page.waitForSelector('#historiqueSection', { timeout: 8000 }).catch(() => {});
@@ -921,7 +923,7 @@ console.log('\n[accueil 1B] — structure d’accueil et navigation par catégor
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
 
   const utilisees = [...new Set(tools.map((t) => t.category))];
@@ -1120,7 +1122,7 @@ console.log('\n[modes 1B] — Débutant / Technicien, persistance et sécurité'
   await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
   assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
     'le mode choisi survit au rechargement de la page');
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
   assert(await page.getAttribute('#modeSelector .mode-option[data-mode="technicien"]', 'aria-pressed') === 'true',
     'le mode choisi vaut aussi pour l’accueil');
@@ -1150,7 +1152,7 @@ console.log('\n[modes 1B] — repli quand localStorage est bloqué');
   const erreurs = [];
   page.on('pageerror', (e) => erreurs.push(e.message));
 
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#modeSelector .mode-option', { timeout: 8000 });
   assert(await page.getAttribute('#modeSelector .mode-option[data-mode="debutant"]', 'aria-pressed') === 'true',
     'stockage bloqué : le mode par défaut s’applique quand même');
@@ -1294,7 +1296,7 @@ console.log('\n[thème 1B] — Clair / Sombre / Système, persistance et repli')
 {
   const ctx  = await browser.newContext({ colorScheme: 'dark' });
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#themeSelector .theme-option', { timeout: 8000 });
 
   const opts = await page.$$eval('#themeSelector .theme-option',
@@ -1382,7 +1384,7 @@ console.log('\n[thème 1B] — Clair / Sombre / Système, persistance et repli')
 {
   const ctx  = await browser.newContext({ colorScheme: 'light' });
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#themeSelector', { timeout: 8000 });
   const fondAuto = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   await page.click('#themeSelector .theme-option[data-theme="clair"]');
@@ -1407,7 +1409,7 @@ console.log('\n[thème 1B] — Clair / Sombre / Système, persistance et repli')
   });
   const erreurs = [];
   page.on('pageerror', (e) => erreurs.push(e.message));
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#themeSelector', { timeout: 8000 });
   assert(await page.evaluate(() => document.documentElement.dataset.theme) === 'systeme',
     'stockage bloqué : le thème par défaut s’applique quand même');
@@ -1431,7 +1433,7 @@ for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
   const outil = tools[0];
 
   // Accueil
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
   const debord = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -1483,7 +1485,7 @@ for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
   }
 
   // Les cartes de catégorie et le sélecteur de mode restent utilisables.
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
   const petits = await page.$$eval('#categoryGrid .category-card, .mode-option, .theme-option',
     (els) => els.filter((e) => e.getBoundingClientRect().height < 32).length);
@@ -1498,7 +1500,7 @@ console.log('\n[menu 1B] — panneau latéral sur téléphone');
 {
   const ctx  = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#menuButton', { timeout: 8000 });
 
   assert(await page.getAttribute('#menuButton', 'aria-expanded') === 'false',
@@ -1555,7 +1557,7 @@ console.log('\n[catégories v2] — catalogue canonique affiché');
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#categoryGrid .category-card', { timeout: 8000 });
 
   const cartes = await page.$$eval('#categoryGrid .category-card',
@@ -1773,7 +1775,7 @@ console.log('\n[Catalogue] — outils, catégories et sous-rubriques dans la pag
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
 
   // Le catalogue grandit d'un lot a l'autre : on verifie sa composition, non un
@@ -1908,7 +1910,7 @@ console.log('\n[LOT 2] — recherche, favoris et historique');
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
 
   for (const [requete, idAttendu] of [
@@ -1934,7 +1936,7 @@ console.log('\n[LOT 2] — recherche, favoris et historique');
   // Favori sur un outil du LOT 2, puis persistance.
   await page.goto(`${BASE_URL}#/outil/dns-diagnostic`);
   await page.waitForSelector('#scriptOutput', { timeout: 8000 });
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
   await page.fill('#search', 'dns');
   await page.waitForTimeout(150);
@@ -2028,7 +2030,7 @@ console.log('\n[stockage] — dégradation propre quand localStorage est bloqué
       get() { return { getItem: jette, setItem: jette, removeItem: jette }; },
     });
   });
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
   const cartes = await page.locator('#toolGrid .open-tool').count();
   assert(cartes === tools.length,
@@ -2164,7 +2166,7 @@ console.log('\n[LOT 3] — recherche, favoris et historique sur les outils AD');
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
 
   // On cherche comme cherche quelqu'un qui a un problème : par le symptôme,
@@ -2196,7 +2198,7 @@ console.log('\n[LOT 3] — recherche, favoris et historique sur les outils AD');
   // Favori et historique sur un outil du lot.
   await page.goto(`${BASE_URL}#/outil/ad-domain-full-report`);
   await page.waitForSelector('#scriptOutput', { timeout: 8000 });
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 8000 });
   await page.fill('#search', 'sysvol');
   await page.waitForTimeout(150);

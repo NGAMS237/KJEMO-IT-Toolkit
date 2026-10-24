@@ -145,7 +145,7 @@ async function verifierFiche(page, tool, contexte) {
 console.log('\n[accueil] 11 cartes (LOT 9 : Imprimantes visible), deux nouvelles catégories');
 {
   const { context, page, problemes } = await nouvellePage();
-  await page.goto(BASE);
+  await page.goto(BASE + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool');
   const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => e.dataset.category));
   assert(CATEGORIES.length === 10, `10 catégories canoniques (${CATEGORIES.length})`);
@@ -181,7 +181,7 @@ const CI_ECH = [T('cisco-identification'), T('cisco-trunk-preparation'), T('cisc
 for (const [ordre, premiers, seconds] of [['A : Azure puis Cisco', AZ_ECH, CI_ECH], ['B : Cisco puis Azure', CI_ECH, AZ_ECH]]) {
   console.log(`\n[ordre ${ordre}] navigation sans rechargement`);
   const { context, page, problemes } = await nouvellePage();
-  await page.goto(BASE);
+  await page.goto(BASE + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool');
   for (let i = 0; i < premiers.length; i++) {
     await aller(page, premiers[i]);

@@ -357,3 +357,8 @@ Méthode : relecture de la section « LOT 7 — SAMBA-ADV-01 » ci-dessus, puis 
 
 Garde-fous Samba inchangés : le site génère sans exécuter ; pas de `chmod 777`, de partage invité, de mot de passe d'exemple ni d'ouverture générale du pare-feu ; pas de `/dev/md127` ni d'UID/GID fixes ; aucun test non exécuté n'est déclaré PASS.
 
+
+
+## UX-COMMANDES-PROCEDURES-02 (hors numérotation des lots)
+
+Vue rapide / pas à pas, scénarios multi-équipements, copie par équipement, filtre de contenu : livrés localement (voir `docs/UX-COMMANDES-PROCEDURES-02.md`). Suite possible, non engagée : fiches courtes pour les 155 assistants restants selon la demande, variante commutateur L3, essai en laboratoire réel.

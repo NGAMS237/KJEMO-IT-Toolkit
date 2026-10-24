@@ -170,7 +170,7 @@ section('Les 18 assistants du LOT 6B dans la grille');
 
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 10000 });
 
   const titresGrille = await page.$$eval('#toolGrid h3', (els) => els.map((e) => e.textContent.trim()));
@@ -466,7 +466,7 @@ section('Recherche : on cherche par le symptôme, pas par le nom de l’outil');
 {
   const ctx  = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 10000 });
 
   for (const [requete, idAttendu] of [
@@ -524,7 +524,7 @@ section('Favoris et consultations récentes sur une fiche du LOT 6B');
 
   await page.goto(`${BASE_URL}#/outil/temp-cleanup`);
   await page.waitForSelector('#scriptOutput', { timeout: 10000 });
-  await page.goto(BASE_URL);
+  await page.goto(BASE_URL + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool', { timeout: 10000 });
   await page.fill('#search', 'fichiers temporaires');
   await page.waitForTimeout(200);
