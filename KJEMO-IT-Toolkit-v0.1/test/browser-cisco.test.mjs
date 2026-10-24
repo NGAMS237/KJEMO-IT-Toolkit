@@ -102,7 +102,7 @@ assert(cisco.length === 19, '19 fiches Cisco dans le catalogue', String(cisco.le
   const page = await context.newPage();
   const problemes = [];
   page.on('pageerror', (e) => problemes.push(e.message));
-  await page.goto(BASE);
+  await page.goto(BASE + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool');
   assert(await page.locator('#toolGrid .open-tool').count() === tools.length, 'la grille affiche tous les outils du catalogue');
   const cartes = await page.$$eval('#categoryGrid .category-card', (els) => els.map((e) => e.dataset.category));

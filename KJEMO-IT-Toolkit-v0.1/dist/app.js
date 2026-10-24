@@ -7,6 +7,12 @@ import { plateformeDe, sortieDe, estBash, estIOS, estDocumentationSeule, estLect
          extensionDe, nomFichierDe, etiquetteSortie, commandesExecution } from './plateforme.mjs';
 import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
+import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
+         compteParCategorie, couverture } from './taches.mjs';
+import { ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
+         resumeScriptMarkup, badgeEffet, esc } from './vue-taches.mjs';
+import { rendreMethode, evaluerValeurs, validerParametre, texteCopiable, raisonRefus,
+         dossierMarkdown } from './procedures.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
          creerPreference } from './preferences.mjs';
 
@@ -28,6 +34,17 @@ const categoriesAffichees = categoriesVisibles(tools);
 const categories = [CAT_TOUT, ...categoriesAffichees.map((c) => c.name)];
 let selectedCategory = CAT_TOUT;
 let currentTool = null;
+// UX-COMMANDES-PROCEDURES-01 : fiche tâche ouverte (entrée du catalogue), méthode
+// choisie et valeurs saisies. Les valeurs ne vivent que le temps d'une fiche :
+// ouvrir une autre fiche repart de zéro (aucun état gardé par erreur).
+let currentTache = null;
+let methodeTache = null;
+let saisiesTache = {};
+let vueLocale = null;           // 'rapide' | 'pas' | null : choix LOCAL à la fiche ouverte (le mode global donne le défaut)
+let vueAssistants = false;      // #/assistants : les assistants seuls, recherche historique
+let vueCatalogue = false;       // « Parcourir tout le catalogue »
+let natureFiltre = null;        // null | 'fiche' | 'commande' | 'assistant'
+let platFiltre = null;          // Linux | Windows | Cisco | Azure | null
 
 // ---------------------------------------------------------------------------
 // Mode de lecture — Débutant / Technicien
@@ -109,6 +126,7 @@ function renderModeSelector() {
     btn.addEventListener('click', () => {
       if (btn.dataset.mode === modeCourant()) return;
       prefMode.definir(btn.dataset.mode);
+      vueLocale = null; // un changement de mode global redonne la vue par défaut du mode
       render();
     });
   });
@@ -125,12 +143,15 @@ function fermerMenu() {
 
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
+  const comptesTaches = compteParCategorie(ENTREES_LISTEES);
   nav.innerHTML = categories.map((category) => {
     const meta    = category === CAT_TOUT ? null : categorieParNom(category);
     const icone   = category === CAT_TOUT ? '\u2261' : (meta?.icon ?? '\u25CB');
-    const count   = category === CAT_TOUT
-      ? tools.length
-      : (categoriesAffichees.find((c) => c.name === category)?.count ?? 0);
+    // Mêmes décomptes que les cartes de l'accueil : en vue « tâches », ce sont des entrées
+    // (procédures, scénarios, commandes, assistants non couverts) ; en vue « assistants », des assistants.
+    const count   = vueAssistants
+      ? (category === CAT_TOUT ? tools.length : (categoriesAffichees.find((c) => c.name === category)?.count ?? 0))
+      : (category === CAT_TOUT ? ENTREES_LISTEES.length : (comptesTaches.get(category) ?? 0));
     const actif   = category === selectedCategory;
     // Les noms canoniques sont longs et le panneau est étroit : le libellé est
     // tronqué visuellement, mais reste lisible au survol et complet pour les
@@ -142,7 +163,7 @@ function renderNavigation() {
       + `<span class="nav-count">${count}</span></button>`;
   }).join('');
   nav.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
-    selectedCategory = button.dataset.category; revenirAccueil(); fermerMenu();
+    selectedCategory = button.dataset.category; vueCatalogue = selectedCategory === CAT_TOUT; revenirAccueil(); fermerMenu();
   }));
 }
 
@@ -154,28 +175,42 @@ function renderNavigation() {
 function renderCategoryGrid() {
   const grille = document.querySelector('#categoryGrid');
   if (!grille) return;
+  const comptes = vueAssistants
+    ? new Map(categoriesAffichees.map((c) => [c.name, c.count]))
+    : compteParCategorie(ENTREES_LISTEES);
+  const total = vueAssistants ? tools.length : ENTREES_LISTEES.length;
 
+  // Carte compacte : icône, nom, nombre de tâches. Les descriptions longues ne
+  // sont plus affichées (elles restent dans le titre au survol).
   const carte = (nom, icone, description, count, actif, sous) =>
     `<button type="button" role="listitem" class="category-card${actif ? ' is-selected' : ''}"`
-    + ` data-category="${nom}" aria-pressed="${actif ? 'true' : 'false'}">`
+    + ` data-category="${nom}" aria-pressed="${actif ? 'true' : 'false'}" title="${textToCode(description ?? '')}">`
     + `<span class="category-icon" aria-hidden="true">${textToCode(icone)}</span>`
     + `<span class="category-name">${textToCode(nom === CAT_TOUT ? 'Tous les outils' : nom)}</span>`
-    + `<span class="category-count">${count} outil${count > 1 ? 's' : ''}</span>`
-    + (description ? `<span class="category-desc">${textToCode(description)}</span>` : '')
+    + `<span class="category-count">${count} <span class="sr-only">${vueAssistants ? (count > 1 ? 'outils' : 'outil') : (count > 1 ? 'tâches' : 'tâche')}</span></span>`
     + (sous && sous.length
-        ? `<span class="category-sub">${textToCode(sous.map((x) => x.name).join(' · '))}</span>`
+        ? `<span class="category-sub sr-only">Sous-rubriques : ${textToCode(sous.map((x) => x.name).join(' · '))}</span>`
         : '')
     + `</button>`;
 
   grille.innerHTML =
-    carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', tools.length, selectedCategory === CAT_TOUT, null)
+    carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', total, selectedCategory === CAT_TOUT && (vueCatalogue || vueAssistants))
     + categoriesAffichees
-        .map((c) => carte(c.name, c.icon, c.description, c.count, selectedCategory === c.name, c.sous))
+        .map((c) => carte(c.name, c.icon, c.description, comptes.get(c.name) ?? 0, selectedCategory === c.name, c.sous))
         .join('');
+
+  // Légende des nombres : dit ce qui est compté, sans compter deux fois une tâche à plusieurs méthodes.
+  let legende = document.querySelector('#catalogueLegende');
+  if (!legende) { legende = document.createElement('p'); legende.id = 'catalogueLegende'; legende.className = 'catalogue-legende'; grille.insertAdjacentElement('afterend', legende); }
+  const cv = couverture();
+  legende.textContent = vueAssistants
+    ? `${tools.length} assistants complets (scripts générés avec formulaire).`
+    : `${ENTREES_LISTEES.length} entrées : ${cv.procedures} fiches (dont ${cv.scenarios} scénarios), ${cv.commandesRapides} commandes rapides, ${cv.assistantsListes} assistants complets listés. Les ${cv.assistants} assistants restent tous accessibles. Une tâche à plusieurs méthodes compte une fois.`;
 
   grille.querySelectorAll('.category-card').forEach((btn) => {
     btn.addEventListener('click', () => {
       selectedCategory = btn.dataset.category;
+      vueCatalogue = selectedCategory === CAT_TOUT;
       revenirAccueil();
     });
   });
@@ -212,7 +247,7 @@ function ecrireStockage(cle, valeur) {
 
 /** N'accepte que des identifiants d'outils réellement existants. */
 function idsValides(liste) {
-  const connus = new Set(tools.map((t) => t.id));
+  const connus = new Set(TOUTES_LES_ENTREES.map((e) => e.id));
   return liste.filter((id) => connus.has(id));
 }
 
@@ -242,8 +277,15 @@ function outilDepuisHash() {
   return tools.find((t) => t.id === m[1]) ?? null;
 }
 
-function ecrireHash(tool) {
-  const cible = tool ? `#/outil/${tool.id}` : '#/';
+/** Fiche tâche demandée par l'URL (#/tache/<id>), si l'identifiant porte une procédure. */
+function tacheDepuisHash() {
+  const m = /^#\/tache\/([A-Za-z0-9_-]+)$/.exec(location.hash || '');
+  if (!m) return null;
+  const e = entreeParId(m[1]);
+  return e && e.procedure ? e : null;
+}
+
+function ecrireHash(cible) {
   if (location.hash !== cible) {
     history.pushState(null, '', cible);
   }
@@ -252,23 +294,54 @@ function ecrireHash(tool) {
 /** Ouvre une fiche : met à jour l'état, l'URL et l'historique local. */
 function ouvrirOutil(tool, { pousserHash = true } = {}) {
   currentTool = tool;
+  currentTache = null;
   noterConsultation(tool.id);
-  if (pousserHash) ecrireHash(tool);
+  if (pousserHash) ecrireHash(`#/outil/${tool.id}`);
   render();
+}
+
+/** Ouvre une fiche tâche. Les valeurs saisies repartent de zéro. */
+function ouvrirTache(entree, { pousserHash = true } = {}) {
+  currentTool = null;
+  currentTache = entree;
+  methodeTache = entree.procedure.methodes[0].id;
+  saisiesTache = {};
+  vueLocale = null;
+  noterConsultation(entree.id);
+  if (pousserHash) ecrireHash(`#/tache/${entree.id}`);
+  render();
+}
+
+/** Ouvre ce qu'une ligne de résultat désigne : fiche tâche ou assistant complet. */
+function ouvrirEntree(entree, opts) {
+  if (entree.procedure) return ouvrirTache(entree, opts);
+  return ouvrirOutil(entree.tool, opts);
 }
 
 function revenirAccueil({ pousserHash = true } = {}) {
   currentTool = null;
-  if (pousserHash) ecrireHash(null);
+  currentTache = null;
+  if (pousserHash) ecrireHash(vueAssistants ? '#/assistants' : '#/');
   render();
 }
 
 /** Applique l'URL courante à l'état de l'application. */
 function appliquerHash() {
+  const vuePrevue = location.hash === '#/assistants';
+  if (vuePrevue !== vueAssistants && !tacheDepuisHash() && !outilDepuisHash()) {
+    vueAssistants = vuePrevue;
+    if (vuePrevue) selectedCategory = CAT_TOUT;
+    currentTool = null; currentTache = null;
+    render();
+    return;
+  }
+  const tache = tacheDepuisHash();
   const tool = outilDepuisHash();
-  if (tool) {
+  if (tache) {
+    if (currentTache?.id !== tache.id) ouvrirTache(tache, { pousserHash: false });
+  } else if (tool) {
     if (currentTool?.id !== tool.id) ouvrirOutil(tool, { pousserHash: false });
-  } else if (currentTool) {
+  } else if (currentTool || currentTache) {
     revenirAccueil({ pousserHash: false });
   }
 }
@@ -279,14 +352,14 @@ function appliquerHash() {
  */
 function raccourcisMarkup() {
   if (currentQuery()) return '';
-  const parId = (id) => tools.find((t) => t.id === id);
+  const parId = (id) => entreeParId(id);
   const favoris = lireFavoris().map(parId).filter(Boolean);
   const recents = lireHistorique().map(parId).filter(Boolean)
     .filter((t) => !favoris.some((f) => f.id === t.id));
 
   const puce = (t, cls) =>
     `<button class="shortcut ${cls}" data-tool="${t.id}" type="button">`
-    + `<span class="shortcut-icon">${textToCode(t.icon)}</span>${textToCode(t.title)}</button>`;
+    + `<span class="shortcut-icon" aria-hidden="true">${textToCode(t.tool?.icon ?? (t.kind === 'commande' ? '›_' : '▸'))}</span>${textToCode(t.titre)}</button>`;
 
   let html = '';
   if (favoris.length) {
@@ -309,12 +382,43 @@ function currentQuery() {
  * correspondance, affiché sur la carte pour que l'utilisateur comprenne
  * POURQUOI cet outil lui est proposé.
  */
+const ORDRE_KIND = { procedure: 0, commande: 1, assistant: 2 };
+
+/**
+ * Résultats de l'accueil. Trois situations :
+ *  - une requête : recherche pertinente dans tout le catalogue (ou la catégorie) ;
+ *  - une catégorie ou « tout le catalogue » : liste complète, procédures d'abord ;
+ *  - rien : les tâches courantes (les fiches rédigées), pas 300 lignes.
+ */
+function modeListe() {
+  if (vueAssistants) return currentQuery() ? 'recherche' : 'liste';
+  if (currentQuery()) return 'recherche';
+  if (selectedCategory !== CAT_TOUT || vueCatalogue || natureFiltre) return 'liste';
+  return 'accueil';
+}
+
 function searchResults() {
-  return searchTools(currentQuery(), selectedCategory);
+  const mode = modeListe();
+  // Catalogue des assistants : exactement les assistants, avec la recherche
+  // historique (ET logique, champs pondérés) — l'accès complet reste intact.
+  if (vueAssistants) {
+    return searchTools(currentQuery(), selectedCategory)
+      .map((r) => ({ entree: entreeParId(r.tool.id), motif: r.reason, score: r.score }));
+  }
+  const opts = { categorie: selectedCategory, plateforme: platFiltre, kinds: NATURES.find((n) => n.id === natureFiltre)?.kinds ?? null };
+  if (mode === 'accueil') {
+    return chercher('', { ...opts, kinds: ['procedure'] }).map((r) => ({ ...r, motif: null }));
+  }
+  const res = chercher(currentQuery(), opts);
+  if (mode === 'liste') {
+    res.sort((a, b) => ORDRE_KIND[a.entree.kind] - ORDRE_KIND[b.entree.kind]
+      || a.entree.titre.localeCompare(b.entree.titre, 'fr'));
+  }
+  return res;
 }
 
 function filteredTools() {
-  return searchResults().map((r) => r.tool);
+  return searchResults().map((r) => r.entree);
 }
 
 /**
@@ -338,10 +442,46 @@ function commonErrorBanner(query) {
     + `</div>`;
 }
 
+const NATURES = [
+  { id: 'fiche', label: 'Procédures et scénarios', kinds: ['procedure', 'scenario'] },
+  { id: 'commande', label: 'Commandes', kinds: ['commande'] },
+  { id: 'assistant', label: 'Assistants complets', kinds: ['assistant'] },
+];
+const PLATEFORMES_FILTRE = ['Linux', 'Windows', 'Cisco', 'Azure'];
+
+function renderPlatFilters() {
+  const zone = document.querySelector('#platFilters');
+  if (!zone) return;
+  zone.innerHTML = `<span class="plat-filter-label" id="platFilterLabel">Plateforme</span>`
+    + `<div class="chips" role="group" aria-labelledby="platFilterLabel">`
+    + [null, ...PLATEFORMES_FILTRE].map((p) =>
+      `<button type="button" class="chip${platFiltre === p ? ' is-on' : ''}" data-plat="${p ?? ''}" aria-pressed="${platFiltre === p}">${p ?? 'Toutes'}</button>`).join('')
+    + `</div>`;
+  zone.querySelectorAll('[data-plat]').forEach((b) => b.addEventListener('click', () => {
+    platFiltre = b.dataset.plat || null;
+    renderHome();
+  }));
+  // Nature du contenu : un seul groupe de puces, dans son propre conteneur.
+  const zoneNature = document.querySelector('#natureFilters');
+  if (zoneNature) {
+    zoneNature.innerHTML = vueAssistants ? '' : `<span class="plat-filter-label" id="natureFilterLabel">Contenu</span>`
+      + `<div class="chips" role="group" aria-labelledby="natureFilterLabel">`
+      + [{ id: null, label: 'Tout' }, ...NATURES].map((n) =>
+        `<button type="button" class="chip${natureFiltre === n.id ? ' is-on' : ''}" data-nature="${n.id ?? ''}" aria-pressed="${natureFiltre === n.id}">${n.label}</button>`).join('')
+      + `</div>`;
+    zoneNature.querySelectorAll('[data-nature]').forEach((b) => b.addEventListener('click', () => {
+      natureFiltre = b.dataset.nature || null;
+      renderHome();
+    }));
+  }
+}
+
 function renderHome() {
   renderCategoryGrid();
+  renderPlatFilters();
   const grid    = document.querySelector('#toolGrid');
   const query   = currentQuery();
+  const mode    = modeListe();
   const results = searchResults();
 
   // Bandeau d'erreur commune, inséré avant la grille
@@ -352,58 +492,66 @@ function renderHome() {
   if (zoneRaccourcis) {
     zoneRaccourcis.innerHTML = raccourcisMarkup();
     zoneRaccourcis.querySelectorAll('.shortcut').forEach((btn) => {
-      const t = tools.find((x) => x.id === btn.dataset.tool);
-      if (t) btn.addEventListener('click', () => ouvrirOutil(t));
+      const t = entreeParId(btn.dataset.tool);
+      if (t) btn.addEventListener('click', () => ouvrirEntree(t));
     });
   }
 
+  const titre = document.querySelector('#toolsTitle');
+  if (titre) {
+    titre.textContent = vueAssistants ? 'Les assistants complets' : mode === 'recherche' ? 'Résultats'
+      : (mode === 'liste' ? (selectedCategory === CAT_TOUT ? 'Tout le catalogue' : selectedCategory) : 'Tâches courantes');
+  }
   document.querySelector('#toolCount').textContent =
-    `${results.length} outil${results.length > 1 ? 's' : ''}`;
+    vueAssistants ? `${results.length} outil${results.length > 1 ? 's' : ''}`
+      : `${results.length} ${mode === 'recherche' ? (results.length > 1 ? 'résultats' : 'résultat') : (results.length > 1 ? 'entrées' : 'entrée')}`;
+
+  const pied = document.querySelector('#catalogueFooter');
+  if (pied) {
+    if (vueAssistants) {
+      pied.innerHTML = '<button type="button" class="secondary-button" id="versTaches">Chercher une commande ou une procédure</button>';
+    } else if (mode === 'accueil') {
+      pied.innerHTML = `<button type="button" class="secondary-button" id="voirCatalogue">Parcourir tout le catalogue (${ENTREES_LISTEES.length} entrées)</button>`
+        + `<button type="button" class="secondary-button" id="voirAssistants">Les ${tools.length} assistants complets</button>`;
+    } else if (mode === 'liste' && selectedCategory === CAT_TOUT) {
+      pied.innerHTML = '<button type="button" class="secondary-button" id="replierCatalogue">Revenir aux tâches courantes</button>';
+    } else pied.innerHTML = '';
+    pied.querySelector('#voirCatalogue')?.addEventListener('click', () => { vueCatalogue = true; selectedCategory = CAT_TOUT; renderHome(); });
+    pied.querySelector('#replierCatalogue')?.addEventListener('click', () => { vueCatalogue = false; renderHome(); });
+    pied.querySelector('#voirAssistants')?.addEventListener('click', () => { vueAssistants = true; selectedCategory = CAT_TOUT; ecrireHash('#/assistants'); renderHome(); });
+    pied.querySelector('#versTaches')?.addEventListener('click', () => { vueAssistants = false; vueCatalogue = false; selectedCategory = CAT_TOUT; ecrireHash('#/'); renderHome(); });
+  }
 
   grid.innerHTML = '';
   if (!results.length) {
     grid.innerHTML = query
       ? `<div class="empty">Aucun outil ne correspond à « ${textToCode(query)} ».<br />`
-        + `Essaie un mot plus court, ou colle le message d\u2019erreur que tu vois.</div>`
+        + `Essaie un mot plus court, un nom de commande, ou colle le message d\u2019erreur que tu vois.</div>`
       : '<div class="empty">Aucun outil dans cette catégorie.</div>';
     return;
   }
 
-  const template = document.querySelector('#toolTemplate');
-  results.forEach(({ tool, reason }) => {
-    const card = template.content.cloneNode(true);
-    card.querySelector('.tool-icon').textContent = tool.icon;
-    card.querySelector('.tag').textContent = tool.subcategory
-      ? `${tool.category.toUpperCase()} · ${tool.subcategory}`
-      : tool.category.toUpperCase();
-    card.querySelector('h3').textContent = tool.title;
-    card.querySelector('p').textContent = tool.summary;
+  const favoris = new Set(lireFavoris());
+  grid.innerHTML = results.map(({ entree, motif }) =>
+    ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null })).join('');
+}
 
-    // Motif de correspondance — seulement en situation de recherche
-    if (reason) {
-      const why = document.createElement('p');
-      why.className = 'match-reason';
-      why.textContent = `Correspond au ${reason}`;
-      card.querySelector('h3').after(why);
-    }
-
-    card.querySelector('.open-tool').addEventListener('click', () => ouvrirOutil(tool));
-
-    const fav = card.querySelector('.fav-toggle');
-    const peindreFav = (actif) => {
-      fav.textContent = actif ? '★' : '☆';
-      fav.setAttribute('aria-pressed', String(actif));
-      fav.title = actif ? 'Retirer des favoris' : 'Ajouter aux favoris';
-      fav.classList.toggle('is-fav', actif);
-    };
-    peindreFav(estFavori(tool.id));
-    fav.addEventListener('click', (ev) => {
+/** Clics sur les lignes de résultat : une seule écoute, posée une fois. */
+function brancherListe() {
+  const grid = document.querySelector('#toolGrid');
+  grid.addEventListener('click', (ev) => {
+    const carte = ev.target.closest('.task-row');
+    if (!carte) return;
+    const entree = entreeParId(carte.dataset.id);
+    if (!entree) return;
+    if (ev.target.closest('.fav-toggle')) {
       ev.stopPropagation();
-      peindreFav(basculerFavori(tool.id));
+      basculerFavori(entree.id);
       renderHome();
-    });
-
-    grid.append(card);
+      grid.querySelector(`.task-row[data-id="${CSS.escape(entree.id)}"] .fav-toggle`)?.focus();
+      return;
+    }
+    ouvrirEntree(entree);
   });
 }
 
@@ -515,17 +663,21 @@ function compatMarkup(tool) {
   const ligne = (titre, valeur) => (valeur
     ? `<h3>${titre}</h3><p>${textToCode(String(valeur))}</p>` : '');
 
+  // Essentiel visible : plateforme, effet, droits et prérequis. Le détail (compatibilité,
+  // limites, contexte, ce qui a été validé) est replié mais reste à un clic : rien n'est retiré.
   return `<div class="details prereqs" id="prereqBlock">`
     + bandeau
+    + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
+    + `<details class="prereq-more" id="prereqMore"><summary>Compatibilité, limites, contexte et validation</summary>`
     + `<h3>Systèmes compatibles</h3><ul>${tool.os.map(li).join('')}</ul>`
     + bloc('Distributions visées', tool.distros)
     + bloc('Paquets nécessaires', tool.packages)
     + ligne('Privilèges', tool.privileges)
     + ligne('Service concerné', tool.service)
-    + `<h3>Prérequis</h3>${admin}<ul>${tool.prereqs.map(li).join('')}</ul>`
     + bloc('Limites connues', tool.limites)
     + cloudMarkup(tool, { bloc, ligne })
     + ciscoMarkup(tool, { bloc })
+    + `</details>`
     + impressionMarkup(tool, { bloc })
     + `</div>`;
 }
@@ -591,14 +743,15 @@ function impressionMarkup(tool, { bloc }) {
   return `<div class="impression-bloc" id="impressionBloc">`
     + `<h3>Imprimantes : ce qui se passe</h3>`
     + p('Le problème', c.probleme)
-    + p('Exemple en entreprise', c.exemple)
     + p('Première vérification', c.premiere)
+    + `<details class="impression-more"><summary>Exemple, ce qui est lu et écrit, effets, limites, validation</summary>`
+    + p('Exemple en entreprise', c.exemple)
     + p('Ce qui est lu', c.lit)
     + p('Ce qui est écrit', c.ecrit)
     + p('Effets', c.effets)
     + bloc('Limites de cet assistant', c.limites)
     + (Array.isArray(c.validation) ? bloc('Ce qui a été validé — et ce qui ne l’a pas été', c.validation) : '')
-    + `</div>`;
+    + `</details></div>`;
 }
 
 /**
@@ -867,11 +1020,36 @@ function allerASection(id, { focusChamp = false } = {}) {
 }
 
 
+/** Ce que fait un script complet, en cinq lignes, avant son code. */
+function resumeScript(tool) {
+  const premiere = String(tool.summary).split(/(?<=[.!?])\s+/)[0];
+  const lignes = [['Ce que ça fait', premiere]];
+  const ro = estLectureSeule(tool);
+  lignes.push(['Effet', ro ? 'Lecture seule : ne modifie rien.' : (RISQUE_SIMPLE[tool.risk] ?? '').replace(/^Ce script /, 'Ce script '), ro ? 'ok' : 'attention']);
+  let produit;
+  if (estIOS(tool)) produit = 'Des commandes Cisco IOS à coller dans la console, étape par étape. Le Toolkit ne se connecte à aucun équipement.';
+  else if (estDocumentationSeule(tool)) produit = 'Une procédure à suivre à la main (aucun script).';
+  else if (estBash(tool)) produit = 'Un script Bash (.sh) à lancer sur la machine Linux concernée.';
+  else produit = 'Un script PowerShell (.ps1) à lancer sur le poste concerné.';
+  const format = (tool.fields ?? []).find((f) => f.type === 'select' && (f.options ?? []).some((o) => String(o.value ?? o) === 'Console'));
+  if (format) produit += ' Affiche un rapport ou l’exporte (Console, JSON, HTML, CSV).';
+  lignes.push(['Produit', produit]);
+  lignes.push(['Droits', estIOS(tool) ? 'Mode privilégié sur l’équipement.' : (tool.requiresAdmin ? (estBash(tool) ? 'Root (sudo) nécessaire.' : 'Console administrateur nécessaire.') : 'Session standard.')]);
+  return lignes;
+}
+
+/** Lien vers la version courte de la tâche, quand une fiche existe. */
+function ficheRapideMarkup(tool) {
+  const f = ficheDeAssistant(tool.id);
+  if (!f) return '';
+  return `<p class="fiche-rapide" id="ficheRapide">Version courte : <a href="#/tache/${f.id}">${textToCode(f.titre)}</a> — les commandes à copier, sans le formulaire ni le script complet.</p>`;
+}
+
 function renderTool() {
   const tool = currentTool;
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
-  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode(tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase())}</div><h1>${tool.icon} ${tool.title}</h1><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheNavMarkup()}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
+  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode(tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase())}</div><h1>${tool.icon} ${tool.title}</h1><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheRapideMarkup(tool)}${resumeScriptMarkup(resumeScript(tool))}${ficheNavMarkup()}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
   const content = view.querySelector('#tabContent');
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
@@ -916,7 +1094,8 @@ function renderTool() {
       + `</section>`
       + `<section class="panel fiche-section" data-section="4" id="sectionScript" aria-labelledby="titreScript">`
         + titreSection(4, `${etiquetteSortie(tool)} généré`, 'titreScript')
-        + `<div class="code-wrap"><pre id="scriptOutput" class="code" tabindex="0" role="region" aria-label="Aperçu du ${textToCode(etiquetteSortie(tool))}">${textToCode(script)}</pre></div>`
+        + `<div class="code-wrap is-clamped" id="codeWrap"><pre id="scriptOutput" class="code" tabindex="0" role="region" aria-label="Aperçu du ${textToCode(etiquetteSortie(tool))}">${textToCode(script)}</pre></div>`
+        + `<button type="button" class="secondary-button script-toggle" id="scriptToggle" aria-expanded="false" aria-controls="scriptOutput">Afficher le script complet</button>`
         + `<div class="code-actions"><button id="copyButton" class="secondary-button">Copier</button>`
         + `<button id="downloadButton" class="secondary-button">Télécharger ${textToCode(extensionDe(tool) ?? '')}</button></div>`
         + `<span id="copyFeedback" class="copy-feedback" aria-live="polite"></span>`
@@ -959,6 +1138,20 @@ function renderTool() {
   if (boutonCommencer) {
     boutonCommencer.addEventListener('click', () =>
       allerASection('sectionFormulaire', { focusChamp: true }));
+  }
+
+  // Script replié par défaut : les premières lignes suffisent à reconnaître le
+  // fichier, le reste s'ouvre d'un clic. Copier et Télécharger restent visibles.
+  const bascule = view.querySelector('#scriptToggle');
+  const enveloppe = view.querySelector('#codeWrap');
+  if (bascule && enveloppe) {
+    const lignes = script.split('\n').length;
+    if (lignes <= 9) { enveloppe.classList.remove('is-clamped'); bascule.hidden = true; }
+    bascule.addEventListener('click', () => {
+      const ouvert = enveloppe.classList.toggle('is-clamped') === false;
+      bascule.setAttribute('aria-expanded', String(ouvert));
+      bascule.textContent = ouvert ? 'Replier le script' : 'Afficher le script complet';
+    });
   }
 
   // Point 5 (Codex) : marquer l'aperçu comme obsolète dès qu'un champ est modifié.
@@ -1066,14 +1259,272 @@ function renderTool() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Fiche tâche — #/tache/<id>
+// Le marquage vient de vue-taches.mjs ; ici, seulement le câblage.
+// ---------------------------------------------------------------------------
+function methodeActive() {
+  const p = currentTache.procedure;
+  return p.methodes.find((m) => m.id === methodeTache) ?? p.methodes[0];
+}
+
+/** Vue d'une fiche : le choix local, sinon le défaut du mode (Technicien : rapide ; Débutant : pas à pas). */
+function vueTache() { return vueLocale ?? (estDebutant() ? 'pas' : 'rapide'); }
+
+function renduCourant() {
+  return rendreMethode(methodeActive(), currentTache.procedure.params, saisiesTache);
+}
+
+function majEtapes() {
+  const p = currentTache.procedure;
+  const zone = document.querySelector('#etapesZone');
+  if (!zone) return;
+  zone.innerHTML = etapesMarkup(p, methodeActive(), saisiesTache, { vue: vueTache() }).html;
+  const dl = document.querySelector('#dlDossier');
+  if (dl) {
+    const pret = renduCourant().manquants.length === 0;
+    dl.setAttribute('aria-disabled', pret ? 'false' : 'true');
+    if (pret) dl.removeAttribute('aria-disabled');
+    const hint = document.querySelector('#dlDossierHint');
+    if (hint) hint.textContent = pret ? 'Plan et commandes par équipement, sans invite ni secret.' : 'Renseigne toutes les valeurs pour télécharger le dossier.';
+  }
+}
+
+function majNoteExemples() {
+  const p = currentTache.procedure;
+  const note = document.querySelector('#exemplesNote');
+  if (!note) return;
+  const egal = (prm) => (prm.type === 'table'
+    ? JSON.stringify((saisiesTache[prm.id] ?? []).map((r) => prm.colonnes.map((c) => r[c.id] ?? ''))) === JSON.stringify(prm.exemple.map((r) => prm.colonnes.map((c) => r[c.id] ?? '')))
+    : (saisiesTache[prm.id] ?? '') === prm.exemple);
+  const tous = p.params.length > 0 && p.params.every(egal);
+  note.textContent = tous ? 'Valeurs d’exemple fictives : remplace-les par les tiennes avant de copier.' : '';
+  note.classList.toggle('is-warn', tous);
+}
+
+/** Erreurs affichées sous chaque tableau : cellule invalide, doublon, chevauchement… */
+function majErreursTables() {
+  const p = currentTache.procedure;
+  const ev = evaluerValeurs(p.params, saisiesTache);
+  for (const prm of p.params.filter((x) => x.type === 'table')) {
+    const liste = document.querySelector(`#te-${prm.id}`);
+    if (!liste) continue;
+    const t = ev.tables[prm.id];
+    const messages = t.erreurs.map((e) => e.message);
+    liste.innerHTML = messages.map((m) => `<li>${esc(m)}</li>`).join('');
+    document.querySelectorAll(`input.cell[data-table="${prm.id}"]`).forEach((el) => {
+      const mauvais = t.erreurs.some((e) => e.ligne === Number(el.dataset.row) && e.col === el.dataset.col);
+      el.setAttribute('aria-invalid', mauvais ? 'true' : 'false');
+      el.classList.toggle('is-invalid', mauvais);
+    });
+  }
+}
+
+function renderTache() {
+  const entree = currentTache;
+  const p = entree.procedure;
+  const view = document.querySelector('#taskView');
+  const assistant = p.assistant ? tools.find((t) => t.id === p.assistant) : null;
+  view.innerHTML = tachePageMarkup(entree, {
+    methodeId: methodeActive().id,
+    vue: vueTache(),
+    saisies: saisiesTache,
+    favori: estFavori(entree.id),
+    assistantTitre: assistant?.title ?? null,
+    prete: renduCourant().manquants.length === 0,
+  });
+  document.title = `${p.titre} — KJEMO IT Toolkit`;
+
+  view.querySelector('#taskBack').addEventListener('click', () => revenirAccueil());
+
+  const fav = view.querySelector('#taskFav');
+  fav.addEventListener('click', () => {
+    const actif = basculerFavori(entree.id);
+    fav.textContent = actif ? '★' : '☆';
+    fav.setAttribute('aria-pressed', String(actif));
+    fav.classList.toggle('is-fav', actif);
+    fav.setAttribute('aria-label', actif ? 'Retirer des favoris' : 'Ajouter aux favoris');
+  });
+
+  // Vue rapide / Pas à pas : un choix LOCAL à cette fiche, qui ne touche pas au mode global.
+  view.querySelectorAll('.vue-option').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.vue === vueTache()) return;
+    vueLocale = b.dataset.vue;
+    renderTache();
+    document.querySelector(`#vue-${vueLocale}`)?.focus();
+  }));
+
+  // Onglets de méthode : flèches gauche/droite, comme tout tablist.
+  const onglets = [...view.querySelectorAll('.method-tab')];
+  onglets.forEach((tab, i) => {
+    tab.addEventListener('click', () => {
+      methodeTache = tab.dataset.methode;
+      renderTache();
+      document.querySelector(`#tab-${methodeTache}`)?.focus();
+    });
+    tab.addEventListener('keydown', (ev) => {
+      const delta = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (!delta) return;
+      ev.preventDefault();
+      onglets[(i + delta + onglets.length) % onglets.length].click();
+    });
+  });
+
+  // Paramètres simples : saisie -> validation affichée -> étapes recalculées.
+  view.querySelectorAll('[data-param]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const prm = p.params.find((x) => x.id === input.dataset.param);
+      saisiesTache[prm.id] = input.value;
+      const err = view.querySelector(`#p-${prm.id}-err`);
+      const r = validerParametre(prm, input.value);
+      const message = input.value.trim() && !r.ok ? r.error : '';
+      err.textContent = message;
+      input.setAttribute('aria-invalid', message ? 'true' : 'false');
+      input.classList.toggle('is-invalid', Boolean(message));
+      input.classList.toggle('is-valid', r.ok && input.value.trim() !== '');
+      majNoteExemples();
+      majErreursTables();
+      majEtapes();
+    });
+  });
+
+  // Tableaux (plan de VLAN…) : une cellule modifie une ligne ; ajouter / supprimer une ligne.
+  const form = view.querySelector('#paramsForm');
+  if (form) {
+    form.addEventListener('input', (ev) => {
+      const cell = ev.target.closest('input.cell');
+      if (!cell) return;
+      const id = cell.dataset.table; const prm = p.params.find((x) => x.id === id);
+      const rows = Array.isArray(saisiesTache[id]) ? saisiesTache[id] : [];
+      while (rows.length < Number(cell.dataset.row) + 1) rows.push({});
+      rows[Number(cell.dataset.row)][cell.dataset.col] = cell.value;
+      saisiesTache[id] = rows;
+      majNoteExemples(); majErreursTables(); majEtapes();
+    });
+    form.addEventListener('click', (ev) => {
+      const ajout = ev.target.closest('.row-add'); const retrait = ev.target.closest('.row-del');
+      const cible = ajout ?? retrait;
+      if (!cible || cible.getAttribute('aria-disabled') === 'true') return;
+      const id = cible.dataset.table; const prm = p.params.find((x) => x.id === id);
+      const rows = lignesSaisies(prm, saisiesTache);
+      if (ajout) rows.push({}); else rows.splice(Number(retrait.dataset.row), 1);
+      saisiesTache[id] = rows;
+      const zone = form.querySelector(`[data-table-wrap="${id}"]`);
+      zone.outerHTML = tableMarkup(prm, saisiesTache);
+      majNoteExemples(); majErreursTables(); majEtapes();
+      const dernier = ajout ? form.querySelector(`input.cell[data-table="${id}"][data-row="${rows.length - 1}"]`) : form.querySelector(`.row-add[data-table="${id}"]`);
+      dernier?.focus();
+    });
+  }
+
+  const exemples = view.querySelector('#exemplesBtn');
+  if (exemples) {
+    exemples.addEventListener('click', () => {
+      p.params.forEach((prm) => {
+        saisiesTache[prm.id] = prm.type === 'table' ? prm.exemple.map((r) => ({ ...r })) : prm.exemple;
+      });
+      renderTache();
+      document.querySelector('#exemplesBtn')?.focus();
+    });
+  }
+  majNoteExemples();
+  majErreursTables();
+
+  // Copie : le texte est CALCULÉ (procedures.mjs), jamais lu dans le DOM — les
+  // invites, les numéros, les libellés d'équipement et les repères restent donc
+  // hors du presse-papiers. Un secret n'existe pas ici : il se tape sur l'équipement.
+  view.querySelector('.tache').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.copy-step, .copy-seg, .copy-phase, .copy-eq, #copyAll');
+    if (btn) return copier(btn, view);
+    const dl = ev.target.closest('#dlDossier');
+    if (dl) return telechargerDossier(dl, view);
+  });
+}
+
+/** Résout le texte, la méthode (normalisation) et l'indice d'un bouton de copie. */
+function cibleDeCopie(btn, rendu, methode) {
+  const methodeDe = (id) => (methode.equipements ?? []).find((q) => q.id === id)?.methode ?? methode.id;
+  if (btn.matches('#copyAll')) return { texte: rendu.texteComplet, raison: rendu.raisonComplet, methodeId: methode.id, manquants: rendu.manquants };
+  if (btn.matches('.copy-eq')) {
+    const q = rendu.parEquipement.find((x) => x.id === btn.dataset.eq);
+    return { texte: q.texte, raison: q.raison, methodeId: q.methode, manquants: rendu.manquants };
+  }
+  if (btn.matches('.copy-phase')) {
+    const ph = rendu.phases[Number(btn.dataset.phase)];
+    const eq = ph.equipement ? methodeDe(ph.equipement) : methode.id;
+    return { texte: ph.texte, raison: ph.raison, methodeId: eq, manquants: ph.manquants, espaceFinal: false };
+  }
+  if (btn.matches('.copy-seg')) {
+    // Segment de la Vue rapide : suite d'étapes consécutives, texte CALCULÉ (jamais lu dans le DOM).
+    const etapes = btn.dataset.steps.split(',').map((n) => rendu.etapes[Number(n)]);
+    const manquants = [...new Set(etapes.flatMap((x) => x.rendu.manquants))];
+    const dernier = etapes[etapes.length - 1];
+    const eq0 = etapes[0].equipement ? methodeDe(etapes[0].equipement) : methode.id;
+    return { texte: manquants.length ? null : etapes.map((x) => x.rendu.texteCopie).join('\n'), raison: 'manquants', methodeId: eq0, manquants, espaceFinal: dernier.rendu.espaceFinal };
+  }
+  const e = rendu.etapes[Number(btn.dataset.step)];
+  const eq = e.equipement ? methodeDe(e.equipement) : methode.id;
+  if (btn.dataset.inst !== undefined) {
+    const inst = e.rendu.instances[Number(btn.dataset.inst)];
+    return { texte: e.rendu.bloque ? null : inst.texteCopie, raison: 'manquants', methodeId: eq, manquants: e.rendu.manquants, espaceFinal: e.rendu.espaceFinal };
+  }
+  return { texte: e.rendu.texteCopie, raison: 'manquants', methodeId: eq, manquants: e.rendu.manquants, espaceFinal: e.rendu.espaceFinal };
+}
+
+async function copier(btn, view) {
+  const p = currentTache.procedure;
+  const methode = methodeActive();
+  const rendu = renduCourant();
+  const cible = cibleDeCopie(btn, rendu, methode);
+  const indice = view.querySelector(`#${CSS.escape(btn.getAttribute('aria-describedby') ?? '')}`);
+  if (cible.texte === null || cible.texte === undefined) {
+    if (cible.raison === 'manquants') {
+      const libelles = Object.fromEntries(p.params.flatMap((x) => [[x.id, x.label], ...(x.colonnes ?? []).map((c) => [c.id, c.label])]));
+      if (indice) indice.textContent = `À renseigner pour copier : ${cible.manquants.map((id) => libelles[id] ?? id).join(', ')}.`;
+      const premier = cible.manquants[0];
+      (view.querySelector(`#p-${premier}`) ?? view.querySelector(`input.cell[data-table="${premier}"]`) ?? view.querySelector('input.cell'))?.focus();
+    } else if (indice) indice.textContent = raisonRefus(cible.raison);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(texteCopiable(cible.texte, cible.methodeId, { espaceFinal: Boolean(cible.espaceFinal) }));
+    if (indice) indice.textContent = btn.matches('#copyAll') ? 'Toutes les commandes sont copiées.' : btn.matches('.copy-eq') ? 'Séquence de cet équipement copiée.' : btn.matches('.copy-phase') ? 'Bloc copié.' : btn.matches('.copy-seg') ? 'Segment copié.' : 'Commande copiée.';
+    btn.classList.add('is-copied');
+    setTimeout(() => btn.classList.remove('is-copied'), 1600);
+  } catch {
+    if (indice) indice.textContent = 'Copie impossible : sélectionne le texte du bloc à la main.';
+  }
+}
+
+/** Dossier de procédure : Markdown UTF-8, LF, sans BOM — plan et commandes par équipement, sans secret. */
+function telechargerDossier(btn, view) {
+  const p = currentTache.procedure;
+  const rendu = renduCourant();
+  const hint = view.querySelector('#dlDossierHint');
+  if (rendu.manquants.length) {
+    if (hint) hint.textContent = 'Renseigne toutes les valeurs pour télécharger le dossier.';
+    return;
+  }
+  const texte = dossierMarkdown(p, rendu, methodeActive()).replace(/\r\n?/g, '\n');
+  const blob = new Blob([texte], { type: 'text/markdown;charset=utf-8' });
+  const lien = document.createElement('a');
+  lien.href = URL.createObjectURL(blob);
+  lien.download = `procedure-${p.id}.md`;
+  document.body.appendChild(lien); lien.click(); lien.remove();
+  setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+  if (hint) hint.textContent = 'Dossier téléchargé.';
+}
+
 function render() {
   renderNavigation();
   renderModeSelector();
   renderThemeSelector();
   document.body.dataset.mode = modeCourant();
-  document.querySelector('#home').hidden = Boolean(currentTool);
+  document.querySelector('#home').hidden = Boolean(currentTool || currentTache);
   document.querySelector('#toolView').hidden = !currentTool;
-  if (currentTool) renderTool(); else renderHome();
+  document.querySelector('#taskView').hidden = !currentTache;
+  if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
+  if (currentTool || currentTache) window.scrollTo?.({ top: 0 });
 }
 
 const champRecherche = document.querySelector('#search');
@@ -1085,7 +1536,7 @@ function majEffacer() {
 
 champRecherche.addEventListener('input', () => {
   majEffacer();
-  if (!currentTool) renderHome();
+  if (!currentTool && !currentTache) renderHome();
 });
 
 if (boutonEffacer) {
@@ -1093,7 +1544,7 @@ if (boutonEffacer) {
     champRecherche.value = '';
     majEffacer();
     champRecherche.focus();
-    if (!currentTool) renderHome();
+    if (!currentTool && !currentTache) renderHome();
   });
 }
 
@@ -1103,7 +1554,7 @@ champRecherche.addEventListener('keydown', (ev) => {
     ev.preventDefault();
     champRecherche.value = '';
     majEffacer();
-    if (!currentTool) renderHome();
+    if (!currentTool && !currentTache) renderHome();
   }
 });
 majEffacer();
@@ -1132,10 +1583,17 @@ window.addEventListener('popstate', appliquerHash);
 window.addEventListener('hashchange', appliquerHash);
 
 // Ouvrir directement la fiche demandée par l'URL au chargement
+const tacheInitiale = tacheDepuisHash();
 const outilInitial = outilDepuisHash();
-if (outilInitial) {
+if (tacheInitiale) {
+  currentTache = tacheInitiale;
+  methodeTache = tacheInitiale.procedure.methodes[0].id;
+  noterConsultation(tacheInitiale.id);
+} else if (outilInitial) {
   currentTool = outilInitial;
   noterConsultation(outilInitial.id);
 }
+vueAssistants = location.hash === '#/assistants';
+brancherListe();
 appliquerTheme();
 render();

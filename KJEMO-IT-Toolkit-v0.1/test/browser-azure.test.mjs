@@ -94,7 +94,7 @@ assert(azure.length === 24, '24 fiches Azure dans le catalogue', String(azure.le
   const page = await context.newPage();
   const problemes = [];
   page.on('pageerror', (e) => problemes.push(e.message));
-  await page.goto(BASE);
+  await page.goto(BASE + '/#/assistants');
   await page.waitForSelector('#toolGrid .open-tool');
   const cartes = await page.locator('#toolGrid .open-tool').count();
   assert(cartes === tools.length, 'la grille affiche tous les outils du catalogue', `${cartes}/${tools.length}`);

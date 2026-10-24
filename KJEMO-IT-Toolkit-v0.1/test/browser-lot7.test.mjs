@@ -232,7 +232,7 @@ try {
   if (jouer('A')) {
     const ctx = await browser.newContext({ viewport: DESKTOP });
     const page = await nouvellePage(ctx);
-    await page.goto(BASE);
+    await page.goto(BASE + '/#/assistants');
     await page.waitForSelector('#categoryGrid .category-card');
 
     const visibles = categoriesVisibles(tools);
@@ -342,7 +342,7 @@ try {
   if (jouer('C')) {
     const ctx = await browser.newContext({ viewport: DESKTOP });
     const page = await nouvellePage(ctx);
-    await page.goto(BASE);
+    await page.goto(BASE + '/#/assistants');
     await attendreAccueil(page);
 
     // --- C1 : recherche -------------------------------------------------
@@ -473,8 +473,11 @@ try {
     verifier(true, 'C26 : avec un stockage INACCESSIBLE, la fiche s\'ouvre quand même');
     await pb.click('#backButton');
     await attendreAccueil(pb);
+    // L'accueil n'affiche plus tout le catalogue : la grille doit simplement rester
+    // entière après la bascule (même nombre de lignes avant et après).
+    const avantBascule = await pb.locator('#toolGrid .tool-card').count();
     await pb.locator('#toolGrid .fav-toggle').nth(0).click();
-    verifier(await pb.locator('#toolGrid .tool-card').count() === tools.length,
+    verifier(avantBascule > 0 && await pb.locator('#toolGrid .tool-card').count() === avantBascule,
       'C27 : avec un stockage inaccessible, basculer un favori ne casse pas la page');
     await ctxBloque.close();
   }
@@ -485,7 +488,7 @@ try {
   if (jouer('D')) {
     const ctx = await browser.newContext({ viewport: DESKTOP });
     const page = await nouvellePage(ctx);
-    await page.goto(BASE);
+    await page.goto(BASE + '/#/assistants');
     await attendreAccueil(page);
     const actif = () => page.evaluate(() => {
       const a = document.activeElement;
@@ -506,7 +509,7 @@ try {
     // tabulation séquentielle est DÉPLACÉ sur la cible (#main) — Tab ne repasse
     // plus par le lien ni par le menu. Pour mesurer le parcours complet, on
     // repart d'un document neuf.
-    await page.goto(BASE);
+    await page.goto(BASE + '/#/assistants');
     await page.reload();
     await attendreAccueil(page);
     const attendus = await page.evaluate(() => [...document.querySelectorAll('a[href], button, input:not([type=hidden]), select, textarea, summary, [tabindex="0"]')]
@@ -563,7 +566,7 @@ try {
     await page.focus('#backButton');
     await page.keyboard.press('Enter');
     await attendreAccueil(page);
-    verifier(await page.evaluate(() => location.hash) === '#/' && await page.$eval('#toolView', (e) => e.hidden),
+    verifier(['#/', '#/assistants'].includes(await page.evaluate(() => location.hash)) && await page.$eval('#toolView', (e) => e.hidden),
       'D13 : le bouton « Tous les outils » ramène à l\'accueil, au clavier');
     await page.goBack();
     await page.waitForSelector('#scriptOutput');
@@ -594,7 +597,7 @@ try {
   if (jouer('E')) {
     const ctx = await browser.newContext({ viewport: MOBILE });
     const page = await nouvellePage(ctx);
-    await page.goto(BASE);
+    await page.goto(BASE + '/#/assistants');
     await attendreAccueil(page);
     const m = await sonderMiseEnPage(page);
     verifier(m.scrollWidth <= m.vw, `E1 : accueil — aucun défilement horizontal (${m.scrollWidth} <= ${m.vw})`);
