@@ -50,7 +50,7 @@ export const LIBELLES = {
     'fiche.script': 'Script généré',
     'fiche.verification': 'Vérifier que ça a fonctionné',
     'fiche.annulation': 'Revenir en arrière',
-    'fiche.graphique': 'Méthode graphique',
+    'fiche.graphique': 'Interface graphique',
     'fiche.erreurs': 'Erreurs fréquentes',
     'fiche.sources': 'Sources officielles',
     'action.generer': 'Générer le script',

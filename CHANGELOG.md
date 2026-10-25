@@ -1,5 +1,35 @@
 # Journal des changements
 
+## UX-NAVIGATION-CATALOGUE-01 — Navigation par groupes et sous-groupes de toutes les cartes (branche claude/ux-navigation-catalogue-01)
+
+**Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un poste, un equipement ou un tenant.**
+
+- Classement commun `dist/classement.mjs` (362 entrees sur 362 classees, 0 orpheline, 0 rubrique vide, trois niveaux au plus) : menu lateral, cartes de rubrique, recherche, fil d'Ariane et compteurs lisent la meme source. Tableau : `docs/UX-CLASSEMENT-COMPLET.md`.
+- Routes `#/rubrique/<domaine>[/<groupe>[/<sujet>]]` et `#/assistants/…` ; routes existantes, favoris, historique, copies, telechargements inchanges.
+- Panneau de rubrique (fil d'Ariane, cartes des groupes), listes titrees par groupe/sujet/section, groupes sous le domaine ouvert dans le menu lateral.
+- Fiches : fil d'Ariane cliquable jusqu'au groupe et bouton « Retour : <groupe> » ; un lien direct garde le retour historique vers la liste complète (le fil d'Ariane mène au groupe).
+- Recherche limitee au perimetre choisi + « Rechercher dans tout le catalogue » (requete conservee).
+- Bandeau « un filtre masque des resultats existants » (type ou plateforme) : filtre, nombre, requete, perimetre, autres types avec leur nombre.
+- Phase en lecture seule titree « Consulter » au lieu de « Appliquer ».
+- Linux / Samba : trois sections reunissant fiches, commandes rapides et assistants. SAMBA-ADV-01 (samba-tool groupes, smbclient get/put) : NON realise, annonce comme tel dans la rubrique.
+- Correctif de contraste : survol et sélection du menu latéral (groupes et domaines) et compteurs utilisaient `#fff` / `--muted-2` : 1,23:1 (survol, thème clair) et 3,8–4,2:1 (compteurs). Couleurs désormais issues des jetons du thème (`--text-strong`, `--muted`), sélection doublée d'un trait et du gras. Contrôle de contraste ≥ 4,5 des éléments de navigation (menu, cartes, fil d'Ariane, bandeau, périmètre, fiche) en clair, sombre et système, au repos, au survol et à la sélection ; la règle fautive réinjectée fait échouer le banc.
+- Bancs : `test/classement.test.mjs` (statique, contre-epreuves) et `test/browser-navigation.test.mjs` (navigateur : cinq parcours sans recherche, filtres, clavier, 390 px) ; anciens bancs rejoues sans changer d'assertion.
+- Limites : Windows, PowerShell 5.1, Cisco, Ubuntu reels et CI GitHub : NON EXECUTES.
+
+## UX-COHERENCE-03 — Audit de cohérence : types de contenu, méthodes nommées, liens réciproques (branche claude/ux-coherence-03)
+
+**Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un poste, un equipement ou un tenant.**
+
+- Audit de 362 routes (211 assistants, 39 fiches dont 4 scenarios, 112 commandes rapides) : un assistant n'offrant qu'un script est legitime ; l'ecart observe venait d'une integration oubliee de UX-02b dans la page assistant. Tableau complet : `docs/UX-COHERENCE-03.md`.
+- Page assistant : en-tete identique a celui des fiches (type « ASSISTANT COMPLET », plateforme, langage, favori) ; ancre « Script » remplacee par « Script PowerShell » / « Script Bash » / « Commandes Cisco IOS » ; section « Interface graphique » (meme nom que l'onglet des fiches) ; effet affiche une seule fois ; ton de la ligne « Effet » aligne sur le badge (vert lecture, ambre modification, rouge destructif).
+- Plateformes : les 24 assistants Azure etaient classes « Windows » (le filtre Azure ne les trouvait pas) ; ils sont classes Azure.
+- Liens reciproques : l'assistant renvoie vers sa fiche ET vers ses commandes rapides (29 assistants n'avaient aucun lien).
+- Methode nommee partout : pastille de methode sur chaque carte de resultat et dans l'en-tete des fiches a methode unique.
+- Recherche : grille des categories repliee pendant une recherche (resultats visibles sans defiler) ; un seul bouton « effacer ».
+- Bancs : `test/coherence.test.mjs` (statique) et `test/browser-coherence.test.mjs` (navigateur, 362 routes sans rechargement) ; contre-epreuves par mutation ; anciens bancs rejoues sans changer d'assertion.
+- Plan distinct pour les 155 assistants sans fiche courte : `docs/UX-COUVERTURE-PLAN.md` (aucune fiche generee automatiquement).
+- Limites : Windows, PowerShell 5.1, Cisco, Ubuntu reels et CI GitHub : NON EXECUTES.
+
 ## UX-COMMANDES-PROCEDURES-02b — Vue rapide finalisee, methodes CMD verifiees, livraison reparee (branche claude/ux-commandes-procedures-02b)
 
 **Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un equipement, un tenant, une imprimante ou un poste reels. Base : bf73ef4 (= origin/main). Les lots ne sont pas renumerotes.**

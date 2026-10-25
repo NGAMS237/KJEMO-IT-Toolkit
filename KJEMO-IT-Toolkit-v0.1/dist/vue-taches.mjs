@@ -18,6 +18,7 @@
  *    documentation ; il n'affirme jamais qu'un essai a été fait.
  */
 
+import { etiquetteSortie, extensionDe } from './plateforme.mjs';
 import { EFFETS, METHODES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
 
 /** Échappement HTML complet (guillemets inclus : le texte peut aller dans un attribut). */
@@ -42,6 +43,28 @@ export function badgeEffet(effet) {
   return `<span class="effet effet-${e.id}" data-effet="${e.id}"><span class="effet-sym" aria-hidden="true">${e.symbole}</span> ${esc(e.label)}</span>`;
 }
 
+/**
+ * Méthode(s) réellement proposées par une entrée — jamais le mot générique
+ * « Script » : un assistant dit son langage (Script PowerShell, Script Bash,
+ * Commandes Cisco IOS), une fiche liste ses méthodes, un scénario ses
+ * équipements.
+ */
+export function libellesMethodes(entree) {
+  if (entree.tool) return [etiquetteSortie(entree.tool)];
+  const p = entree.procedure;
+  const ids = [];
+  for (const m of p.methodes) {
+    const sous = m.id === 'scenario' ? (m.equipements ?? []).map((q) => q.methode) : [m.id];
+    for (const id of sous) if (METHODES[id] && !ids.includes(id)) ids.push(id);
+  }
+  return ids.map((id) => METHODES[id].label);
+}
+
+export function methodeBadgesMarkup(entree) {
+  return libellesMethodes(entree)
+    .map((l) => `<span class="methode-badge" data-methode-badge>${esc(l)}</span>`).join('');
+}
+
 export const LIBELLE_KIND = { procedure: 'Procédure', scenario: 'Scénario', commande: 'Commande', assistant: 'Assistant complet' };
 const LIBELLE_BOUTON = { procedure: 'Ouvrir la fiche', scenario: 'Ouvrir le scénario', commande: 'Voir la commande', assistant: 'Ouvrir l’assistant' };
 
@@ -61,7 +84,7 @@ export function ligneResultatMarkup(entree, { favori = false, motif = null } = {
     + `<h3>${esc(entree.titre)}</h3>`
     + `<p class="task-desc">${esc(entree.resume)}</p>`
     + (motif ? `<p class="match-reason">Correspond au ${esc(motif)}</p>` : '')
-    + `<div class="task-badges"><span class="kind kind-${entree.kind}">${LIBELLE_KIND[entree.kind]}</span>${plat}${badgeEffet(entree.effet)}</div>`
+    + `<div class="task-badges"><span class="kind kind-${entree.kind}">${LIBELLE_KIND[entree.kind]}</span>${plat}${methodeBadgesMarkup(entree)}${badgeEffet(entree.effet)}</div>`
     + `</div>`
     + `<div class="task-actions">`
     + `<button class="fav-toggle${favori ? ' is-fav' : ''}" type="button" aria-pressed="${favori}" title="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'} : ${esc(entree.titre)}">${favori ? '★' : '☆'}</button>`
@@ -478,7 +501,7 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
     + `<div class="tool-header"><button class="back-button" id="taskBack" type="button">← Retour</button>`
     + `<div class="tache-titre"><div class="tag">${esc(p.categorie.toUpperCase())} · ${esc(LIBELLE_KIND[entree.kind].toUpperCase())}</div>`
     + `<h1>${esc(p.titre)}</h1>`
-    + `<div class="tache-meta">${plateformes}${badgeEffet(p.effet)}<button class="fav-toggle${favori ? ' is-fav' : ''}" id="taskFav" type="button" aria-pressed="${favori}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${favori ? '★' : '☆'}</button></div>`
+    + `<div class="tache-meta">${plateformes}${p.methodes.length === 1 || scenario ? methodeBadgesMarkup(entree) : ''}${badgeEffet(p.effet)}<button class="fav-toggle${favori ? ' is-fav' : ''}" id="taskFav" type="button" aria-pressed="${favori}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${favori ? '★' : '☆'}</button></div>`
     + `</div></div>`
     + `<p class="tache-resume">${esc(p.resume)}</p>`
     + hypothesesMarkup(p, { replie: vue === 'rapide' })
@@ -500,4 +523,30 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
  */
 export function resumeScriptMarkup(lignes) {
   return `<dl class="script-resume" id="scriptResume">${lignes.map(([k, v, ton]) => `<div class="sr-row${ton ? ` sr-${ton}` : ''}"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
+}
+
+
+/**
+ * En-tête d'un assistant complet, construit avec les mêmes éléments que celui
+ * d'une fiche : type, plateforme, langage de sortie, favori. L'effet n'est pas
+ * répété ici : la pastille de risque de l'assistant le porte déjà.
+ */
+export function enteteAssistantMeta(entree, { favori = false } = {}) {
+  const plateformes = entree.plateformes.map((x) => `<span class="plat"><span aria-hidden="true">${iconePlateforme(x)}</span> ${esc(x)}</span>`).join('');
+  return `<div class="tache-meta" id="toolMeta">${plateformes}${methodeBadgesMarkup(entree)}`
+    + `<button class="fav-toggle${favori ? ' is-fav' : ''}" id="toolFav" type="button" aria-pressed="${favori}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${favori ? '★' : '☆'}</button></div>`;
+}
+
+/** Lien réciproque : l'assistant renvoie vers ses versions courtes (fiche, commandes rapides). */
+export function versionsCourtesMarkup({ procedures = [], commandes = [] }) {
+  if (!procedures.length && !commandes.length) return '';
+  const lien = (e) => `<a href="#/tache/${esc(e.id)}">${esc(e.titre)}</a>`;
+  let h = '';
+  if (procedures.length) {
+    h += `<p class="fiche-rapide" id="ficheRapide">Version courte : ${procedures.map(lien).join(' · ')} — les commandes à copier, en vue rapide ou pas à pas, sans le formulaire ni le script complet.</p>`;
+  }
+  if (commandes.length) {
+    h += `<p class="fiche-rapide" id="commandesLiees">${commandes.length > 1 ? 'Commandes rapides liées' : 'Commande rapide liée'} : ${commandes.map(lien).join(' · ')}.</p>`;
+  }
+  return h;
 }

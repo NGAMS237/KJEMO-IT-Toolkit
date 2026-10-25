@@ -483,6 +483,11 @@ export function phasesDeMethode(rendu) {
   const aff = { action: 'Appliquer', verification: 'Vérifier', persistance: 'Enregistrer', dernier: 'Dernier recours' };
   return phases.map((ph, n) => {
     const etapes = ph.indices.map((i) => rendu.etapes[i]);
+    // Le titre dit ce que la phase FAIT : une simple lecture ne « s'applique » pas.
+    // Une phase dont toutes les étapes sont en lecture seule s'appelle « Consulter » ;
+    // dès qu'une étape modifie, interrompt ou détruit, elle reste « Appliquer ».
+    const effets = etapes.map((e) => e.effet).filter(Boolean);
+    const titreAction = effets.length > 0 && effets.every((x) => x === 'lecture') ? 'Consulter' : aff.action;
     const commandes = etapes.filter((e) => e.rendu);
     const manquants = [...new Set(commandes.flatMap((e) => e.rendu.manquants))];
     const interactif = commandes.some((e) => e.rendu.interactif);
@@ -496,7 +501,7 @@ export function phasesDeMethode(rendu) {
     else if (bloque) raison = 'manquants';
     else texte = commandes.map((e) => e.rendu.texteCopie).join('\n');
     return {
-      numero: n, categorie: ph.categorie, titre: ph.titre ?? aff[ph.categorie], equipement: ph.equipement,
+      numero: n, categorie: ph.categorie, titre: ph.titre ?? (ph.categorie === 'action' ? titreAction : aff[ph.categorie]), equipement: ph.equipement,
       indices: ph.indices, manquants, interactif, texte, raison, nbCommandes: copiables.length,
     };
   });

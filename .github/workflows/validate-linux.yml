@@ -115,7 +115,7 @@ jobs:
                    dist/generators.mjs dist/procedures.mjs \
                    dist/procedures-pilotes.mjs dist/procedures-vague2.mjs \
                    dist/procedures-vague3.mjs dist/scenarios.mjs \
-                   dist/taches.mjs dist/vue-taches.mjs dist/app.js; do
+                   dist/taches.mjs dist/vue-taches.mjs dist/classement.mjs dist/vue-navigation.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
           done
@@ -565,6 +565,14 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cmd-methodes.test.mjs
 
+      - name: Coherence transversale (types, methodes nommees, plateformes, liens reciproques - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/coherence.test.mjs
+
+      - name: Classement du catalogue (aucune entree orpheline, aucune rubrique vide, routes, regroupement - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/classement.test.mjs
+
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #
@@ -622,6 +630,14 @@ jobs:
       - name: Navigateur UX V2 - vue rapide / pas a pas, scenarios, copie par bloc, secrets, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-scenarios.test.mjs
+
+      - name: Navigateur UX coherence - toutes les routes sans rechargement, methodes, etats perimes, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-coherence.test.mjs
+
+      - name: Navigateur UX navigation - parcours sans recherche, fil d'Ariane, perimetre de recherche, filtre masquant, clavier, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-navigation.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

@@ -362,3 +362,24 @@ Garde-fous Samba inchangés : le site génère sans exécuter ; pas de `chmod 77
 ## UX-COMMANDES-PROCEDURES-02 (hors numérotation des lots)
 
 Vue rapide / pas à pas, scénarios multi-équipements, copie par équipement, filtre de contenu : livrés localement (voir `docs/UX-COMMANDES-PROCEDURES-02.md`). Suite possible, non engagée : fiches courtes pour les 155 assistants restants selon la demande, variante commutateur L3, essai en laboratoire réel.
+
+
+## UX-COHERENCE-03 (hors numérotation des lots)
+
+Audit de cohérence de l'application après la fusion de UX-02b (voir `docs/UX-COHERENCE-03.md` à la racine du dépôt). Développé localement et testé localement ; CI GitHub non encore exécutée ; ni fusionné ni déployé.
+
+**Fait :** en-tête d'assistant aligné sur les fiches (type, plateforme, langage, favori), ancre « Script » remplacée par le langage réel (Script PowerShell / Script Bash / Commandes Cisco IOS), assistants Azure classés Azure, liens réciproques assistant ⇄ commandes rapides, méthode nommée sur toutes les cartes et fiches, couleurs d'effet alignées, recherche avec résultats visibles ; bancs `coherence` (statique) et `browser-coherence` (362 routes sans rechargement).
+
+**Restant, par ordre de priorité (plan distinct `docs/UX-COUVERTURE-PLAN.md`) :**
+1. Fiches courtes pour les assistants Windows de lecture (palier P1) : poste de travail, réseau, Active Directory.
+2. Première commande rapide Windows (CMD/PowerShell) : aucune n'existe, les 112 actuelles sont Linux / Bash.
+3. Lectures `show` Cisco et Azure CLI en fiches.
+4. Les paliers P2 (modifications réversibles) puis P3 (destructif) seulement avec effet visible avant l'action et retour exact.
+
+Aucun des assistants restants n'est converti automatiquement en procédure.
+
+## Décision du 24 octobre 2026 — navigation de toutes les cartes
+
+**UX-NAVIGATION-CATALOGUE-01 : développé sur la branche `claude/ux-navigation-catalogue-01`, testé localement ; non testé en CI, non fusionné, non déployé.** Réalisé : classement commun de 362 entrées (aucune orpheline, aucune rubrique vide), routes `#/rubrique/…`, cartes et menu par groupes, fil d'Ariane, recherche dans le périmètre, bandeau de filtre masquant, titres « Consulter ». **Encore prévu, non réalisé** : SAMBA-ADV-01 (groupes `samba-tool`, transferts `smbclient`), fiches courtes des assistants qui n'en ont pas, validation CI et site déployé. Planification initiale : Classement navigable par groupes et sous-groupes (trois niveaux maximum avant la fiche), d'abord Linux/Samba puis toutes les cartes Windows, serveurs, AD/GPO, réseau, Cisco, Azure et imprimantes.
+Conserver recherche, méthodes CMD/PowerShell/Bash/IOS/GUI pertinentes, contenus et routes ; signaler les résultats masqués par les filtres. À coordonner avec UX-COHERENCE-03.
+Décision, constats de visite et critères : [UX-NAVIGATION-CATALOGUE-01.md](UX-NAVIGATION-CATALOGUE-01.md). UX-02b est déployée (PR #10, main `9c8a9be`, run `40093797235` réussi) ; ce nouveau classement reste à réaliser.

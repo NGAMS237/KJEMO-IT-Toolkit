@@ -8,9 +8,12 @@ import { plateformeDe, sortieDe, estBash, estIOS, estDocumentationSeule, estLect
 import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
-         compteParCategorie, couverture } from './taches.mjs';
+         compteParCategorie, couverture, liensDeAssistant } from './taches.mjs';
 import { ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
-         resumeScriptMarkup, badgeEffet, esc } from './vue-taches.mjs';
+         resumeScriptMarkup, badgeEffet, esc, enteteAssistantMeta, versionsCourtesMarkup } from './vue-taches.mjs';
+import { cheminDe, filDeEntree, lireRoute, routePortee, domaineIdDe, domaineNomDe, dans, noeud } from './classement.mjs';
+import { filArianeMarkup, maillonsDePortee, nomDePortee, rubriqueMarkup, groupeEnteteMarkup, groupes,
+         bandeauMasqueMarkup } from './vue-navigation.mjs';
 import { rendreMethode, evaluerValeurs, validerParametre, texteCopiable, raisonRefus,
          dossierMarkdown } from './procedures.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
@@ -45,6 +48,34 @@ let vueAssistants = false;      // #/assistants : les assistants seuls, recherch
 let vueCatalogue = false;       // « Parcourir tout le catalogue »
 let natureFiltre = null;        // null | 'fiche' | 'commande' | 'assistant'
 let platFiltre = null;          // Linux | Windows | Cisco | Azure | null
+// UX-NAVIGATION-CATALOGUE-01 : niveaux sous le domaine (identifiants de classement.mjs).
+let familleSel = null;
+let sujetSel = null;
+
+/** Portée courante de la navigation : domaine, famille, sujet. */
+function portee() {
+  const domaineId = selectedCategory === CAT_TOUT ? null : domaineIdDe(selectedCategory);
+  return {
+    assistants: vueAssistants,
+    domaineId,
+    domaineNom: domaineId ? selectedCategory : null,
+    familleId: domaineId ? familleSel : null,
+    sujetId: domaineId && familleSel ? sujetSel : null,
+  };
+}
+const listeBase = () => (vueAssistants ? TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant') : ENTREES_LISTEES);
+function gardePortee() {
+  const p = portee();
+  return p.familleId ? (e) => dans(e, { familleId: p.familleId, sujetId: p.sujetId }) : null;
+}
+/** Va à une rubrique (domaine, famille, sujet) : état, URL et affichage. */
+function allerPortee(nomDomaine, familleId = null, sujetId = null) {
+  selectedCategory = nomDomaine; familleSel = familleId; sujetSel = sujetId;
+  vueCatalogue = nomDomaine === CAT_TOUT;
+  currentTool = null; currentTache = null;
+  ecrireHash(routePortee(portee()));
+  render();
+}
 
 // ---------------------------------------------------------------------------
 // Mode de lecture — Débutant / Technicien
@@ -141,6 +172,21 @@ function fermerMenu() {
   b.setAttribute('aria-expanded', 'false');
 }
 
+/** Groupes du domaine ouvert, sous son bouton : mêmes liens que les cartes de rubrique. */
+function sousNavigationMarkup(nomDomaine) {
+  const domaineId = domaineIdDe(nomDomaine);
+  const defs = noeud(domaineId)?.familles ?? [];
+  const liste = listeBase();
+  const items = defs.map((f) => {
+    const n = liste.filter((e) => { const c = cheminDe(e); return c && c.domaineId === domaineId && c.famille.id === f.id; }).length;
+    if (!n) return '';
+    const actif = familleSel === f.id;
+    return `<a class="nav-famille${actif ? ' active' : ''}" href="${esc(routePortee({ assistants: vueAssistants, domaineId, familleId: f.id }))}"`
+      + ` data-famille="${esc(f.id)}"${actif ? ' aria-current="true"' : ''}><span class="nav-label">${textToCode(f.nom)}</span><span class="nav-count">${n}</span></a>`;
+  }).join('');
+  return `<div class="nav-sous" role="group" aria-label="Groupes de ${esc(nomDomaine)}">${items}</div>`;
+}
+
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
   const comptesTaches = compteParCategorie(ENTREES_LISTEES);
@@ -160,11 +206,13 @@ function renderNavigation() {
       + ` title="${textToCode(category)}" aria-current="${actif ? 'true' : 'false'}">`
       + `<span class="nav-icon" aria-hidden="true">${textToCode(icone)}</span>`
       + `<span class="nav-label">${textToCode(category)}</span>`
-      + `<span class="nav-count">${count}</span></button>`;
+      + `<span class="nav-count">${count}</span></button>`
+      + (actif && category !== CAT_TOUT ? sousNavigationMarkup(category) : '');
   }).join('');
   nav.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
-    selectedCategory = button.dataset.category; vueCatalogue = selectedCategory === CAT_TOUT; revenirAccueil(); fermerMenu();
+    allerPortee(button.dataset.category); fermerMenu();
   }));
+  nav.querySelectorAll('a.nav-famille').forEach((a) => a.addEventListener('click', () => fermerMenu()));
 }
 
 /**
@@ -209,9 +257,7 @@ function renderCategoryGrid() {
 
   grille.querySelectorAll('.category-card').forEach((btn) => {
     btn.addEventListener('click', () => {
-      selectedCategory = btn.dataset.category;
-      vueCatalogue = selectedCategory === CAT_TOUT;
-      revenirAccueil();
+      allerPortee(btn.dataset.category);
     });
   });
 }
@@ -321,22 +367,35 @@ function ouvrirEntree(entree, opts) {
 function revenirAccueil({ pousserHash = true } = {}) {
   currentTool = null;
   currentTache = null;
-  if (pousserHash) ecrireHash(vueAssistants ? '#/assistants' : '#/');
+  if (pousserHash) ecrireHash(routePortee(portee()));
   render();
 }
 
 /** Applique l'URL courante à l'état de l'application. */
 function appliquerHash() {
-  const vuePrevue = location.hash === '#/assistants';
-  if (vuePrevue !== vueAssistants && !tacheDepuisHash() && !outilDepuisHash()) {
-    vueAssistants = vuePrevue;
-    if (vuePrevue) selectedCategory = CAT_TOUT;
-    currentTool = null; currentTache = null;
-    render();
-    return;
-  }
   const tache = tacheDepuisHash();
   const tool = outilDepuisHash();
+  if (!tache && !tool) {
+    const rub = lireRoute(location.hash);
+    if (rub) {
+      vueAssistants = rub.assistants; vueCatalogue = false;
+      selectedCategory = domaineNomDe(rub.domaineId); familleSel = rub.familleId; sujetSel = rub.sujetId;
+      currentTool = null; currentTache = null;
+      render();
+      document.querySelector('#rubriquesZone [aria-current="page"]')?.closest('nav')?.setAttribute('tabindex', '-1');
+      document.querySelector('#filAriane')?.focus?.({ preventScroll: true });
+      return;
+    }
+    const vuePrevue = location.hash === '#/assistants';
+    const horsPortee = selectedCategory !== CAT_TOUT || familleSel;
+    if (vuePrevue !== vueAssistants || ((location.hash === '#/' || location.hash === '' || vuePrevue) && horsPortee)) {
+      vueAssistants = vuePrevue;
+      selectedCategory = CAT_TOUT; familleSel = null; sujetSel = null; vueCatalogue = false;
+      currentTool = null; currentTache = null;
+      render();
+      return;
+    }
+  }
   if (tache) {
     if (currentTache?.id !== tache.id) ouvrirTache(tache, { pousserHash: false });
   } else if (tool) {
@@ -382,7 +441,7 @@ function currentQuery() {
  * correspondance, affiché sur la carte pour que l'utilisateur comprenne
  * POURQUOI cet outil lui est proposé.
  */
-const ORDRE_KIND = { procedure: 0, commande: 1, assistant: 2 };
+const ORDRE_KIND = { procedure: 0, scenario: 0, commande: 1, assistant: 2 };
 
 /**
  * Résultats de l'accueil. Trois situations :
@@ -390,26 +449,36 @@ const ORDRE_KIND = { procedure: 0, commande: 1, assistant: 2 };
  *  - une catégorie ou « tout le catalogue » : liste complète, procédures d'abord ;
  *  - rien : les tâches courantes (les fiches rédigées), pas 300 lignes.
  */
-function modeListe() {
-  if (vueAssistants) return currentQuery() ? 'recherche' : 'liste';
-  if (currentQuery()) return 'recherche';
-  if (selectedCategory !== CAT_TOUT || vueCatalogue || natureFiltre) return 'liste';
+function modeListe(requete = currentQuery(), categorie = selectedCategory, nature = natureFiltre) {
+  if (vueAssistants) return requete ? 'recherche' : 'liste';
+  if (requete) return 'recherche';
+  if (categorie !== CAT_TOUT || vueCatalogue || nature) return 'liste';
   return 'accueil';
 }
 
-function searchResults() {
-  const mode = modeListe();
-  // Catalogue des assistants : exactement les assistants, avec la recherche
-  // historique (ET logique, champs pondérés) — l'accès complet reste intact.
+/**
+ * Résultats de la vue courante. `over` remplace temporairement un réglage
+ * (nature, plat, categorie, requete) : c'est ainsi que le bandeau « filtre qui
+ * masque des résultats » compte ce que le filtre cache, avec la MÊME logique.
+ */
+function searchResults(over = {}) {
+  const requete = 'requete' in over ? over.requete : currentQuery();
+  const nature  = 'nature' in over ? over.nature : natureFiltre;
+  const plat    = 'plat' in over ? over.plat : platFiltre;
+  const categorie = 'categorie' in over ? over.categorie : selectedCategory;
+  const garde   = 'categorie' in over ? null : gardePortee();
+  const mode = modeListe(requete, categorie, 'nature' in over ? 'force' : nature);
   if (vueAssistants) {
-    return searchTools(currentQuery(), selectedCategory)
-      .map((r) => ({ entree: entreeParId(r.tool.id), motif: r.reason, score: r.score }));
+    return searchTools(requete, categorie)
+      .map((r) => ({ entree: entreeParId(r.tool.id), motif: r.reason, score: r.score }))
+      .filter((r) => !garde || garde(r.entree));
   }
-  const opts = { categorie: selectedCategory, plateforme: platFiltre, kinds: NATURES.find((n) => n.id === natureFiltre)?.kinds ?? null };
+  const kinds = NATURES.find((n) => n.id === nature)?.kinds ?? null;
+  const opts = { categorie, plateforme: plat, kinds, garde };
   if (mode === 'accueil') {
     return chercher('', { ...opts, kinds: ['procedure'] }).map((r) => ({ ...r, motif: null }));
   }
-  const res = chercher(currentQuery(), opts);
+  const res = chercher(requete, opts);
   if (mode === 'liste') {
     res.sort((a, b) => ORDRE_KIND[a.entree.kind] - ORDRE_KIND[b.entree.kind]
       || a.entree.titre.localeCompare(b.entree.titre, 'fr'));
@@ -476,6 +545,47 @@ function renderPlatFilters() {
   }
 }
 
+/** Libellé du périmètre courant, pour les messages : « Linux › Partages de fichiers ». */
+function libellePortee() {
+  const p = portee();
+  if (!p.domaineId) return null;
+  return maillonsDePortee(p).slice(1).map((m) => m.nom).join(' › ');
+}
+
+/**
+ * Filtres qui masquent des résultats EXISTANTS : le bandeau dit lequel, combien,
+ * et propose les autres types ou plateformes sans toucher à la recherche.
+ */
+function bandeauxMasque(results, query) {
+  if (vueAssistants) return '';
+  const perimetre = libellePortee();
+  let html = '';
+  if (natureFiltre) {
+    const sans = searchResults({ nature: null });
+    const masques = sans.length - results.length;
+    if (masques > 0) {
+      const autres = NATURES.filter((n) => n.id !== natureFiltre)
+        .map((n) => ({ action: 'nature', valeur: n.id, libelle: n.label, compte: searchResults({ nature: n.id }).length }))
+        .filter((a) => a.compte > 0);
+      autres.push({ action: 'nature', valeur: '', libelle: 'Tous les types', compte: sans.length });
+      const nom = NATURES.find((n) => n.id === natureFiltre).label;
+      html += bandeauMasqueMarkup({ id: 'filtreMasqueNature', filtre: `Le filtre « ${nom} »`, requete: query, perimetre, masques, autres });
+    }
+  }
+  if (platFiltre) {
+    const sans = searchResults({ plat: null });
+    const masques = sans.length - results.length;
+    if (masques > 0) {
+      const autres = PLATEFORMES_FILTRE.filter((p) => p !== platFiltre)
+        .map((p) => ({ action: 'plat', valeur: p, libelle: p, compte: searchResults({ plat: p }).length }))
+        .filter((a) => a.compte > 0);
+      autres.push({ action: 'plat', valeur: '', libelle: 'Toutes les plateformes', compte: sans.length });
+      html += bandeauMasqueMarkup({ id: 'filtreMasquePlat', filtre: `Le filtre « ${platFiltre} »`, requete: query, perimetre, masques, autres });
+    }
+  }
+  return html;
+}
+
 function renderHome() {
   renderCategoryGrid();
   renderPlatFilters();
@@ -483,6 +593,12 @@ function renderHome() {
   const query   = currentQuery();
   const mode    = modeListe();
   const results = searchResults();
+  const p       = portee();
+  // Pendant une recherche, les résultats passent avant la grille des catégories
+  // (qui les repoussait sous la ligne de flottaison). La barre latérale garde
+  // le filtre par catégorie, et la grille revient dès que la recherche est vidée.
+  document.querySelector('#categoriesSection')?.classList.toggle('is-collapsed', Boolean(query) && selectedCategory === CAT_TOUT);
+  document.querySelector('#categoriesSection')?.classList.toggle('is-compact', Boolean(p.domaineId));
 
   // Bandeau d'erreur commune, inséré avant la grille
   const zone = document.querySelector('#commonErrorZone');
@@ -497,10 +613,38 @@ function renderHome() {
     });
   }
 
+  // Panneau de rubrique : fil d'Ariane, périmètre de recherche, cartes des groupes.
+  const zoneRub = document.querySelector('#rubriquesZone');
+  if (zoneRub) {
+    zoneRub.innerHTML = p.domaineId
+      ? rubriqueMarkup({ liste: listeBase(), assistants: vueAssistants, domaineId: p.domaineId, domaineNom: p.domaineNom,
+          familleId: p.familleId, sujetId: p.sujetId, requete: query,
+          totalPartout: query ? searchResults({ categorie: CAT_TOUT }).length : null })
+      : '';
+    zoneRub.querySelector('#rechercherPartout')?.addEventListener('click', () => {
+      selectedCategory = CAT_TOUT; familleSel = null; sujetSel = null; vueCatalogue = false;
+      ecrireHash(routePortee(portee()));
+      renderHome(); renderNavigation();
+      champRecherche.focus();
+    });
+  }
+
+  const zoneMasque = document.querySelector('#filtreMasqueZone');
+  if (zoneMasque) {
+    zoneMasque.innerHTML = bandeauxMasque(results, query);
+    zoneMasque.querySelectorAll('[data-masque-action]').forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.masqueValeur || null;
+      if (b.dataset.masqueAction === 'nature') natureFiltre = v; else platFiltre = v;
+      renderHome();
+      document.querySelector('#toolsTitle')?.focus?.();
+    }));
+  }
+
   const titre = document.querySelector('#toolsTitle');
   if (titre) {
     titre.textContent = vueAssistants ? 'Les assistants complets' : mode === 'recherche' ? 'Résultats'
-      : (mode === 'liste' ? (selectedCategory === CAT_TOUT ? 'Tout le catalogue' : selectedCategory) : 'Tâches courantes');
+      : (mode === 'liste' ? (p.domaineId ? nomDePortee(p) : 'Tout le catalogue') : 'Tâches courantes');
+    titre.tabIndex = -1;
   }
   document.querySelector('#toolCount').textContent =
     vueAssistants ? `${results.length} outil${results.length > 1 ? 's' : ''}`
@@ -518,22 +662,33 @@ function renderHome() {
     } else pied.innerHTML = '';
     pied.querySelector('#voirCatalogue')?.addEventListener('click', () => { vueCatalogue = true; selectedCategory = CAT_TOUT; renderHome(); });
     pied.querySelector('#replierCatalogue')?.addEventListener('click', () => { vueCatalogue = false; renderHome(); });
-    pied.querySelector('#voirAssistants')?.addEventListener('click', () => { vueAssistants = true; selectedCategory = CAT_TOUT; ecrireHash('#/assistants'); renderHome(); });
-    pied.querySelector('#versTaches')?.addEventListener('click', () => { vueAssistants = false; vueCatalogue = false; selectedCategory = CAT_TOUT; ecrireHash('#/'); renderHome(); });
+    pied.querySelector('#voirAssistants')?.addEventListener('click', () => { vueAssistants = true; selectedCategory = CAT_TOUT; familleSel = null; sujetSel = null; ecrireHash('#/assistants'); renderHome(); });
+    pied.querySelector('#versTaches')?.addEventListener('click', () => { vueAssistants = false; vueCatalogue = false; selectedCategory = CAT_TOUT; familleSel = null; sujetSel = null; ecrireHash('#/'); renderHome(); });
   }
 
   grid.innerHTML = '';
   if (!results.length) {
+    const filtres = (!vueAssistants && (natureFiltre || platFiltre));
     grid.innerHTML = query
-      ? `<div class="empty">Aucun outil ne correspond à « ${textToCode(query)} ».<br />`
+      ? `<div class="empty">Aucun outil ne correspond à « ${textToCode(query)} »${libellePortee() ? ` dans ${textToCode(libellePortee())}` : ''}${filtres ? ' avec les filtres actuels' : ''}.<br />`
         + `Essaie un mot plus court, un nom de commande, ou colle le message d\u2019erreur que tu vois.</div>`
-      : '<div class="empty">Aucun outil dans cette catégorie.</div>';
+      : (filtres ? '<div class="empty">Aucune entrée ne correspond aux filtres actuels.</div>'
+        : '<div class="empty">Aucun outil dans cette catégorie.</div>');
     return;
   }
 
   const favoris = new Set(lireFavoris());
-  grid.innerHTML = results.map(({ entree, motif }) =>
-    ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null })).join('');
+  const ligne = ({ entree, motif }) => ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null });
+  // Catalogue des assistants sans portée : l'ordre historique des outils est conservé (pas de titres de groupe).
+  if (mode === 'liste' && !(vueAssistants && !p.domaineId)) {
+    // Liste complète d'une portée : titres de groupe (domaine, famille, sujet, section).
+    const parId = new Map(results.map((r) => [r.entree.id, r]));
+    grid.innerHTML = groupes(results.map((r) => r.entree), { ...p, categories: categoriesAffichees.map((c) => c.name) })
+      .map((g) => (g.titre ? groupeEnteteMarkup({ titre: g.titre, route: g.route, compte: g.entrees.length }) : '')
+        + g.entrees.map((e) => ligne(parId.get(e.id))).join('')).join('');
+  } else {
+    grid.innerHTML = results.map(ligne).join('');
+  }
 }
 
 /** Clics sur les lignes de résultat : une seule écoute, posée une fois. */
@@ -829,7 +984,7 @@ function commonErrorsMarkup(tool) {
 /** Méthode graphique — section 7, repliée par défaut, jamais supprimée. */
 function guiMarkup(tool) {
   return `<details class="details gui-method" id="guiMethod">`
-    + `<summary>Méthode graphique, sans script</summary>`
+    + `<summary>Interface graphique, sans script</summary>`
     + `<ol class="steps">${tool.gui.map((step) => `<li>${textToCode(step)}</li>`).join('')}</ol>`
     + `</details>`;
 }
@@ -995,10 +1150,13 @@ const FICHE_ANCRES = [
   { cible: 'sectionGraphique',   label: 'Interface graphique' },
 ];
 
-function ficheNavMarkup() {
+function ficheNavMarkup(tool) {
+  // Le libellé de la section de code dit ce qu'elle contient : « Script
+  // PowerShell », « Script Bash », « Commandes Cisco IOS » — jamais « Script ».
+  const libelle = (a) => (a.cible === 'sectionScript' ? etiquetteSortie(tool) : a.label);
   return `<nav class="fiche-nav" id="ficheNav" aria-label="Aller à une section de la fiche">`
     + FICHE_ANCRES.map((a) =>
-        `<a class="fiche-nav-link" href="#${a.cible}" data-cible="${a.cible}">${textToCode(a.label)}</a>`).join('')
+        `<a class="fiche-nav-link" href="#${a.cible}" data-cible="${a.cible}">${textToCode(libelle(a))}</a>`).join('')
     + `</nav>`;
 }
 
@@ -1025,7 +1183,10 @@ function resumeScript(tool) {
   const premiere = String(tool.summary).split(/(?<=[.!?])\s+/)[0];
   const lignes = [['Ce que ça fait', premiere]];
   const ro = estLectureSeule(tool);
-  lignes.push(['Effet', ro ? 'Lecture seule : ne modifie rien.' : (RISQUE_SIMPLE[tool.risk] ?? '').replace(/^Ce script /, 'Ce script '), ro ? 'ok' : 'attention']);
+  // Le ton suit l'effet réel (même règle que le badge de la fiche) : vert pour une
+  // lecture, ambre pour une modification, rouge pour un effet destructif.
+  const ton = (ro || tool.risk === 'diagnostic') ? 'ok' : (tool.risk === 'destructive' ? 'danger' : 'attention');
+  lignes.push(['Effet', ro ? 'Lecture seule : ne modifie rien.' : (RISQUE_SIMPLE[tool.risk] ?? ''), ton]);
   let produit;
   if (estIOS(tool)) produit = 'Des commandes Cisco IOS à coller dans la console, étape par étape. Le Toolkit ne se connecte à aucun équipement.';
   else if (estDocumentationSeule(tool)) produit = 'Une procédure à suivre à la main (aucun script).';
@@ -1040,17 +1201,43 @@ function resumeScript(tool) {
 
 /** Lien vers la version courte de la tâche, quand une fiche existe. */
 function ficheRapideMarkup(tool) {
-  const f = ficheDeAssistant(tool.id);
-  if (!f) return '';
-  return `<p class="fiche-rapide" id="ficheRapide">Version courte : <a href="#/tache/${f.id}">${textToCode(f.titre)}</a> — les commandes à copier, sans le formulaire ni le script complet.</p>`;
+  return versionsCourtesMarkup(liensDeAssistant(tool.id));
+}
+
+/**
+ * Fil d'Ariane et retour d'une fiche. Le bouton de retour ramène à la liste
+ * d'où l'on vient (contrat historique : accueil ou liste des assistants si la
+ * fiche a été ouverte par un lien direct) et nomme le groupe quand la liste
+ * en est un. Le fil d'Ariane, lui, mène toujours au groupe de la fiche.
+ */
+function enteteNavigationFiche(vue, entree, titre, boutonId) {
+  const fil = filDeEntree(entree, entree.categorie);
+  const maillons = [{ nom: 'Catalogue', route: '#/' }];
+  if (fil.length) {
+    fil.forEach((m) => maillons.push({ nom: m.nom, route: vueAssistants ? m.route.replace('#/rubrique/', '#/assistants/') : m.route }));
+  }
+  maillons.push({ nom: titre });
+  vue.insertAdjacentHTML('afterbegin', filArianeMarkup(maillons, { id: 'filFiche' }));
+  const bouton = vue.querySelector(`#${boutonId}`);
+  const p = portee();
+  if (p.domaineId && bouton) bouton.textContent = `← Retour : ${nomDePortee(p)}`;
+  bouton?.addEventListener('click', () => revenirAccueil());
 }
 
 function renderTool() {
   const tool = currentTool;
   const view = document.querySelector('#toolView');
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
-  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode(tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase())}</div><h1>${tool.icon} ${tool.title}</h1><span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheRapideMarkup(tool)}${resumeScriptMarkup(resumeScript(tool))}${ficheNavMarkup()}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
-  view.querySelector('#backButton').addEventListener('click', () => revenirAccueil());
+  view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode((tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase()) + ' \u00B7 ASSISTANT COMPLET')}</div><h1>${tool.icon} ${tool.title}</h1>${enteteAssistantMeta(entreeParId(tool.id), { favori: estFavori(tool.id) })}<span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheRapideMarkup(tool)}${resumeScriptMarkup(resumeScript(tool))}${ficheNavMarkup(tool)}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
+  enteteNavigationFiche(view, entreeParId(tool.id), tool.title, 'backButton');
+  const favTool = view.querySelector('#toolFav');
+  favTool.addEventListener('click', () => {
+    const actif = basculerFavori(tool.id);
+    favTool.textContent = actif ? '★' : '☆';
+    favTool.setAttribute('aria-pressed', String(actif));
+    favTool.classList.toggle('is-fav', actif);
+    favTool.setAttribute('aria-label', actif ? 'Retirer des favoris' : 'Ajouter aux favoris');
+  });
   const content = view.querySelector('#tabContent');
   const defaultValues = Object.fromEntries(tool.fields.map((field) => [field.id, String(field.default ?? '')]));
   // LOT 7 (25/n) — le normaliseur suit la PLATEFORME, aussi pour l'aperçu
@@ -1111,7 +1298,7 @@ function renderTool() {
       + rollbackMarkup(tool)
     + `</section>`
     + `<section class="fiche-section" data-section="7" id="sectionGraphique" aria-labelledby="titreGraphique">`
-      + titreSection(7, 'Méthode graphique', 'titreGraphique')
+      + titreSection(7, 'Interface graphique', 'titreGraphique')
       + guiMarkup(tool)
     + `</section>`
     + `<section class="fiche-section" data-section="8" id="sectionErreurs" aria-labelledby="titreErreurs">`
@@ -1335,7 +1522,7 @@ function renderTache() {
   });
   document.title = `${p.titre} — KJEMO IT Toolkit`;
 
-  view.querySelector('#taskBack').addEventListener('click', () => revenirAccueil());
+  enteteNavigationFiche(view, entree, p.titre, 'taskBack');
 
   const fav = view.querySelector('#taskFav');
   fav.addEventListener('click', () => {
@@ -1594,6 +1781,13 @@ if (tacheInitiale) {
   noterConsultation(outilInitial.id);
 }
 vueAssistants = location.hash === '#/assistants';
+{
+  const rub = lireRoute(location.hash);
+  if (rub && !tacheInitiale && !outilInitial) {
+    vueAssistants = rub.assistants;
+    selectedCategory = domaineNomDe(rub.domaineId); familleSel = rub.familleId; sujetSel = rub.sujetId;
+  }
+}
 brancherListe();
 appliquerTheme();
 render();

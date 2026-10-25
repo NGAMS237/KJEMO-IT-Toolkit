@@ -1680,8 +1680,8 @@ for (const vue of [{ nom: 'bureau 1440x900', width: 1440, height: 900 },
   const liens = await page.$$eval('#ficheNav .fiche-nav-link',
     (els) => els.map((e) => ({ texte: e.textContent.trim(), href: e.getAttribute('href'),
                                balise: e.tagName })));
-  assert(liens.map((l) => l.texte).join(',') === 'Formulaire,Script,Vérifier,Annuler,Interface graphique',
-    `${vue.nom} — les cinq entrées attendues, dans l’ordre`);
+  assert(liens.map((l) => l.texte).join(',') === 'Formulaire,Script PowerShell,Vérifier,Annuler,Interface graphique',
+    `${vue.nom} — les cinq entrées attendues, dans l’ordre (UX-COHERENCE-03 : l’ancre porte le langage réel de static-ip, PowerShell, au lieu du mot générique « Script »)`);
   assert(liens.every((l) => l.balise === 'A' && l.href.startsWith('#section')),
     `${vue.nom} — ce sont des ancres internes, donc atteignables au clavier`);
 

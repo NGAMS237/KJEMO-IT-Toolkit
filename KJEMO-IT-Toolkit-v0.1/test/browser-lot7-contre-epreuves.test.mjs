@@ -77,7 +77,7 @@ const PANNES = [
   { id: 'M12', nom: 'l\'historique n\'est plus plafonné',
     fichier: 'app.js', de: 'const HISTORIQUE_MAX  = 6;', vers: 'const HISTORIQUE_MAX  = 60;', passes: 'C', attendues: ['C20'] },
   { id: 'M13', nom: 'la recherche rend ses résultats à l\'envers',
-    fichier: 'app.js', de: 'return searchTools(currentQuery(), selectedCategory)\n      .map(', vers: 'return searchTools(currentQuery(), selectedCategory).reverse()\n      .map(', passes: 'C', attendues: ['C2'] },
+    fichier: 'app.js', de: 'return searchTools(requete, categorie)\n      .map(', vers: 'return searchTools(requete, categorie).reverse()\n      .map(', passes: 'C', attendues: ['C2'] },
   { id: 'M14', nom: 'une ancre de fiche écrase l\'URL de la route',
     fichier: 'app.js', de: "lien.addEventListener('click', (ev) => {\n      ev.preventDefault();", vers: "lien.addEventListener('click', (ev) => {\n      location.hash = lien.dataset.cible;", passes: 'D', attendues: ['D9'] },
   { id: 'M15', nom: 'le titre de la fiche est coupé sans défilement',
