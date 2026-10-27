@@ -13,8 +13,11 @@
  *  3. Rien ne remplit une fiche à ton insu : « utiliser mon laboratoire » est
  *     un geste explicite, et il ne touche que les champs qu'il connaît.
  *  4. Une case cochée n'est PAS une preuve : le Toolkit n'exécute rien.
- *  5. Le CSV est fabriqué ici, avec des valeurs FICTIVES, puis téléchargé : il
- *     ne quitte jamais le navigateur et ne contient aucun mot de passe.
+ *  5. Le CSV est fabriqué ici (login;motdepasse;departement), avec des logins
+ *     FICTIFS et des mots de passe « FICTIF-nnnn » attribués par l'application,
+ *     puis téléchargé : il ne quitte jamais le navigateur. Aucun vrai mot de
+ *     passe n'est saisi, gardé ou produit ; le script de la fiche refuse ces
+ *     valeurs à l'application.
  *
  * Module PUR : le stockage, le DOM et le téléchargement vivent dans app.js.
  */
@@ -97,29 +100,39 @@ export function saisiesDepuisLabo(procedure, labo) {
 }
 
 // ---------------------------------------------------------------------------
-// Modèle de CSV (valeurs fictives, aucun mot de passe)
+// Modèle de CSV du TP2 : login;motdepasse;departement
+//
+// L'éditeur ne reçoit que « login;departement ». Le fichier produit porte des
+// mots de passe FICTIFS (« FICTIF-0001 »…), attribués ici : l'application ne
+// reçoit, ne garde et ne produit JAMAIS un vrai mot de passe. Le script de la
+// fiche refuse ces valeurs à l'application ; les vrais comptes se tapent dans
+// nano, sur la VM.
 // ---------------------------------------------------------------------------
 
-export const EN_TETE_CSV = 'login,departement';
+export const EN_TETE_CSV = 'login;motdepasse;departement';
+export const EN_TETE_EDITEUR = 'login;departement';
+export const PREFIXE_MDP_MODELE = 'FICTIF-';
 export const LIGNES_CSV_MODELE = [
-  { login: 'alice_chef', departement: 'Ventes_Marketing' },
-  { login: 'bruno_emp', departement: 'Ventes_Marketing' },
-  { login: 'chloe_chef', departement: 'Finances' },
-  { login: 'david_ti', departement: 'Technologies_Information' },
+  { login: 'chef_ventes', departement: 'Ventes_Marketing' },
+  { login: 'employe_ventes', departement: 'Ventes_Marketing' },
+  { login: 'chef_finance', departement: 'Finance' },
+  { login: 'chef_ti', departement: 'Technologies_Information' },
+  { login: 'directeur', departement: 'Direction' },
 ];
 
-const LOGIN = /^[a-z0-9_]{1,20}$/;
-const DEPARTEMENT = /^[A-Za-z0-9_]{1,40}$/;
+// Mêmes règles que le script de la fiche (dist/cours-script-import.mjs).
+const LOGIN = /^[a-z][a-z0-9_.-]{0,19}$/;
+const DEPARTEMENT = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
 
 /** Anomalies d'une ligne (même règle que le script de la fiche). */
 export function erreursLigneCsv(ligne) {
   const e = [];
-  if (!LOGIN.test(String(ligne?.login ?? ''))) e.push('login : 1 à 20 caractères parmi minuscules, chiffres et « _ »');
-  if (!DEPARTEMENT.test(String(ligne?.departement ?? ''))) e.push('département : 1 à 40 caractères parmi lettres, chiffres et « _ »');
+  if (!LOGIN.test(String(ligne?.login ?? ''))) e.push('login : minuscules, chiffres, « _ », « . » ou « - », commençant par une lettre, 20 caractères au plus');
+  if (!DEPARTEMENT.test(String(ligne?.departement ?? ''))) e.push('département : lettres, chiffres et « _ », commençant par une lettre, sans espace ni accent');
   return e;
 }
 
-/** Texte du CSV (LF, sans BOM, une ligne par compte) ; null si une ligne est invalide. */
+/** Texte du CSV (LF, sans BOM, une ligne par compte, mots de passe FICTIFS) ; null si une ligne est invalide. */
 export function csvDepuisLignes(lignes) {
   if (!Array.isArray(lignes) || !lignes.length || lignes.length > 50) return null;
   const vus = new Set();
@@ -127,17 +140,29 @@ export function csvDepuisLignes(lignes) {
     if (erreursLigneCsv(l).length || vus.has(l.login)) return null;
     vus.add(l.login);
   }
-  return `${[EN_TETE_CSV, ...lignes.map((l) => `${l.login},${l.departement}`)].join('\n')}\n`;
+  const corps = lignes.map((l, i) => `${l.login};${PREFIXE_MDP_MODELE}${String(i + 1).padStart(4, '0')};${l.departement}`);
+  return `${[EN_TETE_CSV, ...corps].join('\n')}\n`;
 }
 
-/** Lit un texte « login,departement » par ligne ; { lignes, erreurs:[{ligne,message}] }. */
+/** Texte de l'éditeur par défaut. */
+export function texteEditeurModele() {
+  return `${[EN_TETE_EDITEUR, ...LIGNES_CSV_MODELE.map((l) => `${l.login};${l.departement}`)].join('\n')}\n`;
+}
+
+/**
+ * Lit l'éditeur « login;departement » ; { lignes, erreurs:[{ligne,message}] }.
+ * Une ligne à trois champs est refusée SANS en recopier le contenu : le troisième
+ * champ ressemble à un mot de passe.
+ */
 export function lignesDepuisTexte(texte) {
   const lignes = []; const erreurs = []; const vus = new Set();
   String(texte ?? '').replace(/\r/g, '').split('\n').forEach((brut, i) => {
     const s = brut.trim();
-    if (!s || s === EN_TETE_CSV) return;
-    const morceaux = s.split(',');
-    if (morceaux.length !== 2) { erreurs.push({ ligne: i + 1, message: 'Deux champs séparés par une virgule : login,departement (pas de mot de passe).' }); return; }
+    if (!s || s === EN_TETE_EDITEUR) return;
+    if (/["']/.test(s)) { erreurs.push({ ligne: i + 1, message: 'Pas de guillemets : le script de la fiche ne les prend pas en charge.' }); return; }
+    const morceaux = s.split(';');
+    if (morceaux.length === 3) { erreurs.push({ ligne: i + 1, message: 'Trois champs : ne saisis jamais un mot de passe ici. Écris seulement login;departement ; le fichier téléchargé porte des mots de passe fictifs, et les vrais se tapent dans nano sur ta VM.' }); return; }
+    if (morceaux.length !== 2) { erreurs.push({ ligne: i + 1, message: 'Deux champs séparés par « ; » : login;departement (une virgule ne convient pas).' }); return; }
     const l = { login: morceaux[0].trim(), departement: morceaux[1].trim() };
     const pb = erreursLigneCsv(l);
     if (pb.length) { erreurs.push({ ligne: i + 1, message: pb.join(' ; ') }); return; }

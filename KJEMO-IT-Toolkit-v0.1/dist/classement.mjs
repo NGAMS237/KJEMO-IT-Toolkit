@@ -47,6 +47,16 @@ export const HOTE_PROCEDURE = {
   'cours-samba-import-csv': 'samba-ad-user-manage',
   'cours-samba-dns': 'samba-ad-health',
   'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
+  // KJEMO-COURS-TP2-01-R1 : postes clients du TP2.
+  'cours-hyperviseur-ajouter-disque': 'linux-disk-partition-mount',
+  'cours-ubuntu-reseau-client': 'linux-network-diagnostic',
+  'cours-ubuntu-acces-partage': 'samba-diagnostic',
+  'cours-windows-acces-partage': 'samba-diagnostic',
+  // Compléments du mémo (commandes des notes sans route jusque-là).
+  'cours-samba-connexions': 'samba-diagnostic',
+  'cours-ifconfig-ancien': 'linux-network-diagnostic',
+  'cours-disque-entretien': 'linux-disk-partition-mount',
+  'cours-quota-edquota': 'linux-quota-enable',
 };
 
 /**
@@ -90,6 +100,7 @@ export const ARBRE = {
     F('ou', 'Unités d’organisation', { sub: ['Unités organisationnelles', 'Structure et OU'] }),
     F('maintenance', 'Maintenance des objets', { sub: ['Maintenance des objets'] }),
     F('rsat', 'Outils d’administration à distance (RSAT)', { fiches: ['cours-rsat-windows'] }),
+    F('session-domaine', 'Ouvrir une session de domaine (poste Windows)', { fiches: ['cours-windows-connexion-domaine'] }),
   ],
   gpo: [
     F('diagnostic', 'Diagnostic et inventaire', { sub: ['Diagnostic et inventaire'] }),
@@ -120,16 +131,20 @@ export const ARBRE = {
     F('fichiers', 'Fichiers et dossiers', { sujets: [
       F('reperer', 'Se repérer et inspecter', { fiches: ['cours-se-reperer', 'cours-identifier-fichier'] }),
       F('manipuler', 'Créer, copier, déplacer, supprimer', { fiches: ['cours-creer-dossiers-fichiers', 'cours-copier-deplacer', 'cours-supprimer-prudemment', 'cours-liens'] }),
+      F('archives', 'Archiver et compresser', { fiches: ['cours-archives', 'cours-gzip-fichier'] }),
+      F('localiser', 'Trouver une commande ou un fichier', { fiches: ['cours-trouver-commande'] }),
     ] }),
-    F('texte', 'Lire, chercher et filtrer du texte', { fiches: ['cours-lire-fichiers', 'cours-grep-wc', 'cours-find-fichiers', 'cours-redirections-tubes'] }),
+    F('texte', 'Lire, chercher et filtrer du texte', { fiches: ['cours-lire-fichiers', 'cours-grep-wc', 'cours-find-fichiers', 'cours-redirections-tubes', 'cours-comparer-trier'] }),
     F('services', 'Services, paquets et heure', { sujets: [
-      F('systemd', 'Services systemd', { hotes: ['systemd-service-diagnostic', 'systemd-service-control'] }),
+      F('systemd', 'Services systemd', { hotes: ['systemd-service-diagnostic', 'systemd-service-control'], fiches: ['cours-service-ancien'] }),
+      F('processus', 'Processus, état du système et arrêt', { fiches: ['cours-processus', 'cours-etat-systeme', 'cours-arret-redemarrage'] }),
+      F('planification', 'Tâches planifiées', { fiches: ['cours-planifier-taches'] }),
       F('paquets', 'Paquets', { hotes: ['linux-package-diagnostic'] }),
       F('heure', 'Heure et NTP', { hotes: ['linux-time-sync-diagnostic'] }),
     ] }),
     F('utilisateurs', 'Utilisateurs et permissions', { sujets: [
       F('permissions', 'Permissions et ACL', { hotes: ['linux-permission-audit', 'linux-permission-change', 'linux-permission-acl'] }),
-      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'] }),
+      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local'] }),
     ] }),
     F('stockage', 'Stockage', { sujets: [
       F('disques', 'Disques, partitions et montages', { hotes: ['linux-storage-diagnostic', 'linux-disk-partition-mount'] }),
@@ -158,7 +173,7 @@ export const ARBRE = {
       F('nfs', 'NFS', { hotes: ['nfs-server-readiness', 'nfs-export-create'] }),
     ] }),
     F('annuaire', 'Domaine et annuaire (Samba Active Directory)', { sub: ['Samba AD'] }),
-    F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions'] }),
+    F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-afficher-texte'] }),
   ],
   'azure-entra': [
     F('acces', 'Connexion, contexte et accès', { sub: ['Connexion, contexte et accès'] }),

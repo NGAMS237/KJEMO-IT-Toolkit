@@ -165,7 +165,7 @@ Règle : domaine (catégorie existante) → groupe → sujet (seulement s’il y
 
 ## Addendum KJEMO-COMMANDES-COURS-TP2-01 — Linux et services réseau, familles recalculées
 
-Le catalogue compte maintenant 390 entrées (28 fiches de cours ajoutées), toutes classées. Les familles *Fichiers et dossiers* et *Lire, chercher et filtrer du texte* sont nouvelles ; Stockage, Utilisateurs et permissions, Partages de fichiers, Domaine et annuaire et Bash et automatisation reçoivent des fiches. Les sections Samba historiques sont inchangées et la couverture « à venir » de SAMBA-ADV-01 (assistants guidés) reste écrite comme non réalisée. Les cartes de rubrique du reste du catalogue sont inchangées.
+Le catalogue compte maintenant 412 entrées (50 fiches de cours ajoutées ; R1 : 22 fiches de plus, dont 17 de mémo — les nombres par famille du tableau ci-dessous datent de la première version et sont recalculés par `node test/classement.test.mjs`), toutes classées. Les familles *Fichiers et dossiers* et *Lire, chercher et filtrer du texte* sont nouvelles ; Stockage, Utilisateurs et permissions, Partages de fichiers, Domaine et annuaire et Bash et automatisation reçoivent des fiches. Les sections Samba historiques sont inchangées et la couverture « à venir » de SAMBA-ADV-01 (assistants guidés) reste écrite comme non réalisée. Les cartes de rubrique du reste du catalogue sont inchangées.
 
 | Famille | Route | Entrées |
 |---|---|---|

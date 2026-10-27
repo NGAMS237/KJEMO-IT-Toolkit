@@ -389,13 +389,12 @@ Décision, constats de visite et critères : [UX-NAVIGATION-CATALOGUE-01.md](UX-
 Les prérequis et diagnostics Samba AD sont partiellement couverts. La jonction Ubuntu realmd/SSSD/PAM, la gestion DNS Samba par `samba-tool dns` et la procédure RSAT DNS sur Samba restent **à développer**. Les assistants Windows de jonction ne couvrent pas Ubuntu. Voir [l'audit de couverture et les adaptations des leçons](AUDIT-COURS-SAMBA-2026-10-27.md). Les compléments SAMBA-ADV-01 déjà prévus (groupes et transferts SMB) restent inscrits ; cet audit ne les réalise pas.
 
 
-## KJEMO-COMMANDES-COURS-TP2-01 — Mes cours et TP (27 octobre 2026)
+## KJEMO-COURS-TP2-01-R1 — Fidélité au sujet TP2 (27 octobre 2026)
 
-**Développé sur `claude/commandes-cours-tp2-01`, testé localement ; non testé en CI, non fusionné, non déployé ; rien exécuté sur une machine réelle.** Réalisé : 28 fiches rédigées à la main (bases Linux/Bash, stockage, quotas, RAID 1, Samba, DNS Samba, jonction Ubuntu, RSAT), « Mes cours et TP » (cours Serveurs II — TP2, parcours A à E), « Mon laboratoire » (sans mot de passe, ni disque), CSV de comptes fictif, gabarit de TP, validateurs de périphériques, bancs `cours`, `browser-cours` et matrice de couverture. Détail : [COURS-TP2-01.md](COURS-TP2-01.md) et [COURS-TP2-01-MATRICE.md](COURS-TP2-01-MATRICE.md).
+**Développé sur `claude/commandes-cours-tp2-01`, testé localement ; non testé en CI, non publié (accès en écriture refusé, non contourné), non fusionné, non déployé ; rien exécuté sur une machine réelle.** Réalisé : parcours A à E réécrits d'après l'énoncé (45 éléments), CSV conforme et script d'import testé contre un faux `samba-tool`, fiches A5/B1/D4–D7 (postes clients, hyperviseur), copie par poste et prérequis, 17 fiches de mémo, matrice des commandes. Détail : [COURS-TP2-01.md](COURS-TP2-01.md), reprise : [REPRISE-COURS-TP2-R1.md](REPRISE-COURS-TP2-R1.md).
 
 **Restant, par ordre de priorité :**
-1. Relire les parcours contre l’énoncé d’origine et trancher les 11 ambiguïtés avec l’enseignant (unité Mo/Mio en tête).
-2. Couvrir A5 (ouverture de session Windows avec un compte de domaine) et D7 (accès à un partage depuis Windows 11).
-3. Jouer les fiches sur un Ubuntu et un Samba AD de laboratoire, puis confirmer ou retirer les points non vérifiés (`--must-change-at-next-login`, renommage md127).
+1. Publier la branche depuis le poste de l'étudiant (bundle fourni), ouvrir la PR, laisser tourner la CI, corriger, fusionner, vérifier GitHub Pages et le site public.
+2. Jouer les fiches sur un Ubuntu, un Samba AD et un Windows 11 de laboratoire ; confirmer ou retirer les points non vérifiés (`--must-change-at-next-login`, renommage md127, menus des hyperviseurs).
+3. Trancher avec l'enseignant les ambiguïtés de l'énoncé (unité Mo/Mio en tête).
 4. SAMBA-ADV-01 : les ASSISTANTS guidés (script généré et gardé) restent à faire ; les fiches ne les remplacent pas.
-5. Validation CI GitHub, puis revue de la PR.

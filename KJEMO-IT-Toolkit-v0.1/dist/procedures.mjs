@@ -67,6 +67,18 @@ export const METHODES = {
 /** Méthodes qu'un équipement de scénario peut employer (une console, jamais l'interface graphique). */
 export const METHODES_EQUIPEMENT = ['ios', 'powershell', 'cmd', 'linux', 'azure'];
 
+/**
+ * Postes d'un TP à plusieurs machines (champ `machine` d'une étape). Une
+ * commande ne se colle que sur SON poste : la copie globale est refusée dès que
+ * deux postes interviennent, et chaque poste a sa propre séquence.
+ */
+export const MACHINES = {
+  serveur: { id: 'serveur', label: 'Serveur Samba (terminal Linux)', court: 'Serveur' },
+  'client-ubuntu': { id: 'client-ubuntu', label: 'Client Ubuntu Desktop', court: 'Client Ubuntu' },
+  'client-windows': { id: 'client-windows', label: 'Client Windows 11', court: 'Client Windows' },
+  hyperviseur: { id: 'hyperviseur', label: 'Hyperviseur (interface graphique)', court: 'Hyperviseur' },
+};
+
 export const REPERE_OUVRANT = '‹';
 export const REPERE_FERMANT = '›';
 
@@ -518,10 +530,11 @@ export function phasesDeMethode(rendu) {
     const categorie = categorieEtape(e);
     const titre = e.phase ?? null;
     const eq = e.equipement ?? null;
+    const machine = e.machine ?? null;
     const derniere = phases[phases.length - 1];
-    if (derniere && derniere.categorie === categorie && derniere.titre === titre && derniere.equipement === eq) {
+    if (derniere && derniere.categorie === categorie && derniere.titre === titre && derniere.equipement === eq && derniere.machine === machine) {
       derniere.indices.push(index);
-    } else phases.push({ categorie, titre, equipement: eq, indices: [index] });
+    } else phases.push({ categorie, titre, equipement: eq, machine, indices: [index] });
   });
   const aff = { action: 'Appliquer', verification: 'Vérifier', persistance: 'Enregistrer', dernier: 'Dernier recours' };
   return phases.map((ph, n) => {
@@ -544,7 +557,7 @@ export function phasesDeMethode(rendu) {
     else if (bloque) raison = 'manquants';
     else texte = commandes.map((e) => e.rendu.texteCopie).join('\n');
     return {
-      numero: n, categorie: ph.categorie, titre: ph.titre ?? (ph.categorie === 'action' ? titreAction : aff[ph.categorie]), equipement: ph.equipement,
+      numero: n, categorie: ph.categorie, titre: ph.titre ?? (ph.categorie === 'action' ? titreAction : aff[ph.categorie]), equipement: ph.equipement, machine: ph.machine,
       indices: ph.indices, manquants, interactif, texte, raison, nbCommandes: copiables.length,
     };
   });
@@ -559,6 +572,7 @@ export function raisonRefus(raison) {
     'aucune-commande': 'Aucune commande à copier ici.',
     'plusieurs-machines': 'Ce bloc vise plusieurs machines (une par ligne du tableau) : chacune a sa propre copie.',
     'plusieurs-equipements': 'Ces commandes visent plusieurs équipements : elles ne se collent pas dans un seul terminal.',
+    'plusieurs-postes': 'Ces étapes se font sur plusieurs machines (serveur, clients) : chaque poste a sa propre copie, jamais un bloc unique.',
   })[raison] ?? '';
 }
 
@@ -571,6 +585,7 @@ export function raisonRefusCourte(raison) {
     'aucune-commande': 'Aucune commande à copier ici.',
     'plusieurs-machines': 'Une copie par machine (une par ligne du tableau).',
     'plusieurs-equipements': 'Plusieurs équipements : pas de copie unique.',
+    'plusieurs-postes': 'Plusieurs machines : une copie par poste.',
   })[raison] ?? '';
 }
 
@@ -590,7 +605,9 @@ export function rendreMethode(methode, params, saisies) {
   // Procédure à un seul équipement : copie de toute la séquence si elle est sûre.
   const interactifGlobal = copiables.some((e) => e.rendu.interactif);
   let texteComplet = null; let raisonComplet = null;
+  const machines = [...new Set(etapes.filter((e) => e.machine).map((e) => e.machine))];
   if (equipements) raisonComplet = 'plusieurs-equipements';
+  else if (machines.length > 1) raisonComplet = 'plusieurs-postes';
   else if (!copiables.length) raisonComplet = 'aucune-commande';
   else if (copiables.some((e) => e.rendu.multi)) raisonComplet = 'plusieurs-machines';
   else if (interactifGlobal) raisonComplet = 'interactif';
@@ -615,7 +632,20 @@ export function rendreMethode(methode, params, saisies) {
     return { ...eq, texte, raison, nbEtapes: idx.length };
   });
 
-  return { evaluation, etapes, phases, manquants: manquantsTous, texteComplet, raisonComplet, parEquipement };
+  // Procédure à plusieurs postes : une séquence par machine (jamais mélangée), dans l'ordre d'apparition.
+  const parMachine = machines.length > 1 ? machines.map((id) => {
+    const idx = etapes.map((e, i) => (e.machine === id ? i : -1)).filter((i) => i >= 0);
+    const miens = idx.map((i) => etapes[i]).filter((e) => e.rendu && !e.facultatif && !e.dernierRecours);
+    let texte = null; let raison = null;
+    if (!miens.length) raison = 'aucune-commande';
+    else if (miens.some((e) => e.rendu.multi)) raison = 'plusieurs-machines';
+    else if (miens.some((e) => e.rendu.interactif)) raison = 'interactif';
+    else if (miens.some((e) => e.rendu.bloque)) raison = 'manquants';
+    else texte = miens.map((e) => e.rendu.texteCopie).join('\n');
+    return { id, label: MACHINES[id]?.label ?? id, court: MACHINES[id]?.court ?? id, texte, raison, nbEtapes: idx.length };
+  }) : [];
+
+  return { evaluation, etapes, phases, manquants: manquantsTous, texteComplet, raisonComplet, parEquipement, parMachine };
 }
 
 // ---------------------------------------------------------------------------
@@ -684,6 +714,10 @@ export function incoherencesProcedure(p) {
     if (txt(p.topologie).length < 20) pb.push('scénario : topologie absente');
   }
 
+  for (const [k, r] of (p.prerequis ?? []).entries()) {
+    if (txt(r?.texte).length < 10) pb.push(`prérequis ${k + 1} : texte absent`);
+    if (r?.fiche !== undefined && !/^[a-zA-Z0-9][a-zA-Z0-9-]*$/.test(txt(r.fiche))) pb.push(`prérequis ${k + 1} : identifiant de fiche mal formé`);
+  }
   const ids = new Set(); const colonnes = new Set();
   for (const prm of p.params ?? []) {
     if (ids.has(prm.id)) pb.push(`paramètre en double : ${prm.id}`);
@@ -739,6 +773,9 @@ export function incoherencesProcedure(p) {
       if (e.effet && !EFFETS[e.effet]) pb.push(`${nom} : effet inconnu ${e.effet}`);
       if (m.id === 'scenario' && !eqIds.has(e.equipement)) pb.push(`${nom} : équipement « ${e.equipement} » non déclaré`);
       if (m.id !== 'scenario' && e.equipement) pb.push(`${nom} : « equipement » n'a de sens que dans un scénario`);
+      if (e.machine !== undefined && !MACHINES[e.machine]) pb.push(`${nom} : machine inconnue « ${e.machine} »`);
+      if (m.etapes.some((x) => x.machine) && !e.machine) pb.push(`${nom} : la fiche désigne des machines, cette étape n'en désigne aucune`);
+      if (e.suppose !== undefined && txt(e.suppose).length < 10) pb.push(`${nom} : « suppose » trop court`);
       if (m.id === 'gui') {
         if (e.lignes) pb.push(`${nom} : une étape graphique n'a pas de ligne de commande`);
         return;

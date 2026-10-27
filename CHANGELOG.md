@@ -1,16 +1,19 @@
 # Journal des changements
 
-## KJEMO-COMMANDES-COURS-TP2-01 — Mes cours et TP, fiches de cours, laboratoire (branche claude/commandes-cours-tp2-01)
+## KJEMO-COURS-TP2-01-R1 — Parcours fideles au sujet TP2, CSV, postes clients, memo complete (branche claude/commandes-cours-tp2-01)
 
-**Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un poste, un serveur ou un equipement.**
+**Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON publie, NON fusionne, NON deploye (acces en ecriture au depot refuse depuis la session, non contourne). Aucune commande n'a ete executee sur un poste, un serveur ou un equipement ; seul le script d'import CSV a ete execute, contre un FAUX samba-tool.**
 
-- 28 fiches redigees a la main (bases Linux/Bash, partition/ext4/fstab, quotas, RAID 1, groupes et partages Samba, smbclient, DNS Samba, jonction Ubuntu realmd/SSSD/PAM, RSAT) : meme contrat et memes vues que les autres procedures ; aucune generee automatiquement.
-- Espace « Mes cours et TP » : cours Serveurs II — TP2, parcours A a E renvoyant vers une fiche ET une etape ; routes `#/cours…` et `#/tache/<id>/etape/<n>/depuis/<cours>/<lettre>` ; etape visee reperee, retour au parcours ; lettres et numeros du TP conserves comme alias de recherche. Trois elements sont dits NON COUVERTS (A5, B1, D7) ; 11 ambiguites de l'enonce signalees.
-- Espace « Mon laboratoire » : 15 champs sans mot de passe, disque, UUID ni gid ; « Utiliser mon laboratoire » est un geste explicite ; modele de CSV fictif, valide avant telechargement ; progression locale (une case cochee n'est pas une preuve) ; gabarit JSON pour un prochain TP. Stockage local protege : l'ecran fonctionne s'il est refuse.
-- Securite : validateurs `peripherique` / `etiquetteExt4`, controles `distinctDe` / `superieurA` ; aucune commande ne contient /dev/sdb ni /dev/md127 ; 777 reserve au laboratoire ; systemd-resolved jamais desactive ; mode GPO permissif = dernier recours en lecture seule ; deux groupes pour read only / write list.
-- Accueil : les fiches de cours ne gonflent pas « Taches courantes » (recherche, rubriques et « Mes cours et TP » les trouvent).
-- Bancs : `test/cours.test.mjs` (2 197 verifications, contre-epreuves), `test/browser-cours.test.mjs` (56, 3 gestes de l'accueil a l'etape, 390 px), `test/matrice-cours.mjs --verifier` ; cables dans package.json et validate-linux.yml. Un seul test existant modifie (`classement.test.mjs` : `estPlaceDirect` au lieu d'un identifiant en dur), sans affaiblir aucune assertion.
-- Limites : rien execute sur machine reelle ; options `samba-tool` et renommage md127 non confirmes ; parcours et taxonomie reconstruits a partir des documents fournis (a relire contre l'enonce).
+- Parcours A a E **reecrits d'apres l'enonce reel** (45 elements, 92 points) a la place de la lecture reconstruite ; 17 ambiguites reelles ecrites ; liens vers fiche + methode + etape, avec controle du titre de l'etape.
+- CSV conforme au sujet (`;`, login ; mot de passe ; departement, `Finance`), modele public FICTIF, vrai CSV sur la VM, aucun mot de passe reel dans l'application. Script d'import unique (`dist/cours-script-import.mjs`) execute par `test/cours-import.test.mjs` contre un faux samba-tool : CRLF, BOM, doublons, lignes invalides, compte/groupe existants, echecs, essai sans ecriture, aucun secret en sortie, codes de sortie.
+- Fiches ajoutees pour A5 (session Windows de domaine), B1 (disque dans l'hyperviseur : VMware, VirtualBox, Proxmox VE, Hyper-V), D4 a D7 (client Ubuntu, client Windows CMD/PowerShell/interface, transferts smbclient) : etapes etiquetees par machine, copie separee par poste, prerequis exposes a l'arrivee directe, aucun « compte » litteral a remplacer a la main.
+- 17 fiches de memo pour des commandes sans route (processus, sessions, comptes locaux, archives, localisation, comparaison, etat, arret, ext4, edquota, smbstatus, planification, ifconfig, service, printf) ; matrice « commande -> fiche -> route -> etat reel » recalculee (83 commandes) ; 412 entrees classees.
+- Bancs : cours (50 fiches), cours-import, matrice du sujet, matrice des commandes, navigateur cours (3 gestes, GUI, postes, 390 px) ; cables dans package.json et validate-linux.yml. Un test existant ajuste : cmd-methodes attend 16 fiches CMD (2 fiches Windows nommees). Aucune assertion supprimee ni affaiblie.
+- Limites : rien execute sur machine reelle ; options samba-tool et md127 non confirmees ; menus des hyperviseurs relus, non verifies. Reprise : docs/REPRISE-COURS-TP2-R1.md.
+
+## KJEMO-COMMANDES-COURS-TP2-01 (remplace par R1 ci-dessus) — Mes cours et TP, fiches de cours, laboratoire
+
+Premiere version (28 fiches, parcours reconstruits). Les parcours et le format CSV de cette version etaient inexacts ; voir R1.
 
 ## UX-NAVIGATION-CATALOGUE-01 — Navigation par groupes et sous-groupes de toutes les cartes (branche claude/ux-navigation-catalogue-01)
 

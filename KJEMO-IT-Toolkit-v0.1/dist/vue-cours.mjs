@@ -145,8 +145,8 @@ export function laboMarkup({ valeurs = {}, erreurs = {}, csvTexte = '', csvErreu
     + `<div class="params-actions"><button type="submit" class="secondary-button" id="laboSave">Enregistrer</button>`
     + `<button type="button" class="secondary-button" id="laboClear">Effacer mon laboratoire</button>`
     + `<span class="params-note" id="laboNote" role="status" aria-live="polite">${nbErr ? `${nbErr} valeur(s) refusée(s) : corrige-les puis enregistre.` : (enregistre ? 'Enregistré dans ce navigateur.' : '')}</span></div></form>`
-    + `<section class="labo-csv"><h2>Fichier CSV des comptes</h2>`
-    + `<p>Une ligne par compte : <code>login,departement</code>. Les valeurs ci-dessous sont <b>fictives</b> : remplace-les par celles de ton énoncé. Le fichier est fabriqué ici et téléchargé ; il n’est envoyé nulle part et ne contient aucun mot de passe.</p>`
+    + `<section class="labo-csv"><h2>Modèle du fichier CSV des comptes</h2>`
+    + `<p>Une ligne par compte : <code>login;departement</code> (séparateur « ; », sans guillemets). Le fichier téléchargé a le format du TP2, <code>login;motdepasse;departement</code>, avec des logins fictifs et des mots de passe <b>fictifs</b> (<code>FICTIF-0001</code>…). <b>Ne tape jamais un vrai mot de passe ici</b> : le vrai CSV se prépare avec nano sur ta VM, et reste là. Le script de la fiche refuse les mots de passe fictifs à l’application.</p>`
     + `<label for="csvTexte" class="sr-only">Lignes du fichier CSV</label>`
     + `<textarea id="csvTexte" rows="8" spellcheck="false" autocomplete="off">${esc(csvTexte)}</textarea>`
     + `<div class="params-actions"><button type="button" class="secondary-button" id="csvVerifier">Vérifier</button>`

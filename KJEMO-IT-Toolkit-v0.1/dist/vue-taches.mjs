@@ -19,7 +19,7 @@
  */
 
 import { etiquetteSortie, extensionDe } from './plateforme.mjs';
-import { EFFETS, METHODES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
+import { EFFETS, METHODES, MACHINES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
 
 /** Échappement HTML complet (guillemets inclus : le texte peut aller dans un attribut). */
 export function esc(texte) {
@@ -168,8 +168,14 @@ function blocEtapeMarkup(etape, i, ctx, { compact }) {
   return corps;
 }
 
+function puceMachine(id) {
+  const m = MACHINES[id];
+  return m ? `<span class="machine-chip machine-${esc(id)}" title="${esc(m.label)}"><span aria-hidden="true">▣</span> Sur : ${esc(m.court)}</span>` : '';
+}
+
 function etiquettesEtape(etape) {
   return [
+    puceMachine(etape.machine),
     etape.verification ? '<span class="step-flag flag-verif"><span aria-hidden="true">✔</span> Vérification</span>' : '',
     etape.facultatif ? '<span class="step-flag flag-fac">Facultatif</span>' : '',
     etape.dernierRecours ? '<span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : '',
@@ -191,7 +197,7 @@ function enteteIPhase(ph, rendu, ctx, { rapide = false } = {}) {
   // Vue rapide : un bloc dont la copie unique serait trompeuse n'affiche pas de bouton désactivé,
   // seulement la raison en quelques mots ; chaque segment garde son propre bouton.
   const refusSansBouton = rapide && ph.texte === null && ph.raison && ph.raison !== 'manquants';
-  const noteRefus = refusSansBouton ? `<span class="phase-copy-note">${esc(({ interactif: '⏸ copie par segment', entrecoupee: 'copie par bloc', 'plusieurs-machines': 'une copie par machine', 'plusieurs-equipements': 'pas de copie unique' })[ph.raison] ?? raisonRefusCourte(ph.raison))}</span>` : '';
+  const noteRefus = refusSansBouton ? `<span class="phase-copy-note">${esc(({ interactif: '⏸ copie par segment', entrecoupee: 'copie par bloc', 'plusieurs-machines': 'une copie par machine', 'plusieurs-equipements': 'pas de copie unique', 'plusieurs-postes': 'une copie par poste' })[ph.raison] ?? raisonRefusCourte(ph.raison))}</span>` : '';
   const copie = refusSansBouton ? '' : nbCmd >= 2 || ph.equipement
     ? boutonCopie({ classe: 'copy-phase', data: `data-phase="${ph.numero}"`, libelle: 'Copier ce bloc', bloque: ph.texte === null,
       indice: ph.texte === null ? (rapide ? raisonRefusCourte(ph.raison) : raisonRefus(ph.raison)) : '', idIndice: `hp-${ph.numero}`, court: true })
@@ -201,6 +207,7 @@ function enteteIPhase(ph, rendu, ctx, { rapide = false } = {}) {
   return `<header class="phase-head">`
     + `<h3 class="phase-title"><span class="phase-icone" aria-hidden="true">${ICONE_CATEGORIE[ph.categorie]}</span> ${esc(ph.titre)}`
     + `<span class="sr-only"> — ${esc(LIBELLE_CATEGORIE[ph.categorie])}</span></h3>`
+    + (ph.machine ? puceMachine(ph.machine) : '')
     + (eq ? `<span class="eq-chip eq-${esc(eq.methode)}"><span aria-hidden="true">${ICONE_EQUIPEMENT[eq.methode] ?? '○'}</span> ${esc(eq.label)}</span>` : '')
     + chipCat
     + (rapide && effet === 'lecture' ? '' : badgeEffet(effet))
@@ -216,6 +223,7 @@ function etapeRapide(etape, i, ctx) {
     + `<p class="qstep-head"><span class="qstep-titre">${esc(etape.titre)}</span>`
     + (etape.mode ? ` <span class="qstep-mode">${esc(etape.mode)}</span>` : '')
     + etiquettesEtape(etape) + `</p>`
+    + (etape.suppose ? `<p class="qstep-suppose"><span class="step-suppose-label">Suppose</span> ${inline(etape.suppose)}</p>` : '')
     + blocEtapeMarkup(etape, i, ctx, { compact: true })
     + `</li>`;
 }
@@ -227,7 +235,7 @@ function etapePas(etape, i, numero, ctx) {
     + `<div class="step-head"><span class="step-num" aria-hidden="true">${numero}</span>`
     + `<h4 class="step-title"><span class="sr-only">Étape ${numero} : </span>${esc(etape.titre)}</h4>`
     + `${etiquettesEtape(etape)}${etape.effet ? badgeEffet(etape.effet) : ''}</div>`
-    + `<div class="step-body"><p class="step-expl">${inline(etape.explication)}</p>`
+    + `<div class="step-body">${etape.suppose ? `<p class="step-suppose"><span class="step-suppose-label">Cette étape suppose</span> ${inline(etape.suppose)}</p>` : ''}<p class="step-expl">${inline(etape.explication)}</p>`
     + (etape.mode ? `<p class="step-mode"><span class="step-mode-label">Mode attendu</span> ${esc(etape.mode)}</p>` : '')
     + blocEtapeMarkup(etape, i, ctx, { compact: false })
     + attenduMarkup(etape)
@@ -261,6 +269,14 @@ function barreCopieMarkup(procedure, methode, rendu, ctx, { rapide = false } = {
         + `</div>`;
     }).join('');
     return `<div class="eq-bar" role="group" aria-label="Équipements">${cartes}</div>`;
+  }
+  if (rendu.parMachine?.length > 1) {
+    const cartes = rendu.parMachine.map((q) => `<div class="eq-card machine-card" data-machine="${esc(q.id)}">`
+      + `<h3 class="eq-title"><span aria-hidden="true">▣</span> ${esc(q.label)}</h3>`
+      + boutonCopie({ classe: 'secondary-button copy-machine', data: `data-machine="${esc(q.id)}"`, libelle: 'Copier la séquence de ce poste', bloque: q.texte === null,
+        indice: q.texte === null ? (rapide ? raisonRefusCourte(q.raison) : raisonRefus(q.raison)) : 'Étapes facultatives exclues. Colle-la seulement sur ce poste.', idIndice: `hm-${esc(q.id)}`, court: true })
+      + `</div>`).join('');
+    return `<div class="eq-bar machine-bar" role="group" aria-label="Postes (machines) de cette procédure"><p class="machine-note">Cette procédure se déroule sur plusieurs machines : la copie est séparée par poste, jamais en un seul bloc.</p>${cartes}</div>`;
   }
   const copiables = rendu.etapes.filter((e) => e.rendu && !e.facultatif && !e.dernierRecours);
   if (methode.id === 'gui' || methode.copieSequence === false || copiables.length < 2) return '';
@@ -460,12 +476,19 @@ function hypothesesMarkup(p, { replie = false } = {}) {
     + `</section>`;
 }
 
+/** « Avant de commencer » : ce que la fiche suppose déjà fait, avec le lien vers la fiche qui le fait. */
+function prerequisMarkup(p, titres = {}) {
+  if (!p.prerequis?.length) return '';
+  const items = p.prerequis.map((r) => `<li>${inline(r.texte)}${r.fiche ? ` <a class="prerequis-lien" href="#/tache/${esc(r.fiche)}">${esc(titres[r.fiche] ?? r.fiche)} <span aria-hidden="true">→</span></a>` : ''}</li>`).join('');
+  return `<aside class="prerequis" aria-label="Avant de commencer"><h2 class="prerequis-titre">Avant de commencer</h2><ul>${items}</ul></aside>`;
+}
+
 function selecteurVueMarkup(vue) {
   return `<div class="vue-switch" role="group" aria-label="Affichage de la procédure">${VUES.map((v) => `<button type="button" class="vue-option${v.id === vue ? ' is-selected' : ''}" id="vue-${v.id}" data-vue="${v.id}" aria-pressed="${v.id === vue}" title="${esc(v.aide)}">${esc(v.label)}</button>`).join('')}</div>`;
 }
 
 /** Page complète d'une fiche tâche (avant branchement des événements). */
-export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, favori = false, assistantTitre = null, prete = false } = {}) {
+export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, favori = false, assistantTitre = null, prete = false, prerequisTitres = {} } = {}) {
   const p = entree.procedure;
   const methode = p.methodes.find((m) => m.id === methodeId) ?? p.methodes[0];
   const { html: etapes, rendu } = etapesMarkup(p, methode, saisies, { vue });
@@ -509,6 +532,7 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
     + `<div class="tache-meta">${plateformes}${p.methodes.length === 1 || scenario ? methodeBadgesMarkup(entree) : ''}${badgeEffet(p.effet)}<button class="fav-toggle${favori ? ' is-fav' : ''}" id="taskFav" type="button" aria-pressed="${favori}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${favori ? '★' : '☆'}</button></div>`
     + `</div></div>`
     + `<p class="tache-resume">${esc(p.resume)}</p>`
+    + prerequisMarkup(p, prerequisTitres)
     + hypothesesMarkup(p, { replie: vue === 'rapide' })
     + `<div class="tache-controls">${selecteurVueMarkup(vue)}${onglets}</div>`
     + `<div id="panneau-methode" class="method-panel" role="${p.methodes.length > 1 ? 'tabpanel' : 'region'}" aria-label="${esc(METHODES[methode.id].label)}"${p.methodes.length > 1 ? ` aria-labelledby="tab-${methode.id}"` : ''}>`

@@ -23,9 +23,12 @@ export const itr = (titre, explication, lignes, attendu, extra = {}) => ({ titre
 
 export const sh = (cmd) => ({ invite: '$', cmd });
 export const ps = (cmd) => ({ invite: 'PS>', cmd });
+export const cm = (cmd) => ({ invite: '>', cmd });
+/** Étape d'interface graphique : des actions à faire à la souris, aucune ligne de commande. */
+export const gui = (titre, effet, explication, actions, attendu, extra = {}) => ({ titre, effet, explication, actions, attendu, ...extra });
 
 /** Fiche à une seule méthode Linux. */
-export function ficheLinux({ id, titre, resume, effet, intentions, motsCles, params = [], privileges, etapes, verification, retour = null, sources, cours = null }) {
+export function ficheLinux({ id, titre, resume, effet, intentions, motsCles, params = [], privileges, etapes, verification, retour = null, sources, cours = null, prerequis = [] }) {
   return {
     id,
     titre,
@@ -41,5 +44,6 @@ export function ficheLinux({ id, titre, resume, effet, intentions, motsCles, par
     validation: V_COURS,
     origine: 'cours',
     ...(cours ? { cours } : {}),
+    ...(prerequis.length ? { prerequis } : {}),
   };
 }

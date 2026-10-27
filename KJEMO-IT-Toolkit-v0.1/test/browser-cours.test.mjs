@@ -115,18 +115,89 @@ const COURS_ID = COURS[0].id;
 }
 
 // ---------------------------------------------------------------------------
-// 2. Éléments non couverts : dits, jamais cachés
+// 2. Éléments Windows / hyperviseur : couverts, avec lien vers la BONNE méthode
+//    (A5, B1, D7 étaient « non couverts » ; ils ne le sont plus et doivent le prouver)
 // ---------------------------------------------------------------------------
 {
-  const attendus = { A: 'A5', B: 'B1', D: 'D7' };
+  const attendus = [
+    ['A', 'A5', /\/tache\/cours-windows-connexion-domaine\/methode\/gui\/etape\/3\//],
+    ['B', 'B1', /\/tache\/cours-hyperviseur-ajouter-disque\/methode\/gui\/etape\/1\//],
+    ['D', 'D7', /\/tache\/cours-windows-acces-partage\/methode\/gui\/etape\/1\//],
+  ];
   const { context, page } = await nouvellePage({}, '/');
-  for (const [lettre, id] of Object.entries(attendus)) {
+  for (const [lettre, id, motif] of attendus) {
     await page.goto(`${BASE}/#/cours/${COURS_ID}/${lettre}`);
     await page.waitForSelector('#coursView:not([hidden]) .parcours-items');
     const li = page.locator(`li[data-item="${id}"]`);
-    assert(/Non couvert/.test(await li.innerText()), `${id} : « Non couvert par le catalogue » est écrit (pas seulement coloré)`);
-    assert(await li.locator('a[data-etape]').count() === 0, `${id} : aucun faux lien d’étape`);
+    assert(!/Non couvert/.test(await li.innerText()), `${id} : n’est plus déclaré « non couvert »`);
+    const hrefs = await li.locator('a[data-etape]').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    assert(hrefs.some((h) => motif.test(h)), `${id} : un lien mène à l’étape de la bonne méthode`, hrefs.join(' | '));
   }
+  // Le lien est suivi pour de bon : la méthode GUI s’ouvre (pas la première méthode par défaut) et l’étape est repérée.
+  await page.goto(`${BASE}/#/cours/${COURS_ID}/B`);
+  await page.waitForSelector('#coursView:not([hidden]) .parcours-items');
+  await page.locator('li[data-item="B1"] a[data-etape]').first().click();
+  await page.waitForSelector('#taskView:not([hidden]) li.etape-cible');
+  assert(/\/methode\/gui\/etape\/1\//.test(await hashDe(page)), 'B1 : l’adresse porte la méthode GUI et l’étape', await hashDe(page));
+  assert(await page.locator('li.etape-cible').isVisible(), 'B1 : l’étape visée est visible dans la méthode GUI');
+  await context.close();
+}
+
+// ---------------------------------------------------------------------------
+// 2 bis. Plusieurs postes : puces de machine, copie SÉPARÉE par poste, prérequis
+//        exposés à l'arrivée directe (D5/D6, transferts smbclient)
+// ---------------------------------------------------------------------------
+{
+  const { context, page } = await nouvellePage({ permissions: ['clipboard-read', 'clipboard-write'] }, '/#/tache/cours-smbclient-transferts');
+  await page.waitForSelector('#taskView:not([hidden])');
+  assert(await page.locator('#copyAll').count() === 0, 'plusieurs postes : aucun bouton « Copier toutes les commandes » en un seul bloc');
+  assert(await page.locator('.machine-bar .copy-machine').count() === 2, 'plusieurs postes : un bouton de copie par poste (serveur, client Ubuntu)');
+  assert(await page.locator('.machine-chip').count() >= 2, 'chaque étape annonce sur quel poste elle se joue (puce « Sur : … »)');
+  const puces = await page.locator('.machine-chip').allInnerTexts();
+  assert(puces.every((t) => /Sur :/.test(t)), 'la puce est écrite (pas seulement colorée)', puces.join(' | '));
+  assert(await page.locator('aside.prerequis a.prerequis-lien').count() >= 2, 'arrivée directe : les prérequis sont montrés avec un lien vers la fiche qui les fait');
+  const lienPrereq = await page.locator('aside.prerequis a.prerequis-lien').first().getAttribute('href');
+  assert(/^#\/tache\/cours-[a-z0-9-]+$/.test(lienPrereq ?? ''), 'le lien de prérequis mène à une fiche existante', lienPrereq);
+  // copie bloquée tant que les paramètres ne sont pas renseignés, puis séparée par poste
+  assert(await page.locator('.copy-machine[aria-disabled="true"]').count() === 2, 'copie par poste bloquée tant que les paramètres manquent');
+  await page.click('#exemplesBtn');
+  assert(await page.locator('.copy-machine[data-machine="serveur"][aria-disabled="true"]').count() === 0, 'copie du serveur débloquée une fois les paramètres renseignés');
+  // Le client demande le mot de passe au terminal (smbclient) : sa copie d'un seul bloc reste REFUSÉE, et le dit.
+  assert(await page.locator('.copy-machine[data-machine="client-ubuntu"][aria-disabled="true"]').count() === 1, 'copie du client Ubuntu refusée : smbclient demande un mot de passe saisi au terminal');
+  const refus = await page.locator('#hm-client-ubuntu').innerText();
+  assert(/étape|réponds|interactiv|mot de passe|une par une|une à une/i.test(refus), 'le refus est expliqué à l’écran', refus);
+  await page.locator('.copy-machine[data-machine="serveur"]').click();
+  const serveur = await page.evaluate(() => navigator.clipboard.readText());
+  assert(/sudo tee/.test(serveur) && !/smbclient/.test(serveur), 'copie du serveur : ses commandes seulement, aucun smbclient');
+  // clavier : tout est atteignable à la tabulation
+  await page.keyboard.press('Tab');
+  assert(await page.evaluate(() => document.activeElement && document.activeElement !== document.body), 'clavier : le focus se déplace');
+  await capture(page, 'bureau-04-plusieurs-postes');
+  await context.close();
+}
+{
+  // mobile 390 px : pas de défilement horizontal sur une fiche à plusieurs postes ni sur le parcours
+  for (const hash of ['/#/tache/cours-smbclient-transferts', `/#/cours/${COURS_ID}/D`, '/#/tache/cours-hyperviseur-ajouter-disque/methode/gui']) {
+    const { context, page } = await nouvellePage({ viewport: { width: 390, height: 844 } }, hash);
+    await page.waitForTimeout(300);
+    const largeur = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
+    assert(largeur.sw <= largeur.cw + 1, `390 px sans défilement horizontal : ${hash}`, JSON.stringify(largeur));
+    await context.close();
+  }
+}
+{
+  // Fiches Windows : puces de poste, méthodes CMD / PowerShell / GUI distinctes, jamais mêlées dans une copie
+  const { context, page } = await nouvellePage({ permissions: ['clipboard-read', 'clipboard-write'] }, '/#/tache/cours-windows-acces-partage/methode/cmd');
+  await page.waitForSelector('#taskView:not([hidden])');
+  const cmd = await page.locator('.cmd-block, pre').allInnerTexts();
+  assert(cmd.length > 0 && cmd.every((t) => !/Get-ChildItem|New-Item|Set-/.test(t)), 'méthode CMD : aucune commande PowerShell');
+  await page.goto(`${BASE}/#/tache/cours-windows-acces-partage/methode/powershell`);
+  await page.waitForTimeout(200);
+  const ps = await page.locator('.cmd-block, pre').allInnerTexts();
+  assert(ps.length > 0 && ps.every((t) => !/^\s*(dir|mkdir)\b/m.test(t) || /Get-ChildItem|New-Item/.test(t)), 'méthode PowerShell : cmdlets, pas de commandes CMD seules');
+  await page.goto(`${BASE}/#/tache/cours-windows-acces-partage/methode/gui`);
+  await page.waitForTimeout(200);
+  assert(await page.locator('.copy-step').count() === 0, 'méthode GUI : rien à copier (étapes à la souris)');
   await context.close();
 }
 
@@ -220,26 +291,26 @@ const COURS_ID = COURS[0].id;
   const { context, page } = await nouvellePage({}, '/#/labo');
   await page.waitForSelector('#csvTexte');
   const modele = await page.locator('#csvTexte').inputValue();
-  assert(/^login,departement\n/.test(modele) && !/pass|mdp|secret/i.test(modele), 'modèle CSV : en-tête login,departement, aucun mot de passe');
+  assert(/^login;departement\n/.test(modele) && !/pass|mdp|secret|FICTIF/i.test(modele), 'modèle CSV : éditeur login;departement, aucune colonne de mot de passe');
   await page.click('#csvVerifier');
   assert(/CSV valide/.test(await page.locator('#csvRetour').innerText()), 'le modèle est valide');
 
   // Contre-épreuve : 3e champ (mot de passe) refusé
-  await page.fill('#csvTexte', 'login,departement\nalice,Ventes,MotDePasse123\n');
+  await page.fill('#csvTexte', 'login;departement\nalice;Ventes;MotDePasse123\n');
   await page.click('#csvVerifier');
-  assert(/Ligne 2/.test(await page.locator('#csvRetour').innerText()), 'ligne à 3 champs (mot de passe) : refusée et localisée');
+  { const retour = await page.locator('#csvRetour').innerText(); assert(/Ligne 2/.test(retour) && !retour.includes('MotDePasse123'), 'ligne à 3 champs (mot de passe) : refusée, localisée, contenu non recopié'); }
   assert(await page.locator('#csvTelecharger').getAttribute('aria-disabled') === 'true', 'le téléchargement est désactivé tant que le CSV est invalide');
 
   // Contre-épreuve : doublon
-  await page.fill('#csvTexte', 'alice,Ventes\nalice,Finances\n');
+  await page.fill('#csvTexte', 'alice;Ventes\nalice;Finance\n');
   await page.click('#csvVerifier');
   assert(/déjà/.test(await page.locator('#csvRetour').innerText()), 'login en double : refusé');
 
   // Téléchargement valide
-  await page.fill('#csvTexte', 'alice,Ventes\nbruno,Finances\n');
+  await page.fill('#csvTexte', 'alice;Ventes\nbruno;Finance\n');
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#csvTelecharger', { force: true })]);
   const contenu = readFileSync(await dl.path(), 'utf8');
-  assert(dl.suggestedFilename() === 'employes.csv' && contenu === 'login,departement\nalice,Ventes\nbruno,Finances\n', 'CSV téléchargé : LF, en-tête, deux comptes', JSON.stringify(contenu));
+  assert(dl.suggestedFilename() === 'comptes_tp2_MODELE.csv' && contenu === 'login;motdepasse;departement\nalice;FICTIF-0001;Ventes\nbruno;FICTIF-0002;Finance\n', 'CSV téléchargé : LF, en-tête du TP2, mots de passe FICTIFS', JSON.stringify(contenu));
   await context.close();
 }
 

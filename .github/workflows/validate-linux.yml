@@ -117,7 +117,8 @@ jobs:
                    dist/procedures-vague3.mjs dist/scenarios.mjs \
                    dist/taches.mjs dist/vue-taches.mjs dist/classement.mjs dist/vue-navigation.mjs \
                    dist/cours-outils.mjs dist/cours-fiches-bases.mjs dist/cours-fiches-stockage.mjs \
-                   dist/cours-fiches-samba.mjs dist/procedures-cours.mjs dist/cours.mjs dist/labo.mjs \
+                   dist/cours-fiches-samba.mjs dist/cours-fiches-clients.mjs dist/cours-fiches-memo.mjs \
+                   dist/cours-script-import.mjs dist/procedures-cours.mjs dist/cours.mjs dist/labo.mjs \
                    dist/vue-cours.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
@@ -576,13 +577,21 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/classement.test.mjs
 
-      - name: Cours et TP (28 fiches, parcours A-E, laboratoire sans secret, validateurs de peripheriques, contre-epreuves - statique)
+      - name: Cours et TP (50 fiches, parcours A-E fideles au sujet, machines, prerequis, laboratoire sans secret, contre-epreuves - statique)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cours.test.mjs
 
       - name: Matrice de couverture du cours (a jour avec dist/cours.mjs - statique)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/matrice-cours.mjs --verifier
+
+      - name: Matrice des commandes du cours (chaque commande a une route, fichier a jour - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrice-commandes-cours.mjs --verifier
+
+      - name: Script d'import CSV du TP2 (execute contre un FAUX samba-tool, 79 controles + contre-epreuves - aucun domaine reel)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cours-import.test.mjs
 
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs

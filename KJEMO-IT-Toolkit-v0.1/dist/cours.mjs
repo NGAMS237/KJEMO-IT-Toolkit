@@ -26,114 +26,116 @@ export const COURS = [
   {
     id: 'serveurs2-tp2',
     titre: 'Serveurs II — TP2 : comptes, stockage et partages Samba',
-    resume: 'Un serveur Samba contrôleur de domaine : comptes créés par script depuis un CSV, disques et quotas, RAID 1, partages Samba pour des comptes et pour un groupe, clients Ubuntu et Windows.',
-    source: 'Notes de cours et énoncé du TP2 fournis par l’étudiant (non republiés ici). Les parcours ci-dessous sont NOTRE lecture de l’énoncé : en cas de doute, c’est l’énoncé qui fait foi.',
-    avertissement: 'Les fiches expliquent comment faire ; elles ne remplacent pas ton énoncé, ne produisent aucune capture et ne prouvent rien : « coché » veut seulement dire « je l’ai fait ».',
+    resume: 'Un serveur Samba contrôleur de domaine (entreprise fictive « Québec consulting international ») : comptes créés par script depuis un CSV, disque de 1 Go et quotas, RAID 1, partages Samba pour des comptes et pour le groupe Direction, clients Ubuntu Desktop et Windows 11.',
+    source: 'Énoncé TP2-A26 et notes de cours fournis par l’étudiant (non republiés ici). Les demandes A à E ci-dessous suivent l’ordre de l’énoncé, résumées dans nos mots ; en cas de doute, c’est l’énoncé qui fait foi.',
+    avertissement: 'Les fiches expliquent comment faire ; elles ne remplacent pas ton énoncé, ne produisent aucune capture et ne prouvent rien : « coché » veut seulement dire « je l’ai fait ». Les mots de passe se tapent sur les machines, jamais dans cette application.',
     parcours: [
       {
         lettre: 'A',
         titre: 'Créer les comptes depuis un fichier CSV',
         points: 24,
-        resume: 'Un script lit un fichier CSV et crée, sur le contrôleur de domaine, les comptes et les groupes de départements ; test de connexion depuis Windows.',
+        resume: 'Un script lit un CSV (login, mot de passe, département) et crée, sur le contrôleur de domaine, les comptes et les groupes de départements (Ventes et marketing, Finance, Technologies de l’information, Direction) ; test de connexion depuis un poste Windows pour un utilisateur de chaque département.',
         prerequis: [
-          f('cours-bash-boucles', 1, { pourquoi: 'while read et IFS, la base du script.' }),
-          f('cours-samba-groupes', 1, { pourquoi: 'créer un groupe et y ajouter des membres avec samba-tool.' }),
+          f('cours-bash-boucles', 1, { titre: 'Écrire le script', pourquoi: 'while read et IFS : la base du script (exemple du cours : lecture de /etc/passwd).' }),
+          f('cours-samba-groupes', 2, { titre: 'Créer le groupe', pourquoi: 'créer un groupe et y ajouter des membres avec samba-tool (document « Exemple de partage d’un dossier par groupe »).' }),
         ],
         items: [
-          { id: 'A1', texte: 'Écrire le fichier CSV des employés (login, département).', refs: [f('cours-samba-import-csv', 1)] },
-          { id: 'A2', texte: 'Écrire le script qui lit le CSV et crée groupes, comptes et appartenances.', refs: [f('cours-samba-import-csv', 2), f('cours-samba-import-csv', 3)] },
-          { id: 'A3', texte: 'Lancer le script en essai, puis pour de bon.', refs: [f('cours-samba-import-csv', 4), f('cours-samba-import-csv', 5)] },
-          { id: 'A4', texte: 'Lister les comptes et les groupes créés (captures demandées).', refs: [f('cours-samba-import-csv', 6)] },
-          { id: 'A5', texte: 'Tester une connexion depuis un poste Windows pour un compte de chaque département.', refs: [], couvert: false, note: 'Pas de fiche pour l’ouverture de session Windows avec un compte de domaine. Pour joindre le poste au domaine, voir l’assistant « Joindre un poste Windows à un domaine ».', assistants: ['windows-domain-join'] },
+          { id: 'A1', texte: 'Fichier CSV : login, mot de passe et département de chaque employé de l’entreprise (capture du contenu demandée).', refs: [f('cours-samba-import-csv', 1, { titre: 'MODÈLE' }), f('cours-samba-import-csv', 2, { titre: 'vrais comptes' })], note: 'Le modèle public est fictif ; le vrai CSV reste sur ta VM (droits 600, supprimé après le labo).' },
+          { id: 'A2', texte: 'Script qui lit le CSV et, pour chaque ligne, crée le groupe du département, le compte et son appartenance (capture du script demandée).', refs: [f('cours-samba-import-csv', 3, { titre: 'Écrire le script' }), f('cours-samba-import-csv', 4), f('cours-samba-import-csv', 6, { titre: 'ESSAI' }), f('cours-samba-import-csv', 7, { titre: 'APPLIQUER' })] },
+          { id: 'A3', texte: 'Liste des comptes Samba : samba-tool user list (capture).', refs: [f('cours-samba-import-csv', 8, { titre: 'Contrôler les comptes' })] },
+          { id: 'A4', texte: 'Liste des groupes Samba : samba-tool group list (capture).', refs: [f('cours-samba-import-csv', 8, { titre: 'Contrôler les comptes' }), f('cours-samba-groupes', 4, { titre: 'Lister les membres' })] },
+          { id: 'A5', texte: 'Test de connexion depuis un poste Windows pour un utilisateur de CHAQUE département.', refs: [f('cours-windows-connexion-domaine', 3, { methode: 'gui', titre: 'Ouvrir la session' }), f('cours-windows-connexion-domaine', 2, { methode: 'cmd', titre: 'groupe du département' })] },
         ],
       },
       {
         lettre: 'B',
         titre: 'Disques, système de fichiers et quotas',
         points: 22,
-        resume: 'Un disque de 1 Go : partition, ext4, étiquette, UUID, montage, fstab, quotas utilisateur, propriétaire du dossier.',
+        resume: 'Un disque de 1 Go : partition, ext4, étiquette data_tp2, UUID, point de montage /DATA_TP2, fichier test_tp2, fstab, quotas utilisateur (christian_chef), propriétaire du dossier. Serveur seulement.',
         prerequis: [
-          f('cours-lire-fichiers', 1, { pourquoi: 'lire fstab et les sorties de commandes.' }),
+          f('cours-lire-fichiers', 1, { titre: 'Tout afficher', pourquoi: 'lire fstab et les sorties de commandes.' }),
         ],
         items: [
-          { id: 'B1', texte: 'Ajouter un disque de 1 Go à la machine virtuelle.', refs: [], couvert: false, note: 'Ce geste se fait dans l’hyperviseur (VMware, VirtualBox, Proxmox…), pas dans le système invité : hors catalogue. Puis lis lsblk.' },
-          { id: 'B2', texte: 'Retrouver le nom que le système a donné au nouveau disque.', refs: [f('cours-partition-formater-monter', 1)] },
-          { id: 'B3', texte: 'Lancer fdisk sur ce disque.', refs: [f('cours-partition-formater-monter', 3)] },
-          { id: 'B4', texte: 'Créer une partition primaire.', refs: [f('cours-partition-formater-monter', 3)] },
-          { id: 'B5', texte: 'Forcer la relecture de la table de partitions.', refs: [f('cours-partition-formater-monter', 4)] },
-          { id: 'B6', texte: 'Créer un système de fichiers ext4 dans la partition.', refs: [f('cours-partition-formater-monter', 5)] },
-          { id: 'B7', texte: 'Donner une étiquette au système de fichiers.', refs: [f('cours-partition-formater-monter', 6)] },
-          { id: 'B8', texte: 'Relever l’UUID du système de fichiers.', refs: [f('cours-partition-formater-monter', 7)] },
-          { id: 'B9', texte: 'Créer le dossier qui servira de point de montage.', refs: [f('cours-partition-formater-monter', 8)] },
-          { id: 'B10', texte: 'Monter la partition sur ce dossier.', refs: [f('cours-partition-formater-monter', 8)] },
-          { id: 'B11', texte: 'Créer un premier fichier dans la partition montée.', refs: [f('cours-partition-formater-monter', 9)] },
-          { id: 'B12', texte: 'Écrire la ligne de /etc/fstab qui monte la partition par son étiquette.', refs: [f('cours-partition-formater-monter', 10), f('cours-partition-formater-monter', 11)] },
-          { id: 'B13', texte: 'Afficher l’occupation des systèmes de fichiers, lisiblement.', refs: [f('cours-partition-formater-monter', 12)] },
-          { id: 'B14', texte: 'Activer l’option de quotas utilisateur dans fstab et remonter.', refs: [f('cours-quotas-utilisateur', 3), f('cours-quotas-utilisateur', 4)] },
-          { id: 'B15', texte: 'Créer et activer les quotas sur la partition.', refs: [f('cours-quotas-utilisateur', 5), f('cours-quotas-utilisateur', 6)] },
-          { id: 'B16', texte: 'Fixer une limite souple de 260 Mo à un compte, limite stricte = souple + 10 Ko.', refs: [f('cours-quotas-utilisateur', 7)], note: 'Unités à trancher : voir l’ambiguïté sur « Mo ».' },
-          { id: 'B17', texte: 'Donner le dossier monté à un compte et à un groupe.', refs: [f('cours-donner-dossier-compte', 3)] },
-          { id: 'B18', texte: 'Se connecter avec ce compte et y créer un dossier et un fichier.', refs: [f('cours-donner-dossier-compte', 4), f('cours-creer-dossiers-fichiers', 1)] },
+          { id: 'B1', texte: 'Ajouter un nouveau disque de 1 Go (après avoir supprimé les disques du dernier formatif).', refs: [f('cours-hyperviseur-ajouter-disque', 1, { methode: 'gui', titre: 'Choisir ton hyperviseur' })], note: 'Dans l’hyperviseur (quatre séries d’étapes : VMware, VirtualBox, Proxmox VE, Hyper-V). Menus relus dans la documentation, non exécutés.' },
+          { id: 'B2', texte: 'Vérifier le nom associé au nouveau disque (par exemple /dev/sdb).', refs: [f('cours-hyperviseur-ajouter-disque', 2, { methode: 'linux', titre: 'APRÈS' }), f('cours-partition-formater-monter', 1, { titre: 'Repérer le disque' })] },
+          { id: 'B3', texte: 'Lancer fdisk pour créer une partition dans ce disque.', refs: [f('cours-partition-formater-monter', 3, { titre: 'fdisk' })] },
+          { id: 'B4', texte: 'Créer une nouvelle partition primaire.', refs: [f('cours-partition-formater-monter', 3, { titre: 'fdisk' })] },
+          { id: 'B5', texte: 'Forcer la mise à jour de la table des partitions.', refs: [f('cours-partition-formater-monter', 4, { titre: 'relire' })] },
+          { id: 'B6', texte: 'Créer un système de fichiers ext4 dans la partition.', refs: [f('cours-partition-formater-monter', 5, { titre: 'ext4' })] },
+          { id: 'B7', texte: 'Lui attribuer l’étiquette data_tp2.', refs: [f('cours-partition-formater-monter', 6, { titre: 'étiquette' })] },
+          { id: 'B8', texte: 'Donner l’UUID du système de fichiers.', refs: [f('cours-partition-formater-monter', 7, { titre: 'UUID' })] },
+          { id: 'B9', texte: 'Créer, depuis la racine, le répertoire DATA_TP2 (point de montage).', refs: [f('cours-partition-formater-monter', 8, { titre: 'dossier de montage' })] },
+          { id: 'B10', texte: 'Monter le système de fichiers PAR SON NOM DE PÉRIPHÉRIQUE sur DATA_TP2.', refs: [f('cours-partition-formater-monter', 8, { titre: 'dossier de montage' })] },
+          { id: 'B11', texte: 'Se placer dans le point de montage et créer le fichier test_tp2 contenant la phrase demandée.', refs: [f('cours-partition-formater-monter', 9, { titre: 'test_tp2' })], note: 'La phrase exacte de l’énoncé est reprise dans la fiche.' },
+          { id: 'B12', texte: 'Donner la ligne de /etc/fstab qui monte automatiquement ce système de fichiers PAR SON LABEL data_tp2.', refs: [f('cours-partition-formater-monter', 10, { titre: 'montage automatique' }), f('cours-partition-formater-monter', 11, { titre: 'Contrôler fstab' })] },
+          { id: 'B13', texte: 'Commande qui affiche l’occupation des systèmes de fichiers de façon lisible.', refs: [f('cours-partition-formater-monter', 12, { titre: 'occupation' })] },
+          { id: 'B14', texte: 'Modifier avec nano la ligne de fstab pour activer les quotas utilisateur et remonter.', refs: [f('cours-quotas-utilisateur', 3, { titre: 'usrquota' }), f('cours-quotas-utilisateur', 4, { titre: 'Remonter' })] },
+          { id: 'B15', texte: 'Commandes qui créent et activent les quotas sur DATA_TP2.', refs: [f('cours-quotas-utilisateur', 1, { titre: 'Installer' }), f('cours-quotas-utilisateur', 5, { titre: 'Créer les fichiers' }), f('cours-quotas-utilisateur', 6, { titre: 'Activer' })] },
+          { id: 'B16', texte: 'Limite soft de 260 Mo pour christian_chef (hard = soft + 10 Ko).', refs: [f('cours-quotas-utilisateur', 7, { titre: 'limites' })], note: 'Unités à trancher : voir l’ambiguïté sur « Mo ».' },
+          { id: 'B17', texte: 'Changer propriétaire et groupe de DATA_TP2 en christian_chef:users.', refs: [f('cours-donner-dossier-compte', 3, { titre: 'propriétaire' })], note: 'Un compte du domaine ne se résout comme propriétaire que si le serveur le voit (getent passwd) : voir l’ambiguïté correspondante.' },
+          { id: 'B18', texte: 'Se connecter avec christian_chef et créer un répertoire et un fichier dans DATA_TP2.', refs: [f('cours-donner-dossier-compte', 4, { titre: 'Tester l’écriture' })] },
         ],
       },
       {
         lettre: 'C',
         titre: 'RAID 1 : création, panne, remplacement, disque de secours',
         points: 14,
-        resume: 'Un miroir de deux disques de 1 Go, formaté, rempli de fichiers ; une panne simulée, le remplacement du disque, puis un disque de secours.',
+        resume: 'Un miroir de deux disques de 1 Go, formaté, rempli de trois fichiers ; une panne simulée, le remplacement du disque, puis un disque de secours (section 8 du formatif). Serveur seulement.',
         prerequis: [
-          f('cours-creer-dossiers-fichiers', 1, { pourquoi: 'créer les fichiers de test dans le RAID.' }),
+          f('cours-creer-dossiers-fichiers', 1, { titre: 'Créer le dossier', pourquoi: 'créer les fichiers de test dans le RAID.' }),
         ],
         items: [
-          { id: 'C1', texte: 'Créer le RAID 1 avec deux nouveaux disques.', refs: [f('cours-raid1-creer', 4)] },
-          { id: 'C2', texte: 'Donner l’état du RAID.', refs: [f('cours-raid1-creer', 5)] },
-          { id: 'C3', texte: 'Formater le RAID.', refs: [f('cours-raid1-creer', 6)] },
-          { id: 'C4', texte: 'Créer trois fichiers texte dans le RAID.', refs: [f('cours-raid1-creer', 7), f('cours-creer-dossiers-fichiers', 3)] },
-          { id: 'C5', texte: 'Simuler la panne d’un des disques.', refs: [f('cours-raid1-panne-secours', 2)] },
-          { id: 'C6', texte: 'Donner l’état du RAID après la panne.', refs: [f('cours-raid1-panne-secours', 3)] },
-          { id: 'C7', texte: 'Remplacer le disque en panne.', refs: [f('cours-raid1-panne-secours', 4), f('cours-raid1-panne-secours', 6), f('cours-raid1-panne-secours', 7)] },
-          { id: 'C8', texte: 'Ajouter un disque de secours et suivre toutes les étapes de la section correspondante du formatif.', refs: [f('cours-raid1-panne-secours', 8), f('cours-raid1-panne-secours', 9)], note: 'Le formatif crée parfois le RAID AVEC le disque de secours ; la fiche l’ajoute après coup.' },
+          { id: 'C1', texte: 'Créer un RAID 1 avec deux nouveaux disques de 1 Go.', refs: [f('cours-raid1-creer', 4, { titre: 'Créer le miroir' })], note: 'Le formatif demande md1 à la place de md0 : la matrice est un champ de la fiche.' },
+          { id: 'C2', texte: 'Donner l’état du RAID.', refs: [f('cours-raid1-creer', 5, { titre: 'synchronisation' })] },
+          { id: 'C3', texte: 'Formater le RAID.', refs: [f('cours-raid1-creer', 6, { titre: 'Formater' })] },
+          { id: 'C4', texte: 'Créer trois fichiers texte dans le RAID (touch, cat ou nano).', refs: [f('cours-raid1-creer', 7, { titre: 'Monter' }), f('cours-raid1-creer', 8, { titre: 'trois fichiers' })] },
+          { id: 'C5', texte: 'Simuler la panne d’un des disques du RAID.', refs: [f('cours-raid1-panne-secours', 2, { titre: 'simuler la panne' })] },
+          { id: 'C6', texte: 'Donner l’état du RAID après la panne.', refs: [f('cours-raid1-panne-secours', 3, { titre: 'après la panne' })] },
+          { id: 'C7', texte: 'Remplacer le disque en panne.', refs: [f('cours-raid1-panne-secours', 4, { titre: 'Retirer' }), f('cours-raid1-panne-secours', 6, { titre: 'remplacement' }), f('cours-raid1-panne-secours', 7, { titre: 'reconstruction' })] },
+          { id: 'C8', texte: 'Ajouter un disque de secours et suivre toutes les étapes de la section 8 du formatif (rôles, bascule du secours).', refs: [f('cours-raid1-panne-secours', 8, { titre: 'secours' }), f('cours-raid1-panne-secours', 9, { titre: 'faire tomber' }), f('cours-raid1-panne-secours', 11, { titre: 'rôles' })], note: 'Le formatif crée parfois le RAID AVEC le disque de secours ; la fiche l’ajoute après coup, comme la capture de l’énoncé (mdadm --manage … --add).' },
         ],
       },
       {
         lettre: 'D',
         titre: 'Partage Samba : un compte écrit, un compte lit',
         points: 20,
-        resume: 'Un dossier partagé dans le RAID, deux comptes aux droits différents, test de configuration, accès depuis Ubuntu et Windows 11, puis smbclient.',
+        resume: 'Le dossier partage_tp2 (777) dans le RAID, deux comptes user1tp2 (écriture) et user2tp2 (lecture), test de configuration, accès depuis Ubuntu Desktop et Windows 11, puis smbclient dans les deux sens.',
         prerequis: [
-          f('cours-samba-groupes', 2, { pourquoi: 'comprendre comptes et groupes du domaine avant d’en créer.' }),
-          f('cours-droits-dossier-partage', 2, { pourquoi: 'distinguer le réglage de laboratoire (777) du réglage professionnel.' }),
+          f('cours-samba-groupes', 1, { titre: 'Lister', pourquoi: 'comprendre comptes et groupes du domaine avant d’en créer.' }),
+          f('cours-droits-dossier-partage', 4, { titre: 'Laboratoire', pourquoi: 'distinguer le réglage de laboratoire (777) du réglage professionnel.' }),
         ],
         items: [
-          { id: 'D1', texte: 'Créer, dans le RAID, le dossier à partager avec les droits demandés.', refs: [f('cours-samba-partage-utilisateurs', 1), f('cours-samba-partage-utilisateurs', 4)], note: 'L’énoncé demande 777 : c’est un réglage de LABORATOIRE (étape facultative de la fiche) ; le réglage professionnel est à côté.' },
-          { id: 'D2', texte: 'Déclarer le partage dans smb.conf : visible, avec description, un compte en écriture, un compte en lecture.', refs: [f('cours-samba-partage-utilisateurs', 2), f('cours-samba-partage-utilisateurs', 6)] },
-          { id: 'D3', texte: 'Tester les paramètres avec testparm.', refs: [f('cours-samba-partage-utilisateurs', 7)] },
-          { id: 'D4', texte: 'Configurer la carte réseau du client Ubuntu pour atteindre le serveur.', refs: [f('cours-ubuntu-jonction-ad', 2)], assistants: ['netplan-readiness'], note: 'Le réglage DNS par netplan est dans la fiche de jonction ; l’assistant Netplan prépare une configuration complète.' },
-          { id: 'D5', texte: 'Montrer, depuis Ubuntu, que le compte en écriture peut écrire.', refs: [f('cours-smbclient-transferts', 3)] },
-          { id: 'D6', texte: 'Montrer que le compte en lecture ne peut pas écrire mais peut lire.', refs: [f('cours-smbclient-transferts', 3)] },
-          { id: 'D7', texte: 'Refaire D5 et D6 depuis un client Windows 11.', refs: [], couvert: false, note: 'Pas de fiche pour l’accès graphique à un partage depuis Windows (\\\\serveur\\partage). À faire dans l’explorateur de fichiers.' },
-          { id: 'D8.1', texte: 'Avec smbclient, télécharger deux fichiers du partage vers le client.', refs: [f('cours-smbclient-transferts', 3), f('cours-smbclient-transferts', 4)], note: 'L’énoncé cite deux fois le même nom de fichier : lu comme deux fichiers distincts.' },
-          { id: 'D8.2', texte: 'Avec smbclient, déposer deux fichiers créés sur le client dans le partage.', refs: [f('cours-smbclient-transferts', 2), f('cours-smbclient-transferts', 3)] },
+          { id: 'D1', texte: 'Dans le RAID, créer le répertoire à partager partage_tp2 avec les permissions 777.', refs: [f('cours-samba-partage-utilisateurs', 1, { titre: 'Créer le dossier' }), f('cours-samba-partage-utilisateurs', 4, { titre: '777' })], note: '777 est un réglage de LABORATOIRE (étape séparée de la fiche).' },
+          { id: 'D2', texte: 'Configurer le partage dans smb.conf : affichable, user1tp2 écrit, user2tp2 lit seulement, description visible dans le voisinage réseau.', refs: [f('cours-samba-partage-utilisateurs', 2, { titre: 'deux comptes' }), f('cours-samba-partage-utilisateurs', 6, { titre: 'section de partage' })] },
+          { id: 'D3', texte: 'Tester les paramètres de smb.conf avec testparm.', refs: [f('cours-samba-partage-utilisateurs', 7, { titre: 'Tester la configuration' })] },
+          { id: 'D4', texte: 'Sur le client Ubuntu Desktop, configurer la carte réseau pour atteindre le serveur.', refs: [f('cours-ubuntu-reseau-client', 1, { methode: 'gui', titre: 'carte réseau' }), f('cours-ubuntu-reseau-client', 2, { methode: 'linux', titre: 'Fixer l’adresse' })], assistants: ['netplan-readiness'] },
+          { id: 'D5', texte: 'Depuis Ubuntu, montrer que user1tp2 peut écrire dans le dossier partagé.', refs: [f('cours-ubuntu-acces-partage', 3, { methode: 'linux', titre: 'créer un dossier' }), f('cours-ubuntu-acces-partage', 2, { methode: 'gui', titre: 'compte en écriture' })] },
+          { id: 'D6', texte: 'Depuis Ubuntu, montrer que user2tp2 NE PEUT PAS écrire mais peut lire.', refs: [f('cours-ubuntu-acces-partage', 4, { methode: 'linux', titre: 'lire' }), f('cours-ubuntu-acces-partage', 5, { methode: 'linux', titre: 'refus attendu' })] },
+          { id: 'D7', texte: 'Même chose que D5 et D6, mais avec un client Windows 11.', refs: [f('cours-windows-acces-partage', 1, { methode: 'gui', titre: 'Ouvrir le partage' }), f('cours-windows-acces-partage', 3, { methode: 'cmd', titre: 'compte en écriture' }), f('cours-windows-acces-partage', 3, { methode: 'powershell', titre: 'compte en écriture' })], note: 'Changer de compte vers le même serveur demande de retirer la connexion existante (erreur 1219) : étape ciblée, jamais « net use * /delete ».' },
+          { id: 'D8.1', texte: 'Avec smbclient depuis Ubuntu, télécharger deux fichiers créés d’abord sur le serveur dans le dossier partagé.', refs: [f('cours-smbclient-transferts', 1, { titre: 'Créer les deux fichiers' }), f('cours-smbclient-transferts', 5, { titre: 'Télécharger' })], note: 'L’énoncé cite deux fois « fichier1tp2 » : lu comme fichier1tp2 et fichier2tp2.' },
+          { id: 'D8.2', texte: 'Depuis Ubuntu, créer depot1 et depot2 et les déposer dans le dossier partagé avec smbclient.', refs: [f('cours-smbclient-transferts', 8, { titre: 'depot1' }), f('cours-smbclient-transferts', 9, { titre: 'Déposer' })] },
         ],
       },
       {
         lettre: 'E',
-        titre: 'Partage d’un dossier par groupe Samba',
+        titre: 'Partage d’un dossier par groupe Samba (Direction)',
         points: 12,
-        resume: 'Un dossier pour le groupe d’un département : droits 770, déclaration dans smb.conf, lecture et écriture pour tous sauf un compte en lecture seule, test d’écriture.',
+        resume: 'Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration dans smb.conf, tous les membres lisent et écrivent sauf la réceptionniste (lecture seule), test d’écriture avec elle.',
         prerequis: [
-          f('cours-samba-groupes', 2, { pourquoi: 'créer le groupe et lire son gid.' }),
-          f('cours-samba-import-csv', 1, { pourquoi: 'les comptes du département viennent du CSV de la partie A.' }),
+          f('cours-samba-groupes', 5, { titre: 'gid', pourquoi: 'lire le gid du groupe Direction.' }),
+          f('cours-samba-import-csv', 7, { titre: 'APPLIQUER', pourquoi: 'les comptes du département Direction viennent du CSV de la partie A.' }),
         ],
         items: [
-          { id: 'E1', texte: 'Créer le dossier partagé du groupe.', refs: [f('cours-samba-partage-groupe', 1)] },
-          { id: 'E2', texte: 'Donner le dossier au groupe et mettre ses droits en 770.', refs: [f('cours-samba-partage-groupe', 2), f('cours-samba-partage-groupe', 3), f('cours-samba-partage-groupe', 4)] },
-          { id: 'E3', texte: 'Déclarer le partage dans smb.conf (groupe en lecture et écriture, un compte en lecture seule).', refs: [f('cours-samba-partage-groupe', 6)], note: 'Un compte présent à la fois dans read list et write list reçoit l’écriture : la fiche utilise deux groupes.' },
-          { id: 'E4', texte: 'Tester, avec le compte en lecture seule, qu’il ne peut pas écrire.', refs: [f('cours-samba-partage-groupe', 7), f('cours-samba-partage-groupe', 8), f('cours-smbclient-transferts', 3)] },
+          { id: 'E1', texte: 'Créer le répertoire partagé du groupe Direction.', refs: [f('cours-samba-partage-groupe', 1, { titre: 'Créer le dossier' })] },
+          { id: 'E2', texte: 'Donner le dossier au groupe et passer ses droits en 770 (chmod 770).', refs: [f('cours-samba-partage-groupe', 2, { titre: 'gid' }), f('cours-samba-partage-groupe', 3, { titre: 'Donner' }), f('cours-samba-partage-groupe', 4, { titre: '770' })] },
+          { id: 'E3', texte: 'Ajouter la configuration du partage dans /etc/samba/smb.conf.', refs: [f('cours-samba-partage-groupe', 6, { titre: 'Déclarer' }), f('cours-samba-partage-groupe', 7, { titre: 'recharger' })] },
+          { id: 'E4', texte: 'Tous les utilisateurs du département lisent et écrivent, sauf la réceptionniste qui lit seulement.', refs: [f('cours-samba-partage-groupe', 6, { titre: 'Déclarer' }), f('cours-samba-partage-groupe', 8, { titre: 'écriture permise' })], note: 'read list = le compte de la réceptionniste ; jamais dans write list.' },
+          { id: 'E5', texte: 'Test d’écriture avec la réceptionniste : montrer qu’elle n’a pas le droit d’écrire.', refs: [f('cours-samba-partage-groupe', 9, { titre: 'refus attendu' })] },
         ],
       },
     ],
     soutien: [
+      { fiche: 'cours-samba-groupes', pourquoi: 'Gérer les groupes Samba (créer, ajouter, lister, gid).' },
       { fiche: 'cours-ubuntu-jonction-ad', pourquoi: 'Joindre un poste Ubuntu au domaine (realmd, SSSD, PAM).' },
       { fiche: 'cours-samba-dns', pourquoi: 'Enregistrements A, zone inverse et PTR dans le DNS de Samba.' },
       { fiche: 'cours-rsat-windows', pourquoi: 'Installer les consoles AD et DNS sur un poste Windows.' },
@@ -148,14 +150,37 @@ export const COURS = [
       { fiche: 'cours-find-fichiers', pourquoi: 'find : retrouver un fichier par son nom, sa taille ou sa date.' },
       { fiche: 'cours-redirections-tubes', pourquoi: '>, >>, | : rediriger et enchaîner les commandes.' },
       { fiche: 'cours-groupes-locaux', pourquoi: 'Comptes et groupes LOCAUX (par opposition au domaine).' },
+      { fiche: 'cours-creer-compte-local', pourquoi: 'useradd, passwd : créer un compte LOCAL, mot de passe saisi au terminal (résumé Linux).' },
+      { fiche: 'cours-afficher-texte', pourquoi: 'echo et printf : afficher du texte et des menus (S2, menus Bash).' },
+      { fiche: 'cours-processus', pourquoi: 'ps, top, kill : voir et arrêter un processus (notes S10.1).' },
+      { fiche: 'cours-sessions-utilisateurs', pourquoi: 'who, w, last, groups : qui est connecté et à quels groupes (notes S10.1, S9).' },
+      { fiche: 'cours-supprimer-compte-local', pourquoi: 'userdel, deluser : retirer un compte LOCAL (notes S10.1, résumé Linux).' },
+      { fiche: 'cours-archives', pourquoi: 'tar : sauvegarder un dossier (notes S10.1, dont deux options fausses corrigées).' },
+      { fiche: 'cours-gzip-fichier', pourquoi: 'gzip et gunzip sur un seul fichier (notes S10.1).' },
+      { fiche: 'cours-trouver-commande', pourquoi: 'which, type, man, locate : trouver une commande ou un fichier (notes S10.1).' },
+      { fiche: 'cours-comparer-trier', pourquoi: 'diff, sort, uniq, tr, more : comparer et transformer du texte (résumé Linux).' },
+      { fiche: 'cours-etat-systeme', pourquoi: 'free, uptime, uname, df : état du système (formatif 3, S10.1).' },
+      { fiche: 'cours-arret-redemarrage', pourquoi: 'shutdown, reboot : arrêter ou redémarrer (S10.1, RAID1 : « Faites un reboot »).' },
+      { fiche: 'cours-disque-entretien', pourquoi: 'tune2fs, fsck : forcer et lancer une vérification (formatif 3, étape tune2fs -C 1000).' },
+      { fiche: 'cours-quota-edquota', pourquoi: 'edquota : fixer un quota avec l’éditeur (formatif 3) ; variante interactive de setquota.' },
+      { fiche: 'cours-samba-connexions', pourquoi: 'smbstatus : voir les connexions actives (cours Samba).' },
+      { fiche: 'cours-planifier-taches', pourquoi: 'at et crontab : planifier une commande (S10.1).' },
+      { fiche: 'cours-ifconfig-ancien', pourquoi: 'ifconfig -a et son remplaçant ip (notes S1).' },
+      { fiche: 'cours-service-ancien', pourquoi: 'service et systemctl : même résultat, deux commandes (résumé Linux).' },
     ],
     ambiguites: [
+      { id: 'amb-identifiants', sujet: 'A — logins, mots de passe et noms de départements', texte: 'L’énoncé n’impose ni la liste complète des logins ni les mots de passe : seuls quelques exemples apparaissent dans les images (christian_chef, julie_emp1, dominique_chef). Le CSV public de l’application est donc entièrement FICTIF ; ton vrai fichier reste sur TA machine virtuelle et aucun vrai mot de passe n’est saisi dans l’application.' },
+      { id: 'amb-csv-format', sujet: 'A/D — format du CSV', texte: 'Les images montrent un séparateur point-virgule sans ligne d’en-tête, alors que la phrase de l’énoncé contient une double virgule parasite. Le script accepte donc le point-virgule, une en-tête facultative, les fins de ligne Windows, les lignes vides ou invalides (comptées et signalées) et les doublons (ignorés avec avertissement).' },
+      { id: 'amb-finance', sujet: 'A — « Finance » ou « Finances »', texte: 'Les images écrivent « Finance » au singulier, certaines phrases « Finances ». Les fiches utilisent « Finance » ; garde l’orthographe exacte de TON énoncé pour les noms de groupes.' },
+      { id: 'amb-hyperviseur', sujet: 'B1 — hyperviseur non précisé', texte: 'L’énoncé demande d’ajouter un disque sans nommer l’hyperviseur. La fiche GUI propose quatre cas (VirtualBox, VMware, Proxmox, Hyper-V) ; choisis celui de ton laboratoire. Seule la vérification sous Ubuntu (lsblk) est commune.' },
       { id: 'amb-mo', sujet: 'B16 — « 260 Mo »', texte: 'Mo = 1 000 000 octets, ou Mio = 1 048 576 ? En blocs de 1 Kio, 260 Mio = 266 240 ; 260 Mo = environ 253 906. La fiche propose 266240 / 266250 (Mio, souple + 10 Kio). Demande à ton enseignant l’unité attendue.' },
       { id: 'amb-fichiers', sujet: 'D8.1 — deux fichiers du même nom', texte: 'L’énoncé écrit deux fois « fichier1tp2 ». Lu comme fichier1tp2 et fichier2tp2. Deux noms identiques ne transfèrent qu’un fichier.' },
       { id: 'amb-777', sujet: 'D1 — permissions 777', texte: '777 donne tous les droits à tout le monde au niveau Unix : seul Samba filtre. Acceptable pour un laboratoire isolé, jamais en production. Les fiches séparent les deux réglages.' },
       { id: 'amb-service', sujet: 'D — redémarrer Samba', texte: 'Les notes disent « systemctl restart smbd ». Sur un CONTRÔLEUR DE DOMAINE, le service s’appelle samba-ad-dc (smbd est masqué). Les fiches utilisent smbcontrol reload-config, valable des deux côtés.' },
-      { id: 'amb-comptes', sujet: 'D2 — « utilisateurs Samba »', texte: 'Sur un contrôleur de domaine, les comptes se créent avec samba-tool (smbpasswd concerne un serveur de fichiers autonome). Les fiches suivent samba-tool.' },
-      { id: 'amb-readwrite', sujet: 'E — réceptionniste en lecture seule', texte: 'Un compte présent dans read list ET write list reçoit l’écriture (manuel de smb.conf). Avec un groupe d’écriture distinct, le compte en lecture seule reste sans écriture.' },
+      { id: 'amb-comptes', sujet: 'D2 — « utilisateurs Samba »', texte: 'Sur un contrôleur de domaine, les comptes se créent avec samba-tool (smbpasswd concerne un serveur de fichiers autonome). Les fiches suivent samba-tool ; le mot de passe de samba-tool user create apparaît dans la ligne de commande : usage de laboratoire uniquement.' },
+      { id: 'amb-direction', sujet: 'A/E — groupe de la direction et réceptionniste', texte: 'L’énoncé ne nomme ni le groupe de la direction ni le login de la réceptionniste. Ils sont des paramètres de la fiche (valeurs d’exemple fictives), à remplacer par ceux de ton CSV.' },
+      { id: 'amb-windows', sujet: 'A5/D7 — jonction et connexion Windows', texte: 'L’énoncé ne détaille pas la jonction de Windows 11 au domaine. Les fiches supposent le poste déjà joint (voir la mention « suppose » de chaque fiche) et traitent la connexion avec un compte du domaine, la vérification du département, le partage autorisé (lecture/écriture) et l’écriture refusée.' },
+      { id: 'amb-readwrite', sujet: 'E — réceptionniste en lecture seule', texte: 'read list rend un compte en lecture seule même si le partage est inscriptible ; un compte présent dans read list ET write list reçoit l’écriture (manuel de smb.conf). Les fiches suivent le document de cours (valid users + read list).' },
       { id: 'amb-quota-ad', sujet: 'B16–B17 — compte du domaine comme propriétaire', texte: 'chown et les quotas ne fonctionnent que si le système sait résoudre le compte (winbind ou SSSD). Vérifie avec getent passwd avant ; sinon utilise un compte local.' },
       { id: 'amb-run', sujet: 'C — arrêt et relance du RAID', texte: 'Les notes relancent avec --run après --stop. Après un arrêt, la matrice n’existe plus : on la ré-assemble avec --assemble --scan. Son nom peut alors changer (md127).' },
       { id: 'amb-hdc', sujet: 'C7 — « /dev/hdc »', texte: 'L’exemple de remplacement des notes cite un disque IDE ancien (hdc). Utilise le nom réel de TON disque, lu avec lsblk : il n’est jamais présumé.' },
@@ -207,19 +232,20 @@ export function aliasesDe(ficheId) {
 // Liens
 // ---------------------------------------------------------------------------
 
-/** #/tache/<id>[/etape/<n>[/depuis/<cours>/<lettre>]] */
+/** #/tache/<id>[/methode/<m>][/etape/<n>[/depuis/<cours>/<lettre>]] */
 export function lienEtape(ref, { coursId = null, lettre = null } = {}) {
   let h = `#/tache/${ref.fiche}`;
+  if (ref.methode) h += `/methode/${ref.methode}`;
   if (ref.etape) h += `/etape/${ref.etape}`;
   if (ref.etape && coursId && lettre) h += `/depuis/${coursId}/${lettre}`;
   return h;
 }
 
-/** Décode la partie après #/tache/ : { id, etape, coursId, lettre } ou null. */
+/** Décode la partie après #/tache/ : { id, methode, etape, coursId, lettre } ou null. */
 export function lireRouteTache(hash) {
-  const m = /^#\/tache\/([A-Za-z0-9_-]+)(?:\/etape\/(\d{1,3})(?:\/depuis\/([A-Za-z0-9_-]+)\/([A-Z]))?)?$/.exec(hash || '');
+  const m = /^#\/tache\/([A-Za-z0-9_-]+)(?:\/methode\/(linux|powershell|cmd|ios|azure|gui|scenario))?(?:\/etape\/(\d{1,3})(?:\/depuis\/([A-Za-z0-9_-]+)\/([A-Z]))?)?$/.exec(hash || '');
   if (!m) return null;
-  return { id: m[1], etape: m[2] ? Number(m[2]) : null, coursId: m[3] ?? null, lettre: m[4] ?? null };
+  return { id: m[1], methode: m[2] ?? null, etape: m[3] ? Number(m[3]) : null, coursId: m[4] ?? null, lettre: m[5] ?? null };
 }
 
 export function routeParcours(coursId, lettre = null) {
@@ -252,8 +278,17 @@ export function incoherencesCours(cours, { fiches, assistants = () => true }) {
   const verifierRef = (r, ou) => {
     const fiche = fiches(r.fiche);
     if (!fiche) { pb.push(`${ou} : fiche inconnue « ${r.fiche} »`); return; }
-    if (r.etape !== null && r.etape !== undefined && (!Number.isInteger(r.etape) || r.etape < 1 || r.etape > fiche.etapes)) {
-      pb.push(`${ou} : étape ${r.etape} absente de ${r.fiche} (${fiche.etapes} étape(s))`);
+    // Les étapes sont numérotées PAR méthode : sans méthode, c'est la première de la fiche.
+    const mid = r.methode ?? fiche.methodeParDefaut ?? null;
+    if (r.methode && fiche.methodes && !(r.methode in fiche.methodes)) { pb.push(`${ou} : méthode « ${r.methode} » absente de ${r.fiche}`); return; }
+    const n = mid && fiche.methodes ? fiche.methodes[mid] : fiche.etapes;
+    if (r.etape !== null && r.etape !== undefined && (!Number.isInteger(r.etape) || r.etape < 1 || r.etape > n)) {
+      pb.push(`${ou} : étape ${r.etape} absente de ${r.fiche} (${n} étape(s))`);
+    }
+    // Garde-fou : le titre cité doit apparaître dans le titre de l'étape visée (une étape insérée ne décale pas le lien en silence).
+    if (r.titre && r.etape && fiche.titres) {
+      const t = (fiche.titres[mid ?? fiche.methodeParDefaut] ?? [])[r.etape - 1];
+      if (!t || !t.toLowerCase().includes(r.titre.toLowerCase())) pb.push(`${ou} : l’étape ${r.etape} de ${r.fiche} ne s’intitule pas « ${r.titre} » (« ${t ?? '—'} »)`);
     }
   };
   for (const p of cours.parcours ?? []) {

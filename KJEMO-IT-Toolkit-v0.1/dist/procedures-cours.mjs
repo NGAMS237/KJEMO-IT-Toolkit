@@ -8,5 +8,7 @@
 import { COURS_BASES } from './cours-fiches-bases.mjs';
 import { COURS_STOCKAGE } from './cours-fiches-stockage.mjs';
 import { COURS_SAMBA } from './cours-fiches-samba.mjs';
+import { COURS_CLIENTS } from './cours-fiches-clients.mjs';
+import { COURS_MEMO } from './cours-fiches-memo.mjs';
 
-export const PROCEDURES_COURS = [...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA];
+export const PROCEDURES_COURS = [...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO];

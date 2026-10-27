@@ -777,3 +777,13 @@ li.etape-cible{outline:3px solid var(--accent);outline-offset:3px;border-radius:
 [aria-disabled="true"]{opacity:.55;cursor:not-allowed}
 @media(max-width:820px){.parcours-item{grid-template-columns:1fr}.item-case{flex-direction:row;justify-content:flex-start}.espaces-nav a{min-height:44px}}
 li.etape-cible{scroll-margin-top:20px}
+
+.machine-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--info-bg);color:var(--info-text);border:1px solid var(--border-strong)}
+.machine-note{grid-column:1/-1;margin:0;color:var(--muted);font-size:13px}
+.step-suppose,.qstep-suppose{margin:0 0 8px;padding:6px 10px;border-left:3px solid var(--warn);background:var(--warn-bg);color:var(--warn-text);border-radius:6px;font-size:13.5px}
+.step-suppose-label{font-weight:700;margin-right:6px}
+.prerequis{margin:12px 0;padding:10px 14px;border:1px solid var(--warn-border);background:var(--warn-bg);color:var(--warn-text);border-radius:10px}
+.prerequis-titre{font-size:15px;margin:0 0 4px}
+.prerequis ul{margin:0;padding-left:20px}
+.prerequis li{margin:3px 0}
+.prerequis-lien{color:var(--link);font-weight:600}

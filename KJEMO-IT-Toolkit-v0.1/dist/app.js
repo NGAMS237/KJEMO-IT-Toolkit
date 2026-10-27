@@ -18,7 +18,7 @@ import { rendreMethode, evaluerValeurs, validerParametre, texteCopiable, raisonR
          dossierMarkdown } from './procedures.mjs';
 import { COURS, COURS_PAR_ID, ROUTE_COURS, ROUTE_LABO, lireRouteTache, lireRouteCours, GABARIT_TP } from './cours.mjs';
 import { CLE_LABO, CLE_PROGRESSION, normaliserLabo, saisiesDepuisLabo, normaliserProgression, basculer,
-         LIGNES_CSV_MODELE, csvDepuisLignes, lignesDepuisTexte } from './labo.mjs';
+         texteEditeurModele, csvDepuisLignes, lignesDepuisTexte } from './labo.mjs';
 import { coursListeMarkup, coursPageMarkup, coursIntrouvableMarkup, laboMarkup, espacesMarkup,
          retourParcoursMarkup } from './vue-cours.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
@@ -363,7 +363,7 @@ function contexteDepuisHash() {
   const r = lireRouteTache(location.hash);
   const cours = r?.coursId ? COURS_PAR_ID.get(r.coursId) : null;
   const parcoursOk = cours && cours.parcours.some((x) => x.lettre === r.lettre);
-  return { etape: r?.etape ?? null, depuis: parcoursOk ? { coursId: r.coursId, lettre: r.lettre } : null };
+  return { etape: r?.etape ?? null, methode: r?.methode ?? null, depuis: parcoursOk ? { coursId: r.coursId, lettre: r.lettre } : null };
 }
 
 function ecrireHash(cible) {
@@ -383,16 +383,17 @@ function ouvrirOutil(tool, { pousserHash = true } = {}) {
 }
 
 /** Ouvre une fiche tâche. Les valeurs saisies repartent de zéro. */
-function ouvrirTache(entree, { pousserHash = true, etape = null, depuis = null } = {}) {
+function ouvrirTache(entree, { pousserHash = true, etape = null, depuis = null, methode = null } = {}) {
   currentTool = null;
   espace = null;
   currentTache = entree;
   contexteParcours = depuis;
-  const nbEtapes = entree.procedure.methodes[0]?.etapes?.length ?? 0;
-  etapeCible = etape && etape <= nbEtapes ? etape : null;
   const langages = METHODES_PLATEFORME[platFiltre] ?? [];
-  methodeTache = (entree.procedure.methodes.find((m) => langages.includes(m.id))
-    ?? entree.procedure.methodes[0]).id;
+  // Un lien de parcours peut imposer la méthode (#/tache/<id>/methode/<m>/etape/<n>) : les étapes sont numérotées PAR méthode.
+  const imposee = methode ? entree.procedure.methodes.find((m) => m.id === methode) : null;
+  const choisie = imposee ?? entree.procedure.methodes.find((m) => langages.includes(m.id)) ?? entree.procedure.methodes[0];
+  methodeTache = choisie.id;
+  etapeCible = etape && etape <= (choisie.etapes?.length ?? 0) ? etape : null;
   saisiesTache = {};
   vueLocale = etapeCible ? 'pas' : null;   // un lien d'étape ne montre jamais la vue rapide, qui n'a pas d'étapes numérotées
   noterConsultation(entree.id);
@@ -456,7 +457,7 @@ function appliquerHash() {
   }
   if (tache) {
     const ctx = contexteDepuisHash();
-    const memeLien = currentTache?.id === tache.id && etapeCible === null && (ctx.etape === null || ctx.etape === etapeAffichee);
+    const memeLien = currentTache?.id === tache.id && etapeCible === null && (ctx.methode === null || ctx.methode === methodeTache) && (ctx.etape === null || ctx.etape === etapeAffichee);
     if (!memeLien || etaitEspace) ouvrirTache(tache, { pousserHash: false, ...ctx });
   } else if (tool) {
     if (currentTool?.id !== tool.id || etaitEspace) ouvrirOutil(tool, { pousserHash: false });
@@ -1584,6 +1585,7 @@ function renderTache() {
     favori: estFavori(entree.id),
     assistantTitre: assistant?.title ?? null,
     prete: renduCourant().manquants.length === 0,
+    prerequisTitres: Object.fromEntries((p.prerequis ?? []).filter((r) => r.fiche).map((r) => [r.fiche, entreeParId(r.fiche)?.titre ?? r.fiche])),
   });
   document.title = `${p.titre} — KJEMO IT Toolkit`;
 
@@ -1698,7 +1700,7 @@ function renderTache() {
   // invites, les numéros, les libellés d'équipement et les repères restent donc
   // hors du presse-papiers. Un secret n'existe pas ici : il se tape sur l'équipement.
   view.querySelector('.tache').addEventListener('click', async (ev) => {
-    const btn = ev.target.closest('.copy-step, .copy-seg, .copy-phase, .copy-eq, #copyAll');
+    const btn = ev.target.closest('.copy-step, .copy-seg, .copy-phase, .copy-eq, .copy-machine, #copyAll');
     if (btn) return copier(btn, view);
     const dl = ev.target.closest('#dlDossier');
     if (dl) return telechargerDossier(dl, view);
@@ -1726,6 +1728,10 @@ function cibleDeCopie(btn, rendu, methode) {
   if (btn.matches('.copy-eq')) {
     const q = rendu.parEquipement.find((x) => x.id === btn.dataset.eq);
     return { texte: q.texte, raison: q.raison, methodeId: q.methode, manquants: rendu.manquants };
+  }
+  if (btn.matches('.copy-machine')) {
+    const q = rendu.parMachine.find((x) => x.id === btn.dataset.machine);
+    return { texte: q.texte, raison: q.raison, methodeId: methode.id, manquants: rendu.manquants };
   }
   if (btn.matches('.copy-phase')) {
     const ph = rendu.phases[Number(btn.dataset.phase)];
@@ -1766,7 +1772,7 @@ async function copier(btn, view) {
   }
   try {
     await navigator.clipboard.writeText(texteCopiable(cible.texte, cible.methodeId, { espaceFinal: Boolean(cible.espaceFinal) }));
-    if (indice) indice.textContent = btn.matches('#copyAll') ? 'Toutes les commandes sont copiées.' : btn.matches('.copy-eq') ? 'Séquence de cet équipement copiée.' : btn.matches('.copy-phase') ? 'Bloc copié.' : btn.matches('.copy-seg') ? 'Segment copié.' : 'Commande copiée.';
+    if (indice) indice.textContent = btn.matches('#copyAll') ? 'Toutes les commandes sont copiées.' : btn.matches('.copy-eq') ? 'Séquence de cet équipement copiée.' : btn.matches('.copy-machine') ? 'Séquence de ce poste copiée.' : btn.matches('.copy-phase') ? 'Bloc copié.' : btn.matches('.copy-seg') ? 'Segment copié.' : 'Commande copiée.';
     btn.classList.add('is-copied');
     setTimeout(() => btn.classList.remove('is-copied'), 1600);
   } catch {
@@ -1855,7 +1861,7 @@ function renderCours() {
 
 let etatLabo = { erreurs: {}, enregistre: false, csvTexte: null, csvErreurs: [], csvPret: false };
 
-function csvParDefaut() { return `login,departement\n${LIGNES_CSV_MODELE.map((l) => `${l.login},${l.departement}`).join('\n')}\n`; }
+function csvParDefaut() { return texteEditeurModele(); }
 
 function renderLabo() {
   const view = document.querySelector('#laboView');
@@ -1896,7 +1902,7 @@ function renderLabo() {
   view.querySelector('#csvTelecharger').addEventListener('click', () => {
     const r = verifier();
     if (!etatLabo.csvPret) { renderLabo(); document.querySelector('#csvTelecharger')?.focus(); return; }
-    telechargerTexte('employes.csv', csvDepuisLignes(r.lignes), 'text/csv;charset=utf-8');
+    telechargerTexte('comptes_tp2_MODELE.csv', csvDepuisLignes(r.lignes), 'text/csv;charset=utf-8');
     renderLabo(); document.querySelector('#csvTelecharger')?.focus();
   });
 }
@@ -1995,9 +2001,10 @@ if (espaceInitial) {
 } else if (tacheInitiale) {
   const ctxInitial = contexteDepuisHash();
   currentTache = tacheInitiale;
-  methodeTache = tacheInitiale.procedure.methodes[0].id;
+  const methodeInitiale = tacheInitiale.procedure.methodes.find((m) => m.id === ctxInitial.methode) ?? tacheInitiale.procedure.methodes[0];
+  methodeTache = methodeInitiale.id;
   contexteParcours = ctxInitial.depuis;
-  etapeCible = ctxInitial.etape && ctxInitial.etape <= tacheInitiale.procedure.methodes[0].etapes.length ? ctxInitial.etape : null;
+  etapeCible = ctxInitial.etape && ctxInitial.etape <= methodeInitiale.etapes.length ? ctxInitial.etape : null;
   vueLocale = etapeCible ? 'pas' : null;
   noterConsultation(tacheInitiale.id);
 } else if (outilInitial) {
