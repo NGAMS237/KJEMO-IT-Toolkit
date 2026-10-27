@@ -161,3 +161,22 @@ Règle : domaine (catégorie existante) → groupe → sujet (seulement s’il y
 - Entrées sans rubrique : 0.
 - Rubriques vides : 0 (contrôlé par `test/classement.test.mjs`, avec contre-épreuves).
 
+
+
+## Addendum KJEMO-COMMANDES-COURS-TP2-01 — Linux et services réseau, familles recalculées
+
+Le catalogue compte maintenant 390 entrées (28 fiches de cours ajoutées), toutes classées. Les familles *Fichiers et dossiers* et *Lire, chercher et filtrer du texte* sont nouvelles ; Stockage, Utilisateurs et permissions, Partages de fichiers, Domaine et annuaire et Bash et automatisation reçoivent des fiches. Les sections Samba historiques sont inchangées et la couverture « à venir » de SAMBA-ADV-01 (assistants guidés) reste écrite comme non réalisée. Les cartes de rubrique du reste du catalogue sont inchangées.
+
+| Famille | Route | Entrées |
+|---|---|---|
+| Diagnostic général | `#/rubrique/linux/diagnostic` | 4 (0 fiches/scénarios · 0 commandes · 4 assistants) |
+| Fichiers et dossiers | `#/rubrique/linux/fichiers` | 6 (6 fiches/scénarios · 0 commandes · 0 assistants) |
+| Lire, chercher et filtrer du texte | `#/rubrique/linux/texte` | 4 (4 fiches/scénarios · 0 commandes · 0 assistants) |
+| Services, paquets et heure | `#/rubrique/linux/services` | 22 (2 fiches/scénarios · 16 commandes · 4 assistants) |
+| Utilisateurs et permissions | `#/rubrique/linux/utilisateurs` | 19 (3 fiches/scénarios · 11 commandes · 5 assistants) |
+| Stockage | `#/rubrique/linux/stockage` | 30 (5 fiches/scénarios · 19 commandes · 6 assistants) |
+| Réseau | `#/rubrique/linux/reseau` | 23 (2 fiches/scénarios · 17 commandes · 4 assistants) |
+| Accès distant | `#/rubrique/linux/acces-distant` | 25 (1 fiches/scénarios · 18 commandes · 6 assistants) |
+| Partages de fichiers | `#/rubrique/linux/partages` | 29 (3 fiches/scénarios · 21 commandes · 5 assistants) |
+| Domaine et annuaire (Samba Active Directory) | `#/rubrique/linux/annuaire` | 18 (4 fiches/scénarios · 10 commandes · 4 assistants) |
+| Bash et automatisation | `#/rubrique/linux/bash` | 8 (3 fiches/scénarios · 0 commandes · 5 assistants) |

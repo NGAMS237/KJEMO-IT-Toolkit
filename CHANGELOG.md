@@ -1,5 +1,17 @@
 # Journal des changements
 
+## KJEMO-COMMANDES-COURS-TP2-01 — Mes cours et TP, fiches de cours, laboratoire (branche claude/commandes-cours-tp2-01)
+
+**Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un poste, un serveur ou un equipement.**
+
+- 28 fiches redigees a la main (bases Linux/Bash, partition/ext4/fstab, quotas, RAID 1, groupes et partages Samba, smbclient, DNS Samba, jonction Ubuntu realmd/SSSD/PAM, RSAT) : meme contrat et memes vues que les autres procedures ; aucune generee automatiquement.
+- Espace « Mes cours et TP » : cours Serveurs II — TP2, parcours A a E renvoyant vers une fiche ET une etape ; routes `#/cours…` et `#/tache/<id>/etape/<n>/depuis/<cours>/<lettre>` ; etape visee reperee, retour au parcours ; lettres et numeros du TP conserves comme alias de recherche. Trois elements sont dits NON COUVERTS (A5, B1, D7) ; 11 ambiguites de l'enonce signalees.
+- Espace « Mon laboratoire » : 15 champs sans mot de passe, disque, UUID ni gid ; « Utiliser mon laboratoire » est un geste explicite ; modele de CSV fictif, valide avant telechargement ; progression locale (une case cochee n'est pas une preuve) ; gabarit JSON pour un prochain TP. Stockage local protege : l'ecran fonctionne s'il est refuse.
+- Securite : validateurs `peripherique` / `etiquetteExt4`, controles `distinctDe` / `superieurA` ; aucune commande ne contient /dev/sdb ni /dev/md127 ; 777 reserve au laboratoire ; systemd-resolved jamais desactive ; mode GPO permissif = dernier recours en lecture seule ; deux groupes pour read only / write list.
+- Accueil : les fiches de cours ne gonflent pas « Taches courantes » (recherche, rubriques et « Mes cours et TP » les trouvent).
+- Bancs : `test/cours.test.mjs` (2 197 verifications, contre-epreuves), `test/browser-cours.test.mjs` (56, 3 gestes de l'accueil a l'etape, 390 px), `test/matrice-cours.mjs --verifier` ; cables dans package.json et validate-linux.yml. Un seul test existant modifie (`classement.test.mjs` : `estPlaceDirect` au lieu d'un identifiant en dur), sans affaiblir aucune assertion.
+- Limites : rien execute sur machine reelle ; options `samba-tool` et renommage md127 non confirmes ; parcours et taxonomie reconstruits a partir des documents fournis (a relire contre l'enonce).
+
 ## UX-NAVIGATION-CATALOGUE-01 — Navigation par groupes et sous-groupes de toutes les cartes (branche claude/ux-navigation-catalogue-01)
 
 **Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un poste, un equipement ou un tenant.**

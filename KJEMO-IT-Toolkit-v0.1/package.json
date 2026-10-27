@@ -75,6 +75,8 @@
     "test:browser:coherence": "node test/browser-coherence.test.mjs",
     "test:browser:navigation": "node test/browser-navigation.test.mjs",
     "test:cours": "node test/cours.test.mjs",
+    "matrice:cours": "node test/matrice-cours.mjs --ecrire",
+    "test:matrice:cours": "node test/matrice-cours.mjs --verifier",
     "test:browser:cours": "node test/browser-cours.test.mjs",
     "test:sources:9": "node test/sources-impression.mjs",
     "matrices:lot9": "node test/matrices-lot9.mjs",

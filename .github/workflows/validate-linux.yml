@@ -580,6 +580,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cours.test.mjs
 
+      - name: Matrice de couverture du cours (a jour avec dist/cours.mjs - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/matrice-cours.mjs --verifier
+
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #
