@@ -293,6 +293,7 @@ const COURS_ID = COURS[0].id;
   await page.waitForSelector('#espacesZone a');
   const cibles = await page.locator('#espacesZone a').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
   assert(cibles.every((h) => h >= 44), 'mobile : cibles tactiles de l’accueil d’au moins 44 px', cibles.join(','));
+  await page.evaluate(() => window.scrollTo(0, 0));
   await capture(page, 'mobile-04-accueil');
   await context.close();
 }
