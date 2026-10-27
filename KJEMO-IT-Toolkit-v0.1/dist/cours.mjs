@@ -142,6 +142,12 @@ export const COURS = [
       { fiche: 'cours-se-reperer', pourquoi: 'pwd, ls, cd : les bases du terminal.' },
       { fiche: 'cours-grep-wc', pourquoi: 'Chercher dans un fichier de configuration.' },
       { fiche: 'cours-liens', pourquoi: 'Liens durs et symboliques.' },
+      { fiche: 'cours-identifier-fichier', pourquoi: 'file, stat : reconnaître la nature d’un fichier.' },
+      { fiche: 'cours-copier-deplacer', pourquoi: 'cp, mv : copier et déplacer sans écraser par mégarde.' },
+      { fiche: 'cours-supprimer-prudemment', pourquoi: 'rm, rmdir : supprimer en sachant ce qui part.' },
+      { fiche: 'cours-find-fichiers', pourquoi: 'find : retrouver un fichier par son nom, sa taille ou sa date.' },
+      { fiche: 'cours-redirections-tubes', pourquoi: '>, >>, | : rediriger et enchaîner les commandes.' },
+      { fiche: 'cours-groupes-locaux', pourquoi: 'Comptes et groupes LOCAUX (par opposition au domaine).' },
     ],
     ambiguites: [
       { id: 'amb-mo', sujet: 'B16 — « 260 Mo »', texte: 'Mo = 1 000 000 octets, ou Mio = 1 048 576 ? En blocs de 1 Kio, 260 Mio = 266 240 ; 260 Mo = environ 253 906. La fiche propose 266240 / 266250 (Mio, souple + 10 Kio). Demande à ton enseignant l’unité attendue.' },

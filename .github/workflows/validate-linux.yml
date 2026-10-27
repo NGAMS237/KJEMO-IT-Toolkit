@@ -115,7 +115,10 @@ jobs:
                    dist/generators.mjs dist/procedures.mjs \
                    dist/procedures-pilotes.mjs dist/procedures-vague2.mjs \
                    dist/procedures-vague3.mjs dist/scenarios.mjs \
-                   dist/taches.mjs dist/vue-taches.mjs dist/classement.mjs dist/vue-navigation.mjs dist/app.js; do
+                   dist/taches.mjs dist/vue-taches.mjs dist/classement.mjs dist/vue-navigation.mjs \
+                   dist/cours-outils.mjs dist/cours-fiches-bases.mjs dist/cours-fiches-stockage.mjs \
+                   dist/cours-fiches-samba.mjs dist/procedures-cours.mjs dist/cours.mjs dist/labo.mjs \
+                   dist/vue-cours.mjs dist/app.js; do
             node --check "$f"
             echo "  node --check OK : $f"
           done
@@ -573,6 +576,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/classement.test.mjs
 
+      - name: Cours et TP (28 fiches, parcours A-E, laboratoire sans secret, validateurs de peripheriques, contre-epreuves - statique)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cours.test.mjs
+
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #
@@ -638,6 +645,10 @@ jobs:
       - name: Navigateur UX navigation - parcours sans recherche, fil d'Ariane, perimetre de recherche, filtre masquant, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-navigation.test.mjs
+
+      - name: Navigateur Mes cours et TP - etape d'une fiche en 3 gestes, progression locale, laboratoire, CSV, stockage refuse, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-cours.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
