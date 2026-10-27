@@ -26,6 +26,7 @@ import { PROCEDURES_PILOTES } from './procedures-pilotes.mjs';
 import { PROCEDURES_VAGUE2 } from './procedures-vague2.mjs';
 import { PROCEDURES_VAGUE3 } from './procedures-vague3.mjs';
 import { PROCEDURES_COURS } from './procedures-cours.mjs';
+import { aliasesDe } from './cours.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { CATEGORIES } from './categories.mjs';
 import { initialiser as initialiserClassement } from './classement.mjs';
@@ -162,7 +163,8 @@ function entreeProcedure(p) {
     plateformes: plateformesDeProcedure(p),
     effet: p.effet,
     resume: p.resume,
-    intentions: p.intentions,
+    // Les lettres et numéros d'un travail pratique (« TP2 B7 ») retrouvent la fiche.
+    intentions: [...p.intentions, ...aliasesDe(p.id)],
     motsCles: p.motsCles ?? [],
     commandes: motsDeCommande(lignes),
     doc: '',

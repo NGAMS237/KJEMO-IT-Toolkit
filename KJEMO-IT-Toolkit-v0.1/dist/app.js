@@ -16,6 +16,11 @@ import { filArianeMarkup, maillonsDePortee, nomDePortee, rubriqueMarkup, groupeE
          bandeauMasqueMarkup } from './vue-navigation.mjs';
 import { rendreMethode, evaluerValeurs, validerParametre, texteCopiable, raisonRefus,
          dossierMarkdown } from './procedures.mjs';
+import { COURS, COURS_PAR_ID, ROUTE_COURS, ROUTE_LABO, lireRouteTache, lireRouteCours, GABARIT_TP } from './cours.mjs';
+import { CLE_LABO, CLE_PROGRESSION, normaliserLabo, saisiesDepuisLabo, normaliserProgression, basculer,
+         LIGNES_CSV_MODELE, csvDepuisLignes, lignesDepuisTexte } from './labo.mjs';
+import { coursListeMarkup, coursPageMarkup, coursIntrouvableMarkup, laboMarkup, espacesMarkup,
+         retourParcoursMarkup } from './vue-cours.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
          creerPreference } from './preferences.mjs';
 
@@ -41,6 +46,10 @@ let currentTool = null;
 // choisie et valeurs saisies. Les valeurs ne vivent que le temps d'une fiche :
 // ouvrir une autre fiche repart de zéro (aucun état gardé par erreur).
 let currentTache = null;
+let espace = null;            // null | { type:'cours', coursId, lettre } | { type:'labo' } : « Mes cours et TP », « Mon laboratoire »
+let contexteParcours = null;  // { coursId, lettre } quand la fiche est ouverte depuis un parcours
+let etapeAffichee = null;     // dernière étape montrée par un lien (évite de la remontrer à chaque événement)
+let etapeCible = null;        // numéro d'étape à montrer à l'ouverture d'une fiche
 let methodeTache = null;
 let saisiesTache = {};
 let vueLocale = null;           // 'rapide' | 'pas' | null : choix LOCAL à la fiche ouverte (le mode global donne le défaut)
@@ -285,6 +294,21 @@ function lireStockage(cle, defaut) {
   }
 }
 
+function lireObjet(cle) {
+  try {
+    const brut = localStorage.getItem(cle);
+    if (!brut) return {};
+    const val = JSON.parse(brut);
+    return val && typeof val === 'object' && !Array.isArray(val) ? val : {};
+  } catch {
+    return {};
+  }
+}
+
+function stockageDisponible() {
+  try { localStorage.setItem('kjemo.test.v1', '1'); localStorage.removeItem('kjemo.test.v1'); return true; } catch { return false; }
+}
+
 function ecrireStockage(cle, valeur) {
   try {
     localStorage.setItem(cle, JSON.stringify(valeur));
@@ -328,10 +352,18 @@ function outilDepuisHash() {
 
 /** Fiche tâche demandée par l'URL (#/tache/<id>), si l'identifiant porte une procédure. */
 function tacheDepuisHash() {
-  const m = /^#\/tache\/([A-Za-z0-9_-]+)$/.exec(location.hash || '');
-  if (!m) return null;
-  const e = entreeParId(m[1]);
+  const r = lireRouteTache(location.hash);
+  if (!r) return null;
+  const e = entreeParId(r.id);
   return e && e.procedure ? e : null;
+}
+
+/** Étape et parcours d'origine demandés par l'URL d'une fiche (#/tache/<id>/etape/<n>/depuis/<cours>/<lettre>). */
+function contexteDepuisHash() {
+  const r = lireRouteTache(location.hash);
+  const cours = r?.coursId ? COURS_PAR_ID.get(r.coursId) : null;
+  const parcoursOk = cours && cours.parcours.some((x) => x.lettre === r.lettre);
+  return { etape: r?.etape ?? null, depuis: parcoursOk ? { coursId: r.coursId, lettre: r.lettre } : null };
 }
 
 function ecrireHash(cible) {
@@ -344,20 +376,25 @@ function ecrireHash(cible) {
 function ouvrirOutil(tool, { pousserHash = true } = {}) {
   currentTool = tool;
   currentTache = null;
+  espace = null;
   noterConsultation(tool.id);
   if (pousserHash) ecrireHash(`#/outil/${tool.id}`);
   render();
 }
 
 /** Ouvre une fiche tâche. Les valeurs saisies repartent de zéro. */
-function ouvrirTache(entree, { pousserHash = true } = {}) {
+function ouvrirTache(entree, { pousserHash = true, etape = null, depuis = null } = {}) {
   currentTool = null;
+  espace = null;
   currentTache = entree;
+  contexteParcours = depuis;
+  const nbEtapes = entree.procedure.methodes[0]?.etapes?.length ?? 0;
+  etapeCible = etape && etape <= nbEtapes ? etape : null;
   const langages = METHODES_PLATEFORME[platFiltre] ?? [];
   methodeTache = (entree.procedure.methodes.find((m) => langages.includes(m.id))
     ?? entree.procedure.methodes[0]).id;
   saisiesTache = {};
-  vueLocale = null;
+  vueLocale = etapeCible ? 'pas' : null;   // un lien d'étape ne montre jamais la vue rapide, qui n'a pas d'étapes numérotées
   noterConsultation(entree.id);
   if (pousserHash) ecrireHash(`#/tache/${entree.id}`);
   render();
@@ -372,12 +409,28 @@ function ouvrirEntree(entree, opts) {
 function revenirAccueil({ pousserHash = true } = {}) {
   currentTool = null;
   currentTache = null;
+  espace = null;
   if (pousserHash) ecrireHash(routePortee(portee()));
   render();
 }
 
 /** Applique l'URL courante à l'état de l'application. */
+function espaceDepuisHash() {
+  if (location.hash === ROUTE_LABO) return { type: 'labo' };
+  const c = lireRouteCours(location.hash);
+  if (!c) return null;
+  return { type: 'cours', coursId: c.coursId, lettre: c.lettre };
+}
+
 function appliquerHash() {
+  const nouvelEspace = espaceDepuisHash();
+  if (nouvelEspace) {
+    espace = nouvelEspace; currentTool = null; currentTache = null;
+    render();
+    return;
+  }
+  const etaitEspace = espace !== null;
+  espace = null;
   const tache = tacheDepuisHash();
   const tool = outilDepuisHash();
   if (!tache && !tool) {
@@ -402,11 +455,15 @@ function appliquerHash() {
     }
   }
   if (tache) {
-    if (currentTache?.id !== tache.id) ouvrirTache(tache, { pousserHash: false });
+    const ctx = contexteDepuisHash();
+    const memeLien = currentTache?.id === tache.id && etapeCible === null && (ctx.etape === null || ctx.etape === etapeAffichee);
+    if (!memeLien || etaitEspace) ouvrirTache(tache, { pousserHash: false, ...ctx });
   } else if (tool) {
-    if (currentTool?.id !== tool.id) ouvrirOutil(tool, { pousserHash: false });
+    if (currentTool?.id !== tool.id || etaitEspace) ouvrirOutil(tool, { pousserHash: false });
   } else if (currentTool || currentTache) {
     revenirAccueil({ pousserHash: false });
+  } else if (etaitEspace) {
+    render();
   }
 }
 
@@ -1529,6 +1586,8 @@ function renderTache() {
   document.title = `${p.titre} — KJEMO IT Toolkit`;
 
   enteteNavigationFiche(view, entree, p.titre, 'taskBack');
+  const coursOrigine = contexteParcours ? COURS_PAR_ID.get(contexteParcours.coursId) : null;
+  if (coursOrigine) view.insertAdjacentHTML('afterbegin', retourParcoursMarkup(coursOrigine.titre, contexteParcours.lettre, coursOrigine.id));
 
   const fav = view.querySelector('#taskFav');
   fav.addEventListener('click', () => {
@@ -1611,6 +1670,15 @@ function renderTache() {
   }
 
   const exemples = view.querySelector('#exemplesBtn');
+  const depuisLabo = saisiesDepuisLabo(p, lireObjet(CLE_LABO));
+  if (exemples && Object.keys(depuisLabo).length) {
+    exemples.insertAdjacentHTML('afterend', ' <button type="button" class="secondary-button" id="laboBtn">Utiliser mon laboratoire</button>');
+    view.querySelector('#laboBtn').addEventListener('click', () => {
+      Object.assign(saisiesTache, depuisLabo);
+      renderTache();
+      document.querySelector('#laboBtn')?.focus();
+    });
+  }
   if (exemples) {
     exemples.addEventListener('click', () => {
       p.params.forEach((prm) => {
@@ -1622,6 +1690,7 @@ function renderTache() {
   }
   majNoteExemples();
   majErreursTables();
+  montrerEtapeCible(view);
 
   // Copie : le texte est CALCULÉ (procedures.mjs), jamais lu dans le DOM — les
   // invites, les numéros, les libellés d'équipement et les repères restent donc
@@ -1632,6 +1701,20 @@ function renderTache() {
     const dl = ev.target.closest('#dlDossier');
     if (dl) return telechargerDossier(dl, view);
   });
+}
+
+/** Montre l'étape demandée par un lien de parcours : défilement, repère visible, focus sans saut. */
+function montrerEtapeCible(view) {
+  if (!etapeCible) return;
+  const n = etapeCible;
+  etapeCible = null;
+  const li = view.querySelector(`#etape-${n}`);
+  if (!li) return;
+  etapeAffichee = n;
+  li.classList.add('etape-cible');
+  li.setAttribute('tabindex', '-1');
+  li.scrollIntoView?.({ block: 'start' });
+  li.focus?.({ preventScroll: true });
 }
 
 /** Résout le texte, la méthode (normalisation) et l'indice d'un bouton de copie. */
@@ -1708,16 +1791,142 @@ function telechargerDossier(btn, view) {
   if (hint) hint.textContent = 'Dossier téléchargé.';
 }
 
+// ---------------------------------------------------------------------------
+// Mes cours et TP · Mon laboratoire
+// Aucun secret : le laboratoire n'a pas de champ de mot de passe ni de disque, la
+// progression ne garde que des identifiants d'éléments, et une case cochée n'est
+// jamais une preuve. Tout passe par un stockage protégé ; sans lui, l'écran
+// fonctionne et dit que rien n'est conservé.
+// ---------------------------------------------------------------------------
+function contexteCours() {
+  return {
+    fiche: (id) => {
+      const e = entreeParId(id);
+      if (!e?.procedure) return null;
+      return { titre: e.procedure.titre, etapes: e.procedure.methodes[0].etapes };
+    },
+    assistant: (id) => tools.find((t) => t.id === id)?.title ?? null,
+  };
+}
+
+// Copie en mémoire : si le stockage est refusé, la case reste cochée pour la session (et l'écran le dit).
+let progressionMemoire = null;
+function lireProgression() {
+  if (!progressionMemoire) progressionMemoire = normaliserProgression(lireObjet(CLE_PROGRESSION), COURS);
+  return progressionMemoire;
+}
+
+function telechargerTexte(nom, texte, type) {
+  const blob = new Blob([texte], { type });
+  const lien = document.createElement('a');
+  lien.href = URL.createObjectURL(blob);
+  lien.download = nom;
+  document.body.appendChild(lien); lien.click(); lien.remove();
+  setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+}
+
+function renderCours() {
+  const view = document.querySelector('#coursView');
+  const ctx = contexteCours();
+  const progression = lireProgression();
+  if (!espace.coursId) {
+    view.innerHTML = coursListeMarkup(COURS, progression, ctx);
+    document.title = 'Mes cours et TP — KJEMO IT Toolkit';
+  } else {
+    const cours = COURS_PAR_ID.get(espace.coursId);
+    if (!cours) { view.innerHTML = coursIntrouvableMarkup(); document.title = 'Cours introuvable — KJEMO IT Toolkit'; return; }
+    view.innerHTML = coursPageMarkup(cours, espace.lettre, progression, ctx);
+    document.title = `${cours.titre} — KJEMO IT Toolkit`;
+    view.querySelectorAll('input[type="checkbox"][data-item]').forEach((c) => c.addEventListener('change', () => {
+      const suite = basculer(lireProgression(), cours.id, c.dataset.item);
+      progressionMemoire = suite;
+      const ok = ecrireStockage(CLE_PROGRESSION, suite);
+      if (!ok) c.title = 'Le stockage du navigateur est indisponible : cette case ne sera pas conservée.';
+      renderCours();
+      document.querySelector(`#item-${c.dataset.item.replace(/\./g, '-')}`)?.focus();
+    }));
+  }
+  view.querySelector('#gabaritBtn')?.addEventListener('click', () => {
+    telechargerTexte('gabarit-tp.json', `${JSON.stringify(GABARIT_TP, null, 2)}\n`, 'application/json;charset=utf-8');
+  });
+}
+
+let etatLabo = { erreurs: {}, enregistre: false, csvTexte: null, csvErreurs: [], csvPret: false };
+
+function csvParDefaut() { return `login,departement\n${LIGNES_CSV_MODELE.map((l) => `${l.login},${l.departement}`).join('\n')}\n`; }
+
+function renderLabo() {
+  const view = document.querySelector('#laboView');
+  if (etatLabo.csvTexte === null) etatLabo.csvTexte = csvParDefaut();
+  const { valeurs } = normaliserLabo(lireObjet(CLE_LABO));
+  view.innerHTML = laboMarkup({ valeurs, erreurs: etatLabo.erreurs, csvTexte: etatLabo.csvTexte, csvErreurs: etatLabo.csvErreurs,
+    csvPret: etatLabo.csvPret, enregistre: etatLabo.enregistre, stockageOk: stockageDisponible() });
+  document.title = 'Mon laboratoire — KJEMO IT Toolkit';
+  view.querySelector('#laboForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const brut = {};
+    view.querySelectorAll('[data-labo]').forEach((i) => { brut[i.dataset.labo] = i.value; });
+    const { valeurs: v, erreurs } = normaliserLabo(brut);
+    // On enregistre ce qui est valide ; ce qui est refusé reste affiché avec sa raison.
+    const ok = ecrireStockage(CLE_LABO, v);
+    etatLabo = { ...etatLabo, erreurs, enregistre: ok && Object.keys(erreurs).length === 0 };
+    renderLabo();
+    document.querySelector('#laboNote')?.focus?.();
+  });
+  view.querySelector('#laboClear').addEventListener('click', () => {
+    try { localStorage.removeItem(CLE_LABO); } catch { /* stockage indisponible : rien à effacer */ }
+    etatLabo = { ...etatLabo, erreurs: {}, enregistre: false };
+    renderLabo();
+    document.querySelector('#laboClear')?.focus();
+  });
+  const verifier = () => {
+    const texte = view.querySelector('#csvTexte').value;
+    const r = lignesDepuisTexte(texte);
+    const vide = r.lignes.length === 0 && r.erreurs.length === 0;
+    etatLabo = { ...etatLabo, csvTexte: texte,
+      csvErreurs: vide ? [{ ligne: 0, message: 'Aucune ligne de compte.' }] : r.erreurs,
+      csvPret: !vide && r.erreurs.length === 0 && csvDepuisLignes(r.lignes) !== null };
+    return r;
+  };
+  view.querySelector('#csvVerifier').addEventListener('click', () => {
+    verifier(); renderLabo(); document.querySelector('#csvVerifier')?.focus();
+  });
+  view.querySelector('#csvTelecharger').addEventListener('click', () => {
+    const r = verifier();
+    if (!etatLabo.csvPret) { renderLabo(); document.querySelector('#csvTelecharger')?.focus(); return; }
+    telechargerTexte('employes.csv', csvDepuisLignes(r.lignes), 'text/csv;charset=utf-8');
+    renderLabo(); document.querySelector('#csvTelecharger')?.focus();
+  });
+}
+
+/** Les deux entrées de la barre latérale : l'état courant est annoncé (aria-current). */
+function majNavEspaces() {
+  document.querySelectorAll('#espacesNav a').forEach((a) => {
+    const actif = (a.dataset.espace === 'cours' && espace?.type === 'cours') || (a.dataset.espace === 'labo' && espace?.type === 'labo');
+    if (actif) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    a.classList.toggle('active', actif);
+  });
+  const zone = document.querySelector('#espacesZone');
+  if (zone && !zone.dataset.pret) { zone.innerHTML = espacesMarkup(); zone.dataset.pret = '1'; }
+}
+
 function render() {
   renderNavigation();
   renderModeSelector();
   renderThemeSelector();
   document.body.dataset.mode = modeCourant();
-  document.querySelector('#home').hidden = Boolean(currentTool || currentTache);
+  document.querySelector('#home').hidden = Boolean(currentTool || currentTache || espace);
   document.querySelector('#toolView').hidden = !currentTool;
   document.querySelector('#taskView').hidden = !currentTache;
-  if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
-  if (currentTool || currentTache) window.scrollTo?.({ top: 0 });
+  document.querySelector('#coursView').hidden = espace?.type !== 'cours';
+  document.querySelector('#laboView').hidden = espace?.type !== 'labo';
+  if (!currentTache) etapeAffichee = null;
+  const versEtape = Boolean(etapeCible);   // montrerEtapeCible consomme etapeCible : on retient s'il faut défiler jusqu'à l'étape
+  if (espace?.type === 'cours') renderCours();
+  else if (espace?.type === 'labo') renderLabo();
+  else if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
+  if ((currentTool || currentTache || espace) && !versEtape) window.scrollTo?.({ top: 0 });
+  majNavEspaces();
 }
 
 const champRecherche = document.querySelector('#search');
@@ -1729,7 +1938,7 @@ function majEffacer() {
 
 champRecherche.addEventListener('input', () => {
   majEffacer();
-  if (!currentTool && !currentTache) renderHome();
+  if (!currentTool && !currentTache && !espace) renderHome();
 });
 
 if (boutonEffacer) {
@@ -1737,7 +1946,7 @@ if (boutonEffacer) {
     champRecherche.value = '';
     majEffacer();
     champRecherche.focus();
-    if (!currentTool && !currentTache) renderHome();
+    if (!currentTool && !currentTache && !espace) renderHome();
   });
 }
 
@@ -1747,7 +1956,7 @@ champRecherche.addEventListener('keydown', (ev) => {
     ev.preventDefault();
     champRecherche.value = '';
     majEffacer();
-    if (!currentTool && !currentTache) renderHome();
+    if (!currentTool && !currentTache && !espace) renderHome();
   }
 });
 majEffacer();
@@ -1776,11 +1985,18 @@ window.addEventListener('popstate', appliquerHash);
 window.addEventListener('hashchange', appliquerHash);
 
 // Ouvrir directement la fiche demandée par l'URL au chargement
-const tacheInitiale = tacheDepuisHash();
-const outilInitial = outilDepuisHash();
-if (tacheInitiale) {
+const espaceInitial = espaceDepuisHash();
+const tacheInitiale = espaceInitial ? null : tacheDepuisHash();
+const outilInitial = espaceInitial ? null : outilDepuisHash();
+if (espaceInitial) {
+  espace = espaceInitial;
+} else if (tacheInitiale) {
+  const ctxInitial = contexteDepuisHash();
   currentTache = tacheInitiale;
   methodeTache = tacheInitiale.procedure.methodes[0].id;
+  contexteParcours = ctxInitial.depuis;
+  etapeCible = ctxInitial.etape && ctxInitial.etape <= tacheInitiale.procedure.methodes[0].etapes.length ? ctxInitial.etape : null;
+  vueLocale = etapeCible ? 'pas' : null;
   noterConsultation(tacheInitiale.id);
 } else if (outilInitial) {
   currentTool = outilInitial;
