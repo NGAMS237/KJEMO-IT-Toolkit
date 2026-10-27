@@ -49,7 +49,9 @@ export function badgeEffet(effet) {
  * Commandes Cisco IOS), une fiche liste ses méthodes, un scénario ses
  * équipements.
  */
-export function libellesMethodes(entree) {
+export const METHODES_PLATEFORME = { Linux: ['linux'], Windows: ['powershell', 'cmd', 'gui'], Cisco: ['ios'], Azure: ['azure', 'powershell'] };
+
+export function libellesMethodes(entree, plateforme = null) {
   if (entree.tool) return [etiquetteSortie(entree.tool)];
   const p = entree.procedure;
   const ids = [];
@@ -57,11 +59,14 @@ export function libellesMethodes(entree) {
     const sous = m.id === 'scenario' ? (m.equipements ?? []).map((q) => q.methode) : [m.id];
     for (const id of sous) if (METHODES[id] && !ids.includes(id)) ids.push(id);
   }
-  return ids.map((id) => METHODES[id].label);
+  const compatibles = METHODES_PLATEFORME[plateforme];
+  // Un scénario garde visibles ses équipements : masquer une machine fausserait la procédure.
+  return ids.filter((id) => !compatibles || entree.kind === 'scenario' || compatibles.includes(id))
+    .map((id) => METHODES[id].label);
 }
 
-export function methodeBadgesMarkup(entree) {
-  return libellesMethodes(entree)
+export function methodeBadgesMarkup(entree, plateforme = null) {
+  return libellesMethodes(entree, plateforme)
     .map((l) => `<span class="methode-badge" data-methode-badge>${esc(l)}</span>`).join('');
 }
 
@@ -73,18 +78,18 @@ const LIBELLE_BOUTON = { procedure: 'Ouvrir la fiche', scenario: 'Ouvrir le scé
  * description. Conserve .tool-card / h3 / .tag / .fav-toggle / .open-tool, que
  * la navigation clavier, les favoris et les tests historiques utilisent.
  */
-export function ligneResultatMarkup(entree, { favori = false, motif = null } = {}) {
+export function ligneResultatMarkup(entree, { favori = false, motif = null, plateforme = null } = {}) {
   const tag = entree.tool?.subcategory
     ? `${entree.categorie.toUpperCase()} · ${entree.tool.subcategory}`
     : entree.categorie.toUpperCase();
-  const plat = entree.plateformes.map((p) => `<span class="plat" title="${esc(p)}"><span aria-hidden="true">${iconePlateforme(p)}</span> ${esc(p)}</span>`).join('');
+  const plat = entree.plateformes.filter((p) => !plateforme || p === plateforme).map((p) => `<span class="plat" title="${esc(p)}"><span aria-hidden="true">${iconePlateforme(p)}</span> ${esc(p)}</span>`).join('');
   return `<article class="tool-card task-row kind-${entree.kind}" data-id="${esc(entree.id)}" data-kind="${entree.kind}" role="listitem">`
     + `<div class="task-main">`
     + `<span class="tag">${esc(tag)}</span>`
     + `<h3>${esc(entree.titre)}</h3>`
     + `<p class="task-desc">${esc(entree.resume)}</p>`
     + (motif ? `<p class="match-reason">Correspond au ${esc(motif)}</p>` : '')
-    + `<div class="task-badges"><span class="kind kind-${entree.kind}">${LIBELLE_KIND[entree.kind]}</span>${plat}${methodeBadgesMarkup(entree)}${badgeEffet(entree.effet)}</div>`
+    + `<div class="task-badges"><span class="kind kind-${entree.kind}">${LIBELLE_KIND[entree.kind]}</span>${plat}${methodeBadgesMarkup(entree, plateforme)}${badgeEffet(entree.effet)}</div>`
     + `</div>`
     + `<div class="task-actions">`
     + `<button class="fav-toggle${favori ? ' is-fav' : ''}" type="button" aria-pressed="${favori}" title="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'} : ${esc(entree.titre)}">${favori ? '★' : '☆'}</button>`

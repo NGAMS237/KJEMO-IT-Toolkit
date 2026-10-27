@@ -9,7 +9,7 @@ import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
          compteParCategorie, couverture, liensDeAssistant } from './taches.mjs';
-import { ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
+import { METHODES_PLATEFORME, ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
          resumeScriptMarkup, badgeEffet, esc, enteteAssistantMeta, versionsCourtesMarkup } from './vue-taches.mjs';
 import { cheminDe, filDeEntree, lireRoute, routePortee, domaineIdDe, domaineNomDe, dans, noeud } from './classement.mjs';
 import { filArianeMarkup, maillonsDePortee, nomDePortee, rubriqueMarkup, groupeEnteteMarkup, groupes,
@@ -63,7 +63,9 @@ function portee() {
     sujetId: domaineId && familleSel ? sujetSel : null,
   };
 }
-const listeBase = () => (vueAssistants ? TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant') : ENTREES_LISTEES);
+const compatiblePlateforme = (e, plat = platFiltre) => !plat || e.plateformes.includes(plat);
+const listeBase = () => (vueAssistants ? TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant') : ENTREES_LISTEES)
+  .filter((e) => compatiblePlateforme(e));
 function gardePortee() {
   const p = portee();
   return p.familleId ? (e) => dans(e, { familleId: p.familleId, sujetId: p.sujetId }) : null;
@@ -189,15 +191,14 @@ function sousNavigationMarkup(nomDomaine) {
 
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
-  const comptesTaches = compteParCategorie(ENTREES_LISTEES);
-  nav.innerHTML = categories.map((category) => {
+  const liste = listeBase();
+  const comptesTaches = compteParCategorie(liste);
+  nav.innerHTML = categories.filter((c) => c === CAT_TOUT || (comptesTaches.get(c) ?? 0) > 0).map((category) => {
     const meta    = category === CAT_TOUT ? null : categorieParNom(category);
     const icone   = category === CAT_TOUT ? '\u2261' : (meta?.icon ?? '\u25CB');
     // Mêmes décomptes que les cartes de l'accueil : en vue « tâches », ce sont des entrées
     // (procédures, scénarios, commandes, assistants non couverts) ; en vue « assistants », des assistants.
-    const count   = vueAssistants
-      ? (category === CAT_TOUT ? tools.length : (categoriesAffichees.find((c) => c.name === category)?.count ?? 0))
-      : (category === CAT_TOUT ? ENTREES_LISTEES.length : (comptesTaches.get(category) ?? 0));
+    const count = category === CAT_TOUT ? liste.length : (comptesTaches.get(category) ?? 0);
     const actif   = category === selectedCategory;
     // Les noms canoniques sont longs et le panneau est étroit : le libellé est
     // tronqué visuellement, mais reste lisible au survol et complet pour les
@@ -223,10 +224,9 @@ function renderNavigation() {
 function renderCategoryGrid() {
   const grille = document.querySelector('#categoryGrid');
   if (!grille) return;
-  const comptes = vueAssistants
-    ? new Map(categoriesAffichees.map((c) => [c.name, c.count]))
-    : compteParCategorie(ENTREES_LISTEES);
-  const total = vueAssistants ? tools.length : ENTREES_LISTEES.length;
+  const liste = listeBase();
+  const comptes = compteParCategorie(liste);
+  const total = liste.length;
 
   // Carte compacte : icône, nom, nombre de tâches. Les descriptions longues ne
   // sont plus affichées (elles restent dans le titre au survol).
@@ -244,6 +244,7 @@ function renderCategoryGrid() {
   grille.innerHTML =
     carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', total, selectedCategory === CAT_TOUT && (vueCatalogue || vueAssistants))
     + categoriesAffichees
+        .filter((c) => (comptes.get(c.name) ?? 0) > 0)
         .map((c) => carte(c.name, c.icon, c.description, comptes.get(c.name) ?? 0, selectedCategory === c.name, c.sous))
         .join('');
 
@@ -251,7 +252,9 @@ function renderCategoryGrid() {
   let legende = document.querySelector('#catalogueLegende');
   if (!legende) { legende = document.createElement('p'); legende.id = 'catalogueLegende'; legende.className = 'catalogue-legende'; grille.insertAdjacentElement('afterend', legende); }
   const cv = couverture();
-  legende.textContent = vueAssistants
+  legende.textContent = platFiltre
+    ? `${total} ${vueAssistants ? "assistants" : "entrées"} compatibles avec ${platFiltre}. Une tâche peut proposer plusieurs méthodes ; la méthode compatible est ouverte en premier.`
+    : vueAssistants
     ? `${tools.length} assistants complets (scripts générés avec formulaire).`
     : `${ENTREES_LISTEES.length} entrées : ${cv.procedures} fiches (dont ${cv.scenarios} scénarios), ${cv.commandesRapides} commandes rapides, ${cv.assistantsListes} assistants complets listés. Les ${cv.assistants} assistants restent tous accessibles. Une tâche à plusieurs méthodes compte une fois.`;
 
@@ -350,7 +353,9 @@ function ouvrirOutil(tool, { pousserHash = true } = {}) {
 function ouvrirTache(entree, { pousserHash = true } = {}) {
   currentTool = null;
   currentTache = entree;
-  methodeTache = entree.procedure.methodes[0].id;
+  const langages = METHODES_PLATEFORME[platFiltre] ?? [];
+  methodeTache = (entree.procedure.methodes.find((m) => langages.includes(m.id))
+    ?? entree.procedure.methodes[0]).id;
   saisiesTache = {};
   vueLocale = null;
   noterConsultation(entree.id);
@@ -412,8 +417,8 @@ function appliquerHash() {
 function raccourcisMarkup() {
   if (currentQuery()) return '';
   const parId = (id) => entreeParId(id);
-  const favoris = lireFavoris().map(parId).filter(Boolean);
-  const recents = lireHistorique().map(parId).filter(Boolean)
+  const favoris = lireFavoris().map(parId).filter(Boolean).filter((e) => compatiblePlateforme(e));
+  const recents = lireHistorique().map(parId).filter(Boolean).filter((e) => compatiblePlateforme(e))
     .filter((t) => !favoris.some((f) => f.id === t.id));
 
   const puce = (t, cls) =>
@@ -471,7 +476,7 @@ function searchResults(over = {}) {
   if (vueAssistants) {
     return searchTools(requete, categorie)
       .map((r) => ({ entree: entreeParId(r.tool.id), motif: r.reason, score: r.score }))
-      .filter((r) => !garde || garde(r.entree));
+      .filter((r) => compatiblePlateforme(r.entree, plat) && (!garde || garde(r.entree)));
   }
   const kinds = NATURES.find((n) => n.id === nature)?.kinds ?? null;
   const opts = { categorie, plateforme: plat, kinds, garde };
@@ -587,6 +592,7 @@ function bandeauxMasque(results, query) {
 }
 
 function renderHome() {
+  renderNavigation();
   renderCategoryGrid();
   renderPlatFilters();
   const grid    = document.querySelector('#toolGrid');
@@ -655,8 +661,8 @@ function renderHome() {
     if (vueAssistants) {
       pied.innerHTML = '<button type="button" class="secondary-button" id="versTaches">Chercher une commande ou une procédure</button>';
     } else if (mode === 'accueil') {
-      pied.innerHTML = `<button type="button" class="secondary-button" id="voirCatalogue">Parcourir tout le catalogue (${ENTREES_LISTEES.length} entrées)</button>`
-        + `<button type="button" class="secondary-button" id="voirAssistants">Les ${tools.length} assistants complets</button>`;
+      pied.innerHTML = `<button type="button" class="secondary-button" id="voirCatalogue">Parcourir tout le catalogue (${listeBase().length} entrées${platFiltre ? ` compatibles ${platFiltre}` : ""})</button>`
+        + `<button type="button" class="secondary-button" id="voirAssistants">Les ${TOUTES_LES_ENTREES.filter((e) => e.kind === "assistant" && compatiblePlateforme(e)).length} assistants complets${platFiltre ? ` compatibles ${platFiltre}` : ""}</button>`;
     } else if (mode === 'liste' && selectedCategory === CAT_TOUT) {
       pied.innerHTML = '<button type="button" class="secondary-button" id="replierCatalogue">Revenir aux tâches courantes</button>';
     } else pied.innerHTML = '';
@@ -678,7 +684,7 @@ function renderHome() {
   }
 
   const favoris = new Set(lireFavoris());
-  const ligne = ({ entree, motif }) => ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null });
+  const ligne = ({ entree, motif }) => ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null, plateforme: platFiltre });
   // Catalogue des assistants sans portée : l'ordre historique des outils est conservé (pas de titres de groupe).
   if (mode === 'liste' && !(vueAssistants && !p.domaineId)) {
     // Liste complète d'une portée : titres de groupe (domaine, famille, sujet, section).

@@ -483,6 +483,43 @@ console.log('12. Contraste des éléments de navigation : clair, sombre, systèm
   }
 }
 
+// 13 — Le filtre plateforme s'applique à toutes les portes d'entrée.
+{
+  const { context, page } = await nouvellePage();
+  await page.click('#platFilters [data-plat="Linux"]');
+  const compatibles = T.ENTREES_LISTEES.filter((e) => e.plateformes.includes('Linux'));
+  const categoriesLinux = new Set(compatibles.map((e) => e.categorie));
+  const cartes = await page.locator('#categoryGrid [data-category]').evaluateAll((els) => els.map((e) => e.dataset.category));
+  assert(cartes.every((c) => c === 'Tout' || categoriesLinux.has(c)), 'Linux : aucune carte de domaine incompatible', JSON.stringify(cartes));
+  assert(Number.parseInt(await page.locator('#categoryGrid [data-category="Tout"] .category-count').innerText(), 10) === compatibles.length, 'Linux : compteur filtré');
+  const nav = await page.locator('#navigation button[data-category]').evaluateAll((els) => els.map((e) => e.dataset.category));
+  assert(nav.every((c) => c === 'Tout' || categoriesLinux.has(c)), 'Linux : navigation filtrée');
+  assert(await page.locator('#toolGrid .plat').evaluateAll((els) => els.every((e) => e.title === 'Linux')), 'Linux : badges des résultats compatibles seulement');
+  const ping = compatibles.find((e) => e.kind === 'procedure' && /ping/i.test(e.titre));
+  assert(Boolean(ping), 'fiche ping commune présente');
+  await page.locator(`#toolGrid .task-row[data-id="${ping.id}"] .open-tool`).click();
+  assert(await page.locator('[role="tab"][data-methode="linux"]').getAttribute('aria-selected') === 'true', 'Linux : ping ouvre Bash et non PowerShell');
+  await page.locator('#taskView .back-button').click();
+  await page.click('#voirAssistants');
+  const ids = await page.locator('#toolGrid .task-row').evaluateAll((els) => els.map((e) => e.dataset.id));
+  const attendus = T.TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant' && e.plateformes.includes('Linux'));
+  assert(ids.length === attendus.length && ids.every((id) => attendus.some((e) => e.id === id)), 'Linux : tous les assistants affichés sont compatibles');
+  await page.click('#platFilters [data-plat=""]');
+  assert(await page.locator('#toolGrid .task-row').count() === tools.length, 'Toutes : les 211 assistants redeviennent accessibles');
+  // Les autres plateformes et la recherche dans les assistants suivent la même règle.
+  for (const plat of ['Windows', 'Cisco', 'Azure']) {
+    await page.click(`#platFilters [data-plat="${plat}"]`);
+    const visibles = await page.locator('#toolGrid .task-row').evaluateAll((els) => els.map((e) => e.dataset.id));
+    const compatibles = T.TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant' && e.plateformes.includes(plat));
+    assert(visibles.length === compatibles.length && visibles.every((id) => compatibles.some((e) => e.id === id)), `${plat} : assistants et compteur concordent`);
+    await page.fill('#search', plat === 'Cisco' ? 'vlan' : plat === 'Azure' ? 'azure' : 'dns');
+    const trouves = await page.locator('#toolGrid .task-row').evaluateAll((els) => els.map((e) => e.dataset.id));
+    assert(trouves.length > 0 && trouves.every((id) => compatibles.some((e) => e.id === id)), `${plat} : recherche filtrée`);
+    await page.fill('#search', '');
+  }
+  await context.close();
+}
+
 console.log(`\nRésultat : ${passed} réussis, ${failed} échoués`);
 console.log('Exécution réelle sur équipement : NON EXÉCUTÉE. Génération et affichage vérifiés seulement.');
 await browser.close(); server.close();
