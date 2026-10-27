@@ -25,6 +25,7 @@ import { plateformeDe, estLectureSeule } from './plateforme.mjs';
 import { PROCEDURES_PILOTES } from './procedures-pilotes.mjs';
 import { PROCEDURES_VAGUE2 } from './procedures-vague2.mjs';
 import { PROCEDURES_VAGUE3 } from './procedures-vague3.mjs';
+import { PROCEDURES_COURS } from './procedures-cours.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { CATEGORIES } from './categories.mjs';
 import { initialiser as initialiserClassement } from './classement.mjs';
@@ -335,7 +336,7 @@ function entreeAssistant(t) {
 // ---------------------------------------------------------------------------
 
 /** Toutes les fiches rédigées à la main, pilotes puis seconde vague. */
-export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...SCENARIOS];
+export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...SCENARIOS];
 const procedures = PROCEDURES_REDIGEES.map(entreeProcedure);
 const commandes = COMMANDES_RAPIDES.map(entreeCommande);
 const assistants = tools.map(entreeAssistant);

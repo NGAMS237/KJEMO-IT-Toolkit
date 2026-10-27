@@ -32,6 +32,21 @@ export const HOTE_PROCEDURE = {
   'scenario-linux-ssh': 'ssh-server-readiness',
   'scenario-cisco-ssh-commutateur': 'cisco-console-ssh',
   'scenario-cisco-inter-vlan-routeur': 'cisco-vlan-creation',
+  // KJEMO-COMMANDES-COURS-TP2-01 : fiches rédigées à partir des notes de cours.
+  'cours-partition-formater-monter': 'linux-disk-partition-mount',
+  'cours-quotas-utilisateur': 'linux-quota-enable',
+  'cours-raid1-creer': 'linux-raid1-create',
+  'cours-raid1-panne-secours': 'linux-raid-member-manage',
+  'cours-droits-dossier-partage': 'linux-permission-change',
+  'cours-donner-dossier-compte': 'linux-permission-change',
+  'cours-groupes-locaux': 'linux-user-create',
+  'cours-samba-partage-utilisateurs': 'samba-share-create',
+  'cours-samba-partage-groupe': 'samba-share-create',
+  'cours-smbclient-transferts': 'samba-diagnostic',
+  'cours-samba-groupes': 'samba-ad-user-manage',
+  'cours-samba-import-csv': 'samba-ad-user-manage',
+  'cours-samba-dns': 'samba-ad-health',
+  'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
 };
 
 /**
@@ -74,6 +89,7 @@ export const ARBRE = {
     F('utilisateurs', 'Utilisateurs, groupes et comptes', { sub: ['Utilisateurs', 'Utilisateurs et groupes', 'Cycle de vie des comptes'] }),
     F('ou', 'Unités d’organisation', { sub: ['Unités organisationnelles', 'Structure et OU'] }),
     F('maintenance', 'Maintenance des objets', { sub: ['Maintenance des objets'] }),
+    F('rsat', 'Outils d’administration à distance (RSAT)', { fiches: ['cours-rsat-windows'] }),
   ],
   gpo: [
     F('diagnostic', 'Diagnostic et inventaire', { sub: ['Diagnostic et inventaire'] }),
@@ -101,6 +117,11 @@ export const ARBRE = {
   ],
   linux: [
     F('diagnostic', 'Diagnostic général', { sub: ['Diagnostic Linux'] }),
+    F('fichiers', 'Fichiers et dossiers', { sujets: [
+      F('reperer', 'Se repérer et inspecter', { fiches: ['cours-se-reperer', 'cours-identifier-fichier'] }),
+      F('manipuler', 'Créer, copier, déplacer, supprimer', { fiches: ['cours-creer-dossiers-fichiers', 'cours-copier-deplacer', 'cours-supprimer-prudemment', 'cours-liens'] }),
+    ] }),
+    F('texte', 'Lire, chercher et filtrer du texte', { fiches: ['cours-lire-fichiers', 'cours-grep-wc', 'cours-find-fichiers', 'cours-redirections-tubes'] }),
     F('services', 'Services, paquets et heure', { sujets: [
       F('systemd', 'Services systemd', { hotes: ['systemd-service-diagnostic', 'systemd-service-control'] }),
       F('paquets', 'Paquets', { hotes: ['linux-package-diagnostic'] }),
@@ -132,12 +153,12 @@ export const ARBRE = {
           { id: 'partage', titre: 'Créer un partage et régler ses permissions', hotes: ['samba-share-create'] },
           { id: 'diagnostic', titre: 'Diagnostic et connexion d’un client', hotes: ['samba-diagnostic'] },
         ],
-        prevu: 'Pas encore réalisé (SAMBA-ADV-01) : gestion des groupes avec samba-tool et transferts avec smbclient (get, put, récursivité). Un reclassement ne les ajoute pas.',
+        prevu: 'Pas encore réalisé (SAMBA-ADV-01) : les ASSISTANTS guidés (script généré, garde, validation) pour la gestion des groupes avec samba-tool et pour les transferts smbclient. Des fiches pas à pas rédigées à la main existent (COURS-TP2-01) ; ce ne sont pas des assistants et elles n’ont pas été exécutées sur une machine réelle.',
       }),
       F('nfs', 'NFS', { hotes: ['nfs-server-readiness', 'nfs-export-create'] }),
     ] }),
     F('annuaire', 'Domaine et annuaire (Samba Active Directory)', { sub: ['Samba AD'] }),
-    F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'] }),
+    F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions'] }),
   ],
   'azure-entra': [
     F('acces', 'Connexion, contexte et accès', { sub: ['Connexion, contexte et accès'] }),
@@ -159,6 +180,18 @@ export const ARBRE = {
 // ---------------------------------------------------------------------------
 // Résolution
 // ---------------------------------------------------------------------------
+
+/**
+ * Cette entrée est-elle placée DIRECTEMENT (sans assistant hôte) ? Vrai pour
+ * les entrées de DIRECT et pour celles que la liste `fiches` d'une famille ou
+ * d'un sujet nomme. C'est la seule dérogation à la règle « chaque fiche suit
+ * son hôte » ; le banc de classement la vérifie nommément.
+ */
+export function estPlaceDirect(id) {
+  if (DIRECT[id]) return true;
+  const visite = (n) => Boolean(n.fiches?.includes(id)) || (n.sujets ?? []).some(visite);
+  return Object.values(ARBRE).some((familles) => familles.some(visite));
+}
 
 /** Sujet ou famille par identifiants, ou null. */
 export function noeud(domaineId, familleId = null, sujetId = null) {
@@ -201,7 +234,8 @@ function sousCategorieDe(hote) {
   return h?.tool?.subcategory ?? null;
 }
 
-function correspond(noeudDef, hote, sub) {
+function correspond(noeudDef, hote, sub, id = null) {
+  if (id && noeudDef.fiches?.includes(id)) return true;
   if (noeudDef.hotes?.includes(hote)) return true;
   if (noeudDef.sub && sub && noeudDef.sub.includes(sub)) return true;
   return false;
@@ -224,12 +258,12 @@ export function cheminDe(entree) {
   const sub = hote ? sousCategorieDe(hote) : null;
   for (const f of familles) {
     if (f.sujets) {
-      const s = f.sujets.find((x) => correspond(x, hote, sub));
+      const s = f.sujets.find((x) => correspond(x, hote, sub, entree.id));
       if (s) {
-        const section = s.sections?.find((x) => x.hotes.includes(hote)) ?? null;
+        const section = s.sections?.find((x) => x.fiches?.includes(entree.id) || x.hotes?.includes(hote)) ?? null;
         return { domaineId, famille: f, sujet: s, section };
       }
-    } else if (correspond(f, hote, sub)) {
+    } else if (correspond(f, hote, sub, entree.id)) {
       return { domaineId, famille: f, sujet: null, section: null };
     }
   }

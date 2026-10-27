@@ -63,7 +63,7 @@ console.log('2. Une entrée suit son hôte');
 for (const e of E.filter((x) => x.kind !== 'assistant')) {
   const h = C.hoteDe(e);
   const hote = h && T.entreeParId(h);
-  assert(Boolean(hote) || e.id === 'cisco-voir-routes', `${e.id} : hôte connu (${h ?? 'direct'})`);
+  assert(Boolean(hote) || C.estPlaceDirect(e.id), `${e.id} : hôte connu (${h ?? 'direct'})`);
   if (hote) {
     const a = C.cheminDe(e); const b = C.cheminDe(hote);
     assert(a.famille.id === b.famille.id && a.sujet?.id === b.sujet?.id, `${e.id} : même rubrique que ${h}`);

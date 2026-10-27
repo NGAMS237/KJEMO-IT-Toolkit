@@ -149,6 +149,32 @@ export const TYPES_PARAM = {
     }
     return ok(sortie.join(','));
   },
+  // Périphérique bloc : /dev/sdX, /dev/vdX, /dev/nvmeXnY, /dev/mdN. Jamais présumé :
+  // la fiche l'exige, la personne le lit d'abord dans « lsblk ». `portee` :
+  // disque (sans numéro de partition), partition (avec), md (matrice RAID).
+  peripherique: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    const portee = p.portee ?? 'disque';
+    const motifs = {
+      disque: /^\/dev\/(?:sd[a-z]{1,2}|vd[a-z]{1,2}|xvd[a-z]{1,2}|nvme\d{1,2}n\d{1,2})$/,
+      partition: /^\/dev\/(?:(?:sd[a-z]{1,2}|vd[a-z]{1,2}|xvd[a-z]{1,2})\d{1,2}|nvme\d{1,2}n\d{1,2}p\d{1,2})$/,
+      md: /^\/dev\/md\d{1,3}$/,
+    };
+    const attendu = { disque: 'un DISQUE entier, par exemple /dev/sdb (sans numéro de partition)', partition: 'une PARTITION, par exemple /dev/sdb1', md: 'une matrice RAID, par exemple /dev/md0' };
+    if (!motifs[portee]) return ko(`${p.label} : portée inconnue.`);
+    return motifs[portee].test(s) ? ok(s) : ko(`${p.label} : ${attendu[portee]}. Lis « lsblk » pour trouver le tien — il n'est jamais présumé.`);
+  },
+  // Étiquette ext4 : 16 caractères au plus (limite du superbloc).
+  etiquetteExt4: (v, p) => {
+    const s = String(v ?? '').trim();
+    return /^[A-Za-z0-9_-]{1,16}$/.test(s) ? ok(s) : ko(`${p.label} : 1 à 16 caractères parmi lettres, chiffres, « _ » et « - » (limite d'une étiquette ext4).`);
+  },
+  // UUID de système de fichiers, tel que blkid l'affiche.
+  uuid: (v, p) => {
+    const s = String(v ?? '').trim();
+    return /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/.test(s) ? ok(s) : ko(`${p.label} : un UUID de 36 caractères (8-4-4-4-12), tel que « blkid » l'affiche.`);
+  },
   prefixe: (v, p) => {
     const s = String(v ?? '').trim().replace(/^\//, '');
     if (!/^\d{1,2}$/.test(s) || Number(s) < 8 || Number(s) > 30) return ko(`${p.label} : un nombre de 8 à 30 (par exemple 24).`);
@@ -330,6 +356,23 @@ export function evaluerValeurs(params, saisies = {}) {
     if (!tables[p.id].ok) {
       if (tables[p.id].vide && !tables[p.id].erreurs.length) vides.push(p.id);
       else erreurs[p.id] = tables[p.id].messages[0] ?? `${p.label} : valeurs à corriger.`;
+    }
+  }
+  // Vérifications croisées entre paramètres simples : deux disques distincts,
+  // une limite stricte au moins égale à la limite souple.
+  for (const p of params ?? []) {
+    if (p.type === 'table' || !(p.id in valides) || p.id in erreurs) continue;
+    for (const autre of p.distinctDe ?? []) {
+      const q = (params ?? []).find((x) => x.id === autre);
+      if (q && autre in valides && !(autre in erreurs) && String(valides[autre]) !== '' && valides[autre] === valides[p.id]) {
+        erreurs[p.id] = `${p.label} : doit être différent de « ${q.label} » (même valeur saisie deux fois).`;
+      }
+    }
+    if (p.superieurA) {
+      const q = (params ?? []).find((x) => x.id === p.superieurA);
+      if (q && p.superieurA in valides && !(p.superieurA in erreurs) && Number(valides[p.id]) < Number(valides[p.superieurA])) {
+        erreurs[p.id] = `${p.label} : doit être supérieure ou égale à « ${q.label} ».`;
+      }
     }
   }
   return { valides, erreurs, vides, tables };
