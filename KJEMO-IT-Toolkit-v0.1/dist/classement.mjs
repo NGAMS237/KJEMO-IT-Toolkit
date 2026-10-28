@@ -45,6 +45,7 @@ export const HOTE_PROCEDURE = {
   'cours-smbclient-transferts': 'samba-diagnostic',
   'cours-samba-groupes': 'samba-ad-user-manage',
   'cours-samba-import-csv': 'samba-ad-user-manage',
+  'cours-samba-script-menu': 'samba-ad-user-manage',
   'cours-samba-dns': 'samba-ad-health',
   'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
   // KJEMO-COURS-TP2-01-R1 : postes clients du TP2.
@@ -130,7 +131,7 @@ export const ARBRE = {
     F('diagnostic', 'Diagnostic général', { sub: ['Diagnostic Linux'] }),
     F('fichiers', 'Fichiers et dossiers', { sujets: [
       F('reperer', 'Se repérer et inspecter', { fiches: ['cours-se-reperer', 'cours-identifier-fichier'] }),
-      F('manipuler', 'Créer, copier, déplacer, supprimer', { fiches: ['cours-creer-dossiers-fichiers', 'cours-copier-deplacer', 'cours-supprimer-prudemment', 'cours-liens'] }),
+      F('manipuler', 'Créer, copier, déplacer, supprimer', { fiches: ['cours-creer-dossiers-fichiers', 'cours-copier-deplacer', 'cours-supprimer-prudemment', 'cours-liens', 'cours-droits-fichier'] }),
       F('archives', 'Archiver et compresser', { fiches: ['cours-archives', 'cours-gzip-fichier'] }),
       F('localiser', 'Trouver une commande ou un fichier', { fiches: ['cours-trouver-commande'] }),
     ] }),
@@ -173,7 +174,7 @@ export const ARBRE = {
       F('nfs', 'NFS', { hotes: ['nfs-server-readiness', 'nfs-export-create'] }),
     ] }),
     F('annuaire', 'Domaine et annuaire (Samba Active Directory)', { sub: ['Samba AD'] }),
-    F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-afficher-texte'] }),
+    F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-bash-menu', 'cours-afficher-texte'] }),
   ],
   'azure-entra': [
     F('acces', 'Connexion, contexte et accès', { sub: ['Connexion, contexte et accès'] }),

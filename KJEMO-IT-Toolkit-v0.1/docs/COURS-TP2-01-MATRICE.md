@@ -12,10 +12,10 @@ Un script lit un CSV (login, mot de passe, département) et crée, sur le contr�
 
 | Élément | Demande (résumée) | Fiche · méthode · étape | Effet de l’étape | État de la couverture |
 |---|---|---|---|---|
-| A1 | Fichier CSV : login, mot de passe et département de chaque employé de l’entreprise (capture du contenu demandée). | `cours-samba-import-csv` · étape 1 « Écrire le MODÈLE public du CSV (valeurs fictives) » + `cours-samba-import-csv` · étape 2 « Mettre tes vrais comptes dans le CSV — sur la VM seulement » | modification | Couvert — Le modèle public est fictif ; le vrai CSV reste sur ta VM (droits 600, supprimé après le labo). |
-| A2 | Script qui lit le CSV et, pour chaque ligne, crée le groupe du département, le compte et son appartenance (capture du script demandée). | `cours-samba-import-csv` · étape 3 « Écrire le script » + `cours-samba-import-csv` · étape 4 « Rendre le script exécutable » + `cours-samba-import-csv` · étape 6 « ESSAI : lire et vérifier sans rien créer » + `cours-samba-import-csv` · étape 7 « APPLIQUER : créer groupes, comptes et appartenances » | modification, lecture | Couvert |
-| A3 | Liste des comptes Samba : samba-tool user list (capture). | `cours-samba-import-csv` · étape 8 « Contrôler les comptes, les groupes et les membres » | lecture | Couvert |
-| A4 | Liste des groupes Samba : samba-tool group list (capture). | `cours-samba-import-csv` · étape 8 « Contrôler les comptes, les groupes et les membres » + `cours-samba-groupes` · étape 4 « Lister les membres » | lecture | Couvert |
+| A1 | Fichier CSV : login, mot de passe et département de chaque employé de l’entreprise (capture du contenu demandée). | `cours-samba-script-menu` · étape 1 « Écrire le MODÈLE public du CSV (valeurs fictives) » + `cours-samba-script-menu` · étape 2 « Mettre tes vrais comptes dans le CSV — sur la VM seulement » | modification | Couvert — Le modèle public est fictif ; le vrai CSV reste sur ta VM (droits 600, supprimé après le labo). |
+| A2 | Script à menu (while, case, fonctions) qui lit le CSV et, pour chaque ligne, crée le groupe du département, le compte et son appartenance (capture du script demandée). | `cours-samba-script-menu` · étape 3 « Écrire le script à menu » + `cours-samba-script-menu` · étape 4 « Rendre le script exécutable » + `cours-samba-script-menu` · étape 5 « Lancer le menu et choisir 1 : créer les comptes » | modification | Couvert — Version du niveau du cours ; la version renforcée (essai à blanc) reste dans cours-samba-import-csv. |
+| A3 | Liste des comptes Samba : samba-tool user list (capture). | `cours-samba-script-menu` · étape 6 « Contrôler : comptes, groupes et membres (choix 2, 3, 4) » | lecture | Couvert |
+| A4 | Liste des groupes Samba : samba-tool group list (capture). | `cours-samba-script-menu` · étape 6 « Contrôler : comptes, groupes et membres (choix 2, 3, 4) » + `cours-samba-groupes` · étape 4 « Lister les membres » | lecture | Couvert |
 | A5 | Test de connexion depuis un poste Windows pour un utilisateur de CHAQUE département. | `cours-windows-connexion-domaine` · gui étape 3 « Ouvrir la session avec le compte du département » [client-windows] + `cours-windows-connexion-domaine` · cmd étape 2 « Le groupe du département » [client-windows] | lecture | Couvert |
 
 ## B — Disques, système de fichiers et quotas (22 points)
@@ -84,7 +84,7 @@ Le dossier partage_tp2 (777) dans le RAID, deux comptes user1tp2 (écriture) et 
 
 Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration dans smb.conf, tous les membres lisent et écrivent sauf la réceptionniste (lecture seule), test d’écriture avec elle.
 
-À lire d’abord : `cours-samba-groupes` (étape 5) ; `cours-samba-import-csv` (étape 7).
+À lire d’abord : `cours-samba-groupes` (étape 5) ; `cours-samba-script-menu` (étape 5).
 
 | Élément | Demande (résumée) | Fiche · méthode · étape | Effet de l’étape | État de la couverture |
 |---|---|---|---|---|
@@ -98,6 +98,10 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 
 | Fiche | Pourquoi |
 |---|---|
+| `cours-samba-import-csv` | Version renforcée (hors cours) : essai à blanc et contrôles avant d’appliquer. |
+| `cours-bash-menu` | Le menu while + case + fonctions des formatifs. |
+| `cours-samba-script-menu` | Le script à menu de la partie A au niveau du cours. |
+| `cours-droits-fichier` | ls -l et chmod en octal (formatif 2). |
 | `cours-samba-groupes` | Gérer les groupes Samba (créer, ajouter, lister, gid). |
 | `cours-ubuntu-jonction-ad` | Joindre un poste Ubuntu au domaine (realmd, SSSD, PAM). |
 | `cours-samba-dns` | Enregistrements A, zone inverse et PTR dans le DNS de Samba. |
@@ -151,7 +155,7 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 - **B15 — quotacheck** — Les notes écrivent « quotacheck -c ». La fiche écrit « -cu » (quotas utilisateur explicitement). Sur un noyau allégé, la prise en charge des quotas peut demander un paquet de modules supplémentaires.
 - **E — nom du document de référence** — L’énoncé renvoie à « S06-Exemple de partage… » alors que le fichier fourni s’appelle « S05-Exemple de partage… » : même document, numéro différent.
 
-## Fiches du cours (50)
+## Fiches du cours (53)
 
 | Fiche | Titre | Étapes | Effet |
 |---|---|---|---|
@@ -163,12 +167,12 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-liens` | Créer un lien dur et un lien symbolique : ln | 4 | modification |
 | `cours-lire-fichiers` | Lire un fichier : cat, less, head, tail | 4 | lecture |
 | `cours-grep-wc` | Chercher un motif et compter : grep, wc | 3 | lecture |
-| `cours-find-fichiers` | Trouver des fichiers par nom, type ou taille : find | 3 | lecture |
+| `cours-find-fichiers` | Trouver des fichiers par nom, type ou taille : find | 4 | lecture |
 | `cours-redirections-tubes` | Rediriger et enchaîner : >, >>, 2>, \| | 3 | modification |
-| `cours-groupes-locaux` | Créer un groupe local et y ajouter un compte | 4 | modification |
+| `cours-groupes-locaux` | Créer un groupe local et y ajouter un compte | 6 | modification |
 | `cours-droits-dossier-partage` | Régler les droits d’un dossier de groupe : chgrp, chmod | 5 | modification |
-| `cours-bash-condition` | Écrire un script Bash avec if et case | 3 | modification |
-| `cours-bash-boucles` | Écrire un script Bash avec for, while et select | 3 | modification |
+| `cours-bash-condition` | Écrire un script Bash avec if et case | 4 | modification |
+| `cours-bash-boucles` | Écrire un script Bash avec for et while | 3 | modification |
 | `cours-bash-fonctions` | Écrire un script Bash avec une fonction et des arguments | 3 | modification |
 | `cours-partition-formater-monter` | Partitionner, formater et monter un nouveau disque (fdisk, ext4) | 12 | destructif |
 | `cours-quotas-utilisateur` | Activer les quotas utilisateur sur une partition ext4 | 8 | modification |
@@ -176,7 +180,7 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-raid1-creer` | Créer un RAID 1 (miroir) avec mdadm, le formater et le monter | 11 | destructif |
 | `cours-raid1-panne-secours` | RAID 1 : panne simulée, remplacement et disque de secours | 12 | interruption |
 | `cours-samba-groupes` | Gérer les groupes Samba AD avec samba-tool | 6 | modification |
-| `cours-samba-import-csv` | Créer des comptes et des groupes Samba depuis un fichier CSV | 11 | modification |
+| `cours-samba-import-csv` | Import CSV Samba renforcé (essai -n, hors cours) | 11 | modification |
 | `cours-samba-partage-utilisateurs` | Partage Samba : un compte en écriture, un en lecture | 9 | modification |
 | `cours-samba-partage-groupe` | Partager un dossier avec un groupe Samba (un compte en lecture seule) | 10 | modification |
 | `cours-smbclient-transferts` | Télécharger et déposer des fichiers avec smbclient | 10 | modification |
@@ -204,4 +208,7 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-ifconfig-ancien` | L’ancienne commande ifconfig et son remplaçant ip | 2 | lecture |
 | `cours-service-ancien` | L’ancienne commande service et systemctl | 4 | interruption |
 | `cours-creer-compte-local` | Créer un compte local : adduser ou useradd, puis passwd | 4 | modification |
-| `cours-afficher-texte` | Afficher du texte : echo et printf | 3 | lecture |
+| `cours-afficher-texte` | Afficher du texte : echo et printf | 4 | lecture |
+| `cours-bash-menu` | Écrire un menu en Bash : while, case et fonctions | 3 | modification |
+| `cours-samba-script-menu` | TP2 A : le script à menu qui crée les comptes depuis le CSV | 7 | modification |
+| `cours-droits-fichier` | Lire et changer les droits d’un fichier : ls -l, chmod | 5 | modification |

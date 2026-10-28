@@ -49,8 +49,8 @@ export const COURS_SAMBA = [
 
   ficheLinux({
     id: 'cours-samba-import-csv',
-    titre: 'Créer des comptes et des groupes Samba depuis un fichier CSV',
-    resume: 'Prépare un CSV « login;motdepasse;departement » LOCAL à la VM (modèle public entièrement fictif), puis un script Bash qui crée le groupe du département, le compte et son appartenance, vérifie chaque commande et résume. Essai (-n) d’abord : il ne modifie rien. Version de laboratoire : pas la pratique professionnelle.',
+    titre: 'Import CSV Samba renforcé (essai -n, hors cours)',
+    resume: 'Version RENFORCÉE, hors niveau du cours (celle du cours : script à menu). Prépare un CSV « login;motdepasse;departement » LOCAL à la VM (modèle public entièrement fictif), puis un script Bash qui crée le groupe du département, le compte et son appartenance, vérifie chaque commande et résume. Essai (-n) d’abord : il ne modifie rien. Version de laboratoire : pas la pratique professionnelle.',
     effet: 'modification',
     intentions: ['script csv samba-tool', 'créer des utilisateurs depuis un csv', 'while read csv bash samba', 'import de comptes samba', 'créer plusieurs utilisateurs samba', 'script de création de comptes', 'tp2 a4 csv login mot de passe département'],
     motsCles: ['csv', 'script', 'bash', 'while', 'read', 'IFS', 'samba-tool', 'user create', 'group addmembers', 'comptes', 'département', 'motdepasse'],

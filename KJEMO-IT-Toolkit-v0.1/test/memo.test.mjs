@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC :
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
 const existe = (id) => Boolean(T.entreeParId(id)?.procedure);
 
-// 1. cohérence : chaque fiche existe, rangée UNE fois, les 50 fiches de cours toutes rangées
+// 1. cohérence : chaque fiche existe, rangée UNE fois, les 53 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
 ok(pb.length === 0, `incohérences : ${pb.join(' | ')}`);
-ok(idsCours.length === 50, `50 fiches de cours attendues, ${idsCours.length} trouvées`);
+ok(idsCours.length === 53, `53 fiches de cours attendues, ${idsCours.length} trouvées`);
 ok(M.toutesLesFichesMemo().length === new Set(M.toutesLesFichesMemo()).size, 'aucune fiche rangée deux fois');
 for (const id of M.toutesLesFichesMemo()) {
   const e = T.entreeParId(id);

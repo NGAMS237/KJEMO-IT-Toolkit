@@ -26,7 +26,7 @@ export const MEMO_GROUPES = [
     resume: 'Se repérer, créer, copier, supprimer, archiver et retrouver.',
     sous: [
       { id: 'reperer', titre: 'Se repérer', fiches: ['cours-se-reperer', 'cours-identifier-fichier'] },
-      { id: 'manipuler', titre: 'Créer, copier, supprimer', fiches: ['cours-creer-dossiers-fichiers', 'cours-copier-deplacer', 'cours-supprimer-prudemment', 'cours-liens'] },
+      { id: 'manipuler', titre: 'Créer, copier, supprimer', fiches: ['cours-creer-dossiers-fichiers', 'cours-copier-deplacer', 'cours-supprimer-prudemment', 'cours-liens', 'cours-droits-fichier'] },
       { id: 'archiver', titre: 'Archiver et compresser', fiches: ['cours-archives', 'cours-gzip-fichier'] },
       { id: 'trouver', titre: 'Trouver', fiches: ['cours-find-fichiers', 'cours-trouver-commande'] },
     ] },
@@ -64,7 +64,7 @@ export const MEMO_GROUPES = [
   { id: 'samba', titre: 'Samba et domaine', icone: '🗂', couleur: '#0b7a5a', commandes: 'samba-tool, smbclient',
     resume: 'Comptes du domaine, partages, clients Ubuntu et Windows, DNS.',
     sous: [
-      { id: 'comptes', titre: 'Comptes et groupes du domaine', fiches: ['cours-samba-groupes', 'cours-samba-import-csv'] },
+      { id: 'comptes', titre: 'Comptes et groupes du domaine', fiches: ['cours-samba-groupes', 'cours-samba-script-menu', 'cours-samba-import-csv'] },
       { id: 'partages', titre: 'Partages', fiches: ['cours-samba-partage-utilisateurs', 'cours-samba-partage-groupe', 'cours-samba-connexions'] },
       { id: 'clients', titre: 'Postes clients', fiches: ['cours-smbclient-transferts', 'cours-ubuntu-acces-partage', 'cours-windows-acces-partage', 'cours-windows-connexion-domaine'] },
       { id: 'domaine', titre: 'Domaine, DNS et outils', fiches: ['cours-samba-dns', 'cours-ubuntu-jonction-ad', 'cours-rsat-windows'] },
@@ -72,7 +72,7 @@ export const MEMO_GROUPES = [
   { id: 'bash', titre: 'Bash', icone: '⌨', couleur: '#475569', commandes: 'if, for, select, printf',
     resume: 'Écrire de petits scripts : conditions, boucles, fonctions.',
     sous: [
-      { id: 'scripts', titre: 'Scripts', fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions'] },
+      { id: 'scripts', titre: 'Scripts', fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-bash-menu'] },
     ] },
 ];
 
@@ -89,7 +89,9 @@ export const AJOUTS = Object.fromEntries([
   'cours-gzip-fichier', 'cours-trouver-commande', 'cours-comparer-trier', 'cours-etat-systeme', 'cours-arret-redemarrage',
   'cours-disque-entretien', 'cours-quota-edquota', 'cours-samba-connexions', 'cours-planifier-taches', 'cours-ifconfig-ancien',
   'cours-service-ancien', 'cours-creer-compte-local', 'cours-afficher-texte',
-].map((id) => [id, '2026-10-27']));
+].map((id) => [id, '2026-10-27']).concat(
+  ['cours-bash-menu', 'cours-samba-script-menu', 'cours-droits-fichier'].map((id) => [id, '2026-10-28']),
+));
 
 const JOUR = 86400000;
 const t = (d) => Date.parse(`${d}T00:00:00Z`);

@@ -40,10 +40,10 @@ export const COURS = [
           f('cours-samba-groupes', 2, { titre: 'Créer le groupe', pourquoi: 'créer un groupe et y ajouter des membres avec samba-tool (document « Exemple de partage d’un dossier par groupe »).' }),
         ],
         items: [
-          { id: 'A1', texte: 'Fichier CSV : login, mot de passe et département de chaque employé de l’entreprise (capture du contenu demandée).', refs: [f('cours-samba-import-csv', 1, { titre: 'MODÈLE' }), f('cours-samba-import-csv', 2, { titre: 'vrais comptes' })], note: 'Le modèle public est fictif ; le vrai CSV reste sur ta VM (droits 600, supprimé après le labo).' },
-          { id: 'A2', texte: 'Script qui lit le CSV et, pour chaque ligne, crée le groupe du département, le compte et son appartenance (capture du script demandée).', refs: [f('cours-samba-import-csv', 3, { titre: 'Écrire le script' }), f('cours-samba-import-csv', 4), f('cours-samba-import-csv', 6, { titre: 'ESSAI' }), f('cours-samba-import-csv', 7, { titre: 'APPLIQUER' })] },
-          { id: 'A3', texte: 'Liste des comptes Samba : samba-tool user list (capture).', refs: [f('cours-samba-import-csv', 8, { titre: 'Contrôler les comptes' })] },
-          { id: 'A4', texte: 'Liste des groupes Samba : samba-tool group list (capture).', refs: [f('cours-samba-import-csv', 8, { titre: 'Contrôler les comptes' }), f('cours-samba-groupes', 4, { titre: 'Lister les membres' })] },
+          { id: 'A1', texte: 'Fichier CSV : login, mot de passe et département de chaque employé de l’entreprise (capture du contenu demandée).', refs: [f('cours-samba-script-menu', 1, { titre: 'MODÈLE' }), f('cours-samba-script-menu', 2, { titre: 'vrais comptes' })], note: 'Le modèle public est fictif ; le vrai CSV reste sur ta VM (droits 600, supprimé après le labo).' },
+          { id: 'A2', texte: 'Script à menu (while, case, fonctions) qui lit le CSV et, pour chaque ligne, crée le groupe du département, le compte et son appartenance (capture du script demandée).', refs: [f('cours-samba-script-menu', 3, { titre: 'Écrire le script' }), f('cours-samba-script-menu', 4), f('cours-samba-script-menu', 5, { titre: 'choisir 1' })], note: 'Version du niveau du cours ; la version renforcée (essai à blanc) reste dans cours-samba-import-csv.' },
+          { id: 'A3', texte: 'Liste des comptes Samba : samba-tool user list (capture).', refs: [f('cours-samba-script-menu', 6, { titre: 'Contrôler' })] },
+          { id: 'A4', texte: 'Liste des groupes Samba : samba-tool group list (capture).', refs: [f('cours-samba-script-menu', 6, { titre: 'Contrôler' }), f('cours-samba-groupes', 4, { titre: 'Lister les membres' })] },
           { id: 'A5', texte: 'Test de connexion depuis un poste Windows pour un utilisateur de CHAQUE département.', refs: [f('cours-windows-connexion-domaine', 3, { methode: 'gui', titre: 'Ouvrir la session' }), f('cours-windows-connexion-domaine', 2, { methode: 'cmd', titre: 'groupe du département' })] },
         ],
       },
@@ -123,7 +123,7 @@ export const COURS = [
         resume: 'Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration dans smb.conf, tous les membres lisent et écrivent sauf la réceptionniste (lecture seule), test d’écriture avec elle.',
         prerequis: [
           f('cours-samba-groupes', 5, { titre: 'gid', pourquoi: 'lire le gid du groupe Direction.' }),
-          f('cours-samba-import-csv', 7, { titre: 'APPLIQUER', pourquoi: 'les comptes du département Direction viennent du CSV de la partie A.' }),
+          f('cours-samba-script-menu', 5, { titre: 'choisir 1', pourquoi: 'les comptes du département Direction viennent du CSV de la partie A.' }),
         ],
         items: [
           { id: 'E1', texte: 'Créer le répertoire partagé du groupe Direction.', refs: [f('cours-samba-partage-groupe', 1, { titre: 'Créer le dossier' })] },
@@ -135,6 +135,10 @@ export const COURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-samba-import-csv', pourquoi: 'Version renforcée (hors cours) : essai à blanc et contrôles avant d’appliquer.' },
+      { fiche: 'cours-bash-menu', pourquoi: 'Le menu while + case + fonctions des formatifs.' },
+      { fiche: 'cours-samba-script-menu', pourquoi: 'Le script à menu de la partie A au niveau du cours.' },
+      { fiche: 'cours-droits-fichier', pourquoi: 'ls -l et chmod en octal (formatif 2).' },
       { fiche: 'cours-samba-groupes', pourquoi: 'Gérer les groupes Samba (créer, ajouter, lister, gid).' },
       { fiche: 'cours-ubuntu-jonction-ad', pourquoi: 'Joindre un poste Ubuntu au domaine (realmd, SSSD, PAM).' },
       { fiche: 'cours-samba-dns', pourquoi: 'Enregistrements A, zone inverse et PTR dans le DNS de Samba.' },

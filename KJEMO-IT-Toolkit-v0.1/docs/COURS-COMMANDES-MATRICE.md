@@ -9,10 +9,10 @@ Commandes suivies : 83 · avec route : 83 · sans route : 0.
 | Commande | Citée dans | Fiches ou commandes rapides | Route | État réel |
 |---|---|---|---|---|
 | `pwd` | Résumé Linux | `cours-se-reperer` | `#/tache/cours-se-reperer` | Documentaire : relu, non exécuté |
-| `ls` | Résumé Linux | `cours-archives`, `cours-copier-deplacer`, `cours-creer-compte-local`, `cours-creer-dossiers-fichiers` (+21) | `#/tache/cours-archives` `#/tache/cours-copier-deplacer` `#/tache/cours-creer-compte-local` `#/tache/cours-creer-dossiers-fichiers` (+21) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `ls` | Résumé Linux | `cours-archives`, `cours-copier-deplacer`, `cours-creer-compte-local`, `cours-creer-dossiers-fichiers` (+22) | `#/tache/cours-archives` `#/tache/cours-copier-deplacer` `#/tache/cours-creer-compte-local` `#/tache/cours-creer-dossiers-fichiers` (+22) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 | `cd` | Résumé Linux | `cours-partition-formater-monter`, `cours-se-reperer`, `cours-smbclient-transferts` | `#/tache/cours-partition-formater-monter` `#/tache/cours-se-reperer` `#/tache/cours-smbclient-transferts` | Documentaire : relu, non exécuté |
 | `mkdir` | Résumé Linux | `cours-archives`, `cours-creer-dossiers-fichiers`, `cours-partition-formater-monter`, `cours-raid1-creer` (+5) | `#/tache/cours-archives` `#/tache/cours-creer-dossiers-fichiers` `#/tache/cours-partition-formater-monter` `#/tache/cours-raid1-creer` (+5) | Documentaire : relu, non exécuté |
-| `touch` | Résumé Linux | `cours-creer-dossiers-fichiers`, `cours-raid1-creer`, `cr-umask` | `#/tache/cours-creer-dossiers-fichiers` `#/tache/cours-raid1-creer` `#/tache/cr-umask` | Documentaire : relu, non exécuté |
+| `touch` | Résumé Linux | `cours-creer-dossiers-fichiers`, `cours-droits-fichier`, `cours-raid1-creer`, `cr-umask` | `#/tache/cours-creer-dossiers-fichiers` `#/tache/cours-droits-fichier` `#/tache/cours-raid1-creer` `#/tache/cr-umask` | Documentaire : relu, non exécuté |
 | `cp` | Résumé Linux | `cours-copier-deplacer`, `cours-partition-formater-monter`, `cours-quotas-utilisateur`, `cours-raid1-creer` (+2) | `#/tache/cours-copier-deplacer` `#/tache/cours-partition-formater-monter` `#/tache/cours-quotas-utilisateur` `#/tache/cours-raid1-creer` (+2) | Documentaire : relu, non exécuté |
 | `mv` | Résumé Linux | `cours-copier-deplacer` | `#/tache/cours-copier-deplacer` | Documentaire : relu, non exécuté |
 | `rm` | Résumé Linux | `cours-supprimer-prudemment` | `#/tache/cours-supprimer-prudemment` | Documentaire : relu, non exécuté |
@@ -30,36 +30,36 @@ Commandes suivies : 83 · avec route : 83 · sans route : 0.
 
 | Commande | Citée dans | Fiches ou commandes rapides | Route | État réel |
 |---|---|---|---|---|
-| `cat` | Résumé Linux | `cours-bash-boucles`, `cours-bash-condition`, `cours-bash-fonctions`, `cours-creer-dossiers-fichiers` (+13) | `#/tache/cours-bash-boucles` `#/tache/cours-bash-condition` `#/tache/cours-bash-fonctions` `#/tache/cours-creer-dossiers-fichiers` (+13) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `cat` | Résumé Linux | `cours-bash-boucles`, `cours-bash-condition`, `cours-bash-fonctions`, `cours-bash-menu` (+16) | `#/tache/cours-bash-boucles` `#/tache/cours-bash-condition` `#/tache/cours-bash-fonctions` `#/tache/cours-bash-menu` (+16) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 | `more` | Résumé Linux | `cours-comparer-trier` | `#/tache/cours-comparer-trier` | Documentaire : relu, non exécuté |
 | `head` | Résumé Linux | `cours-lire-fichiers`, `cours-processus`, `cr-getfacl-releve`, `cr-ssh-test-config` (+1) | `#/tache/cours-lire-fichiers` `#/tache/cours-processus` `#/tache/cr-getfacl-releve` `#/tache/cr-ssh-test-config` (+1) | Documentaire : relu, non exécuté |
 | `tail` | Résumé Linux | `cours-lire-fichiers` | `#/tache/cours-lire-fichiers` | Documentaire : relu, non exécuté |
-| `wc` | Résumé Linux | `cours-grep-wc` | `#/tache/cours-grep-wc` | Documentaire : relu, non exécuté |
+| `wc` | Résumé Linux | `cours-find-fichiers`, `cours-grep-wc` | `#/tache/cours-find-fichiers` `#/tache/cours-grep-wc` | Documentaire : relu, non exécuté |
 | `grep` | Résumé Linux | `cours-grep-wc`, `cours-processus`, `cours-samba-import-csv`, `cours-ubuntu-jonction-ad` (+24) | `#/tache/cours-grep-wc` `#/tache/cours-processus` `#/tache/cours-samba-import-csv` `#/tache/cours-ubuntu-jonction-ad` (+24) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 | `sort` | Résumé Linux | `cours-comparer-trier`, `cours-redirections-tubes`, `linux-espace-disque` | `#/tache/cours-comparer-trier` `#/tache/cours-redirections-tubes` `#/tache/linux-espace-disque` | Documentaire : relu, non exécuté |
 | `cut` | Résumé Linux | `cours-redirections-tubes`, `cr-passwd-etat` | `#/tache/cours-redirections-tubes` `#/tache/cr-passwd-etat` | Documentaire : relu, non exécuté |
 | `awk` | Résumé Linux | `cr-nfs-ecoute` | `#/tache/cr-nfs-ecoute` | Documentaire : relu, non exécuté |
 | `diff` | Résumé Linux | `cours-archives`, `cours-comparer-trier` | `#/tache/cours-archives` `#/tache/cours-comparer-trier` | Documentaire : relu, non exécuté |
 | `tr` | Résumé Linux | `cours-comparer-trier` | `#/tache/cours-comparer-trier` | Documentaire : relu, non exécuté |
-| `echo` | Résumé Linux | `cours-afficher-texte`, `cours-bash-boucles`, `cours-bash-condition`, `cours-bash-fonctions` (+8) | `#/tache/cours-afficher-texte` `#/tache/cours-bash-boucles` `#/tache/cours-bash-condition` `#/tache/cours-bash-fonctions` (+8) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `echo` | Résumé Linux | `cours-afficher-texte`, `cours-bash-boucles`, `cours-bash-condition`, `cours-bash-fonctions` (+10) | `#/tache/cours-afficher-texte` `#/tache/cours-bash-boucles` `#/tache/cours-bash-condition` `#/tache/cours-bash-fonctions` (+10) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 
 ## Comptes, groupes et droits
 
 | Commande | Citée dans | Fiches ou commandes rapides | Route | État réel |
 |---|---|---|---|---|
-| `id` | Résumé Linux | `cours-creer-compte-local`, `cours-groupes-locaux`, `cours-sessions-utilisateurs`, `cours-ubuntu-jonction-ad` (+2) | `#/tache/cours-creer-compte-local` `#/tache/cours-groupes-locaux` `#/tache/cours-sessions-utilisateurs` `#/tache/cours-ubuntu-jonction-ad` (+2) | Documentaire : relu, non exécuté |
+| `id` | Résumé Linux | `cours-bash-menu`, `cours-creer-compte-local`, `cours-groupes-locaux`, `cours-sessions-utilisateurs` (+3) | `#/tache/cours-bash-menu` `#/tache/cours-creer-compte-local` `#/tache/cours-groupes-locaux` `#/tache/cours-sessions-utilisateurs` (+3) | Documentaire : relu, non exécuté |
 | `whoami` | Formatif 7 | `cours-windows-connexion-domaine` | `#/tache/cours-windows-connexion-domaine` | Documentaire : relu, non exécuté |
 | `who` | S10.1 | `cours-arret-redemarrage`, `cours-sessions-utilisateurs`, `cours-supprimer-compte-local` | `#/tache/cours-arret-redemarrage` `#/tache/cours-sessions-utilisateurs` `#/tache/cours-supprimer-compte-local` | Documentaire : relu, non exécuté |
-| `groups` | Résumé Linux | `cours-sessions-utilisateurs` | `#/tache/cours-sessions-utilisateurs` | Documentaire : relu, non exécuté |
+| `groups` | Résumé Linux | `cours-groupes-locaux`, `cours-sessions-utilisateurs` | `#/tache/cours-groupes-locaux` `#/tache/cours-sessions-utilisateurs` | Documentaire : relu, non exécuté |
 | `last` | S10.1 | `cours-sessions-utilisateurs` | `#/tache/cours-sessions-utilisateurs` | Documentaire : relu, non exécuté |
 | `useradd` | Résumé Linux | `cours-creer-compte-local` | `#/tache/cours-creer-compte-local` | Documentaire : relu, non exécuté |
 | `usermod` | Résumé Linux | `cours-groupes-locaux` | `#/tache/cours-groupes-locaux` | Documentaire : relu, non exécuté |
 | `userdel` | S10.1 | `cours-supprimer-compte-local` | `#/tache/cours-supprimer-compte-local` | Documentaire : relu, non exécuté |
 | `passwd` | Résumé Linux | `cours-creer-compte-local`, `cr-passwd-etat` | `#/tache/cours-creer-compte-local` `#/tache/cr-passwd-etat` | Documentaire : relu, non exécuté |
-| `chmod` | Résumé Linux | `cours-bash-boucles`, `cours-bash-condition`, `cours-bash-fonctions`, `cours-droits-dossier-partage` (+4) | `#/tache/cours-bash-boucles` `#/tache/cours-bash-condition` `#/tache/cours-bash-fonctions` `#/tache/cours-droits-dossier-partage` (+4) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `chmod` | Résumé Linux | `cours-bash-boucles`, `cours-bash-condition`, `cours-bash-fonctions`, `cours-bash-menu` (+7) | `#/tache/cours-bash-boucles` `#/tache/cours-bash-condition` `#/tache/cours-bash-fonctions` `#/tache/cours-bash-menu` (+7) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 | `chown` | Résumé Linux | `cours-donner-dossier-compte` | `#/tache/cours-donner-dossier-compte` | Documentaire : relu, non exécuté |
 | `su` | Résumé Linux | `cours-ubuntu-jonction-ad` | `#/tache/cours-ubuntu-jonction-ad` | Documentaire : relu, non exécuté |
-| `sudo` | Résumé Linux | `cours-donner-dossier-compte`, `cours-samba-import-csv` | `#/tache/cours-donner-dossier-compte` `#/tache/cours-samba-import-csv` | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `sudo` | Résumé Linux | `cours-donner-dossier-compte`, `cours-samba-import-csv`, `cours-samba-script-menu` | `#/tache/cours-donner-dossier-compte` `#/tache/cours-samba-import-csv` `#/tache/cours-samba-script-menu` | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 
 ## Services, processus et journaux
 
@@ -112,7 +112,7 @@ Commandes suivies : 83 · avec route : 83 · sans route : 0.
 
 | Commande | Citée dans | Fiches ou commandes rapides | Route | État réel |
 |---|---|---|---|---|
-| `samba-tool` | Cours Samba | `cours-samba-dns`, `cours-samba-groupes`, `cours-samba-import-csv`, `cours-samba-partage-utilisateurs` (+3) | `#/tache/cours-samba-dns` `#/tache/cours-samba-groupes` `#/tache/cours-samba-import-csv` `#/tache/cours-samba-partage-utilisateurs` (+3) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `samba-tool` | Cours Samba | `cours-samba-dns`, `cours-samba-groupes`, `cours-samba-import-csv`, `cours-samba-partage-utilisateurs` (+4) | `#/tache/cours-samba-dns` `#/tache/cours-samba-groupes` `#/tache/cours-samba-import-csv` `#/tache/cours-samba-partage-utilisateurs` (+4) | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
 | `testparm` | Cours Samba | `cours-samba-partage-groupe`, `cours-samba-partage-utilisateurs`, `cr-samba-acces-hote`, `cr-samba-permissions` (+3) | `#/tache/cours-samba-partage-groupe` `#/tache/cours-samba-partage-utilisateurs` `#/tache/cr-samba-acces-hote` `#/tache/cr-samba-permissions` (+3) | Documentaire : relu, non exécuté |
 | `smbstatus` | Cours Samba | `cours-samba-connexions` | `#/tache/cours-samba-connexions` | Documentaire : relu, non exécuté |
 | `smbcontrol` | Cours Samba | `cours-samba-partage-groupe`, `cours-samba-partage-utilisateurs`, `cr-samba-sections` | `#/tache/cours-samba-partage-groupe` `#/tache/cours-samba-partage-utilisateurs` `#/tache/cr-samba-sections` | Documentaire : relu, non exécuté |
@@ -123,7 +123,7 @@ Commandes suivies : 83 · avec route : 83 · sans route : 0.
 
 | Commande | Citée dans | Fiches ou commandes rapides | Route | État réel |
 |---|---|---|---|---|
-| `read` | S2 | `cours-samba-partage-groupe`, `cours-samba-partage-utilisateurs` | `#/tache/cours-samba-partage-groupe` `#/tache/cours-samba-partage-utilisateurs` | Documentaire : relu, non exécuté |
-| `exit` | S2 | `cours-samba-import-csv`, `scenario-cisco-inter-vlan-routeur` | `#/tache/cours-samba-import-csv` `#/tache/scenario-cisco-inter-vlan-routeur` | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
-| `printf` | S2 | `cours-afficher-texte` | `#/tache/cours-afficher-texte` | Documentaire : relu, non exécuté |
+| `read` | S2 | `cours-afficher-texte`, `cours-bash-menu`, `cours-samba-partage-groupe`, `cours-samba-partage-utilisateurs` (+1) | `#/tache/cours-afficher-texte` `#/tache/cours-bash-menu` `#/tache/cours-samba-partage-groupe` `#/tache/cours-samba-partage-utilisateurs` (+1) | Documentaire : relu, non exécuté |
+| `exit` | S2 | `cours-bash-condition`, `cours-samba-import-csv`, `scenario-cisco-inter-vlan-routeur` | `#/tache/cours-bash-condition` `#/tache/cours-samba-import-csv` `#/tache/scenario-cisco-inter-vlan-routeur` | Documentaire ; script d’import exécuté contre un FAUX samba-tool |
+| `printf` | S2 | `cours-afficher-texte`, `cours-bash-menu`, `cours-samba-script-menu` | `#/tache/cours-afficher-texte` `#/tache/cours-bash-menu` `#/tache/cours-samba-script-menu` | Documentaire : relu, non exécuté |
 

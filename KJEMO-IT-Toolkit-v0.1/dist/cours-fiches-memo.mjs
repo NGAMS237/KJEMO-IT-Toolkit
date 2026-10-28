@@ -357,6 +357,7 @@ export const COURS_MEMO = [
       lec('Afficher une ligne', 'echo écrit ses arguments puis passe à la ligne.', [sh('echo {{mot}}')], 'Le mot, suivi d’un retour à la ligne.'),
       lec('Texte formaté', 'printf n’ajoute PAS de retour à la ligne : on l’écrit avec \\n. %s reçoit un mot, %d un nombre entier.', [sh('printf "Mot : %s\\nNombre : %d\\n" {{mot}} {{nombre}}')], 'Deux lignes : « Mot : … » et « Nombre : … ».', { verification: true }),
       lec('Menu sur plusieurs lignes', 'Un seul printf peut écrire tout un menu, comme dans les scripts du cours.', [sh('printf "Menu :\\n  1) somme\\n  2) produit\\n"')], 'Trois lignes de menu.'),
+      lec('Effacer l’écran et poser une question', 'clear efface l’écran (début d’un menu). read -p affiche une question puis garde la réponse dans une variable ; -r garde les antislashs tels quels.', [sh('clear'), sh('read -r -p "Ton prénom : " prenom; echo "Bonjour $prenom"')], 'L’écran se vide, la question s’affiche, puis « Bonjour » suivi de ta réponse.', { interactions: [{ attend: 'Ton prénom :', reponds: 'Un prénom puis Entrée.' }] }),
     ],
     verification: ['printf écrit exactement les lignes prévues, sans ligne vide en trop.'],
     sources: [{ label: 'printf(1)', url: `${MAN}/man1/printf.1.html` }, { label: 'echo(1)', url: `${MAN}/man1/echo.1.html` }],

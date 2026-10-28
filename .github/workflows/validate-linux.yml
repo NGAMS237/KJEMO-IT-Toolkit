@@ -597,6 +597,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cours-import.test.mjs
 
+      - name: Cours — menus Bash au niveau des formatifs
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cours-menu.test.mjs
+
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #

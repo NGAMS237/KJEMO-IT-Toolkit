@@ -78,6 +78,7 @@
     "matrice:cours": "node test/matrice-cours.mjs --ecrire",
     "test:matrice:cours": "node test/matrice-cours.mjs --verifier",
     "test:cours:import": "node test/cours-import.test.mjs",
+    "test:cours:menu": "node test/cours-menu.test.mjs",
     "matrice:commandes": "node test/matrice-commandes-cours.mjs --ecrire",
     "test:matrice:commandes": "node test/matrice-commandes-cours.mjs --verifier",
     "test:browser:cours": "node test/browser-cours.test.mjs",
