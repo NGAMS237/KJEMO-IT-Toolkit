@@ -15,7 +15,7 @@ let passed = 0; let failed = 0;
 const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC : ${m}`); } };
 
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
-const existe = (id) => Boolean(T.entreeParId(id)?.procedure);
+const existe = (id) => { const e = T.entreeParId(id); return Boolean(e?.procedure) || (e?.kind === 'assistant' && String(e.route).startsWith('#/outil/')); };
 
 // 1. cohérence : chaque fiche existe, rangée UNE fois, les 62 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
@@ -52,7 +52,16 @@ ok(ct > 0 && ct <= total, '« Liés au TP » : entre 1 et le total');
 const cw = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }), 0);
 const cl = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }), 0);
 const cc = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }), 0);
-ok(cw > 0 && cl > 0 && cc === 9 && cl + cw + cc >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, total ${total}`);
+ok(cw >= 77 && cl > 0 && cc === 9 && cl + cw + cc >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, total ${total}`);
+// Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
+const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
+ok(gw.length === 5, `5 groupes Windows attendus, ${gw.length}`);
+for (const g of gw) {
+  ok(M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }) === M.fichesDuGroupe(g).length, `${g.id} : toutes les fiches sont Windows`);
+  ok(M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }) === 0 && M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }) === 0, `${g.id} : aucune fiche Linux ni Cisco (groupe grisé hors Windows)`);
+}
+const nbWin = M.MEMO_GROUPES.filter((g) => M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }) > 0).length;
+ok(nbWin >= 6, `filtre Windows : au moins 6 groupes actifs (5 Windows + Samba), ${nbWin} trouvés`);
 ok(M.compteGroupe(g0, { plat: 'Cisco', plateformesDe, lies }) === 0, 'filtre Cisco : groupe vide (grisé, pas supprimé)');
 ok(M.idsNouveaux({}).size === 0, 'aucun ajout : aucun nouveau');
 ok(M.idsNouveaux({ a: '2026-01-01', b: '2026-10-27' }).has('a') === false, 'fiche ancienne : pas « nouveau »');
@@ -79,6 +88,27 @@ ok(carte.includes('is-vide') && carte.includes(g0.icone) && carte.includes(g0.ti
 ok(V.groupeCarteMarkup({ ...g0, couleur: 'javascript:x' }, 1).includes('#475569'), 'couleur invalide neutralisée');
 ok(V.portesAccueilMarkup({ tp: null, memoCartes: [], memoTotal: 0, catalogueTotal: 0, hrefCours: '#/cours', hrefLabo: '#/labo' }).includes('Aucun cours'), 'accueil sans cours');
 ok(V.retourMemoFicheMarkup(g0).includes('id="retourMemo"'), 'retour de fiche');
+
+// 6. groupes vides regroupés sous un filtre de plateforme ; assistants complets (KJEMO-UX-MEMO-WINDOWS-01)
+{
+  const gr = (plat) => M.MEMO_GROUPES.map((g) => ({ g, compte: M.compteGroupe(g, { plat, plateformesDe, lies }), nouveaux: 0, sous: lignes({ sous: M.filtrerGroupe(g, { plat, plateformesDe, lies }) }) }));
+  const mk = (plat) => V.memoPageMarkup({ groupes: gr(plat), filtre: 'tous', filtres: M.FILTRES_MEMO, compteParFiltre: fc, plat, total });
+  const w = mk('Windows');
+  ok(w.includes('id="groupesMasques"') && !w.includes('class="groupe-bloc is-vide"'), 'Windows : groupes vides regroupés, plus de blocs gris');
+  const masques = (w.match(/class="groupe-masque"/g) ?? []).length;
+  const actifs = (w.match(/<details class="groupe-bloc"/g) ?? []).length;
+  ok(masques + actifs === M.MEMO_GROUPES.length, `Windows : ${actifs} groupes actifs + ${masques} nommés dans la ligne = ${M.MEMO_GROUPES.length} (rien n’est retiré sans explication)`);
+  ok(M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-')).every((g) => w.includes(`<details class="groupe-bloc" style="--gc:${g.couleur}" data-groupe="${g.id}"`)), 'Windows : les 5 groupes Windows sont dépliables');
+  const az = mk('Azure');
+  ok((az.match(/class="groupe-masque"/g) ?? []).length === M.MEMO_GROUPES.length && !az.includes('<details class="groupe-bloc"'), 'Azure : tous les groupes nommés dans la ligne, aucun bloc');
+  const sans = mk(null);
+  ok(!sans.includes('groupes-masques') && (sans.match(/<details class="groupe-bloc"/g) ?? []).length === M.MEMO_GROUPES.length, 'sans filtre : comportement inchangé, aucun groupe masqué');
+  const ligA = V.ficheLigneMarkup({ id: 'ad-user', titre: 'Créer un utilisateur AD', resume: 'r', effet: 'modification', plateformes: ['Windows'], assistant: true, route: '#/outil/ad-user', nbEtapes: 0 }, '#6d28d9');
+  ok(ligA.includes('href="#/outil/ad-user"') && ligA.includes('Assistant complet') && !ligA.includes('0 étape'), 'assistant : lien #/outil/ et mention « Assistant complet »');
+  const ligF = V.ficheLigneMarkup({ id: 'windows-voir-ip', titre: 't', resume: 'r', effet: 'lecture', plateformes: ['Windows'], nbEtapes: 3 }, '#1d4ed8');
+  ok(ligF.includes('href="#/tache/windows-voir-ip"') && ligF.includes('3 étapes'), 'fiche rédigée : lien #/tache/ inchangé');
+  ok(V.ficheLigneMarkup({ id: 'x', titre: 't', resume: 'r', effet: 'lecture', plateformes: [], assistant: true, route: 'javascript:alert(1)', nbEtapes: 0 }, '#000000').includes('href="javascript:alert(1)"') === false, 'route d’assistant échappée/neutralisée');
+}
 
 console.log(`memo.test.mjs : ${passed} OK, ${failed} échec(s)`);
 process.exit(failed ? 1 : 0);

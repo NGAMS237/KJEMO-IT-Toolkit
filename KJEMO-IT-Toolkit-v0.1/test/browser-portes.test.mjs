@@ -166,14 +166,32 @@ const fiche0 = G[0].sous[0].fiches[0];
   await page.click('#platFilters [data-plat="Azure"]');
   assert(await page.locator('#home .groupe-carte').count() === 0 && await page.locator('#home .porte-vide').count() >= 1, 'Azure : accueil sans carte vide, avec les portes « Bientôt »');
   await page.goto(`${BASE}/#/memo`);
-  assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === G.length, 'Azure : page Aide-mémoire, tous les groupes grisés, aucun supprimé');
+  assert(await page.locator('#portesView .groupe-masque').count() === G.length && await page.locator('#portesView details.groupe-bloc').count() === 0, 'Azure : page Aide-mémoire, tous les groupes regroupés et nommés dans une ligne, aucun supprimé sans explication');
   await page.goto(`${BASE}/#/`);
   await page.goto(`${BASE}/#/memo`);
   assert(await page.locator('#filtreActif').isVisible(), 'aide-mémoire : badge « Filtre : Azure » visible');
-  assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === G.length, 'aide-mémoire : groupes vides grisés avec leur raison');
+  assert(await page.locator('#groupesMasques').isVisible() && /sans fiche pour ce filtre \(Azure\)/.test(await page.locator('#groupesMasques').innerText()), 'aide-mémoire : la ligne dit pourquoi les groupes sont regroupés');
   await page.click('#filtreSortie');
   assert(await page.locator('#filtreActif').count() === 0 && await page.locator('#portesView details.groupe-bloc').count() === G.length, 'sortie du filtre : tout revient');
   await page.click('#platFilters [data-plat="Windows"]').catch(() => {});
+  await context.close();
+}
+// 4 bis. Filtre Windows : les groupes Windows sont actifs, les autres regroupés dans une ligne, un assistant s'ouvre
+{
+  const { context, page } = await nouvellePage({}, '/#/');
+  await page.click('#platFilters [data-plat="Windows"]');
+  await page.goto(`${BASE}/#/memo`);
+  const actifs = await page.locator('#portesView details.groupe-bloc').count();
+  const masques = await page.locator('#portesView .groupe-masque').count();
+  assert(actifs >= 6 && actifs + masques === G.length, `Windows : ${actifs} groupes actifs + ${masques} regroupés = ${G.length}`, `${actifs}/${masques}`);
+  assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === 0, 'Windows : plus de blocs gris un par un');
+  assert(await page.locator('#portesView details.groupe-bloc[data-groupe="win-ad"]').count() === 1, 'Windows : le groupe Active Directory est là');
+  const lienAssistant = page.locator('#portesView details.groupe-bloc[data-groupe="win-ad"] .fiche-ligne[data-id="ad-user"] h3 a');
+  assert(await lienAssistant.getAttribute('href') === '#/outil/ad-user', 'assistant : lien vers #/outil/ad-user');
+  await page.goto(`${BASE}/#/memo/win-gpo`);
+  assert(await page.locator('#portesView .titre-groupe').isVisible() && await page.locator('#portesView .fiche-ligne').count() >= 10, 'page du groupe GPO : fiches affichées');
+  await page.goto(`${BASE}/#/outil/ad-user`);
+  assert(await page.locator('#toolView h1').isVisible(), 'l’assistant lié depuis l’aide-mémoire s’ouvre');
   await context.close();
 }
 {

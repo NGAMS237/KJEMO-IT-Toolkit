@@ -1,3 +1,9 @@
+## UX-MEMO-WINDOWS-01 (2026-10-28)
+- Aide-mémoire : 5 groupes Windows (Poste Windows, Réseau Windows, Active Directory, GPO, Windows Server : DHCP, DNS, partages), 77 éléments du catalogue déjà existants, tous marqués Windows. Sous le filtre Windows, la page n'est plus presque vide.
+- Une ligne de l'aide-mémoire peut être un assistant complet (lien `#/outil/…`, mention « Assistant complet ») en plus d'une fiche rédigée.
+- Sous un filtre de plateforme, les groupes sans fiche ne sont plus affichés un par un en gris : une seule ligne les nomme (« N groupes sans fiche pour ce filtre »). Sans filtre, le comportement est inchangé. Azure reste volontairement sans groupe.
+- Tests : `memo.test.mjs` (343) et `browser-portes.test.mjs` étendus ; aucun script ni commande modifié.
+
 
 ## Alignement formatifs du prof (2026-10-28)
 - 3 fiches : `cours-bash-menu`, `cours-samba-script-menu`, `cours-droits-fichier` (53 fiches de cours).

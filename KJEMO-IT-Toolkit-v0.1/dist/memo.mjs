@@ -3,7 +3,8 @@
  * ---------------------------------------------------------------------------
  * L'AIDE-MÉMOIRE du cours : les fiches issues des notes de cours, rangées par
  * ce que l'on veut FAIRE (fichiers, texte, comptes, services, réseau, stockage,
- * Samba, Bash). Module pur : aucune dépendance au DOM, testable sous Node.
+ * Samba, Windows, Cisco, Bash). Une ligne peut être une fiche rédigée
+ * ou un assistant complet. Module pur : aucune dépendance au DOM, testable sous Node.
  *
  * Extensible sans toucher à l'interface :
  *  - une fiche nouvelle s'ajoute dans la liste `fiches` d'un sous-groupe ;
@@ -68,6 +69,44 @@ export const MEMO_GROUPES = [
       { id: 'partages', titre: 'Partages', fiches: ['cours-samba-partage-utilisateurs', 'cours-samba-partage-groupe', 'cours-samba-connexions'] },
       { id: 'clients', titre: 'Postes clients', fiches: ['cours-smbclient-transferts', 'cours-ubuntu-acces-partage', 'cours-windows-acces-partage', 'cours-windows-connexion-domaine'] },
       { id: 'domaine', titre: 'Domaine, DNS et outils', fiches: ['cours-samba-dns', 'cours-ubuntu-jonction-ad', 'cours-rsat-windows'] },
+    ] },
+  // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01) : fiches et assistants du catalogue, rangés par ce que l'on veut faire.
+  { id: 'win-poste', titre: 'Poste Windows', icone: '🖥', couleur: '#1d4ed8', commandes: 'Get-Service, sfc, Get-WinEvent',
+    resume: 'Services, journaux, réparation du système, disque et imprimantes d’un poste Windows.',
+    sous: [
+      { id: 'services', titre: 'Services et journaux', fiches: ['windows-etat-service', 'redemarrer-service-windows', 'windows-service-control', 'journal-evenements-windows'] },
+      { id: 'reparer', titre: 'Réparer le système', fiches: ['reparer-fichiers-systeme', 'sfc-repair', 'dism-repair', 'restore-point-create', 'windows-update-diagnostic'] },
+      { id: 'etat', titre: 'État, disque et inventaire', fiches: ['workstation-health-report', 'workstation-inventory', 'espace-disque-windows', 'workstation-storage-diagnostic', 'local-accounts-audit'] },
+      { id: 'imprimantes', titre: 'Imprimantes', fiches: ['imprimantes-inventaire-windows', 'imprimante-file-bloquee'] },
+    ] },
+  { id: 'win-reseau', titre: 'Réseau Windows', icone: '🛜', couleur: '#0369a1', commandes: 'ipconfig, Test-NetConnection, Resolve-DnsName',
+    resume: 'Adresse IP, DNS, tests de connectivité et diagnostic réseau d’un poste Windows.',
+    sous: [
+      { id: 'adresse', titre: 'Adresse IP et DNS', fiches: ['windows-voir-ip', 'windows-ip-fixe', 'renouveler-bail-dhcp', 'dns-client-change', 'dns-cache-reset'] },
+      { id: 'tester', titre: 'Tester la connectivité', fiches: ['ping-traceroute', 'tester-port-tcp', 'windows-ports-ecoute', 'smb-connectivity-test', 'http-https-tls-test'] },
+      { id: 'diagnostiquer', titre: 'Diagnostiquer', fiches: ['scenario-windows-diagnostic-reseau', 'gateway-diagnostic', 'dns-client-diagnostic', 'dhcp-client-diagnostic', 'network-share-diagnostic', 'ip-conflict-detection'] },
+    ] },
+  { id: 'win-ad', titre: 'Active Directory', icone: '🏛', couleur: '#6d28d9', commandes: 'New-ADUser, Get-ADUser, dcdiag',
+    resume: 'Unités d’organisation, comptes, groupes, dépannage de comptes, santé du domaine, jonction d’un poste.',
+    sous: [
+      { id: 'structure', titre: 'Unités d’organisation, comptes et groupes', fiches: ['ad-ou', 'ad-ou-hierarchy', 'ad-user', 'ad-users-csv', 'ad-groups', 'ad-group-members-csv'] },
+      { id: 'depanner', titre: 'Dépanner un compte', fiches: ['ad-debloquer-compte', 'ad-account-recovery', 'ad-account-health', 'ad-object-search-move'] },
+      { id: 'sante', titre: 'Santé du domaine', fiches: ['ad-dcdiag-report', 'ad-repadmin-report', 'ad-etat-replication', 'ad-dns-health', 'ad-secure-channel'] },
+      { id: 'jonction', titre: 'Joindre un poste au domaine', fiches: ['windows-domain-join-readiness', 'windows-domain-join', 'windows-domain-join-diagnostic'] },
+    ] },
+  { id: 'win-gpo', titre: 'Stratégies de groupe (GPO)', icone: '📋', couleur: '#be123c', commandes: 'gpupdate, gpresult, New-GPO',
+    resume: 'Appliquer et vérifier les GPO, les créer et les lier, préparer les réglages courants.',
+    sous: [
+      { id: 'verifier', titre: 'Appliquer et vérifier', fiches: ['appliquer-strategies-groupe', 'gpo-refresh-diagnostic', 'gpo-resultant-set', 'gpo-health-report', 'gpo-inventory-report'] },
+      { id: 'creer', titre: 'Créer, lier, sauvegarder', fiches: ['gpo-create-link', 'gpo-password', 'gpo-link-audit', 'gpo-security-filter', 'gpo-backup-restore-compare'] },
+      { id: 'reglages', titre: 'Réglages courants', fiches: ['gpo-drive-mapping', 'gpo-session-desktop', 'gpo-folder-redirection', 'gpo-logon-startup-scripts', 'gpo-printer-deployment', 'gpo-firewall-defender'] },
+    ] },
+  { id: 'win-serveur', titre: 'Windows Server : DHCP, DNS, partages', icone: '🗄', couleur: '#b45309', commandes: 'Add-DhcpServerv4Scope, Add-DnsServerPrimaryZone, New-SmbShare',
+    resume: 'Serveur DHCP, zones et enregistrements DNS, dossiers partagés et leurs permissions.',
+    sous: [
+      { id: 'dhcp', titre: 'DHCP', fiches: ['dhcp-install-authorize', 'dhcp-scope-options', 'dhcp-reservation', 'dhcp-leases-diagnostic', 'dhcp-backup'] },
+      { id: 'dns', titre: 'DNS', fiches: ['dns-diagnostic', 'dns-zone', 'dns-record'] },
+      { id: 'partages', titre: 'Partages et permissions', fiches: ['shared-folder', 'file-permissions-audit', 'smb-sessions-diagnostic'] },
     ] },
   { id: 'cisco-commutation', titre: 'Commutation Cisco', icone: '🔀', couleur: '#0e7490', commandes: 'channel-group, show etherchannel, spanning-tree',
     resume: 'Regrouper des liens (EtherChannel), les vérifier, les dépanner, régler Spanning Tree.',

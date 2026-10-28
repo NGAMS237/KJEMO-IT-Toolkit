@@ -1973,6 +1973,7 @@ function ligneMemo(id) {
   const e = entreeParId(id);
   if (!e) return null;
   return { id, titre: e.titre, resume: e.resume ?? '', effet: e.effet, plateformes: e.plateformes ?? [],
+    assistant: !e.procedure && e.kind === 'assistant', route: e.procedure ? null : (e.route ?? null),
     nbEtapes: e.procedure?.methodes?.[0]?.etapes?.length ?? 0, nouveau: idsNouveaux().has(id), lieTp: fichesLiees().has(id) };
 }
 const sousAvecLignes = (sous) => sous.map((x) => ({ ...x, fiches: x.fiches.map(ligneMemo).filter(Boolean) })).filter((x) => x.fiches.length);

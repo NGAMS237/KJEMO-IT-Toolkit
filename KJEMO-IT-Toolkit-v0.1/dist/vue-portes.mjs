@@ -108,14 +108,17 @@ export function portesAccueilMarkup({ tp, memoCartes, memoTotal, catalogueTotal,
 
 /** Ligne de fiche (aide-mémoire) : titre, effet, plateforme, étapes, badges. */
 export function ficheLigneMarkup(l, couleur) {
+  // Une ligne est une fiche rédigée (#/tache/…) ou un assistant complet (#/outil/…, sans étapes numérotées).
+  const href = l.assistant && /^#\/outil\/[a-z0-9-]+$/.test(l.route ?? '') ? l.route : `#/tache/${l.id}`;
+  const genre = l.assistant ? 'Assistant complet' : `${l.nbEtapes} étape${l.nbEtapes > 1 ? 's' : ''}`;
   return `<article class="fiche-ligne" style="--gc:${couleurSure(couleur)}" data-id="${esc(l.id)}">`
-    + `<div class="fiche-ligne-main"><h3><a href="#/tache/${esc(l.id)}">${esc(l.titre)}</a></h3>`
+    + `<div class="fiche-ligne-main"><h3><a href="${esc(href)}">${esc(l.titre)}</a></h3>`
     + `<p class="fiche-ligne-desc">${esc(l.resume)}</p>`
     + `<div class="task-badges">${badgeEffet(l.effet)}`
     + `${(l.plateformes ?? []).map((p) => `<span class="plat">${esc(p)}</span>`).join('')}`
-    + `<span class="kind">${l.nbEtapes} étape${l.nbEtapes > 1 ? 's' : ''}</span>`
+    + `<span class="kind">${genre}</span>`
     + `${l.nouveau ? '<span class="badge-nouveau">nouveau</span>' : ''}${l.lieTp ? '<span class="badge-tp">TP</span>' : ''}</div></div>`
-    + `<a class="fiche-ouvrir" href="#/tache/${esc(l.id)}" aria-label="Ouvrir : ${esc(l.titre)}">Ouvrir <span aria-hidden="true">→</span></a></article>`;
+    + `<a class="fiche-ouvrir" href="${esc(href)}" aria-label="Ouvrir : ${esc(l.titre)}">Ouvrir <span aria-hidden="true">→</span></a></article>`;
 }
 
 function chipsFiltreMarkup(filtres, actif, compteParFiltre) {
@@ -130,14 +133,24 @@ function chipsFiltreMarkup(filtres, actif, compteParFiltre) {
  * après filtre sont GRISÉS (jamais retirés sans explication).
  */
 export function memoPageMarkup({ groupes, filtre, filtres, compteParFiltre, plat, total }) {
+  // Sous un filtre de plateforme, les groupes sans fiche ne sont pas affichés un par un en gris :
+  // ils sont REGROUPÉS dans une seule ligne qui les nomme (rien n'est retiré sans explication).
+  const regroupe = Boolean(plat);
+  const vides = groupes.filter((x) => x.compte === 0);
   const blocs = groupes.map(({ g, compte, nouveaux, sous }) => {
-    if (compte === 0) return `<div class="groupe-bloc is-vide" style="--gc:${couleurSure(g.couleur)}" data-groupe="${esc(g.id)}"><p><span aria-hidden="true">${esc(g.icone)}</span> ${esc(g.titre)} <span class="groupe-compte">0</span> <span class="vide-raison">aucune fiche avec ces filtres</span></p></div>`;
+    if (compte === 0) {
+      return regroupe ? '' : `<div class="groupe-bloc is-vide" style="--gc:${couleurSure(g.couleur)}" data-groupe="${esc(g.id)}"><p><span aria-hidden="true">${esc(g.icone)}</span> ${esc(g.titre)} <span class="groupe-compte">0</span> <span class="vide-raison">aucune fiche avec ces filtres</span></p></div>`;
+    }
     return `<details class="groupe-bloc" style="--gc:${couleurSure(g.couleur)}" data-groupe="${esc(g.id)}">`
       + `<summary><span class="groupe-nom"><span aria-hidden="true">${esc(g.icone)}</span> ${esc(g.titre)}${nouveaux ? ` <span class="badge-nouveau">+${nouveaux} nouveau</span>` : ''}</span><span class="groupe-compte">${compte}</span></summary>`
       + `<p class="groupe-resume">${esc(g.resume)} <a href="${esc(routeMemo(g.id))}">Ouvrir le groupe →</a></p>`
       + sous.map((s) => `<h3 class="sous-titre">${esc(s.titre)} <span class="sous-n">${s.fiches.length}</span></h3>${s.fiches.map((l) => ficheLigneMarkup(l, g.couleur)).join('')}`).join('')
       + `</details>`;
   }).join('');
+  const masques = regroupe && vides.length
+    ? `<p class="groupes-masques" id="groupesMasques">${vides.length} groupe${vides.length > 1 ? 's' : ''} sans fiche pour ce filtre (${esc(plat)}) :`
+      + ` ${vides.map(({ g }) => `<span class="groupe-masque" data-groupe="${esc(g.id)}"><span aria-hidden="true">${esc(g.icone)}</span> ${esc(g.titre)}</span>`).join(' ')}</p>`
+    : '';
   return filPortesMarkup([{ nom: 'Aide-mémoire' }])
     + `<div class="portes-page portes-memo">`
     + retoursMarkup(null)
@@ -146,6 +159,7 @@ export function memoPageMarkup({ groupes, filtre, filtres, compteParFiltre, plat
     + pastilleFiltreMarkup(plat)
     + chipsFiltreMarkup(filtres, filtre, compteParFiltre)
     + `<div class="groupes-liste">${blocs}</div>`
+    + masques
     + `<div class="retours retour-bas"><a class="retour-btn retour-accueil" href="${ROUTE_ACCUEIL}">⌂ Accueil</a><a class="retour-btn retour-cours" href="#/cours">Mes cours et TP →</a></div>`
     + `</div>`;
 }
