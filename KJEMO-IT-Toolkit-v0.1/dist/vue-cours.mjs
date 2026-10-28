@@ -14,6 +14,7 @@
 import { esc, inline, badgeEffet } from './vue-taches.mjs';
 import { lienEtape, routeParcours, ROUTE_COURS, ROUTE_LABO } from './cours.mjs';
 import { CHAMPS_LABO, avancement } from './labo.mjs';
+import { figureMarkup } from './schemas-cisco.mjs';
 
 const lettreOuPremiere = (cours, lettre) => cours.parcours.find((p) => p.lettre === lettre) ?? cours.parcours[0];
 
@@ -39,7 +40,9 @@ export function coursListeMarkup(coursListe, progression, ctx, plat = null) {
         + `<b>${esc(p.lettre)}</b> ${esc(p.titre)} <span class="parcours-puce-n">${a.faits}/${a.total}</span></a>`;
     }).join('');
     return `<article class="cours-carte"><h2><a href="${esc(routeParcours(c.id))}">${esc(c.titre)}</a></h2>`
-      + `<p>${esc(c.resume)}</p><div class="parcours-puces" role="list" aria-label="Parcours de ${esc(c.titre)}">${boutons}</div></article>`;
+      + `<p>${esc(c.resume)}</p>`
+      + (c.rappelCours ? `<p class="cours-carte-resume"><a class="parcours-lien" href="${esc(routeParcours(c.id, 'resume'))}" data-resume="${esc(c.id)}">📘 Résumé du cours (pliable)</a></p>` : '')
+      + `<div class="parcours-puces" role="list" aria-label="Parcours de ${esc(c.titre)}">${boutons}</div></article>`;
   }).join('');
   const titre = plat ? `Mes cours ${plat}` : 'Mes cours et TP';
   if (plat && !coursListe.length) {
@@ -69,8 +72,33 @@ function gabaritMarkup() {
     + `<button type="button" class="secondary-button" id="gabaritBtn">Télécharger le gabarit de TP (JSON)</button></section>`;
 }
 
+/**
+ * Résumé PLIABLE d'un cours (pour se rafraîchir la mémoire) : l'essentiel, des
+ * sections avec schémas, les commandes à retenir, les pièges, puis des
+ * questions dont la réponse reste cachée tant qu'on ne l'ouvre pas.
+ */
+export function rappelCoursMarkup(r, { ouvert = false } = {}) {
+  const sections = r.sections.map((sec) => `<section class="rappel-section" id="rappel-${esc(sec.id)}"><h3>${esc(sec.titre)}</h3>`
+    + `<ul>${sec.points.map((x) => `<li>${inline(x)}</li>`).join('')}</ul>`
+    + (sec.code ? `<pre class="rappel-code" aria-label="Exemple de configuration à lire"><code>${esc(sec.code.join('\n'))}</code></pre>` : '')
+    + (sec.schemas ?? []).map((id) => figureMarkup(id) ?? '').join('')
+    + `</section>`).join('');
+  const commandes = `<table class="rappel-commandes"><caption class="sr-only">Commandes à retenir</caption><thead><tr><th scope="col">Commande</th><th scope="col">Pour quoi faire</th></tr></thead><tbody>`
+    + r.commandes.map((c) => `<tr><td><code>${esc(c.cmd)}</code></td><td>${inline(c.sert)}</td></tr>`).join('') + `</tbody></table>`;
+  const questions = r.questions.map((q, i) => `<details class="rappel-question"><summary><span class="rappel-qn">Q${i + 1}</span> ${esc(q.q)}</summary><p class="rappel-reponse"><b>Réponse :</b> ${inline(q.r)}</p></details>`).join('');
+  return `<details class="cours-resume" id="resume-cours"${ouvert ? ' open' : ''}>`
+    + `<summary><span aria-hidden="true">📘</span> ${esc(r.titre)} <span class="cours-resume-aide">(cliquer pour déplier ou replier)</span></summary>`
+    + `<div class="cours-resume-corps"><p class="rappel-intro">${esc(r.intro)}</p>`
+    + `<section class="rappel-essentiel" id="rappel-essentiel"><h3>L’essentiel</h3><ol>${r.essentiel.map((x) => `<li>${inline(x)}</li>`).join('')}</ol></section>`
+    + sections
+    + `<section class="rappel-section" id="rappel-commandes"><h3>Commandes à retenir</h3>${commandes}<p class="rappel-note">Ces commandes se lisent ; les fiches du parcours donnent les mêmes avec des paramètres validés.</p></section>`
+    + `<section class="rappel-section" id="rappel-pieges"><h3>Pièges classiques</h3><ul>${r.pieges.map((x) => `<li>${inline(x)}</li>`).join('')}</ul></section>`
+    + `<section class="rappel-section" id="rappel-questions"><h3>Pour t’auto-évaluer</h3><p class="rappel-note">Essaie de répondre de tête, puis ouvre la réponse.</p>${questions}</section>`
+    + `</div></details>`;
+}
+
 /** Page d'un cours : onglets A–E, un parcours affiché. */
-export function coursPageMarkup(cours, lettre, progression, ctx) {
+export function coursPageMarkup(cours, lettre, progression, ctx, { resumeOuvert = false } = {}) {
   const p = lettreOuPremiere(cours, lettre);
   const onglets = cours.parcours.map((q) => {
     const a = avancement(cours, q, progression);
@@ -117,6 +145,7 @@ export function coursPageMarkup(cours, lettre, progression, ctx) {
     + `<h1>${esc(cours.titre)}</h1>`
     + `<p class="notice notice-compact"><b>${esc('Une case cochée n’est pas une preuve.')}</b> ${esc(cours.avertissement)}</p>`
     + `<p class="cours-source">${esc(cours.source)}</p>`
+    + (cours.rappelCours ? rappelCoursMarkup(cours.rappelCours, { ouvert: resumeOuvert || lettre === 'resume' }) : '')
     + `<nav class="parcours-onglets" aria-label="Parcours">${onglets}</nav>`
     + `<section class="parcours" aria-labelledby="parcoursTitre">`
     + `<h2 id="parcoursTitre">${esc(p.lettre)} — ${esc(p.titre)}${p.points ? ` <span class="parcours-points">${p.points} points</span>` : ''}</h2>`

@@ -189,6 +189,7 @@ export const ARBRE = {
     F('interfaces', 'Interfaces et port-security', { sub: ['Interfaces, MAC et port-security'] }),
     F('vlan', 'VLAN et ports d’accès', { sub: ['VLAN et ports d’accès'] }),
     F('trunks', 'Trunks, DTP et VTP', { sub: ['Trunks et DTP', 'VTP et diagnostic'] }),
+    F('commutation', 'EtherChannel et Spanning Tree', { fiches: ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner', 'cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'] }),
     F('routage', 'Routage', {}),
   ],
 };

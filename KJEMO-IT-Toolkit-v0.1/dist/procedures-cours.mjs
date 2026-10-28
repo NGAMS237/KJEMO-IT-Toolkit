@@ -11,5 +11,6 @@ import { COURS_SAMBA } from './cours-fiches-samba.mjs';
 import { COURS_CLIENTS } from './cours-fiches-clients.mjs';
 import { COURS_MEMO } from './cours-fiches-memo.mjs';
 import { COURS_FORMATIFS } from './cours-fiches-formatifs.mjs';
+import { COURS_CISCO } from './cours-fiches-cisco.mjs';
 
-export const PROCEDURES_COURS = [...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO, ...COURS_FORMATIFS];
+export const PROCEDURES_COURS = [...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO, ...COURS_FORMATIFS, ...COURS_CISCO];

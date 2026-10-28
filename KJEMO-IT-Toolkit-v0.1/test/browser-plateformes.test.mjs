@@ -77,8 +77,8 @@ const clicPlat = async (page, p) => { await page.click(`#platFilters [data-plat=
   await context.close();
 }
 
-// 2. Windows, Azure, Cisco : même page, seulement leurs éléments ; cours et mémo « Bientôt »
-for (const p of ['Windows', 'Azure', 'Cisco']) {
+// 2. Windows, Azure : même page, seulement leurs éléments ; cours « Bientôt » (Cisco a désormais son cours : banc browser-cisco-s07)
+for (const p of ['Windows', 'Azure']) {
   const { context, page, erreurs } = await nouvellePage({}, '/#/');
   await clicPlat(page, p);
   assert((await page.locator('#platEntete').innerText()).includes(p), `${p} : phrase de vue`);

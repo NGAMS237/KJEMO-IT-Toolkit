@@ -69,6 +69,12 @@ export const MEMO_GROUPES = [
       { id: 'clients', titre: 'Postes clients', fiches: ['cours-smbclient-transferts', 'cours-ubuntu-acces-partage', 'cours-windows-acces-partage', 'cours-windows-connexion-domaine'] },
       { id: 'domaine', titre: 'Domaine, DNS et outils', fiches: ['cours-samba-dns', 'cours-ubuntu-jonction-ad', 'cours-rsat-windows'] },
     ] },
+  { id: 'cisco-commutation', titre: 'Commutation Cisco', icone: '🔀', couleur: '#0e7490', commandes: 'channel-group, show etherchannel, spanning-tree',
+    resume: 'Regrouper des liens (EtherChannel), les vérifier, les dépanner, régler Spanning Tree.',
+    sous: [
+      { id: 'etherchannel', titre: 'EtherChannel', fiches: ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner'] },
+      { id: 'stp', titre: 'Spanning Tree', fiches: ['cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'] },
+    ] },
   { id: 'bash', titre: 'Bash', icone: '⌨', couleur: '#475569', commandes: 'if, for, select, printf',
     resume: 'Écrire de petits scripts : conditions, boucles, fonctions.',
     sous: [
@@ -91,6 +97,9 @@ export const AJOUTS = Object.fromEntries([
   'cours-service-ancien', 'cours-creer-compte-local', 'cours-afficher-texte',
 ].map((id) => [id, '2026-10-27']).concat(
   ['cours-bash-menu', 'cours-samba-script-menu', 'cours-droits-fichier'].map((id) => [id, '2026-10-28']),
+).concat(
+  ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner',
+    'cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'].map((id) => [id, '2026-10-28']),
 ));
 
 const JOUR = 86400000;

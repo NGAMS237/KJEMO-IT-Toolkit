@@ -88,7 +88,7 @@ const COURS_ID = COURS[0].id;
   await page.waitForSelector('#coursView:not([hidden]) h1');
   assert((await page.locator('#coursView h1').innerText()) === 'Mes cours et TP', 'geste 1 : la liste des cours s’affiche');
   await capture(page, 'bureau-01-liste-cours');
-  await page.locator('#coursView .parcours-puce[data-parcours="B"]').click(); gestes++;
+  await page.locator('#coursView .cours-carte').first().locator('.parcours-puce[data-parcours="B"]').click(); gestes++;
   await page.waitForSelector('#coursView .parcours-items');
   assert((await hashDe(page)) === `#/cours/${COURS_ID}/B`, 'geste 2 : le parcours B a sa propre URL', await hashDe(page));
   await capture(page, 'bureau-02-parcours-b');

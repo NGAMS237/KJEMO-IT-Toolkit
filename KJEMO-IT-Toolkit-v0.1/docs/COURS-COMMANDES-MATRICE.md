@@ -71,7 +71,7 @@ Commandes suivies : 83 · avec route : 83 · sans route : 0.
 | `top` | S10.1 | `cours-processus` | `#/tache/cours-processus` | Documentaire : relu, non exécuté |
 | `kill` | S10.1 | `cours-processus` | `#/tache/cours-processus` | Documentaire : relu, non exécuté |
 | `free` | S10.1 | `cours-etat-systeme` | `#/tache/cours-etat-systeme` | Documentaire : relu, non exécuté |
-| `shutdown` | S10.1 | `cours-arret-redemarrage` | `#/tache/cours-arret-redemarrage` | Documentaire : relu, non exécuté |
+| `shutdown` | S10.1 | `cours-arret-redemarrage`, `cours-ec-depanner`, `cours-ec-lacp`, `cours-ec-pagp` (+1) | `#/tache/cours-arret-redemarrage` `#/tache/cours-ec-depanner` `#/tache/cours-ec-lacp` `#/tache/cours-ec-pagp` (+1) | Documentaire : relu, non exécuté |
 | `at` | S10.1 | `cours-planifier-taches` | `#/tache/cours-planifier-taches` | Documentaire : relu, non exécuté |
 | `crontab` | S10.1 | `cours-planifier-taches` | `#/tache/cours-planifier-taches` | Documentaire : relu, non exécuté |
 | `journalctl` | catalogue | `cours-ubuntu-jonction-ad`, `cr-cockpit-certificats`, `cr-cockpit-journal`, `cr-journalctl-erreurs` (+12) | `#/tache/cours-ubuntu-jonction-ad` `#/tache/cr-cockpit-certificats` `#/tache/cr-cockpit-journal` `#/tache/cr-journalctl-erreurs` (+12) | Documentaire : relu, non exécuté |

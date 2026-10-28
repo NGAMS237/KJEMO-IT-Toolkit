@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC :
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
 const existe = (id) => Boolean(T.entreeParId(id)?.procedure);
 
-// 1. cohérence : chaque fiche existe, rangée UNE fois, les 53 fiches de cours toutes rangées
+// 1. cohérence : chaque fiche existe, rangée UNE fois, les 62 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
 ok(pb.length === 0, `incohérences : ${pb.join(' | ')}`);
-ok(idsCours.length === 53, `53 fiches de cours attendues, ${idsCours.length} trouvées`);
+ok(idsCours.length === 62, `62 fiches de cours attendues, ${idsCours.length} trouvées`);
 ok(M.toutesLesFichesMemo().length === new Set(M.toutesLesFichesMemo()).size, 'aucune fiche rangée deux fois');
 for (const id of M.toutesLesFichesMemo()) {
   const e = T.entreeParId(id);
@@ -51,7 +51,8 @@ const ct = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { filtre: 'tp',
 ok(ct > 0 && ct <= total, '« Liés au TP » : entre 1 et le total');
 const cw = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }), 0);
 const cl = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }), 0);
-ok(cw > 0 && cl > 0 && cl + cw >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, total ${total}`);
+const cc = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }), 0);
+ok(cw > 0 && cl > 0 && cc === 9 && cl + cw + cc >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, total ${total}`);
 ok(M.compteGroupe(g0, { plat: 'Cisco', plateformesDe, lies }) === 0, 'filtre Cisco : groupe vide (grisé, pas supprimé)');
 ok(M.idsNouveaux({}).size === 0, 'aucun ajout : aucun nouveau');
 ok(M.idsNouveaux({ a: '2026-01-01', b: '2026-10-27' }).has('a') === false, 'fiche ancienne : pas « nouveau »');

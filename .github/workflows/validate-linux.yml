@@ -580,6 +580,9 @@ jobs:
       - name: Cours et TP (50 fiches, parcours A-E fideles au sujet, machines, prerequis, laboratoire sans secret, contre-epreuves - statique)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cours.test.mjs
+      - name: Cours Cisco S07 (fiches, résumé, schémas)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/cisco-s07.test.mjs
 
       - name: Aide-memoire - groupes, filtres calcules, routes, contre-epreuves, marquage des portes
         working-directory: KJEMO-IT-Toolkit-v0.1
@@ -682,6 +685,9 @@ jobs:
       - name: Navigateur — accueil par plateforme et fiche en fenêtre
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-plateformes.test.mjs
+      - name: Banc navigateur Cisco S07 (résumé pliable, schémas)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-cisco-s07.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

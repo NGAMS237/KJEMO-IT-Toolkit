@@ -163,13 +163,13 @@ const fiche0 = G[0].sous[0].fiches[0];
 // 4. Filtre de plateforme : badge visible, sortie, groupes grisés (pas supprimés)
 {
   const { context, page } = await nouvellePage({}, '/#/');
-  await page.click('#platFilters [data-plat="Cisco"]');
-  assert(await page.locator('#home .groupe-carte').count() === 0 && await page.locator('#home .porte-vide').count() >= 1, 'Cisco : accueil sans carte vide, avec les portes « Bientôt »');
+  await page.click('#platFilters [data-plat="Azure"]');
+  assert(await page.locator('#home .groupe-carte').count() === 0 && await page.locator('#home .porte-vide').count() >= 1, 'Azure : accueil sans carte vide, avec les portes « Bientôt »');
   await page.goto(`${BASE}/#/memo`);
-  assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === G.length, 'Cisco : page Aide-mémoire, tous les groupes grisés, aucun supprimé');
+  assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === G.length, 'Azure : page Aide-mémoire, tous les groupes grisés, aucun supprimé');
   await page.goto(`${BASE}/#/`);
   await page.goto(`${BASE}/#/memo`);
-  assert(await page.locator('#filtreActif').isVisible(), 'aide-mémoire : badge « Filtre : Cisco » visible');
+  assert(await page.locator('#filtreActif').isVisible(), 'aide-mémoire : badge « Filtre : Azure » visible');
   assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === G.length, 'aide-mémoire : groupes vides grisés avec leur raison');
   await page.click('#filtreSortie');
   assert(await page.locator('#filtreActif').count() === 0 && await page.locator('#portesView details.groupe-bloc').count() === G.length, 'sortie du filtre : tout revient');

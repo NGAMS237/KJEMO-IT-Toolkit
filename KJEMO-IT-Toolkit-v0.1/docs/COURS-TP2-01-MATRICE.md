@@ -155,7 +155,7 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 - **B15 — quotacheck** — Les notes écrivent « quotacheck -c ». La fiche écrit « -cu » (quotas utilisateur explicitement). Sur un noyau allégé, la prise en charge des quotas peut demander un paquet de modules supplémentaires.
 - **E — nom du document de référence** — L’énoncé renvoie à « S06-Exemple de partage… » alors que le fichier fourni s’appelle « S05-Exemple de partage… » : même document, numéro différent.
 
-## Fiches du cours (53)
+## Fiches du cours (62)
 
 | Fiche | Titre | Étapes | Effet |
 |---|---|---|---|
@@ -212,3 +212,12 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-bash-menu` | Écrire un menu en Bash : while, case et fonctions | 3 | modification |
 | `cours-samba-script-menu` | TP2 A : le script à menu qui crée les comptes depuis le CSV | 7 | modification |
 | `cours-droits-fichier` | Lire et changer les droits d’un fichier : ls -l, chmod | 5 | modification |
+| `cours-ec-avant-de-grouper` | Vérifier les ports avant de former un EtherChannel | 3 | lecture |
+| `cours-ec-pagp` | Créer un EtherChannel PAgP (Cisco) entre deux commutateurs | 5 | modification |
+| `cours-ec-lacp` | Créer un EtherChannel LACP (802.3ad) entre deux commutateurs | 5 | modification |
+| `cours-ec-statique` | Créer un EtherChannel statique (mode on, sans protocole) | 5 | modification |
+| `cours-ec-verifier` | Vérifier un EtherChannel : show etherchannel et port-channel | 5 | lecture |
+| `cours-ec-depanner` | Dépanner un EtherChannel qui ne se forme pas | 7 | modification |
+| `cours-stp-lire` | Lire l’état de Spanning Tree et retrouver le chemin actif | 4 | lecture |
+| `cours-stp-racines` | Choisir PVST+ ou Rapid PVST+ et fixer les ponts racines | 4 | modification |
+| `cours-stp-portfast-bpduguard` | Activer PortFast et la protection BPDU sur un port d’accès | 4 | modification |

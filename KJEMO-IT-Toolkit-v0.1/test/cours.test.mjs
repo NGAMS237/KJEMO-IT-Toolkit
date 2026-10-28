@@ -31,7 +31,7 @@ const textes = (p) => p.methodes.flatMap((m) => m.etapes.flatMap((e) => [e.titre
 
 // ---------------------------------------------------------------------------
 console.log('1. Les fiches du cours');
-assert(FICHES.length === 53, `53 fiches (${FICHES.length})`);
+assert(FICHES.length === 62, `62 fiches : 53 Linux et 9 Cisco (${FICHES.length})`);
 assert(new Set(FICHES.map((p) => p.id)).size === FICHES.length, 'identifiants uniques');
 for (const p of FICHES) {
   const pb = P.incoherencesProcedure(p);
@@ -126,10 +126,11 @@ const nonCouverts = cours.parcours.flatMap((p) => p.items).filter((i) => i.couve
 assert(nonCouverts.length === 0, `plus aucun élément déclaré non couvert : A5, B1 et D7 ont leurs fiches (${nonCouverts})`);
 assert(cours.ambiguites.length >= 10, `ambiguïtés signalées (${cours.ambiguites.length})`);
 const fichesCitees = new Set(cours.parcours.flatMap((p) => [...p.prerequis.map((r) => r.fiche), ...p.items.flatMap((i) => i.refs.map((r) => r.fiche))]));
+const fichesCiteesTous = new Set(K.COURS.flatMap((c) => [...c.parcours.flatMap((p) => [...p.prerequis.map((r) => r.fiche), ...p.items.flatMap((i) => i.refs.map((r) => r.fiche))]), ...(c.soutien ?? []).map((x) => x.fiche)]));
 const manquantes = ['cours-samba-groupes', 'cours-smbclient-transferts', 'cours-ubuntu-jonction-ad', 'cours-samba-dns', 'cours-rsat-windows'];
 assert(manquantes.every((id) => fichesCitees.has(id) || cours.soutien.some((s) => s.fiche === id)), 'les 4 prérequis manquants (groupes Samba, smbclient, jonction Ubuntu, DNS Samba, RSAT) sont atteignables depuis le cours');
 // chaque fiche du cours est atteinte par un parcours ou par le soutien
-const atteintes = new Set([...fichesCitees, ...cours.soutien.map((s) => s.fiche)]);
+const atteintes = new Set([...fichesCitees, ...cours.soutien.map((s) => s.fiche), ...fichesCiteesTous]);
 const orphelines = FICHES.filter((p) => !atteintes.has(p.id)).map((p) => p.id);
 assert(orphelines.length === 0, 'chaque fiche du cours est atteinte par un parcours ou par le soutien', orphelines.join(', '));
 // contre-épreuves

@@ -20,6 +20,7 @@
 
 import { etiquetteSortie, extensionDe } from './plateforme.mjs';
 import { EFFETS, METHODES, MACHINES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
+import { figureMarkup } from './schemas-cisco.mjs';
 
 /** Échappement HTML complet (guillemets inclus : le texte peut aller dans un attribut). */
 export function esc(texte) {
@@ -512,6 +513,12 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
   const retour = methode.retour
     ? repliable('Retour en arrière', `<p>${inline(methode.retour)}</p>`)
     : '';
+  const rappel = p.rappel
+    ? repliable(p.rappel.titre ?? 'Rappel du cours', `<ul class="rappel-points">${p.rappel.points.map((x) => `<li>${inline(x)}</li>`).join('')}</ul>`, { id: 'rappel-cours' })
+    : '';
+  const schemas = (p.figures ?? []).length
+    ? `<details class="fold schemas-fiche" id="schemas-fiche" open><summary>Schémas (${p.figures.length})</summary><div class="fold-body schemas-grille">${p.figures.map((x) => figureMarkup(x) ?? '').join('')}</div></details>`
+    : '';
   const sources = repliable('Sources et limites de validation',
     `<ul class="sources">${p.sources.map((s) => `<li><a class="source-link" target="_blank" rel="noreferrer" href="${esc(s.url)}">${esc(s.label)}</a></li>`).join('')}</ul>`
     + `<p class="validation-note"><strong>Validation :</strong> ${esc(p.validation ?? 'Non précisée.')}</p>`
@@ -532,6 +539,7 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
     + `<div class="tache-meta">${plateformes}${p.methodes.length === 1 || scenario ? methodeBadgesMarkup(entree) : ''}${badgeEffet(p.effet)}<button class="fav-toggle${favori ? ' is-fav' : ''}" id="taskFav" type="button" aria-pressed="${favori}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${favori ? '★' : '☆'}</button></div>`
     + `</div></div>`
     + `<p class="tache-resume">${esc(p.resume)}</p>`
+    + schemas
     + prerequisMarkup(p, prerequisTitres)
     + hypothesesMarkup(p, { replie: vue === 'rapide' })
     + `<div class="tache-controls">${selecteurVueMarkup(vue)}${onglets}</div>`
@@ -541,7 +549,7 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
     + `<div id="etapesZone">${etapes}</div>`
     + dossier
     + `</div>`
-    + `<div class="folds">${comprendre}${depannage}${retour}${sources}</div>`
+    + `<div class="folds">${rappel}${comprendre}${depannage}${retour}${sources}</div>`
     + assistant
     + `</div>`;
 }

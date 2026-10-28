@@ -907,3 +907,33 @@ li.etape-cible{scroll-margin-top:20px}
 .porte-vide-page{margin:18px 0;padding:18px;border:1px dashed var(--border-strong);border-radius:12px;color:var(--text-soft)}
 .statuts-defile{overflow-x:auto;max-width:100%}
 @media(max-width:600px){.statuts-table th,.statuts-table td{padding:10px 8px;font-size:13px}}
+
+/* KJEMO-CISCO-S07-01 : schémas et résumé pliable */
+.schema{margin:14px 0;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.schema-svg{display:block;max-width:100%;height:auto}
+.schema figcaption{margin-top:8px;font-size:13px;line-height:1.5;color:var(--text-soft)}
+.schemas-grille{display:grid;grid-template-columns:1fr;gap:6px}
+details.schemas-fiche{margin:14px 0}
+.cours-resume{border:1px solid var(--accent);border-radius:12px;background:var(--surface);margin:14px 0;padding:0 16px}
+.cours-resume>summary{cursor:pointer;font-weight:700;font-size:16px;padding:14px 0;color:var(--accent-soft);list-style-position:inside}
+.cours-resume>summary:hover{color:var(--text-strong)}
+.cours-resume>summary:focus-visible,.rappel-question>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cours-resume[open]>summary{border-bottom:1px solid var(--border);margin-bottom:12px}
+.cours-resume-aide{font-weight:400;font-size:12px;color:var(--muted)}
+.cours-resume-corps{padding-bottom:16px}
+.rappel-intro{color:var(--text-soft);margin:0 0 10px}
+.rappel-essentiel{border-left:3px solid var(--cyan);background:var(--surface-3);padding:8px 14px;border-radius:8px;margin-bottom:14px}
+.rappel-section h3,.rappel-essentiel h3{font-size:15px;margin:14px 0 6px}
+.rappel-section li,.rappel-essentiel li{line-height:1.6;margin-bottom:5px}
+.rappel-code{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:10px 14px;overflow:auto;color:var(--code-text);font:12.5px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.rappel-commandes{width:100%;border-collapse:collapse;font-size:13px}
+.rappel-commandes th,.rappel-commandes td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.rappel-commandes code{white-space:pre-wrap;word-break:break-word;color:var(--cyan)}
+.rappel-note{font-size:13px;color:var(--muted)}
+.rappel-question{border:1px solid var(--border);border-radius:8px;margin:8px 0;padding:0 12px;background:var(--surface-3)}
+.rappel-question>summary{cursor:pointer;padding:10px 0;font-size:14px}
+.rappel-qn{display:inline-block;min-width:2em;font-weight:700;color:var(--accent-soft)}
+.rappel-reponse{margin:0 0 10px;color:var(--text-soft);font-size:14px;line-height:1.55}
+.rappel-points{margin:0;padding-left:20px}
+.rappel-points li{margin-bottom:6px;line-height:1.55}
+.cours-carte-resume{margin:6px 0 10px}

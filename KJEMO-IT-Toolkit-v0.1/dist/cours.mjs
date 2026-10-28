@@ -17,6 +17,9 @@
  * taire.
  */
 
+import { RESUME_S07 } from './cours-resume-cisco.mjs';
+import { IDS_SCHEMAS } from './schemas-cisco.mjs';
+
 export const ROUTE_COURS = '#/cours';
 export const ROUTE_LABO = '#/labo';
 
@@ -193,6 +196,82 @@ export const COURS = [
       { id: 'amb-ref', sujet: 'E — nom du document de référence', texte: 'L’énoncé renvoie à « S06-Exemple de partage… » alors que le fichier fourni s’appelle « S05-Exemple de partage… » : même document, numéro différent.' },
     ],
   },
+  {
+    id: 'cisco-s07-etherchannel',
+    plateformes: ['Cisco'],
+    titre: 'Architecture réseau II — Semaine 7 : EtherChannel et Spanning Tree',
+    resume: 'Regrouper des liens entre commutateurs Cisco (PAgP, LACP, mode on), vérifier et dépanner un canal, puis régler Spanning Tree (PVST+, Rapid PVST+, ponts racines, PortFast). Six exercices Packet Tracer du formatif 07 et un résumé pliable du cours avec schémas.',
+    source: 'Cours de la semaine 7 (« EtherChannel », chapitre 6 de CCNA 2 v7) et formatif 07 (six exercices Packet Tracer) fournis par l’étudiant, non republiés ici : les parcours résument les demandes dans nos mots et les schémas sont originaux. En cas de doute, ton énoncé fait foi.',
+    avertissement: 'Les fiches expliquent comment faire dans la console d’un commutateur de laboratoire (Packet Tracer ou matériel) ; elles ne remplacent pas ton énoncé et ne prouvent rien : « coché » veut seulement dire « je l’ai fait ». Le Toolkit n’exécute aucune commande et ne se connecte à aucun équipement.',
+    rappelCours: RESUME_S07,
+    parcours: [
+      {
+        lettre: 'A',
+        titre: 'Configurer des EtherChannel (PAgP et LACP)',
+        resume: 'Exercices « Configure EtherChannel » (6.2.4) et « Implement EtherChannel » (6.4.1) : trois commutateurs, trois canaux, un en PAgP et deux en LACP, avec des ports d’abord réglés en trunk statique.',
+        prerequis: [
+          f('cours-ec-avant-de-grouper', 1, { titre: 'Voir la vitesse', pourquoi: 'lire l’état des ports avant de les regrouper.' }),
+        ],
+        items: [
+          { id: 'A1', texte: 'Donner un nom aux commutateurs, puis relever l’état, la vitesse, le duplex et le mode des ports qui relient les commutateurs.', refs: [f('cours-ec-avant-de-grouper', 1, { titre: 'Voir la vitesse' }), f('cours-ec-avant-de-grouper', 2, { titre: 'trunk' })] },
+          { id: 'A2', texte: 'Régler tous les ports du futur canal en trunk statique (sinon DTP peut les laisser en accès).', refs: [f('cours-ec-pagp', 1, { titre: 'Régler les ports en trunk' })] },
+          { id: 'A3', texte: 'Canal 1 en PAgP (desirable des deux côtés) sur deux ports Fast Ethernet : éteindre, channel-group, rallumer.', refs: [f('cours-ec-pagp', 1, { titre: 'éteindre' }), f('cours-ec-pagp', 2, { titre: 'groupe' }), f('cours-ec-pagp', 3, { titre: 'Rallumer' })] },
+          { id: 'A4', texte: 'Régler l’interface port-channel du canal 1 en trunk, sur les deux commutateurs.', refs: [f('cours-ec-pagp', 4, { titre: 'port-channel' })] },
+          { id: 'A5', texte: 'Vérifier le canal 1 : résumé EtherChannel, trunks et Spanning Tree. Si le canal manque, éteindre puis rallumer les ports aux deux bouts.', refs: [f('cours-ec-pagp', 5, { titre: 'Vérifier le canal' }), f('cours-ec-verifier', 1, { titre: 'Résumé' }), f('cours-ec-verifier', 5, { titre: 'Spanning Tree' })] },
+          { id: 'A6', texte: 'Canal 2 en LACP (active des deux côtés) sur deux ports Gigabit entre deux autres commutateurs.', refs: [f('cours-ec-lacp', 1, { titre: 'trunk' }), f('cours-ec-lacp', 2, { titre: 'groupe' }), f('cours-ec-lacp', 3, { titre: 'Rallumer' }), f('cours-ec-lacp', 4, { titre: 'port-channel' })] },
+          { id: 'A7', texte: 'Canal 3 en LACP « négocié » : un bout en active qui propose, l’autre en passive qui répond.', refs: [f('cours-ec-lacp', 2, { titre: 'groupe' })], note: 'Le mode se choisit avec le paramètre « mode » de la fiche : active sur un commutateur, passive sur l’autre.' },
+          { id: 'A8', texte: 'Contrôler les trois canaux avec le résumé EtherChannel sur chaque commutateur.', refs: [f('cours-ec-verifier', 1, { titre: 'Résumé' })] },
+          { id: 'A9', texte: 'Exercice 6.4.1 : construire la topologie (trois commutateurs 2960, câbles droits, noms SWA, SWB, SWC) avant de configurer.', refs: [], couvert: false, note: 'La construction de la topologie se fait dans Packet Tracer (glisser les commutateurs, câbler les ports du tableau) ; le catalogue ne couvre que les commandes de configuration.' },
+          { id: 'A10', texte: 'Exercice 6.4.1 : un canal PAgP entre SWA et SWB, un canal LACP entre SWA et SWC, un canal LACP de secours entre SWB et SWC où SWC propose et SWB répond.', refs: [f('cours-ec-pagp', 2, { titre: 'groupe' }), f('cours-ec-lacp', 2, { titre: 'groupe' })] },
+          { id: 'A11', texte: 'Variante du cours : un EtherChannel statique en mode on, sur les deux bouts.', refs: [f('cours-ec-statique', 2, { titre: 'groupe' })] },
+        ],
+      },
+      {
+        lettre: 'B',
+        titre: 'Vérifier et dépanner des EtherChannel',
+        resume: 'Exercice « Troubleshoot EtherChannel » (6.3.4) : quatre commutateurs et six canaux mal configurés par un technicien ; on lit, on compare au tableau fourni, puis on corrige les modes de port, les affectations et les protocoles.',
+        prerequis: [
+          f('cours-ec-verifier', 1, { titre: 'Résumé', pourquoi: 'savoir lire Po(SU), Po(SD) et les ports (P) ou (I).' }),
+        ],
+        items: [
+          { id: 'B1', texte: 'Repérer les ports restés en mode accès au lieu de trunk (physiques et port-channel).', refs: [f('cours-ec-avant-de-grouper', 2, { titre: 'trunk' }), f('cours-ec-avant-de-grouper', 3, { titre: 'mode' })] },
+          { id: 'B2', texte: 'Corriger ces ports en trunk, d’abord les ports physiques puis les interfaces port-channel.', refs: [f('cours-ec-depanner', 5, { titre: 'Retirer l’ancien groupe' }), f('cours-ec-pagp', 4, { titre: 'port-channel' })] },
+          { id: 'B3', texte: 'Comparer le résumé EtherChannel de chaque commutateur au tableau des groupes et des ports fourni.', refs: [f('cours-ec-depanner', 1, { titre: 'état du canal' }), f('cours-ec-verifier', 1, { titre: 'Résumé' })] },
+          { id: 'B4', texte: 'Corriger les ports affectés au mauvais groupe (par exemple deux ports dans un groupe qui ne correspond pas au tableau).', refs: [f('cours-ec-depanner', 4, { titre: 'Éteindre' }), f('cours-ec-depanner', 5, { titre: 'Retirer l’ancien groupe' }), f('cours-ec-depanner', 6, { titre: 'Rallumer' })] },
+          { id: 'B5', texte: 'Repérer et corriger un protocole incompatible : PAgP configuré d’un côté face à LACP de l’autre.', refs: [f('cours-ec-depanner', 2, { titre: 'interfaces logiques' }), f('cours-ec-depanner', 5, { titre: 'Retirer l’ancien groupe' })], note: 'Les deux bouts d’un canal utilisent le même protocole : choisis le mode du tableau (LACP actif) sur le commutateur fautif.' },
+          { id: 'B6', texte: 'Vérifier que les six canaux sont en service (SU) avec leurs ports dans le canal (P).', refs: [f('cours-ec-depanner', 7, { titre: 'Contrôler' }), f('cours-ec-verifier', 1, { titre: 'Résumé' })] },
+        ],
+      },
+      {
+        lettre: 'C',
+        titre: 'Spanning Tree : redondance, PVST+ et Rapid PVST+',
+        resume: 'Trois exercices : « Examining a Redundant Design » (3.1.1.5), « Configuring PVST+ » (3.3.1.5) et « Configuring Rapid PVST+ » (3.3.2.2). On observe la convergence, on règle le mode et les ponts racines par VLAN, puis PortFast et la protection BPDU.',
+        prerequis: [
+          f('cours-stp-lire', 1, { titre: 'Voir tous les arbres', pourquoi: 'lire racine, rôles et états des ports.' }),
+        ],
+        items: [
+          { id: 'C1', texte: 'Vérifier la convergence : quels liens montants transmettent, lesquels sont bloqués.', refs: [f('cours-stp-lire', 1, { titre: 'Voir tous les arbres' }), f('cours-stp-lire', 3, { titre: 'ports actifs' })] },
+          { id: 'C2', texte: 'Suivre un ping entre deux ordinateurs en mode simulation (ARP puis ICMP) et noter le chemin sans boucle.', refs: [], couvert: false, note: 'Le mode simulation et les scénarios de Packet Tracer ne s’apprennent pas par une commande ; observe le chemin, puis relis les ports actifs avec la fiche « Lire l’état de Spanning Tree ».' },
+          { id: 'C3', texte: 'Supprimer un lien, puis un commutateur, attendre la convergence et noter le nouveau chemin actif.', refs: [f('cours-stp-lire', 3, { titre: 'ports actifs' }), f('cours-stp-lire', 2, { titre: 'un seul VLAN' })] },
+          { id: 'C4', texte: 'PVST+ : mettre les ports d’utilisateurs en accès, créer les VLAN du plan et les affecter.', refs: [f('cisco-creer-vlan'), f('cisco-affecter-port-vlan')] },
+          { id: 'C5', texte: 'PVST+ : régler le mode « pvst » sur les trois commutateurs.', refs: [f('cours-stp-racines', 1, { titre: 'Choisir le mode' })] },
+          { id: 'C6', texte: 'PVST+ : un commutateur racine principale de certains VLAN, un autre racine principale des autres, le troisième racine secondaire de tous.', refs: [f('cours-stp-racines', 2, { titre: 'Désigner' }), f('cours-stp-racines', 3, { titre: 'VLAN 1' })] },
+          { id: 'C7', texte: 'Vérifier avec show spanning-tree que chaque VLAN a la racine prévue.', refs: [f('cours-stp-racines', 4, { titre: 'Contrôler' }), f('cours-stp-lire', 1, { titre: 'Voir tous les arbres' })] },
+          { id: 'C8', texte: 'PortFast puis protection BPDU sur les ports d’accès des postes.', refs: [f('cours-stp-portfast-bpduguard', 2, { titre: 'PortFast' }), f('cours-stp-portfast-bpduguard', 3, { titre: 'protection BPDU' })] },
+          { id: 'C9', texte: 'Rapid PVST+ : régler le mode « rapid-pvst », reprendre les ponts racines, PortFast et BPDU guard.', refs: [f('cours-stp-racines', 1, { titre: 'Choisir le mode' }), f('cours-stp-racines', 2, { titre: 'Désigner' }), f('cours-stp-portfast-bpduguard', 2, { titre: 'PortFast' })] },
+        ],
+      },
+    ],
+    soutien: [
+      { fiche: 'cours-ec-statique', pourquoi: 'le mode « on » du cours, et pourquoi il est risqué.' },
+      { fiche: 'cisco-voir-trunks', pourquoi: 'lire les trunks (VLAN autorisés, natif) avant et après un canal.' },
+      { fiche: 'cisco-enregistrer-config', pourquoi: 'sauvegarder la configuration une fois le travail validé.' },
+    ],
+    ambiguites: [
+      { id: 'S07-1', sujet: 'Nom des interfaces', texte: 'Les exercices utilisent des noms courts (F0/21, G0/1) comme dans Packet Tracer ; le Toolkit les écrit en entier (FastEthernet0/21), ce qui est équivalent dans IOS. Vérifie la numérotation de TON équipement.' },
+      { id: 'S07-2', sujet: 'Groupes et ports du tableau', texte: 'Le numéro de groupe est local à chaque commutateur. Suis toujours le tableau de TON énoncé pour savoir quels ports vont dans quel groupe et avec quel protocole ; les valeurs des fiches ne sont que des exemples.' },
+    ],
+  },
 ];
 
 export const COURS_PAR_ID = new Map(COURS.map((c) => [c.id, c]));
@@ -208,7 +287,7 @@ function variantes(coursCle, item) {
   return [`${coursCle} ${sans}`, sans, `${coursCle} ${sans.replace(/^([a-z])(\d)/, '$1 $2')}`];
 }
 
-const CLE_COURS = { 'serveurs2-tp2': 'tp2' };
+const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07' };
 
 const ALIAS = (() => {
   const m = new Map();
@@ -258,7 +337,7 @@ export function routeParcours(coursId, lettre = null) {
 }
 
 export function lireRouteCours(hash) {
-  const m = /^#\/cours(?:\/([A-Za-z0-9_-]+)(?:\/([A-Z]))?)?$/.exec(hash || '');
+  const m = /^#\/cours(?:\/([A-Za-z0-9_-]+)(?:\/([A-Z]|resume))?)?$/.exec(hash || '');
   if (!m) return null;
   return { coursId: m[1] ?? null, lettre: m[2] ?? null };
 }
@@ -266,6 +345,36 @@ export function lireRouteCours(hash) {
 // ---------------------------------------------------------------------------
 // Contrat d'un cours — vérifié par le banc, jamais au chargement
 // ---------------------------------------------------------------------------
+
+/**
+ * Anomalies du RÉSUMÉ PLIABLE d'un cours (liste vide = conforme) : de quoi se
+ * rafraîchir la mémoire (essentiel, sections, commandes, pièges, questions), des
+ * schémas qui existent tous, et aucun texte vide.
+ */
+export function incoherencesRappel(r) {
+  const pb = [];
+  const txt = (v) => (typeof v === 'string' ? v.trim() : '');
+  if (txt(r.titre).length < 10) pb.push('résumé : titre absent');
+  if (txt(r.intro).length < 20) pb.push('résumé : introduction absente');
+  if ((r.essentiel ?? []).length < 3) pb.push('résumé : « l’essentiel » demande au moins 3 points');
+  for (const [k, x] of (r.essentiel ?? []).entries()) if (txt(x).length < 20) pb.push(`résumé : point essentiel ${k + 1} trop court`);
+  if (!(r.sections ?? []).length) pb.push('résumé : aucune section');
+  const ids = new Set();
+  for (const sec of r.sections ?? []) {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(txt(sec.id))) pb.push(`résumé : identifiant de section mal formé (${sec.id})`);
+    if (ids.has(sec.id)) pb.push(`résumé : section ${sec.id} en double`);
+    ids.add(sec.id);
+    if (txt(sec.titre).length < 6) pb.push(`résumé : section ${sec.id} sans titre`);
+    if (!(sec.points ?? []).length) pb.push(`résumé : section ${sec.id} sans point`);
+    for (const x of sec.points ?? []) if (txt(x).length < 20) pb.push(`résumé : section ${sec.id} : un point est trop court`);
+    for (const sch of sec.schemas ?? []) if (!IDS_SCHEMAS.includes(sch)) pb.push(`résumé : section ${sec.id} : schéma inconnu « ${sch} »`);
+  }
+  if (!(r.commandes ?? []).length) pb.push('résumé : aucune commande à retenir');
+  for (const c of r.commandes ?? []) if (txt(c.cmd).length < 3 || txt(c.sert).length < 10) pb.push(`résumé : commande « ${c.cmd} » sans explication`);
+  if ((r.questions ?? []).length < 3) pb.push('résumé : au moins 3 questions d’auto-évaluation');
+  for (const q of r.questions ?? []) if (txt(q.q).length < 10 || txt(q.r).length < 20) pb.push(`résumé : question incomplète (« ${txt(q.q).slice(0, 30)} »)`);
+  return pb;
+}
 
 /**
  * Anomalies d'un cours (liste vide = conforme).
@@ -321,6 +430,7 @@ export function incoherencesCours(cours, { fiches, assistants = () => true }) {
     }
   }
   for (const s of cours.soutien ?? []) verifierRef({ fiche: s.fiche, etape: null }, 'soutien');
+  if (cours.rappelCours) pb.push(...incoherencesRappel(cours.rappelCours));
   const amb = new Set();
   for (const a of cours.ambiguites ?? []) {
     if (amb.has(a.id)) pb.push(`ambiguïté ${a.id} en double`);

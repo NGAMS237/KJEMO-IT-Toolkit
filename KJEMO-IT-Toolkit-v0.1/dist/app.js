@@ -1876,7 +1876,11 @@ function renderCours() {
   } else {
     const cours = COURS_PAR_ID.get(espace.coursId);
     if (!cours) { view.innerHTML = coursIntrouvableMarkup(); document.title = 'Cours introuvable — KJEMO IT Toolkit'; return; }
-    view.innerHTML = coursPageMarkup(cours, espace.lettre, progression, ctx);
+    // Le résumé pliable garde son état (ouvert/fermé) quand on coche un élément et que la page se redessine.
+    const dejaVu = view.querySelector('#resume-cours');
+    const resumeOuvert = espace.lettre === 'resume' || Boolean(dejaVu?.open);
+    view.innerHTML = coursPageMarkup(cours, espace.lettre === 'resume' ? null : espace.lettre, progression, ctx, { resumeOuvert });
+    if (espace.lettre === 'resume') view.querySelector('#resume-cours')?.scrollIntoView?.({ block: 'start' });
     document.title = `${cours.titre} — KJEMO IT Toolkit`;
     view.querySelectorAll('input[type="checkbox"][data-item]').forEach((c) => c.addEventListener('change', () => {
       const suite = basculer(lireProgression(), cours.id, c.dataset.item);
