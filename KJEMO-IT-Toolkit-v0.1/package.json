@@ -81,6 +81,8 @@
     "matrice:commandes": "node test/matrice-commandes-cours.mjs --ecrire",
     "test:matrice:commandes": "node test/matrice-commandes-cours.mjs --verifier",
     "test:browser:cours": "node test/browser-cours.test.mjs",
+    "test:memo": "node test/memo.test.mjs",
+    "test:browser:portes": "node test/browser-portes.test.mjs",
     "test:sources:9": "node test/sources-impression.mjs",
     "matrices:lot9": "node test/matrices-lot9.mjs",
     "test:matrices:lot9": "node test/matrices-lot9.mjs --verifier"

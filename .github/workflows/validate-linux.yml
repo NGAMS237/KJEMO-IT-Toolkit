@@ -581,6 +581,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cours.test.mjs
 
+      - name: Aide-memoire - groupes, filtres calcules, routes, contre-epreuves, marquage des portes
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/memo.test.mjs
+
       - name: Matrice de couverture du cours (a jour avec dist/cours.mjs - statique)
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/matrice-cours.mjs --verifier
@@ -662,6 +666,10 @@ jobs:
       - name: Navigateur Mes cours et TP - etape d'une fiche en 3 gestes, progression locale, laboratoire, CSV, stockage refuse, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-cours.test.mjs
+
+      - name: Navigateur accueil a trois portes - aide-memoire, catalogue pro, filtre unique, retours, Echap, 390 px
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-portes.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

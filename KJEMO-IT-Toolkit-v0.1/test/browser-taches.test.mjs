@@ -109,6 +109,7 @@ console.log('2. Recherche dans le navigateur');
   await recherche(page, 'ÉTAT   Service');
   assert(await page.locator('#toolGrid .task-row').count() > 0, 'accents, casse et espaces multiples tolérés');
   await recherche(page, '');
+  await page.click('#voirCatalogue');   // UX-ACCUEIL-01 : les cartes de domaine s'ouvrent avec le catalogue, plus sur l'accueil à portes
   await page.click('#categoryGrid .category-card[data-category="Linux et services réseau"]');
   const kinds = new Set(await page.$$eval('#toolGrid .task-row', (els) => els.map((e) => e.dataset.kind)));
   assert(kinds.has('commande') && kinds.has('assistant') && kinds.has('procedure'), 'catégorie Linux : fiches, commandes rapides et assistants ensemble');

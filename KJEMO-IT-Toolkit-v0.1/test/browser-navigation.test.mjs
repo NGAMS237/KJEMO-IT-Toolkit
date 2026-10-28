@@ -73,7 +73,9 @@ const capture = async (page, nom) => { if (CAPTURES) await page.screenshot({ pat
 async function parcours(page, id) {
   const e = T.entreeParId(id);
   const c = C.cheminDe(e);
-  await page.click(`#categoryGrid .category-card[data-category="${nomDomaine(c.domaineId)}"]`);
+  // UX-ACCUEIL-01 : accueil → porte « Catalogue professionnel » → carte du domaine (clics seulement).
+  await page.click('#porteProBtn');
+  await page.click(`#portesView .domaine-carte[data-domaine="${c.domaineId}"]`);
   await page.waitForSelector('#rubriquesZone .fil-ariane');
   const etapes = [c.famille.id, ...(c.sujet ? [c.sujet.id] : [])];
   const profondeur = [];
@@ -324,6 +326,7 @@ console.log('8. Favoris et historique conservés dans les listes groupées');
 console.log('9. Clavier');
 {
   const { context, page } = await nouvellePage();
+  await page.click('#voirCatalogue');   // UX-ACCUEIL-01 : la grille de domaines s'ouvre avec le catalogue, plus sur l'accueil à portes
   await page.focus('#categoryGrid .category-card[data-category="Linux et services réseau"]');
   await page.keyboard.press('Enter');
   await page.waitForSelector('#rubriqueCartes');

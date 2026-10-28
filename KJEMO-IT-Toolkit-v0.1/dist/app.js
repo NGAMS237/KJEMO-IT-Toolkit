@@ -2,7 +2,7 @@
 // GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
-import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
+import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT, CATEGORIES } from './categories.mjs';
 import { plateformeDe, sortieDe, estBash, estIOS, estDocumentationSeule, estLectureSeule,
          extensionDe, nomFichierDe, etiquetteSortie, commandesExecution } from './plateforme.mjs';
 import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
@@ -16,9 +16,13 @@ import { filArianeMarkup, maillonsDePortee, nomDePortee, rubriqueMarkup, groupeE
          bandeauMasqueMarkup } from './vue-navigation.mjs';
 import { rendreMethode, evaluerValeurs, validerParametre, texteCopiable, raisonRefus,
          dossierMarkdown } from './procedures.mjs';
-import { COURS, COURS_PAR_ID, ROUTE_COURS, ROUTE_LABO, lireRouteTache, lireRouteCours, GABARIT_TP } from './cours.mjs';
+import { COURS, COURS_PAR_ID, ROUTE_COURS, ROUTE_LABO, lireRouteTache, lireRouteCours, routeParcours, GABARIT_TP } from './cours.mjs';
 import { CLE_LABO, CLE_PROGRESSION, normaliserLabo, saisiesDepuisLabo, normaliserProgression, basculer,
-         texteEditeurModele, csvDepuisLignes, lignesDepuisTexte } from './labo.mjs';
+         texteEditeurModele, csvDepuisLignes, lignesDepuisTexte, avancement } from './labo.mjs';
+import { ROUTE_MEMO, ROUTE_CATALOGUE, MEMO_GROUPES, MEMO_PAR_ID, FILTRES_MEMO, idsNouveaux, fichesDuCours, filtrerGroupe,
+         compteGroupe, groupeDeFiche, lireRouteMemo, routeMemo } from './memo.mjs';
+import { portesAccueilMarkup, groupeCarteMarkup, memoPageMarkup, memoGroupePageMarkup, cataloguePageMarkup,
+         retourMemoFicheMarkup, retoursMarkup } from './vue-portes.mjs';
 import { coursListeMarkup, coursPageMarkup, coursIntrouvableMarkup, laboMarkup, espacesMarkup,
          retourParcoursMarkup } from './vue-cours.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
@@ -46,7 +50,8 @@ let currentTool = null;
 // choisie et valeurs saisies. Les valeurs ne vivent que le temps d'une fiche :
 // ouvrir une autre fiche repart de zéro (aucun état gardé par erreur).
 let currentTache = null;
-let espace = null;            // null | { type:'cours', coursId, lettre } | { type:'labo' } : « Mes cours et TP », « Mon laboratoire »
+let espace = null;            // null | { type:'cours', coursId, lettre } | { type:'labo' } | { type:'memo', groupeId } | { type:'catalogue' }
+let memoFiltre = 'tous';       // 'tous' | 'nouveau' | 'tp' : puces de l'aide-mémoire
 let contexteParcours = null;  // { coursId, lettre } quand la fiche est ouverte depuis un parcours
 let etapeAffichee = null;     // dernière étape montrée par un lien (évite de la remontrer à chaque événement)
 let etapeCible = null;        // numéro d'étape à montrer à l'ouverture d'une fiche
@@ -418,6 +423,8 @@ function revenirAccueil({ pousserHash = true } = {}) {
 /** Applique l'URL courante à l'état de l'application. */
 function espaceDepuisHash() {
   if (location.hash === ROUTE_LABO) return { type: 'labo' };
+  const pm = lireRouteMemo(location.hash);
+  if (pm) return pm.type === 'catalogue' ? { type: 'catalogue' } : { type: 'memo', groupeId: pm.groupeId };
   const c = lireRouteCours(location.hash);
   if (!c) return null;
   return { type: 'cours', coursId: c.coursId, lettre: c.lettre };
@@ -663,6 +670,13 @@ function renderHome() {
   // Pendant une recherche, les résultats passent avant la grille des catégories
   // (qui les repoussait sous la ligne de flottaison). La barre latérale garde
   // le filtre par catégorie, et la grille revient dès que la recherche est vidée.
+  // Accueil « trois portes » : seulement sans recherche, sans rubrique et sans filtre de contenu.
+  const accueilPortes = mode === 'accueil';
+  document.querySelector('#home')?.classList.toggle('is-portes', accueilPortes);
+  const zoneNat = document.querySelector('#natureFilters');
+  if (zoneNat) zoneNat.hidden = accueilPortes;
+  const zonePortes = document.querySelector('#espacesZone');
+  if (zonePortes) zonePortes.innerHTML = accueilPortes ? portesAccueilHtml() : '';
   document.querySelector('#categoriesSection')?.classList.toggle('is-collapsed', Boolean(query) && selectedCategory === CAT_TOUT);
   document.querySelector('#categoriesSection')?.classList.toggle('is-compact', Boolean(p.domaineId));
 
@@ -683,7 +697,7 @@ function renderHome() {
   const zoneRub = document.querySelector('#rubriquesZone');
   if (zoneRub) {
     zoneRub.innerHTML = p.domaineId
-      ? rubriqueMarkup({ liste: listeBase(), assistants: vueAssistants, domaineId: p.domaineId, domaineNom: p.domaineNom,
+      ? retoursMarkup({ libelle: 'Retour au catalogue professionnel', route: ROUTE_CATALOGUE }) + rubriqueMarkup({ liste: listeBase(), assistants: vueAssistants, domaineId: p.domaineId, domaineNom: p.domaineNom,
           familleId: p.familleId, sujetId: p.sujetId, requete: query,
           totalPartout: query ? searchResults({ categorie: CAT_TOUT }).length : null })
       : '';
@@ -1592,6 +1606,7 @@ function renderTache() {
   enteteNavigationFiche(view, entree, p.titre, 'taskBack');
   const coursOrigine = contexteParcours ? COURS_PAR_ID.get(contexteParcours.coursId) : null;
   if (coursOrigine) view.insertAdjacentHTML('afterbegin', retourParcoursMarkup(coursOrigine.titre, contexteParcours.lettre, coursOrigine.id));
+  else { const gm = groupeDeFiche(entree.id); if (gm) view.insertAdjacentHTML('afterbegin', retourMemoFicheMarkup(gm)); }
 
   const fav = view.querySelector('#taskFav');
   fav.addEventListener('click', () => {
@@ -1907,15 +1922,114 @@ function renderLabo() {
   });
 }
 
-/** Les deux entrées de la barre latérale : l'état courant est annoncé (aria-current). */
+/** Les entrées colorées de la barre latérale : l'état courant est annoncé (aria-current). */
 function majNavEspaces() {
+  const surAccueil = !espace && !currentTool && !currentTache && modeListe() === 'accueil';
   document.querySelectorAll('#espacesNav a').forEach((a) => {
-    const actif = (a.dataset.espace === 'cours' && espace?.type === 'cours') || (a.dataset.espace === 'labo' && espace?.type === 'labo');
+    const e = a.dataset.espace;
+    const actif = e === 'accueil' ? surAccueil : espace?.type === e;
     if (actif) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     a.classList.toggle('active', actif);
   });
-  const zone = document.querySelector('#espacesZone');
-  if (zone && !zone.dataset.pret) { zone.innerHTML = espacesMarkup(); zone.dataset.pret = '1'; }
+}
+
+// ---------------------------------------------------------------------------
+// Accueil à trois portes, aide-mémoire, catalogue professionnel (KJEMO-UX-ACCUEIL-01)
+// ---------------------------------------------------------------------------
+let liesCache = null;
+const fichesLiees = () => (liesCache ??= new Set(COURS.flatMap((c) => [...fichesDuCours(c)])));
+const platsDe = (id) => entreeParId(id)?.plateformes ?? [];
+const optsMemo = (filtre = memoFiltre) => ({ filtre, plat: platFiltre, plateformesDe: platsDe, lies: fichesLiees(), nouveaux: idsNouveaux() });
+
+function ligneMemo(id) {
+  const e = entreeParId(id);
+  if (!e) return null;
+  return { id, titre: e.titre, resume: e.resume ?? '', effet: e.effet, plateformes: e.plateformes ?? [],
+    nbEtapes: e.procedure?.methodes?.[0]?.etapes?.length ?? 0, nouveau: idsNouveaux().has(id), lieTp: fichesLiees().has(id) };
+}
+const sousAvecLignes = (sous) => sous.map((x) => ({ ...x, fiches: x.fiches.map(ligneMemo).filter(Boolean) })).filter((x) => x.fiches.length);
+const compteMemoTotal = (filtre = 'tous') => MEMO_GROUPES.reduce((n, g) => n + compteGroupe(g, optsMemo(filtre)), 0);
+const compteParFiltreMemo = () => Object.fromEntries(FILTRES_MEMO.map((f) => [f.id, compteMemoTotal(f.id)]));
+
+function portesAccueilHtml() {
+  const cours = COURS[0] ?? null;
+  let tp = null;
+  if (cours) {
+    const prog = lireProgression();
+    let faits = 0; let total = 0; let reprise = null;
+    for (const q of cours.parcours) {
+      const a = avancement(cours, q, prog);
+      faits += a.faits; total += a.total;
+      if (!reprise && a.faits < a.total) reprise = q.lettre;
+    }
+    tp = { titre: cours.titre, faits, total, href: routeParcours(cours.id, reprise) };
+  }
+  const memoCartes = MEMO_GROUPES.map((g) => groupeCarteMarkup(g, compteGroupe(g, optsMemo('tous')), { nouveaux: compteGroupe(g, optsMemo('nouveau')) }));
+  const catalogueTotal = ENTREES_LISTEES.filter((e) => compatiblePlateforme(e)).length;
+  return portesAccueilMarkup({ tp, memoCartes, memoTotal: compteMemoTotal('tous'), catalogueTotal, hrefCours: ROUTE_COURS, hrefLabo: ROUTE_LABO });
+}
+
+const BLOCS_CATALOGUE = [
+  { titre: 'Windows : postes et serveurs', ids: ['poste-windows', 'analyse-disques', 'windows-server', 'imprimantes'] },
+  { titre: 'Annuaire et stratégies', ids: ['active-directory', 'gpo'] },
+  { titre: 'Réseau, Linux et cloud', ids: ['reseau', 'reseau-cisco', 'linux', 'azure-entra'] },
+];
+
+function donneesCatalogue() {
+  const liste = ENTREES_LISTEES.filter((e) => compatiblePlateforme(e));
+  const comptes = compteParCategorie(liste);
+  const blocs = BLOCS_CATALOGUE.map((b) => ({
+    titre: b.titre,
+    domaines: b.ids.map((id) => CATEGORIES.find((c) => c.id === id)).filter(Boolean)
+      .map((c) => ({ id: c.id, nom: c.name, icone: c.icon, sous: c.description, compte: comptes.get(c.name) ?? 0, route: routePortee({ domaineId: c.id }) })),
+  })).filter((b) => b.domaines.length);
+  return { blocs, plat: platFiltre, total: liste.length };
+}
+
+function renderPortes() {
+  const view = document.querySelector('#portesView');
+  if (espace.type === 'catalogue') {
+    view.innerHTML = cataloguePageMarkup(donneesCatalogue());
+    document.title = 'Catalogue professionnel — KJEMO IT Toolkit';
+  } else {
+    const g = espace.groupeId ? MEMO_PAR_ID.get(espace.groupeId) : null;
+    const filtres = FILTRES_MEMO;
+    const compteParFiltre = compteParFiltreMemo();
+    if (g) {
+      view.innerHTML = memoGroupePageMarkup({ g, sous: sousAvecLignes(filtrerGroupe(g, optsMemo())), filtre: memoFiltre, filtres, compteParFiltre, plat: platFiltre });
+      document.title = `${g.titre} — Aide-mémoire — KJEMO IT Toolkit`;
+    } else {
+      const groupes = MEMO_GROUPES.map((x) => ({ g: x, compte: compteGroupe(x, optsMemo()),
+        nouveaux: compteGroupe(x, optsMemo('nouveau')), sous: sousAvecLignes(filtrerGroupe(x, optsMemo())) }));
+      view.innerHTML = memoPageMarkup({ groupes, filtre: memoFiltre, filtres, compteParFiltre, plat: platFiltre, total: compteParFiltre.tous });
+      document.title = 'Aide-mémoire — KJEMO IT Toolkit';
+    }
+  }
+  view.querySelectorAll('[data-memo-filtre]').forEach((b) => b.addEventListener('click', () => {
+    memoFiltre = b.dataset.memoFiltre;
+    renderPortes();
+    view.querySelector(`[data-memo-filtre="${memoFiltre}"]`)?.focus();
+  }));
+  view.querySelector('#filtreSortie')?.addEventListener('click', () => {
+    platFiltre = null; renderPortes();
+    view.querySelector('h1')?.setAttribute('tabindex', '-1'); view.querySelector('h1')?.focus();
+  });
+  view.querySelector('#memoSansFiltre')?.addEventListener('click', (ev) => {
+    ev.preventDefault(); memoFiltre = 'tous'; platFiltre = null; renderPortes();
+  });
+}
+
+/** Où mène Échap : toujours un seul pas en arrière, jamais hors de l'application. */
+function routeParent() {
+  if (espace?.type === 'memo') return espace.groupeId && MEMO_PAR_ID.has(espace.groupeId) ? ROUTE_MEMO : '#/';
+  if (espace?.type === 'catalogue' || espace?.type === 'labo') return '#/';
+  if (espace?.type === 'cours') return espace.coursId ? ROUTE_COURS : '#/';
+  if (currentTache) {
+    if (contexteParcours) return routeParcours(contexteParcours.coursId, contexteParcours.lettre);
+    const g = groupeDeFiche(currentTache.id);
+    return g ? routeMemo(g.id) : null;
+  }
+  return null;
 }
 
 function render() {
@@ -1926,12 +2040,15 @@ function render() {
   document.querySelector('#home').hidden = Boolean(currentTool || currentTache || espace);
   document.querySelector('#toolView').hidden = !currentTool;
   document.querySelector('#taskView').hidden = !currentTache;
+  const estPortes = espace?.type === 'memo' || espace?.type === 'catalogue';
+  document.querySelector('#portesView').hidden = !estPortes;
   document.querySelector('#coursView').hidden = espace?.type !== 'cours';
   document.querySelector('#laboView').hidden = espace?.type !== 'labo';
   if (!currentTache) etapeAffichee = null;
   const versEtape = Boolean(etapeCible);   // montrerEtapeCible consomme etapeCible : on retient s'il faut défiler jusqu'à l'étape
   if (espace?.type === 'cours') renderCours();
   else if (espace?.type === 'labo') renderLabo();
+  else if (estPortes) renderPortes();
   else if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
   if ((currentTool || currentTache || espace) && !versEtape) window.scrollTo?.({ top: 0 });
   majNavEspaces();
@@ -1983,10 +2100,31 @@ majMenu(false);
 boutonMenu.addEventListener('click', () => majMenu(!panneau.classList.contains('open')));
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && panneau.classList.contains('open')) {
+    ev.preventDefault();
     majMenu(false);
     boutonMenu.focus();
   }
 });
+
+// Échap = un pas en arrière (fiche → groupe ou parcours → page d'origine → accueil).
+// Jamais dans un champ de saisie, ni quand Échap vient de fermer le menu.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape' || ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName ?? '')) return;
+  const cible = routeParent();
+  if (cible) { ev.preventDefault(); location.hash = cible; }
+});
+
+// « Accueil » : depuis l'accueil lui-même (recherche, rubrique), le bouton remet tout à plat.
+document.querySelectorAll('a[href="#/"][data-espace="accueil"], #accueilBtn').forEach((a) => a.addEventListener('click', (ev) => {
+  fermerMenu?.();
+  if (location.hash !== '#/' && location.hash !== '') return;   // navigation normale : hashchange fait le travail
+  ev.preventDefault();
+  vueAssistants = false; vueCatalogue = false; natureFiltre = null; selectedCategory = CAT_TOUT; familleSel = null; sujetSel = null;
+  currentTool = null; currentTache = null; espace = null;
+  champRecherche.value = ''; majEffacer();
+  render();
+}));
 
 // Bouton Retour / Suivant du navigateur, et lien partagé collé dans la barre d'adresse
 window.addEventListener('popstate', appliquerHash);

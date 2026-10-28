@@ -60,3 +60,9 @@ Une seule assertion a changé de valeur attendue sur les anciens bancs : `test/c
 ## État de la livraison
 
 Voir le rapport final de la session : développé, testé localement, testé en CI, fusionné, déployé et vérifié sur le site public, non exécuté. **Au moment de l'écriture : développé et testé localement ; la publication GitHub a été refusée (accès en écriture absent) et n'a PAS été contournée ; rien n'est publié, fusionné ni déployé.**
+
+## Suite : KJEMO-UX-ACCUEIL-01 (accueil à trois portes)
+
+Ajoutée au même commit de livraison. Voir [UX-ACCUEIL-01.md](UX-ACCUEIL-01.md) : `dist/memo.mjs`, `dist/vue-portes.mjs`, routes `#/memo`, `#/memo/<groupe>`, `#/catalogue`, bancs `test/memo.test.mjs` et `test/browser-portes.test.mjs`.
+
+Évolutions justifiées de bancs existants (aucune assertion supprimée ni affaiblie) : les cartes de domaine et le filtre « Contenu » ne sont plus sur l'accueil à portes. `browser-navigation` entre désormais par la porte « Catalogue professionnel » (un clic de plus, mêmes contrôles de profondeur) et ouvre la liste avant le test clavier ; `browser-coherence`, `browser-scenarios` et `browser-taches` ouvrent la liste (`#voirCatalogue`) avant d'utiliser le filtre « Contenu » ou une carte de domaine. Défaut réel trouvé par `browser-lot7` et corrigé : la note du bas de la barre latérale recouvrait les liens du catalogue une fois la barre allongée (cinq espaces).

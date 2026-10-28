@@ -217,6 +217,8 @@ console.log('6. Recherche, filtres, favoris et récents sur les assistants comme
   assert(cartes.length > 0 && cartes.every((c) => c.b.length > 0 && !c.b.includes('Script')), `résultats « ping » : chaque carte nomme sa méthode (${cartes.length})`);
   await recherche(page, '');
   await page.click('[data-plat="Azure"], #platFilters button:has-text("Azure")');
+  // Le filtre « Contenu » n'apparaît plus sur l'accueil à trois portes : il s'ouvre avec une liste (UX-ACCUEIL-01).
+  await page.click('#voirCatalogue');
   await page.click('#natureFilters button:has-text("Assistants")');
   const az = await page.$$eval('#toolGrid .task-row', (c) => c.map((x) => x.querySelector('.plat')?.textContent.trim()));
   assert(az.length >= 20 && az.every((p) => /Azure/.test(p)), `filtre Azure × Assistants : ${az.length} assistants Azure`, [...new Set(az)].join('|'));

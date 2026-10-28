@@ -1,5 +1,14 @@
 # Journal des changements
 
+## KJEMO-UX-ACCUEIL-01 — Accueil a trois portes, aide-memoire, catalogue pro (branche claude/commandes-cours-tp2-01)
+
+**Etat : developpe localement, teste localement (statique + Chromium 1280 et 390 px). NON teste en CI GitHub, NON publie, NON fusionne, NON deploye (ecriture au depot refusee, non contournee). Aucune commande executee sur machine reelle.**
+
+- Accueil : trois portes colorees (Mes cours et TP avec avancement, Aide-memoire, Catalogue professionnel) puis groupes de l'aide-memoire ; grille de domaines deplacee sous `#/catalogue` ; filtre « Contenu » masque sans recherche.
+- Nouvelles routes `#/memo`, `#/memo/<groupe>`, `#/catalogue` ; bouton Accueil persistant ; fil d'Ariane ; retours haut et bas ; retour de fiche vers son groupe ; Echap = un pas en arriere.
+- Un seul filtre de plateforme, pastille « Filtre : X » avec sortie ; puces Tous / Nouveautes / Lies au TP calculees ; groupes vides grises et expliques.
+- Nouveaux fichiers : `dist/memo.mjs`, `dist/vue-portes.mjs`, `test/memo.test.mjs`, `test/browser-portes.test.mjs`, `docs/UX-ACCUEIL-01.md`.
+
 ## KJEMO-COURS-TP2-01-R1 — Parcours fideles au sujet TP2, CSV, postes clients, memo complete (branche claude/commandes-cours-tp2-01)
 
 **Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON publie, NON fusionne, NON deploye (acces en ecriture au depot refuse depuis la session, non contourne). Aucune commande n'a ete executee sur un poste, un serveur ou un equipement ; seul le script d'import CSV a ete execute, contre un FAUX samba-tool.**
