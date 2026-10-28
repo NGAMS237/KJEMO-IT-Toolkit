@@ -31,7 +31,7 @@ function lienFicheMarkup(ref, ctx, { coursId, lettre }) {
 }
 
 /** Accueil des cours : la liste, un bouton par parcours. */
-export function coursListeMarkup(coursListe, progression, ctx) {
+export function coursListeMarkup(coursListe, progression, ctx, plat = null) {
   const cartes = coursListe.map((c) => {
     const boutons = c.parcours.map((p) => {
       const a = avancement(c, p, progression);
@@ -41,8 +41,15 @@ export function coursListeMarkup(coursListe, progression, ctx) {
     return `<article class="cours-carte"><h2><a href="${esc(routeParcours(c.id))}">${esc(c.titre)}</a></h2>`
       + `<p>${esc(c.resume)}</p><div class="parcours-puces" role="list" aria-label="Parcours de ${esc(c.titre)}">${boutons}</div></article>`;
   }).join('');
-  return filMarkup([{ nom: 'Accueil', route: '#/' }, { nom: 'Mes cours et TP' }])
-    + `<h1>Mes cours et TP</h1>`
+  const titre = plat ? `Mes cours ${plat}` : 'Mes cours et TP';
+  if (plat && !coursListe.length) {
+    return filMarkup([{ nom: 'Accueil', route: '#/' }, { nom: titre }])
+      + `<h1>${esc(titre)}</h1>`
+      + `<div class="porte-vide-page" role="status"><span class="tag-bientot">Bientôt</span> Aucun cours ${esc(plat)} pour l’instant. Le premier TP ${esc(plat)} apparaîtra ici avec sa progression, comme celui de Serveurs II pour Linux. `
+      + `<a href="#/">Retour à l’accueil</a></div>`;
+  }
+  return filMarkup([{ nom: 'Accueil', route: '#/' }, { nom: titre }])
+    + `<h1>${esc(titre)}</h1>`
     + `<p class="intro">Un parcours dit, pour chaque demande de ton travail, <b>quelle fiche et quelle étape</b> la traitent. Il ne contient aucune commande : corriger une fiche corrige tous les parcours.</p>`
     + cartes
     + gabaritMarkup();

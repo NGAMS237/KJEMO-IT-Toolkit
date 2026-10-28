@@ -601,6 +601,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cours-menu.test.mjs
 
+      - name: Accueil par plateforme (marquage pur)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/vue-portes-plateforme.test.mjs
+
       # -----------------------------------------------------------------------
       # 10 ter. LOT 7 (25/n) — sonde de capacites, dette 6B, bancs negatifs
       #
@@ -674,6 +678,10 @@ jobs:
       - name: Navigateur accueil a trois portes - aide-memoire, catalogue pro, filtre unique, retours, Echap, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-portes.test.mjs
+
+      - name: Navigateur — accueil par plateforme et fiche en fenêtre
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-plateformes.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

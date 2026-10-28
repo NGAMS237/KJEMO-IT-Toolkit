@@ -338,7 +338,7 @@ const COURS_ID = COURS[0].id;
   for (const h of ['#/tache/cours-samba-groupes', '#/assistants', '#/']) {
     await page.goto(`${BASE}/${h}`);
     await page.waitForTimeout(250);
-    assert(await page.locator('#coursView').isHidden(), `route historique ${h} : pas d’espace de cours affiché`);
+    assert(h.startsWith('#/tache') ? await page.locator('#taskView').isVisible() : await page.locator('#coursView').isHidden(), `route historique ${h} : ${h.startsWith('#/tache') ? 'la fiche s’ouvre (en fenêtre au-dessus de la page courante)' : 'pas d’espace de cours affiché'}`);
   }
   assert(erreurs.length === 0, 'aucune erreur JavaScript', erreurs.join(' | '));
   await context.close();

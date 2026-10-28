@@ -25,6 +25,7 @@ const f = (fiche, etape = null, extra = {}) => ({ fiche, etape, ...extra });
 export const COURS = [
   {
     id: 'serveurs2-tp2',
+    plateformes: ['Linux'],
     titre: 'Serveurs II — TP2 : comptes, stockage et partages Samba',
     resume: 'Un serveur Samba contrôleur de domaine (entreprise fictive « Québec consulting international ») : comptes créés par script depuis un CSV, disque de 1 Go et quotas, RAID 1, partages Samba pour des comptes et pour le groupe Direction, clients Ubuntu Desktop et Windows 11.',
     source: 'Énoncé TP2-A26 et notes de cours fournis par l’étudiant (non republiés ici). Les demandes A à E ci-dessous suivent l’ordre de l’énoncé, résumées dans nos mots ; en cas de doute, c’est l’énoncé qui fait foi.',

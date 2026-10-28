@@ -51,6 +51,12 @@ let currentTool = null;
 // ouvrir une autre fiche repart de zéro (aucun état gardé par erreur).
 let currentTache = null;
 let espace = null;            // null | { type:'cours', coursId, lettre } | { type:'labo' } | { type:'memo', groupeId } | { type:'catalogue' }
+// Fiche en fenêtre : la page d'où l'on vient reste derrière (fond = { espace, hash }), on ferme par la croix, Échap ou le fond.
+let fond = null;               // null = fiche en pleine page (lien direct) ; sinon { espace: null|{…}, hash }
+let pasModale = 0;             // fiches enchaînées dans la fenêtre (0 = une seule : fermer = retour arrière)
+let hashPage = '#/';           // dernière page vue hors fiche
+let declencheur = null;        // id de la fiche d'où la fenêtre a été ouverte (pour rendre le focus)
+let fermetureModale = false;   // vrai pendant la fermeture : on garde la position de défilement
 let memoFiltre = 'tous';       // 'tous' | 'nouveau' | 'tp' : puces de l'aide-mémoire
 let contexteParcours = null;  // { coursId, lettre } quand la fiche est ouverte depuis un parcours
 let etapeAffichee = null;     // dernière étape montrée par un lien (évite de la remontrer à chaque événement)
@@ -378,7 +384,14 @@ function ecrireHash(cible) {
 }
 
 /** Ouvre une fiche : met à jour l'état, l'URL et l'historique local. */
-function ouvrirOutil(tool, { pousserHash = true } = {}) {
+function noterFond(espaceAvant) {
+  if (currentTool || currentTache) { if (fond) pasModale += 1; return; }   // déjà dans une fenêtre : le fond reste
+  fond = { espace: espaceAvant ?? null, hash: hashPage };
+  pasModale = 0;
+}
+
+function ouvrirOutil(tool, { pousserHash = true, espaceAvant = espace } = {}) {
+  noterFond(espaceAvant);
   currentTool = tool;
   currentTache = null;
   espace = null;
@@ -388,7 +401,8 @@ function ouvrirOutil(tool, { pousserHash = true } = {}) {
 }
 
 /** Ouvre une fiche tâche. Les valeurs saisies repartent de zéro. */
-function ouvrirTache(entree, { pousserHash = true, etape = null, depuis = null, methode = null } = {}) {
+function ouvrirTache(entree, { pousserHash = true, etape = null, depuis = null, methode = null, espaceAvant = espace } = {}) {
+  noterFond(espaceAvant);
   currentTool = null;
   espace = null;
   currentTache = entree;
@@ -438,6 +452,7 @@ function appliquerHash() {
     return;
   }
   const etaitEspace = espace !== null;
+  const espaceAvant = espace;
   espace = null;
   const tache = tacheDepuisHash();
   const tool = outilDepuisHash();
@@ -465,9 +480,9 @@ function appliquerHash() {
   if (tache) {
     const ctx = contexteDepuisHash();
     const memeLien = currentTache?.id === tache.id && etapeCible === null && (ctx.methode === null || ctx.methode === methodeTache) && (ctx.etape === null || ctx.etape === etapeAffichee);
-    if (!memeLien || etaitEspace) ouvrirTache(tache, { pousserHash: false, ...ctx });
+    if (!memeLien || etaitEspace) ouvrirTache(tache, { pousserHash: false, espaceAvant, ...ctx });
   } else if (tool) {
-    if (currentTool?.id !== tool.id || etaitEspace) ouvrirOutil(tool, { pousserHash: false });
+    if (currentTool?.id !== tool.id || etaitEspace) ouvrirOutil(tool, { pousserHash: false, espaceAvant });
   } else if (currentTool || currentTache) {
     revenirAccueil({ pousserHash: false });
   } else if (etaitEspace) {
@@ -659,6 +674,7 @@ function bandeauxMasque(results, query) {
 }
 
 function renderHome() {
+  majNavEspaces();
   renderNavigation();
   renderCategoryGrid();
   renderPlatFilters();
@@ -1301,7 +1317,7 @@ function enteteNavigationFiche(vue, entree, titre, boutonId) {
   const bouton = vue.querySelector(`#${boutonId}`);
   const p = portee();
   if (p.domaineId && bouton) bouton.textContent = `← Retour : ${nomDePortee(p)}`;
-  bouton?.addEventListener('click', () => revenirAccueil());
+  bouton?.addEventListener('click', () => { if (!fermerModale()) revenirAccueil(); });
 }
 
 function renderTool() {
@@ -1310,6 +1326,7 @@ function renderTool() {
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
   view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode((tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase()) + ' \u00B7 ASSISTANT COMPLET')}</div><h1>${tool.icon} ${tool.title}</h1>${enteteAssistantMeta(entreeParId(tool.id), { favori: estFavori(tool.id) })}<span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheRapideMarkup(tool)}${resumeScriptMarkup(resumeScript(tool))}${ficheNavMarkup(tool)}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   enteteNavigationFiche(view, entreeParId(tool.id), tool.title, 'backButton');
+  barreModale(view);
   const favTool = view.querySelector('#toolFav');
   favTool.addEventListener('click', () => {
     const actif = basculerFavori(tool.id);
@@ -1607,6 +1624,7 @@ function renderTache() {
   const coursOrigine = contexteParcours ? COURS_PAR_ID.get(contexteParcours.coursId) : null;
   if (coursOrigine) view.insertAdjacentHTML('afterbegin', retourParcoursMarkup(coursOrigine.titre, contexteParcours.lettre, coursOrigine.id));
   else { const gm = groupeDeFiche(entree.id); if (gm) view.insertAdjacentHTML('afterbegin', retourMemoFicheMarkup(gm)); }
+  barreModale(view);
 
   const fav = view.querySelector('#taskFav');
   fav.addEventListener('click', () => {
@@ -1853,8 +1871,8 @@ function renderCours() {
   const ctx = contexteCours();
   const progression = lireProgression();
   if (!espace.coursId) {
-    view.innerHTML = coursListeMarkup(COURS, progression, ctx);
-    document.title = 'Mes cours et TP — KJEMO IT Toolkit';
+    view.innerHTML = coursListeMarkup(platFiltre ? COURS.filter((c) => (c.plateformes ?? []).includes(platFiltre)) : COURS, progression, ctx, platFiltre);
+    document.title = platFiltre ? `Mes cours ${platFiltre} — KJEMO IT Toolkit` : 'Mes cours et TP — KJEMO IT Toolkit';
   } else {
     const cours = COURS_PAR_ID.get(espace.coursId);
     if (!cours) { view.innerHTML = coursIntrouvableMarkup(); document.title = 'Cours introuvable — KJEMO IT Toolkit'; return; }
@@ -1924,6 +1942,12 @@ function renderLabo() {
 
 /** Les entrées colorées de la barre latérale : l'état courant est annoncé (aria-current). */
 function majNavEspaces() {
+  const suffixe = platFiltre ? ` ${platFiltre}` : '';
+  const libelles = { cours: platFiltre ? `Mes cours${suffixe}` : 'Mes cours et TP', memo: `Aide-mémoire${suffixe}`, catalogue: `Catalogue pro${suffixe}` };
+  document.querySelectorAll('#espacesNav a').forEach((a) => {
+    const l = libelles[a.dataset.espace]; const cible = a.querySelector('.nav-label');
+    if (l && cible && cible.textContent !== l) cible.textContent = l;
+  });
   const surAccueil = !espace && !currentTool && !currentTache && modeListe() === 'accueil';
   document.querySelectorAll('#espacesNav a').forEach((a) => {
     const e = a.dataset.espace;
@@ -1952,7 +1976,7 @@ const compteMemoTotal = (filtre = 'tous') => MEMO_GROUPES.reduce((n, g) => n + c
 const compteParFiltreMemo = () => Object.fromEntries(FILTRES_MEMO.map((f) => [f.id, compteMemoTotal(f.id)]));
 
 function portesAccueilHtml() {
-  const cours = COURS[0] ?? null;
+  const cours = COURS.find((c) => !platFiltre || (c.plateformes ?? []).includes(platFiltre)) ?? null;
   let tp = null;
   if (cours) {
     const prog = lireProgression();
@@ -1964,9 +1988,16 @@ function portesAccueilHtml() {
     }
     tp = { titre: cours.titre, faits, total, href: routeParcours(cours.id, reprise) };
   }
-  const memoCartes = MEMO_GROUPES.map((g) => groupeCarteMarkup(g, compteGroupe(g, optsMemo('tous')), { nouveaux: compteGroupe(g, optsMemo('nouveau')) }));
+  const memoCartes = MEMO_GROUPES.filter((g) => !platFiltre || compteGroupe(g, optsMemo('tous')) > 0)
+    .map((g) => groupeCarteMarkup(g, compteGroupe(g, optsMemo('tous')), { nouveaux: compteGroupe(g, optsMemo('nouveau')) }));
   const catalogueTotal = ENTREES_LISTEES.filter((e) => compatiblePlateforme(e)).length;
-  return portesAccueilMarkup({ tp, memoCartes, memoTotal: compteMemoTotal('tous'), catalogueTotal, hrefCours: ROUTE_COURS, hrefLabo: ROUTE_LABO });
+  const statuts = platFiltre ? null : PLATEFORMES_FILTRE.map((p) => ({
+    plat: p,
+    cours: COURS.filter((c) => (c.plateformes ?? []).includes(p)).length,
+    memo: MEMO_GROUPES.reduce((n, g) => n + compteGroupe(g, { ...optsMemo('tous'), plat: p }), 0),
+    catalogue: ENTREES_LISTEES.filter((e) => compatiblePlateforme(e, p)).length,
+  }));
+  return portesAccueilMarkup({ tp, memoCartes, memoTotal: compteMemoTotal('tous'), catalogueTotal, hrefCours: ROUTE_COURS, hrefLabo: ROUTE_LABO, plat: platFiltre, statuts });
 }
 
 const BLOCS_CATALOGUE = [
@@ -1987,6 +2018,7 @@ function donneesCatalogue() {
 }
 
 function renderPortes() {
+  majNavEspaces();
   const view = document.querySelector('#portesView');
   if (espace.type === 'catalogue') {
     view.innerHTML = cataloguePageMarkup(donneesCatalogue());
@@ -2032,25 +2064,78 @@ function routeParent() {
   return null;
 }
 
+const enFiche = () => Boolean(currentTool || currentTache);
+const modaleActive = () => Boolean(fond && enFiche());
+
+/** Barre de la fenêtre : la croix est toujours en haut, même quand on a défilé. */
+function barreModale(view) {
+  if (!modaleActive()) return;
+  view.insertAdjacentHTML('afterbegin', `<div class="modale-barre"><button type="button" class="modale-x" id="modaleFermer" aria-label="Fermer la fiche et revenir à la page">✕ Fermer</button>`
+    + `<span class="modale-aide">Échap ferme la fiche : tu restes sur la même page.</span></div>`);
+  view.querySelector('#modaleFermer')?.addEventListener('click', () => fermerModale());
+}
+
+/** Ferme la fenêtre : retour à la page d'origine, à la même place. */
+function fermerModale() {
+  if (!modaleActive()) return false;
+  fermetureModale = true;
+  declencheur = (currentTache ?? entreeParId(currentTool?.id))?.id ?? null;
+  const cible = fond.hash || '#/';
+  location.hash = cible;   // comme « Retour » : « Précédent » du navigateur rouvre la fiche
+  return true;
+}
+
 function render() {
   renderNavigation();
   renderModeSelector();
   renderThemeSelector();
   document.body.dataset.mode = modeCourant();
-  document.querySelector('#home').hidden = Boolean(currentTool || currentTache || espace);
+  const fiche = enFiche();
+  const modale = modaleActive();
+  const vu = modale ? fond.espace : espace;           // la page visible (derrière la fenêtre, ou à la place)
+  if (!fiche) { hashPage = location.hash || '#/'; fond = null; pasModale = 0; }
+  document.querySelector('#home').hidden = Boolean(vu) || (fiche && !modale);
   document.querySelector('#toolView').hidden = !currentTool;
   document.querySelector('#taskView').hidden = !currentTache;
-  const estPortes = espace?.type === 'memo' || espace?.type === 'catalogue';
+  const estPortes = vu?.type === 'memo' || vu?.type === 'catalogue';
   document.querySelector('#portesView').hidden = !estPortes;
-  document.querySelector('#coursView').hidden = espace?.type !== 'cours';
-  document.querySelector('#laboView').hidden = espace?.type !== 'labo';
+  document.querySelector('#coursView').hidden = vu?.type !== 'cours';
+  document.querySelector('#laboView').hidden = vu?.type !== 'labo';
+  for (const id of ['#toolView', '#taskView']) {
+    const el = document.querySelector(id);
+    const ici = modale && !el.hidden;
+    el.classList.toggle('fiche-modale', ici);
+    if (ici) { el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Fiche'); }
+    else { el.removeAttribute('role'); el.removeAttribute('aria-label'); }
+  }
+  const voile = document.querySelector('#modaleVoile');
+  if (voile) voile.hidden = !modale;
+  document.body.classList.toggle('modale-ouverte', modale);
   if (!currentTache) etapeAffichee = null;
   const versEtape = Boolean(etapeCible);   // montrerEtapeCible consomme etapeCible : on retient s'il faut défiler jusqu'à l'étape
-  if (espace?.type === 'cours') renderCours();
+  const restaurer = fermetureModale && !fiche;
+  if (!fiche) fermetureModale = false;
+  if (modale) { if (currentTool) renderTool(); else renderTache(); }   // la page de fond reste telle quelle
+  else if (espace?.type === 'cours') renderCours();
   else if (espace?.type === 'labo') renderLabo();
   else if (estPortes) renderPortes();
   else if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
-  if ((currentTool || currentTache || espace) && !versEtape) window.scrollTo?.({ top: 0 });
+  if (modale) {
+    const vue = document.querySelector(currentTool ? '#toolView' : '#taskView');
+    if (!versEtape) vue.scrollTop = 0;
+    if (!vue.dataset.focusFait || vue.dataset.focusFait !== (currentTache ?? currentTool).id) {
+      vue.dataset.focusFait = (currentTache ?? currentTool).id;
+      document.querySelector('#modaleFermer')?.focus({ preventScroll: true });
+    }
+  } else {
+    document.querySelector('#taskView').dataset.focusFait = '';
+    document.querySelector('#toolView').dataset.focusFait = '';
+    if ((fiche || espace) && !versEtape && !restaurer) window.scrollTo?.({ top: 0 });
+    if (restaurer && declencheur) {
+      document.querySelector(`[href="#/tache/${declencheur}"], [href="#/outil/${declencheur}"], [data-tool="${declencheur}"]`)?.focus?.({ preventScroll: true });
+      declencheur = null;
+    }
+  }
   majNavEspaces();
 }
 
@@ -2111,8 +2196,25 @@ document.addEventListener('keydown', (ev) => {
 document.addEventListener('keydown', (ev) => {
   if (ev.key !== 'Escape' || ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey) return;
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName ?? '')) return;
+  if (modaleActive()) { ev.preventDefault(); fermerModale(); return; }
   const cible = routeParent();
   if (cible) { ev.preventDefault(); location.hash = cible; }
+});
+
+// Fenêtre : un clic sur le fond la ferme (la barre latérale reste utilisable : thème, mode, navigation).
+document.querySelector('#modaleVoile')?.addEventListener('click', () => fermerModale());
+// Les liens « Retour à… » d'une fiche ouverte en fenêtre ferment simplement la fenêtre : la page d'origine est déjà derrière.
+document.addEventListener('click', (ev) => {
+  if (!modaleActive()) return;
+  if (ev.target.closest?.('#retourMemo, #retourParcours')) { ev.preventDefault(); fermerModale(); }
+});
+
+// Tableau « Où en est chaque plateforme » : un clic règle le filtre sur cette plateforme.
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('[data-plat-go]');
+  if (!b) return;
+  platFiltre = b.dataset.platGo; renderHome();
+  document.querySelector('#platEntete, #portes')?.scrollIntoView?.({ block: 'start' });
 });
 
 // « Accueil » : depuis l'accueil lui-même (recherche, rubrique), le bouton remet tout à plat.

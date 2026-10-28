@@ -57,28 +57,53 @@ export function groupeCarteMarkup(g, compte, { nouveaux = 0 } = {}) {
  * L'accueil : trois portes puis les groupes de l'aide-mémoire.
  * tp : { titre, faits, total, href } ou null s'il n'y a aucun cours.
  */
-export function portesAccueilMarkup({ tp, memoCartes, memoTotal, catalogueTotal, hrefCours, hrefLabo }) {
+export function portesAccueilMarkup({ tp, memoCartes, memoTotal, catalogueTotal, hrefCours, hrefLabo, plat = null, statuts = null }) {
   const pct = tp && tp.total ? Math.round((tp.faits / tp.total) * 100) : 0;
-  const porteTp = `<section class="porte porte-tp espace-carte" aria-labelledby="porteTpTitre">`
-    + `<h2 id="porteTpTitre"><span aria-hidden="true">✎</span> Mes cours et TP</h2>`
+  const nomTp = plat ? `Mes cours ${plat}` : 'Mes cours et TP';
+  const nomMemo = plat ? `Aide-mémoire ${plat}` : 'Aide-mémoire du cours';
+  const nomPro = plat ? `Catalogue pro ${plat}` : 'Catalogue professionnel';
+  const vide = (cls, id, titre, icone, texte, btn) => `<section class="porte ${cls} porte-vide" aria-labelledby="${id}">`
+    + `<h2 id="${id}"><span aria-hidden="true">${icone}</span> ${esc(titre)}</h2><p><span class="tag-bientot">Bientôt</span></p>`
+    + `<p class="porte-desc">${esc(texte)}</p><p class="porte-actions"><span class="porte-btn porte-btn-off" aria-disabled="true">${esc(btn)}</span></p></section>`;
+  const porteTp = plat && !tp
+    ? vide('porte-tp', 'porteTpTitre', nomTp, '✎', `Le premier TP ${plat} apparaîtra ici avec sa progression, comme Serveurs II pour Linux.`, 'Aucun cours pour l’instant')
+    : `<section class="porte porte-tp espace-carte" aria-labelledby="porteTpTitre">`
+    + `<h2 id="porteTpTitre"><span aria-hidden="true">✎</span> ${esc(nomTp)}</h2>`
     + (tp ? `<p><b>${esc(tp.titre)}</b></p><div class="porte-barre" role="img" aria-label="${tp.faits} éléments faits sur ${tp.total}"><i style="width:${pct}%"></i></div>`
       + `<p class="porte-desc">${tp.faits} élément${tp.faits > 1 ? 's' : ''} fait${tp.faits > 1 ? 's' : ''} sur ${tp.total}</p>`
       : `<p class="porte-desc">Aucun cours pour l’instant.</p>`)
     + `<p class="porte-actions"><a class="porte-btn" id="porteTpBtn" href="${esc(tp?.href ?? hrefCours)}">${tp ? 'Continuer' : 'Ouvrir'}</a>`
     + `<a class="porte-btn porte-btn-clair" href="${esc(hrefCours)}">Tous les cours</a></p></section>`;
-  const porteMemo = `<section class="porte porte-memo" aria-labelledby="porteMemoTitre">`
-    + `<h2 id="porteMemoTitre"><span aria-hidden="true">⌘</span> Aide-mémoire du cours</h2>`
+  const porteMemo = plat && memoTotal === 0
+    ? vide('porte-memo', 'porteMemoTitre', nomMemo, '⌘', `Les commandes de base de ${plat}, rangées par ce que tu veux faire, arriveront avec les cours ${plat}.`, 'Pas encore de fiches')
+    : `<section class="porte porte-memo" aria-labelledby="porteMemoTitre">`
+    + `<h2 id="porteMemoTitre"><span aria-hidden="true">⌘</span> ${esc(nomMemo)}</h2>`
     + `<p class="porte-desc">Les commandes de base, rangées par ce que tu veux faire. ${memoTotal} fiches.</p>`
     + `<p class="porte-actions"><a class="porte-btn" id="porteMemoBtn" href="${ROUTE_MEMO}">Ouvrir l’aide-mémoire</a></p></section>`;
-  const porteCat = `<section class="porte porte-pro" aria-labelledby="porteProTitre">`
-    + `<h2 id="porteProTitre"><span aria-hidden="true">▣</span> Catalogue professionnel</h2>`
-    + `<p class="porte-desc">Windows, Active Directory, GPO, réseau, Cisco, Azure : ${catalogueTotal} procédures, commandes et assistants.</p>`
+  const porteCat = plat && catalogueTotal === 0
+    ? vide('porte-pro', 'porteProTitre', nomPro, '▣', `Aucune procédure ${plat} dans le catalogue pour l’instant.`, 'Catalogue vide')
+    : `<section class="porte porte-pro" aria-labelledby="porteProTitre">`
+    + `<h2 id="porteProTitre"><span aria-hidden="true">▣</span> ${esc(nomPro)}</h2>`
+    + `<p class="porte-desc">${plat ? `${catalogueTotal} procédures, commandes et assistants ${esc(plat)}.` : `Windows, Active Directory, GPO, réseau, Cisco, Azure : ${catalogueTotal} procédures, commandes et assistants.`}</p>`
     + `<p class="porte-actions"><a class="porte-btn" id="porteProBtn" href="${ROUTE_CATALOGUE}">Parcourir par domaine</a></p></section>`;
-  return `<div class="portes" id="portes">${porteTp}${porteMemo}${porteCat}</div>`
+  const tableau = !plat && statuts
+    ? `<section class="statuts" aria-labelledby="statutsTitre"><h2 class="section-title" id="statutsTitre">Où en est chaque plateforme</h2>`
+      + `<div class="statuts-defile"><table class="statuts-table"><thead><tr><th scope="col">Plateforme</th><th scope="col">Mes cours et TP</th><th scope="col">Aide-mémoire</th><th scope="col">Catalogue pro</th></tr></thead><tbody>`
+      + statuts.map((s) => `<tr><th scope="row"><button type="button" class="lien-bouton" data-plat-go="${esc(s.plat)}">${esc(s.plat)}</button></th>`
+        + `<td>${s.cours ? `${s.cours} cours` : '<span class="statut-bientot">À venir</span>'}</td>`
+        + `<td>${s.memo ? `${s.memo} fiches` : '<span class="statut-bientot">À venir</span>'}</td>`
+        + `<td>${s.catalogue ? `${s.catalogue} entrées` : '<span class="statut-bientot">À venir</span>'}</td></tr>`).join('')
+      + `</tbody></table></div></section>`
+    : '';
+  const aide = plat ? `<p class="plat-entete" id="platEntete">Vue ${esc(plat)} : seulement ce qui concerne ${esc(plat)}. Les cours et l’aide-mémoire arrivent progressivement.</p>` : '';
+  const sectionMemo = memoCartes.length
+    ? `<section class="memo-accueil" aria-labelledby="memoAccueilTitre"><h2 class="section-title" id="memoAccueilTitre">${esc(nomMemo)} — par ce que je veux faire</h2>`
+      + `<div class="groupes-grille" role="list">${memoCartes.map((c) => `<div role="listitem">${c}</div>`).join('')}</div></section>`
+    : '';
+  return aide + `<div class="portes" id="portes">${porteTp}${porteMemo}${porteCat}</div>`
     + `<p class="portes-legende" aria-label="Légende des couleurs"><span class="lg lg-tp">Violet : mon TP</span><span class="lg lg-memo">Vert : aide-mémoire</span><span class="lg lg-pro">Orange : catalogue professionnel</span>`
     + ` <a class="lien-labo espace-carte" href="${esc(hrefLabo)}">⚙ Mon laboratoire</a></p>`
-    + `<section class="memo-accueil" aria-labelledby="memoAccueilTitre"><h2 class="section-title" id="memoAccueilTitre">Aide-mémoire — par ce que je veux faire</h2>`
-    + `<div class="groupes-grille" role="list">${memoCartes.map((c) => `<div role="listitem">${c}</div>`).join('')}</div></section>`;
+    + tableau + sectionMemo;
 }
 
 /** Ligne de fiche (aide-mémoire) : titre, effet, plateforme, étapes, badges. */
