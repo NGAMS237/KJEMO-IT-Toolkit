@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC :
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
 const existe = (id) => { const e = T.entreeParId(id); return Boolean(e?.procedure) || (e?.kind === 'assistant' && String(e.route).startsWith('#/outil/')); };
 
-// 1. cohérence : chaque fiche existe, rangée UNE fois, les 79 fiches de cours toutes rangées
+// 1. cohérence : chaque fiche existe, rangée UNE fois, les 98 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
 ok(pb.length === 0, `incohérences : ${pb.join(' | ')}`);
-ok(idsCours.length === 79, `79 fiches de cours attendues, ${idsCours.length} trouvées`);
+ok(idsCours.length === 98, `98 fiches de cours attendues, ${idsCours.length} trouvées`);
 ok(M.toutesLesFichesMemo().length === new Set(M.toutesLesFichesMemo()).size, 'aucune fiche rangée deux fois');
 for (const id of M.toutesLesFichesMemo()) {
   const e = T.entreeParId(id);
@@ -52,7 +52,8 @@ ok(ct > 0 && ct <= total, '« Liés au TP » : entre 1 et le total');
 const cw = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }), 0);
 const cl = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }), 0);
 const cc = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }), 0);
-ok(cw >= 45 && cl > 0 && cc === 26 && cl + cw + cc >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, total ${total}`);
+const ca = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Azure', plateformesDe, lies }), 0);
+ok(cw >= 45 && cl > 0 && cc === 26 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
 // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
 const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
 ok(gw.length === 5, `5 groupes Windows attendus, ${gw.length}`);
@@ -100,7 +101,8 @@ ok(V.retourMemoFicheMarkup(g0).includes('id="retourMemo"'), 'retour de fiche');
   ok(masques + actifs === M.MEMO_GROUPES.length, `Windows : ${actifs} groupes actifs + ${masques} nommés dans la ligne = ${M.MEMO_GROUPES.length} (rien n’est retiré sans explication)`);
   ok(M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-')).every((g) => w.includes(`<details class="groupe-bloc" style="--gc:${g.couleur}" data-groupe="${g.id}"`)), 'Windows : les 5 groupes Windows sont dépliables');
   const az = mk('Azure');
-  ok((az.match(/class="groupe-masque"/g) ?? []).length === M.MEMO_GROUPES.length && !az.includes('<details class="groupe-bloc"'), 'Azure : tous les groupes nommés dans la ligne, aucun bloc');
+  const azA = (az.match(/<details class="groupe-bloc"/g) ?? []).length; const azM = (az.match(/class="groupe-masque"/g) ?? []).length;
+ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'].every((id) => az.includes(`data-groupe="${id}"`)), `Azure : ${azA} groupes actifs (dont les 4 groupes Azure) + ${azM} nommés dans la ligne`);
   const sans = mk(null);
   ok(!sans.includes('groupes-masques') && (sans.match(/<details class="groupe-bloc"/g) ?? []).length === M.MEMO_GROUPES.length, 'sans filtre : comportement inchangé, aucun groupe masqué');
   const ligA = V.ficheLigneMarkup({ id: 'ad-user', titre: 'Créer un utilisateur AD', resume: 'r', effet: 'modification', plateformes: ['Windows'], assistant: true, route: '#/outil/ad-user', nbEtapes: 0 }, '#6d28d9');

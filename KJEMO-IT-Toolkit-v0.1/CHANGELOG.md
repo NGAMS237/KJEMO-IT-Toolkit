@@ -1,3 +1,13 @@
+## AZURE-COURS-01 (2026-10-28)
+- Source : 9 PDF de cours Azure (infonuagique, introduction à Azure, réseau virtuel, résolution de noms, peering et routage, accès privé, équilibrage de charge, activation de l'abonnement). Le PDF 04 reçu en double n'est traité qu'une fois. Doublons évités : les assistants azure-contexte, azure-rbac, azure-abonnements-rg, azure-reseau-vnets, azure-reseau-dns, azure-reseau-interfaces-ip, azure-stockage-exposition et azure-vm-inventaire sont réutilisés ; une seule fiche est repliée sous chaque assistant.
+- 19 fiches Azure CLI à commande directe (`dist/cours-fiches-azure.mjs`) : groupe de ressources, verrou, rôle d'un coéquipier, VNet, sous-réseau, plan d'adressage, IP publique/privée, VM, DNS public et privé, peering (création et état), routes effectives et personnalisée, service endpoint, private endpoint, load balancer (création et état). Aucune commande de suppression dans le parcours principal.
+- 5 cours (`dist/cours-azure.mjs`) avec résumé pliable (`dist/cours-resume-azure.mjs`) et 10 schémas originaux (`dist/schemas-azure.mjs`, 32 schémas au total).
+- 4 groupes d'aide-mémoire Azure (bases, réseau, routage et accès privé, équilibrage) et 2 familles du catalogue.
+- Validateurs : nomAzure et compteStockage (refus testés).
+- Deux ambiguïtés de diapositives à confirmer avec l'enseignant : AZ03-1 (Windows ou Linux pour les VM) et AZ06-1 (service endpoint ou private endpoint).
+- Tests : `azure-cours.test.mjs` (924), `browser-azure-cours.test.mjs` (71) ; tests existants ajustés (cours, memo, cisco-s07).
+- Non exécuté sur un abonnement Azure réel ; URL Microsoft Learn écrites de mémoire, non ouvertes. Pas de fiche pour App Service, Application Gateway, Traffic Manager ni Front Door.
+
 ## UX-MEMO-WINDOWS-01 (2026-10-28)
 - Constat : dans l'aide-mémoire Windows, « Créer une OU » et la plupart des lignes ouvraient un ASSISTANT (formulaire qui fabrique un script), sans commande visible ni bouton Copier, contrairement aux fiches Linux.
 - 26 fiches Windows à COMMANDE DIRECTE (`dist/procedures-windows.mjs`) : Active Directory (voir/créer OU, créer utilisateur et groupe, ajouter un membre, réinitialiser un mot de passe, désactiver, déplacer, joindre un poste au domaine), GPO (lister, créer et lier, gpresult), DHCP (installer, étendue, réservation, baux), DNS (zone directe, inverse, enregistrement A), partages (créer, droits NTFS, voir, connecter un lecteur), comptes locaux. Chacune : formulaire de valeurs, commande copiable, vérification, retour arrière, lien vers l'assistant complet (conservé).

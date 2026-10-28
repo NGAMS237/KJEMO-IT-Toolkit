@@ -221,7 +221,8 @@ console.log('6. Recherche, filtres, favoris et récents sur les assistants comme
   await page.click('#voirCatalogue');
   await page.click('#natureFilters button:has-text("Assistants")');
   const az = await page.$$eval('#toolGrid .task-row', (c) => c.map((x) => x.querySelector('.plat')?.textContent.trim()));
-  assert(az.length >= 20 && az.every((p) => /Azure/.test(p)), `filtre Azure × Assistants : ${az.length} assistants Azure`, [...new Set(az)].join('|'));
+  // Les assistants Azure repris par une fiche du cours (azure-rbac, vnets, dns, interfaces, stockage) sont repliés sous elle : ils ne comptent plus à part.
+  assert(az.length >= 15 && az.every((p) => /Azure/.test(p)), `filtre Azure × Assistants : ${az.length} assistants Azure`, [...new Set(az)].join('|'));
   // favori depuis la page assistant
   await page.goto(BASE + '/#/outil/static-ip'); await page.waitForSelector('#toolFav');
   await page.focus('#toolFav'); await page.keyboard.press('Enter');

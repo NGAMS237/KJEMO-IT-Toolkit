@@ -31,7 +31,7 @@ const textes = (p) => p.methodes.flatMap((m) => m.etapes.flatMap((e) => [e.titre
 
 // ---------------------------------------------------------------------------
 console.log('1. Les fiches du cours');
-assert(FICHES.length === 79, `79 fiches : 53 Linux et 26 Cisco (${FICHES.length})`);
+assert(FICHES.length === 98, `98 fiches : 53 Linux, 26 Cisco et 19 Azure (${FICHES.length})`);
 assert(new Set(FICHES.map((p) => p.id)).size === FICHES.length, 'identifiants uniques');
 for (const p of FICHES) {
   const pb = P.incoherencesProcedure(p);
@@ -267,7 +267,7 @@ console.log('8. Fidélité au sujet : script, machines, prérequis, paramètres,
   assert(/1219/.test(wtxt) && /net use/.test(wtxt) && /cmdkey/.test(wtxt), 'Windows : erreur 1219, net use ciblé et cmdkey traités');
   assert(!cmds(w).some((l) => /net use \* \/delete|cmdkey \/delete:\*/i.test(l.cmd)), 'Windows : aucune COMMANDE de suppression indiscriminée des connexions (la mise en garde en prose est permise)');
   // identifiant (« compte ») : paramètre validé, pas de texte libre
-  for (const f of FICHES) for (const q of f.params ?? []) if (q.id === 'compte') assert(['identifiant', 'nom'].includes(q.type), `${f.id} : paramètre « compte » validé (${q.type})`);
+  for (const f of FICHES) for (const q of f.params ?? []) if (q.id === 'compte') assert(['identifiant', 'nom', 'compteStockage'].includes(q.type), `${f.id} : paramètre « compte » validé (${q.type})`);
   // aucun secret dans les fiches
   assert(FICHES.every((f) => cmds(f).every((l) => !/(password|passwd|pwd)\s*[:=]\s*\S+|--password[= ]\S|\/user:\S+\s+\S{3,}\s*$/i.test(l.cmd))) && FICHES.every((f) => (f.params ?? []).every((q) => !/mot ?de ?passe|password|secret/i.test(`${q.id} ${q.label}`))), 'aucune commande ni aucun paramètre ne porte un mot de passe');
 }

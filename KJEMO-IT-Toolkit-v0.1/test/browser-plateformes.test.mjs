@@ -79,19 +79,20 @@ const clicPlat = async (page, p) => { await page.click(`#platFilters [data-plat=
 
 // 2. Windows, Azure : même page, seulement leurs éléments ; cours « Bientôt » (Cisco a désormais son cours : banc browser-cisco-s07)
 for (const p of ['Windows', 'Azure']) {
+  const aCours = p === 'Azure'; // Azure a désormais ses cinq cours (banc browser-azure-cours)
   const { context, page, erreurs } = await nouvellePage({}, '/#/');
   await clicPlat(page, p);
   assert((await page.locator('#platEntete').innerText()).includes(p), `${p} : phrase de vue`);
   assert(await page.locator('#porteTpTitre').innerText().then((t) => t.includes(`Mes cours ${p}`)), `${p} : porte « Mes cours ${p} »`);
-  assert(await page.locator('#porteTpTitre').locator('xpath=parent::*').getAttribute('class').then((c) => c.includes('porte-vide')), `${p} : cours = carte « Bientôt »`);
-  assert(await page.locator('#porteTpBtn').count() === 0, `${p} : aucun faux bouton « Continuer »`);
+  assert(await page.locator('#porteTpTitre').locator('xpath=parent::*').getAttribute('class').then((c) => c.includes('porte-vide')) !== aCours, `${p} : cours = ${aCours ? 'porte active' : 'carte « Bientôt »'}`);
+  if (!aCours) assert(await page.locator('#porteTpBtn').count() === 0, `${p} : aucun faux bouton « Continuer »`);
   assert(await page.locator('#porteProTitre').innerText().then((t) => t.includes(`Catalogue pro ${p}`)), `${p} : porte catalogue ${p}`);
   const navTxt = await page.locator('#espacesNav').innerText();
   assert(navTxt.includes(`Mes cours ${p}`) && navTxt.includes(`Aide-mémoire ${p}`) && navTxt.includes(`Catalogue pro ${p}`), `${p} : menu de gauche suit la plateforme`);
   const comptes = await page.locator('#portes .groupe-carte, #home .groupe-carte').evaluateAll((els) => els.map((e) => e.querySelector('.groupe-compte')?.textContent));
   assert(comptes.every((c) => Number(c) > 0), `${p} : aucun groupe d'aide-mémoire vide sur l'accueil`, comptes.join(','));
   await page.click('#espacesNav .nav-tp');
-  assert(await page.locator('#coursView').innerText().then((t) => t.includes(`Aucun cours ${p}`)), `${p} : page des cours = état vide clair`);
+  if (aCours) assert(await page.locator('.cours-carte').count() === 5, `${p} : page des cours = cinq cours`); else assert(await page.locator('#coursView').innerText().then((t) => t.includes(`Aucun cours ${p}`)), `${p} : page des cours = état vide clair`);
   assert(erreurs.length === 0, `${p} : aucune erreur JS`, erreurs.join(' | '));
   await context.close();
 }

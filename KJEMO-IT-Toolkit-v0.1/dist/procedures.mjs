@@ -235,6 +235,20 @@ export const TYPES_PARAM = {
     return texteSimple(v, p.label, { max: p.max ?? 80 });
   },
   // Réseau en notation CIDR : 192.168.1.0/24 (adresse valide, préfixe de 8 à 30).
+  // Nom d'une ressource Azure (groupe, réseau, sous-réseau…) : 1 à 64 caractères, lettres, chiffres, « - », « _ » et « . »,
+  // commence par une lettre ou un chiffre et ne finit ni par un point ni par un tiret.
+  nomAzure: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (!s) return ko(`${p.label} est obligatoire.`);
+    if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}[A-Za-z0-9_]$|^[A-Za-z0-9]$/.test(s)) return ko(`${p.label} : 1 à 64 caractères (lettres, chiffres, « - », « _ », « . »), qui commence par une lettre ou un chiffre et ne finit pas par « . » ni « - ».`);
+    return ok(s);
+  },
+  // Nom d'un compte de stockage Azure : 3 à 24 caractères, minuscules et chiffres seulement, unique dans tout Azure.
+  compteStockage: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (!s) return ko(`${p.label} est obligatoire.`);
+    return /^[a-z0-9]{3,24}$/.test(s) ? ok(s) : ko(`${p.label} : 3 à 24 caractères, minuscules et chiffres seulement (ni tiret, ni majuscule).`);
+  },
   cidr: (v, p) => {
     const m = /^([^/]+)\/(\d{1,2})$/.exec(String(v ?? '').trim());
     if (!m) return ko(`${p.label} : un réseau au format 192.168.1.0/24.`);

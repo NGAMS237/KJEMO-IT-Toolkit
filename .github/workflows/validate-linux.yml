@@ -592,6 +592,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cisco-reseau.test.mjs
 
+      - name: Cours Azure (fiches az, schémas, résumés)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/azure-cours.test.mjs
+
       - name: Aide-memoire - groupes, filtres calcules, routes, contre-epreuves, marquage des portes
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/memo.test.mjs
@@ -700,6 +704,10 @@ jobs:
       - name: Navigateur - cours Cisco semaines 1 à 5 et TP2
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-cisco-reseau.test.mjs
+
+      - name: Navigateur - cours Azure
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-azure-cours.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

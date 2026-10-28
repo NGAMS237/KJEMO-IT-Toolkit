@@ -127,6 +127,31 @@ export const MEMO_GROUPES = [
       { id: 'dtp', titre: 'DTP et trunks', fiches: ['cours-dtp-trunk'] },
       { id: 'depanner', titre: 'Dépanner VTP et DTP', fiches: ['cours-vtp-dtp-depanner'] },
     ] },
+  // Groupes Azure (KJEMO-AZURE-COURS-01) : fiches de construction en Azure CLI ; les assistants de lecture restent dans le catalogue pro.
+  { id: 'az-base', titre: 'Azure : abonnement et groupes', icone: '☁', couleur: '#0369a1', commandes: 'az group create, az lock create, az role assignment create',
+    resume: 'Un groupe de ressources par laboratoire, un verrou contre la suppression, un rôle pour un coéquipier.',
+    sous: [
+      { id: 'organiser', titre: 'Organiser et protéger', fiches: ['cours-az-groupe-ressources', 'cours-az-verrou-ressource'] },
+      { id: 'acces', titre: 'Partager l’accès', fiches: ['cours-az-role-coequipier'] },
+    ] },
+  { id: 'az-reseau', titre: 'Azure : réseau virtuel et DNS', icone: '🕸', couleur: '#0e7490', commandes: 'az network vnet create, az vm create, az network dns zone create',
+    resume: 'Créer un VNet et ses sous-réseaux, relire le plan d’adressage, les adresses IP, une machine, puis le DNS public et privé.',
+    sous: [
+      { id: 'vnet', titre: 'Réseau virtuel et adresses', fiches: ['cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet'] },
+      { id: 'dns', titre: 'DNS public et privé', fiches: ['cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee'] },
+    ] },
+  { id: 'az-routage-prive', titre: 'Azure : peering, routes et accès privé', icone: '🔗', couleur: '#6d28d9', commandes: 'az network vnet peering create, az network route-table create, az network private-endpoint create',
+    resume: 'Appairer deux VNet, lire et créer des routes, limiter ou isoler un compte de stockage.',
+    sous: [
+      { id: 'peering', titre: 'Peering', fiches: ['cours-az-peering-creer', 'cours-az-peering-verifier'] },
+      { id: 'routes', titre: 'Routes', fiches: ['cours-az-routes-effectives', 'cours-az-route-personnalisee'] },
+      { id: 'prive', titre: 'Accès privé au stockage', fiches: ['cours-az-point-service-stockage', 'cours-az-point-prive-stockage'] },
+    ] },
+  { id: 'az-equilibrage', titre: 'Azure : équilibrage de charge', icone: '⚖', couleur: '#b45309', commandes: 'az network lb create, az network lb probe create',
+    resume: 'Créer un Azure Load Balancer public avec sa sonde et sa règle, puis lire sa configuration.',
+    sous: [
+      { id: 'lb', titre: 'Azure Load Balancer', fiches: ['cours-az-lb-creer', 'cours-az-lb-etat'] },
+    ] },
   { id: 'cisco-commutation', titre: 'Commutation Cisco', icone: '🔀', couleur: '#0e7490', commandes: 'channel-group, show etherchannel, spanning-tree',
     resume: 'Regrouper des liens (EtherChannel), les vérifier, les dépanner, régler Spanning Tree.',
     sous: [
@@ -164,6 +189,8 @@ export const AJOUTS = Object.fromEntries([
     'cours-vtp-reseau', 'cours-vtp-transparent-etendus', 'cours-dtp-trunk', 'cours-vtp-dtp-depanner'].map((id) => [id, '2026-10-28']),
 ).concat(
   ['win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-ad-voir-ou', 'win-ad-voir-utilisateurs', 'win-ad-creer-ou', 'win-ad-creer-utilisateur', 'win-ad-creer-groupe', 'win-ad-ajouter-membre', 'win-ad-reinit-mot-de-passe', 'win-ad-desactiver-compte', 'win-ad-deplacer-objet', 'win-ad-joindre-domaine', 'win-gpo-lister', 'win-gpo-resultat', 'win-gpo-creer-lier', 'win-dhcp-installer', 'win-dhcp-etendue', 'win-dhcp-reservation', 'win-dhcp-baux', 'win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a', 'win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'].map((id) => [id, '2026-10-28']),
+).concat(
+  ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier', 'cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee', 'cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-service-stockage', 'cours-az-point-prive-stockage', 'cours-az-lb-creer', 'cours-az-lb-etat'].map((id) => [id, '2026-10-28']),
 ));
 
 const JOUR = 86400000;

@@ -15,6 +15,7 @@
  */
 
 import { SCHEMAS_RESEAU } from './schemas-cisco-reseau.mjs';
+import { SCHEMAS_AZURE } from './schemas-azure.mjs';
 
 const T = 'var(--text-strong,#fff)';
 const S = 'var(--text-soft,#c6cbe2)';
@@ -282,6 +283,8 @@ export const SCHEMAS = {
   'stp-racines': { titre: 'Ponts racines par VLAN', legende: 'Deux racines principales se partagent les VLAN ; la secondaire prend le relais en cas de panne.', svg: racines },
   // Cours des semaines 1 à 5 (KJEMO-CISCO-COURS-RESEAU-01).
   ...SCHEMAS_RESEAU,
+  // Cours d'infonuagique Azure (KJEMO-AZURE-COURS-01).
+  ...SCHEMAS_AZURE,
 };
 
 export const IDS_SCHEMAS = Object.keys(SCHEMAS);

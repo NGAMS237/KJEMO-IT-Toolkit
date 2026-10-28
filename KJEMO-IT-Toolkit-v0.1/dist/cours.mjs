@@ -20,6 +20,7 @@
 import { RESUME_S07 } from './cours-resume-cisco.mjs';
 import { IDS_SCHEMAS } from './schemas-cisco.mjs';
 import { COURS_CISCO_RESEAU_PARCOURS } from './cours-cisco-reseau.mjs';
+import { COURS_AZURE_PARCOURS } from './cours-azure.mjs';
 
 export const ROUTE_COURS = '#/cours';
 export const ROUTE_LABO = '#/labo';
@@ -275,6 +276,7 @@ export const COURS = [
   },
   // Semaines 1 à 5 et TP2 (KJEMO-CISCO-COURS-RESEAU-01), dans l'ordre du cours.
   ...COURS_CISCO_RESEAU_PARCOURS,
+  ...COURS_AZURE_PARCOURS,
 ];
 
 export const COURS_PAR_ID = new Map(COURS.map((c) => [c.id, c]));
@@ -290,7 +292,7 @@ function variantes(coursCle, item) {
   return [`${coursCle} ${sans}`, sans, `${coursCle} ${sans.replace(/^([a-z])(\d)/, '$1 $2')}`];
 }
 
-const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco' };
+const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco', 'azure-01-02-infonuagique-azure': 'azure 01', 'azure-03-reseau-virtuel': 'azure 03', 'azure-04-resolution-noms': 'azure 04', 'azure-05-peering-routage': 'azure 05', 'azure-06-07-acces-prive-equilibrage': 'azure 06' };
 
 const ALIAS = (() => {
   const m = new Map();

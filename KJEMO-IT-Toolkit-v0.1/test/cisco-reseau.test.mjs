@@ -270,7 +270,7 @@ for (const [nom, r, schemas] of [['S01', R.RESUME_S01, ['vlsm-masques', 'vlsm-de
 // ---------------------------------------------------------------------------
 console.log('7. Les 14 schémas originaux');
 {
-  assert(SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 22, '14 schémas ajoutés aux 8 de la semaine 7');
+  assert(SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length >= 22, '14 schémas ajoutés aux 8 de la semaine 7');
   const tmp = mkdtempSync(resolve(tmpdir(), 'svg-'));
   for (const id of SCHEMAS_NEUFS) {
     const sc = S.SCHEMAS[id]; const svg = sc.svg();
