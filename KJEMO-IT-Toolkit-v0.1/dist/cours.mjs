@@ -19,6 +19,7 @@
 
 import { RESUME_S07 } from './cours-resume-cisco.mjs';
 import { IDS_SCHEMAS } from './schemas-cisco.mjs';
+import { COURS_CISCO_RESEAU_PARCOURS } from './cours-cisco-reseau.mjs';
 
 export const ROUTE_COURS = '#/cours';
 export const ROUTE_LABO = '#/labo';
@@ -272,6 +273,8 @@ export const COURS = [
       { id: 'S07-2', sujet: 'Groupes et ports du tableau', texte: 'Le numéro de groupe est local à chaque commutateur. Suis toujours le tableau de TON énoncé pour savoir quels ports vont dans quel groupe et avec quel protocole ; les valeurs des fiches ne sont que des exemples.' },
     ],
   },
+  // Semaines 1 à 5 et TP2 (KJEMO-CISCO-COURS-RESEAU-01), dans l'ordre du cours.
+  ...COURS_CISCO_RESEAU_PARCOURS,
 ];
 
 export const COURS_PAR_ID = new Map(COURS.map((c) => [c.id, c]));
@@ -287,7 +290,7 @@ function variantes(coursCle, item) {
   return [`${coursCle} ${sans}`, sans, `${coursCle} ${sans.replace(/^([a-z])(\d)/, '$1 $2')}`];
 }
 
-const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07' };
+const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco' };
 
 const ALIAS = (() => {
   const m = new Map();
@@ -420,7 +423,7 @@ export function incoherencesCours(cours, { fiches, assistants = () => true }) {
       items.add(it.id);
       if (txt(it.texte).length < 12) pb.push(`${ou} : texte absent`);
       const couvert = it.couvert !== false;
-      if (couvert && !it.refs?.length) pb.push(`${ou} : couvert mais sans fiche (mettre couvert:false et dire pourquoi)`);
+      if (couvert && !it.refs?.length && !it.assistants?.length) pb.push(`${ou} : couvert mais sans fiche (mettre couvert:false et dire pourquoi)`);
       if (!couvert) {
         if (it.refs?.length) pb.push(`${ou} : marqué non couvert mais cite une fiche`);
         if (txt(it.note).length < 20) pb.push(`${ou} : non couvert sans explication`);

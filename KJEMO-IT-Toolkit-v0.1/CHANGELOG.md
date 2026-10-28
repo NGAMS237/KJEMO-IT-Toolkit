@@ -12,6 +12,17 @@
 - Fiches adaptées au niveau du cours : condition (calculatrice), boucles (sans select), find, groupes locaux, afficher-texte.
 - Parcours A du TP2 : script à menu ; l’import renforcé reste en soutien. Voir `docs/ALIGNEMENT-FORMATIFS-PROF.md`.
 
+## CISCO-COURS-RESEAU-01 (2026-10-28)
+- Source : 12 fichiers de cours (S01 à S05, tableaux VLSM, formatif, TP2, note de cours). Vérification des doublons avant construction : les assistants cisco-identification, cisco-gestion-ip, cisco-port-security-config, cisco-vtp-configuration, cisco-dtp-simulation et cisco-vtp-diagnostic sont réutilisés (fiches repliées sous leur assistant), rien n'est recréé.
+- 17 fiches Cisco à commande directe (`dist/cours-fiches-cisco-reseau.mjs`) : base et gestion, ports du commutateur, routes statiques / par défaut / flottantes, RIP, VTP, DTP, dépannage.
+- 5 cours (`dist/cours-cisco-reseau.mjs`) : S01 révision et VLSM, S02 commutateur et sécurité, S02-S03 routage, S05 VLAN/VTP/DTP, TP2 routage statique. Chacun avec son résumé pliable (`dist/cours-resume-cisco-reseau.mjs`).
+- 14 schémas originaux (`dist/schemas-cisco-reseau.mjs`), 22 schémas Cisco au total.
+- 3 groupes d'aide-mémoire Cisco (adressage et routage, accès et ports, VLAN/VTP/DTP).
+- Validateurs : interface Serial, adresse MAC au format IOS, texte ASCII.
+- TP2 : 4 ambiguïtés de l'énoncé signalées comme propositions à confirmer avec l'enseignant (192.158.5.66, S0/0/0 de R1 et R3 identiques, lien R2-R3 absent du tableau 1, adresses PC5/PC6).
+- Tests : `cisco-reseau.test.mjs` (996), `browser-cisco-reseau.test.mjs` (72) ; tests existants ajustés (cisco-s07, memo, cours).
+- Non exécuté sur Packet Tracer ni sur du matériel Cisco ; URL de sources écrites de mémoire, non ouvertes.
+
 ## CISCO-S07-01 (2026-10-28)
 - Premier cours Cisco : semaine 7 EtherChannel et Spanning Tree (3 parcours, 6 exercices du formatif 07), 9 fiches IOS, groupe « Commutation Cisco » de l'aide-mémoire, famille du catalogue.
 - Résumé pliable du cours (essentiel, schémas, commandes, pièges, questions à réponse cachée) ; schémas SVG originaux dans les fiches. Voir `docs/CISCO-S07-01.md`.

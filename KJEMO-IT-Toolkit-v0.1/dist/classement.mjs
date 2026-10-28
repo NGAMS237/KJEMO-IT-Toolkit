@@ -185,12 +185,12 @@ export const ARBRE = {
     F('surveillance', 'Surveillance et coûts', { sub: ['Surveillance et coûts'] }),
   ],
   'reseau-cisco': [
-    F('acces', 'Accès et configuration', { sub: ['Modes, identification et accès', 'Configuration et sauvegarde'] }),
-    F('interfaces', 'Interfaces et port-security', { sub: ['Interfaces, MAC et port-security'] }),
+    F('acces', 'Accès et configuration', { sub: ['Modes, identification et accès', 'Configuration et sauvegarde'], fiches: ['cours-config-portable'] }),
+    F('interfaces', 'Interfaces et port-security', { sub: ['Interfaces, MAC et port-security'], fiches: ['cours-sw-duplex-vitesse', 'cours-sw-diagnostiquer-port', 'cours-sw-ports-inutilises'] }),
     F('vlan', 'VLAN et ports d’accès', { sub: ['VLAN et ports d’accès'] }),
-    F('trunks', 'Trunks, DTP et VTP', { sub: ['Trunks et DTP', 'VTP et diagnostic'] }),
+    F('trunks', 'Trunks, DTP et VTP', { sub: ['Trunks et DTP', 'VTP et diagnostic'], fiches: ['cours-vtp-transparent-etendus'] }),
     F('commutation', 'EtherChannel et Spanning Tree', { fiches: ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner', 'cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'] }),
-    F('routage', 'Routage', {}),
+    F('routage', 'Routage', { fiches: ['cours-rt-interface-ip', 'cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester', 'cours-rip-configurer', 'cours-rip-verifier'] }),
   ],
 };
 

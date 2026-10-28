@@ -87,7 +87,7 @@ export const REPERE_FERMANT = '›';
 // ---------------------------------------------------------------------------
 
 const CONTROLE = /[\u0000-\u001f\u007f]/;
-const FAMILLES_ROUTEUR = { fa: 'FastEthernet', fastethernet: 'FastEthernet', gi: 'GigabitEthernet', gigabitethernet: 'GigabitEthernet', te: 'TenGigabitEthernet', tengigabitethernet: 'TenGigabitEthernet' };
+const FAMILLES_ROUTEUR = { fa: 'FastEthernet', fastethernet: 'FastEthernet', gi: 'GigabitEthernet', gigabitethernet: 'GigabitEthernet', te: 'TenGigabitEthernet', tengigabitethernet: 'TenGigabitEthernet', se: 'Serial', serial: 'Serial' };
 // Caractères qui changeraient la nature d'une ligne collée dans un terminal.
 const META_SHELL = /[;&|`$<>\\"'(){}!*?\[\]~#%^]/;
 
@@ -138,7 +138,7 @@ export const TYPES_PARAM = {
     const t = String(v ?? '').trim();
     const m = /^([A-Za-z]+)(\d{1,2})\/(\d{1,2})(?:\/(\d{1,2}))?$/.exec(t);
     const fam = m && FAMILLES_ROUTEUR[m[1].toLowerCase()];
-    if (!m || !fam) return ko(`${p.label} : une seule interface physique, au format Gi0/0, Gi0/0/0 ou Fa0/0 (ni sous-interface, ni plage).`);
+    if (!m || !fam) return ko(`${p.label} : une seule interface physique, au format Gi0/0, Gi0/0/0, Se0/0/0 ou Fa0/0 (ni sous-interface, ni plage).`);
     const nums = [m[2], m[3], m[4]].filter((x) => x !== undefined);
     if (nums.some((n) => n.length > 1 && n.startsWith('0'))) return ko(`${p.label} : pas de zéro de tête dans les numéros.`);
     return ok(`${fam}${nums.join('/')}`);
@@ -223,6 +223,16 @@ export const TYPES_PARAM = {
   mac: (v, p) => {
     const s = String(v ?? '').trim();
     return /^(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$/.test(s) ? ok(s.toUpperCase()) : ko(`${p.label} : une adresse MAC au format 00-15-5D-01-02-03 (six paires séparées par des tirets).`);
+  },
+  // KJEMO-CISCO-COURS-RESEAU-01 : adresse MAC au format IOS (aaaa.bbbb.cccc) et texte sans accent (IOS exige l'ASCII).
+  macIos: (v, p) => {
+    const s = String(v ?? '').trim().toLowerCase();
+    return /^[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4}$/.test(s) ? ok(s) : ko(`${p.label} : une adresse MAC au format IOS aaaa.bbbb.cccc (trois groupes de quatre chiffres hexadécimaux).`);
+  },
+  texteAscii: (v, p) => {
+    const s = String(v ?? '');
+    if (/[^\x20-\x7e]/.test(s.replace(/[\r\n]/g, '\u0000'))) return ko(`${p.label} : lettres sans accent seulement (IOS n'accepte que l'ASCII).`);
+    return texteSimple(v, p.label, { max: p.max ?? 80 });
   },
   // Réseau en notation CIDR : 192.168.1.0/24 (adresse valide, préfixe de 8 à 30).
   cidr: (v, p) => {

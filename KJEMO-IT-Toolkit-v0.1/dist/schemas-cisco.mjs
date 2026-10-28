@@ -14,6 +14,8 @@
  *    elles ne proviennent d'aucun équipement et ne prouvent rien.
  */
 
+import { SCHEMAS_RESEAU } from './schemas-cisco-reseau.mjs';
+
 const T = 'var(--text-strong,#fff)';
 const S = 'var(--text-soft,#c6cbe2)';
 const FOND = 'var(--surface-3,#11152a)';
@@ -278,6 +280,8 @@ export const SCHEMAS = {
   'ec-depannage': { titre: 'Où chercher en cas de panne', legende: 'Quatre causes courantes, et la commande qui permet de chacune la voir.', svg: depannage },
   'stp-boucle': { titre: 'Spanning Tree et les boucles', legende: 'Un lien redondant est mis en réserve (bloqué) pour qu’aucune trame ne tourne en rond.', svg: boucle },
   'stp-racines': { titre: 'Ponts racines par VLAN', legende: 'Deux racines principales se partagent les VLAN ; la secondaire prend le relais en cas de panne.', svg: racines },
+  // Cours des semaines 1 à 5 (KJEMO-CISCO-COURS-RESEAU-01).
+  ...SCHEMAS_RESEAU,
 };
 
 export const IDS_SCHEMAS = Object.keys(SCHEMAS);

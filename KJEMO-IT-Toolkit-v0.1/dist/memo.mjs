@@ -106,6 +106,27 @@ export const MEMO_GROUPES = [
       { id: 'dns', titre: 'DNS', fiches: ['win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a'] },
       { id: 'partages', titre: 'Partages et droits', fiches: ['win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'] },
     ] },
+  { id: 'cisco-adressage-routage', titre: 'Adressage et routage Cisco', icone: '🧭', couleur: '#b45309', commandes: 'ip address, ip route, router rip, ping',
+    resume: 'Adresser les interfaces, écrire des routes statiques (par défaut, flottantes), tester, puis RIPv2.',
+    sous: [
+      { id: 'interfaces', titre: 'Adresses et interfaces', fiches: ['cours-rt-interface-ip', 'cours-sw-gestion-ip'] },
+      { id: 'statique', titre: 'Routes statiques et tests', fiches: ['cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester'] },
+      { id: 'rip', titre: 'Routage dynamique RIP', fiches: ['cours-rip-configurer', 'cours-rip-verifier'] },
+    ] },
+  { id: 'cisco-acces-ports', titre: 'Accès et ports du commutateur', icone: '🔐', couleur: '#9333ea', commandes: 'hostname, speed, duplex, port-security',
+    resume: 'Configuration de base, vitesse et duplex, diagnostic d’un port, ports inutilisés, sécurité des ports, sauvegarde.',
+    sous: [
+      { id: 'base', titre: 'Configuration de base et sauvegarde', fiches: ['cours-base-peripherique', 'cours-config-portable'] },
+      { id: 'ports', titre: 'Ports : vitesse, diagnostic, inutilisés', fiches: ['cours-sw-duplex-vitesse', 'cours-sw-diagnostiquer-port', 'cours-sw-ports-inutilises'] },
+      { id: 'securite', titre: 'Sécurité des ports', fiches: ['cours-sw-portsec'] },
+    ] },
+  { id: 'cisco-vlan-vtp', titre: 'VLAN, VTP et DTP', icone: '🏷', couleur: '#be185d', commandes: 'vtp mode, vtp domain, switchport mode',
+    resume: 'Distribuer les VLAN avec VTP, créer des VLAN étendus, négocier les trunks avec DTP, dépanner.',
+    sous: [
+      { id: 'vtp', titre: 'VTP et VLAN étendus', fiches: ['cours-vtp-reseau', 'cours-vtp-transparent-etendus'] },
+      { id: 'dtp', titre: 'DTP et trunks', fiches: ['cours-dtp-trunk'] },
+      { id: 'depanner', titre: 'Dépanner VTP et DTP', fiches: ['cours-vtp-dtp-depanner'] },
+    ] },
   { id: 'cisco-commutation', titre: 'Commutation Cisco', icone: '🔀', couleur: '#0e7490', commandes: 'channel-group, show etherchannel, spanning-tree',
     resume: 'Regrouper des liens (EtherChannel), les vérifier, les dépanner, régler Spanning Tree.',
     sous: [
@@ -137,6 +158,10 @@ export const AJOUTS = Object.fromEntries([
 ).concat(
   ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner',
     'cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'].map((id) => [id, '2026-10-28']),
+).concat(
+  ['cours-base-peripherique', 'cours-sw-gestion-ip', 'cours-sw-duplex-vitesse', 'cours-sw-diagnostiquer-port', 'cours-sw-ports-inutilises', 'cours-sw-portsec',
+    'cours-config-portable', 'cours-rt-interface-ip', 'cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester', 'cours-rip-configurer', 'cours-rip-verifier',
+    'cours-vtp-reseau', 'cours-vtp-transparent-etendus', 'cours-dtp-trunk', 'cours-vtp-dtp-depanner'].map((id) => [id, '2026-10-28']),
 ).concat(
   ['win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-ad-voir-ou', 'win-ad-voir-utilisateurs', 'win-ad-creer-ou', 'win-ad-creer-utilisateur', 'win-ad-creer-groupe', 'win-ad-ajouter-membre', 'win-ad-reinit-mot-de-passe', 'win-ad-desactiver-compte', 'win-ad-deplacer-objet', 'win-ad-joindre-domaine', 'win-gpo-lister', 'win-gpo-resultat', 'win-gpo-creer-lier', 'win-dhcp-installer', 'win-dhcp-etendue', 'win-dhcp-reservation', 'win-dhcp-baux', 'win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a', 'win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'].map((id) => [id, '2026-10-28']),
 ));
