@@ -25,8 +25,10 @@ const ATTENDU = ['windows-voir-ip', 'windows-etat-service', 'vider-cache-dns', '
   'redemarrer-service-windows', 'reparer-fichiers-systeme', 'appliquer-strategies-groupe', 'ad-etat-replication', 'windows-ip-fixe',
   'windows-ports-ecoute', 'scenario-windows-diagnostic-reseau', 'journal-evenements-windows',
   // fiches du TP2 (D7) : net use / cmdkey, méthodes CMD vérifiées par ce banc comme les autres
-  'cours-windows-acces-partage', 'cours-windows-connexion-domaine'];
-assert(JSON.stringify(cmdMethodes.map((x) => x.p.id).sort()) === JSON.stringify([...ATTENDU].sort()), `16 méthodes CMD attendues (${cmdMethodes.length})`, cmdMethodes.map((x) => x.p.id).join(','));
+  'cours-windows-acces-partage', 'cours-windows-connexion-domaine',
+  // fiches Windows de l'aide-mémoire (KJEMO-UX-MEMO-WINDOWS-01) : gpresult, icacls, net use
+  'win-gpo-resultat', 'win-partage-ntfs', 'win-partage-connecter'];
+assert(JSON.stringify(cmdMethodes.map((x) => x.p.id).sort()) === JSON.stringify([...ATTENDU].sort()), `${ATTENDU.length} méthodes CMD attendues (${cmdMethodes.length})`, cmdMethodes.map((x) => x.p.id).join(','));
 for (const id of ['scenario-windows-diagnostic-reseau', 'windows-ip-fixe', 'windows-ports-ecoute', 'vider-cache-dns']) {
   const p = fiches.find((x) => x.id === id);
   assert(p.methodes.some((m) => m.id === 'cmd' && m.etapes.length > 0), `${id} : méthode CMD réelle, non vide`);

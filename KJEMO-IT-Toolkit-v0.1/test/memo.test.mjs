@@ -52,7 +52,7 @@ ok(ct > 0 && ct <= total, '« Liés au TP » : entre 1 et le total');
 const cw = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }), 0);
 const cl = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }), 0);
 const cc = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }), 0);
-ok(cw >= 77 && cl > 0 && cc === 9 && cl + cw + cc >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, total ${total}`);
+ok(cw >= 45 && cl > 0 && cc === 9 && cl + cw + cc >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, total ${total}`);
 // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
 const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
 ok(gw.length === 5, `5 groupes Windows attendus, ${gw.length}`);

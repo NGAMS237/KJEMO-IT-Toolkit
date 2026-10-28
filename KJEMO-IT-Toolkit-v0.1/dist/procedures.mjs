@@ -193,6 +193,46 @@ export const TYPES_PARAM = {
     return ok(String(Number(s)));
   },
   identifiant: (v, p) => texteSimple(v, p.label, { max: 80, motif: /^[A-Za-z0-9_.@-]+$/ }),
+  // KJEMO-UX-MEMO-WINDOWS-01 : types des fiches Windows (annuaire, DHCP, partages).
+  // Nom distinctif d'Active Directory : OU=Ventes,DC=lab,DC=local (au moins un composant DC=).
+  dn: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    const composant = '(?:OU|CN|DC)=[A-Za-z0-9_.-](?:[A-Za-z0-9_. -]{0,62}[A-Za-z0-9_.-])?';
+    if (s.length > 200 || !new RegExp(`^${composant}(?:,${composant})*$`).test(s) || !/(?:^|,)DC=/.test(s)) {
+      return ko(`${p.label} : un nom distinctif comme OU=Ventes,DC=lab,DC=local (composants OU=, CN= ou DC=, séparés par des virgules, sans espace autour des virgules, avec au moins un DC=). Get-ADDomain donne celui du domaine.`);
+    }
+    return ok(s);
+  },
+  // Chemin Windows simple : C:\Partages\Ventes (lettre de lecteur, sans espace, sans « .. »).
+  cheminWin: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    if (!/^[A-Za-z]:\\(?:[A-Za-z0-9_.-]+\\?)+$/.test(s) || /(^|\\)\.\.?(\\|$)/.test(s) || s.length > 120) {
+      return ko(`${p.label} : un chemin comme C:\\Partages\\Ventes (lettre de lecteur, dossiers sans espace ni caractère spécial, sans « .. »).`);
+    }
+    return ok(s.replace(/\\$/, ''));
+  },
+  // Compte ou groupe : Nom ou DOMAINE\Nom (le « \ » est permis ici seulement, entre le domaine et le nom).
+  principal: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    return /^(?:[A-Za-z0-9_.-]{1,30}\\)?[A-Za-z0-9_.-]{1,64}$/.test(s) ? ok(s) : ko(`${p.label} : un nom (jdupont) ou DOMAINE\\nom (LAB\\Ventes_G), sans espace ni autre caractère spécial.`);
+  },
+  // Adresse MAC au format du DHCP Windows : 00-15-5D-01-02-03.
+  mac: (v, p) => {
+    const s = String(v ?? '').trim();
+    return /^(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$/.test(s) ? ok(s.toUpperCase()) : ko(`${p.label} : une adresse MAC au format 00-15-5D-01-02-03 (six paires séparées par des tirets).`);
+  },
+  // Réseau en notation CIDR : 192.168.1.0/24 (adresse valide, préfixe de 8 à 30).
+  cidr: (v, p) => {
+    const m = /^([^/]+)\/(\d{1,2})$/.exec(String(v ?? '').trim());
+    if (!m) return ko(`${p.label} : un réseau au format 192.168.1.0/24.`);
+    const a = adapter(validateIPv4(m[1]));
+    if (!a.ok) return ko(`${p.label} : ${a.error}`);
+    const n = Number(m[2]);
+    return n >= 8 && n <= 30 && m[2] === String(n) ? ok(`${a.valeur}/${n}`) : ko(`${p.label} : un préfixe de 8 à 30 (par exemple /24).`);
+  },
   ipv4:    (v, p) => adapter(validateIPv4(v)),
   hote:    (v) => adapter(validerNomHote(v)),
   fqdn:    (v) => adapter(validerFqdn(v)),

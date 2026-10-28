@@ -186,12 +186,16 @@ const fiche0 = G[0].sous[0].fiches[0];
   assert(actifs >= 6 && actifs + masques === G.length, `Windows : ${actifs} groupes actifs + ${masques} regroupés = ${G.length}`, `${actifs}/${masques}`);
   assert(await page.locator('#portesView .groupe-bloc.is-vide').count() === 0, 'Windows : plus de blocs gris un par un');
   assert(await page.locator('#portesView details.groupe-bloc[data-groupe="win-ad"]').count() === 1, 'Windows : le groupe Active Directory est là');
-  const lienAssistant = page.locator('#portesView details.groupe-bloc[data-groupe="win-ad"] .fiche-ligne[data-id="ad-user"] h3 a');
-  assert(await lienAssistant.getAttribute('href') === '#/outil/ad-user', 'assistant : lien vers #/outil/ad-user');
+  const lienFiche = page.locator('#portesView details.groupe-bloc[data-groupe="win-ad"] .fiche-ligne[data-id="win-ad-creer-ou"] h3 a');
+  assert(await lienFiche.getAttribute('href') === '#/tache/win-ad-creer-ou', 'Windows : « Créer une OU » est une fiche à commande directe');
+  assert(await page.locator('#portesView details.groupe-bloc[data-groupe^="win-"] .fiche-ligne .kind', { hasText: 'Assistant complet' }).count() === 0, 'Windows : aucune ligne « Assistant complet » dans l’aide-mémoire');
   await page.goto(`${BASE}/#/memo/win-gpo`);
-  assert(await page.locator('#portesView .titre-groupe').isVisible() && await page.locator('#portesView .fiche-ligne').count() >= 10, 'page du groupe GPO : fiches affichées');
-  await page.goto(`${BASE}/#/outil/ad-user`);
-  assert(await page.locator('#toolView h1').isVisible(), 'l’assistant lié depuis l’aide-mémoire s’ouvre');
+  assert(await page.locator('#portesView .titre-groupe').isVisible() && await page.locator('#portesView .fiche-ligne').count() === 4, 'page du groupe GPO : ses 4 fiches affichées');
+  await page.goto(`${BASE}/#/tache/win-ad-creer-ou`);
+  await page.waitForSelector('#taskView h1');
+  const txt = await page.locator('#taskView').innerText();
+  assert(/New-ADOrganizationalUnit/.test(txt) && /Copier/.test(txt), 'la fiche Créer une OU montre la commande et le bouton Copier');
+  assert(/Retour à .*Active Directory.*aide-mémoire/.test(txt), 'la fiche propose le retour à son groupe de l’aide-mémoire');
   await context.close();
 }
 {

@@ -584,6 +584,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/cisco-s07.test.mjs
 
+      - name: KJEMO-UX-MEMO-WINDOWS-01 — fiches Windows à commande directe
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/windows-fiches.test.mjs
+
       - name: Aide-memoire - groupes, filtres calcules, routes, contre-epreuves, marquage des portes
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/memo.test.mjs

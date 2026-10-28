@@ -561,9 +561,9 @@ function searchResults(over = {}) {
   const kinds = NATURES.find((n) => n.id === nature)?.kinds ?? null;
   const opts = { categorie, plateforme: plat, kinds, garde };
   if (mode === 'accueil') {
-    // « Tâches courantes » : les tâches phares. Les fiches issues d'un cours restent trouvables
+    // « Tâches courantes » : les tâches phares. Les fiches issues d'un cours ou de l'aide-mémoire Windows restent trouvables
     // par la recherche, par les rubriques du catalogue et par « Mes cours et TP ».
-    return chercher('', { ...opts, kinds: ['procedure'] }).filter((r) => r.entree.procedure?.origine !== 'cours').map((r) => ({ ...r, motif: null }));
+    return chercher('', { ...opts, kinds: ['procedure'] }).filter((r) => !['cours', 'memo'].includes(r.entree.procedure?.origine)).map((r) => ({ ...r, motif: null }));
   }
   const res = chercher(requete, opts);
   if (mode === 'liste') {
