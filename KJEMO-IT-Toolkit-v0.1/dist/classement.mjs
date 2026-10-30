@@ -92,6 +92,7 @@ export const ARBRE = {
     F('fichiers', 'Fichiers, archives et droits', { fiches: ['win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession'] }),
     F('logiciels', 'Logiciels et correctifs (en commande)', { fiches: ['win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes'] }),
     F('reglages', 'Tâches, variables et accès à distance', { fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser'] }),
+    F('langue', 'Clavier, langue et format régional', { fiches: ['win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format'] }),
     F('comptes-locaux', 'Comptes locaux (en commande)', { fiches: ['win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] }),
   ],
   'analyse-disques': [
@@ -153,6 +154,7 @@ export const ARBRE = {
       F('planification', 'Tâches planifiées', { fiches: ['cours-planifier-taches'] }),
       F('paquets', 'Paquets', { hotes: ['linux-package-diagnostic'] }),
       F('heure', 'Heure et NTP', { hotes: ['linux-time-sync-diagnostic'] }),
+      F('clavier', 'Clavier et langue', { fiches: ['linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme'] }),
     ] }),
     F('utilisateurs', 'Utilisateurs et permissions', { sujets: [
       F('permissions', 'Permissions et ACL', { hotes: ['linux-permission-audit', 'linux-permission-change', 'linux-permission-acl'] }),

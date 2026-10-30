@@ -15,11 +15,11 @@ const SED = 'https://www.gnu.org/software/sed/manual/sed.html';
 const FICHIER = { id: 'fichier', label: 'fichier à traiter', type: 'arg', exemple: 'comptes_tp2.csv', aide: 'Un fichier texte existant, dans le dossier courant ou avec son chemin.' };
 const SEP = { id: 'sep', label: 'séparateur de colonnes', type: 'choix', choix: [';', ',', ':', '|'], exemple: ';', aide: 'Le caractère qui sépare les colonnes. Le TP2 utilise le point-virgule.' };
 
-function fiche({ id, titre, resume, effet, intentions, motsCles, params, etapes, verification, retour = null, sources }) {
+function fiche({ id, titre, resume, effet, intentions, motsCles, params, etapes, verification, retour = null, sources, privileges = 'Utilisateur ordinaire, avec le droit d’écrire dans le dossier du fichier.' }) {
   return {
     id, titre, categorie: CATEGORIE_LINUX, resume, effet, intentions, motsCles, params,
     origine: 'memo',
-    methodes: [{ id: 'linux', privileges: 'Utilisateur ordinaire, avec le droit d’écrire dans le dossier du fichier.', etapes, verification, retour }],
+    methodes: [{ id: 'linux', privileges, etapes, verification, retour }],
     assistant: null, sources, validation: V_COURS,
   };
 }
@@ -141,7 +141,7 @@ export const PROCEDURES_LINUX_COMPTES = [
     sources: [{ label: 'getent(1)', url: `${MAN}/man1/getent.1.html` }, { label: 'id(1)', url: `${MAN}/man1/id.1.html` }, { label: 'groups(1)', url: `${MAN}/man1/groups.1.html` }],
   }),
   fiche({
-    id: 'linux-mot-de-passe-local', titre: 'Changer le mot de passe d’un compte local', effet: 'modification',
+    id: 'linux-mot-de-passe-local', titre: 'Changer le mot de passe d’un compte Linux local', effet: 'modification',
     resume: 'Définit un nouveau mot de passe pour un compte local avec passwd. Le mot de passe est demandé à l’invite (saisie masquée) : il n’apparaît ni à l’écran ni dans l’historique. Un mot de passe oublié se remplace, il ne se retrouve pas.',
     intentions: ['changer le mot de passe d’un compte linux', 'passwd compte', 'mot de passe linux oublié', 'réinitialiser le mot de passe d’un utilisateur local', 'forcer le changement de mot de passe à la connexion'],
     motsCles: ['passwd', 'mot de passe', 'compte local', 'réinitialiser', 'chage', 'expiration'],
@@ -184,5 +184,79 @@ export const PROCEDURES_LINUX_COMPTES = [
     verification: ['pwdLastSet a changé et le compte ouvre une session avec le nouveau mot de passe.'],
     retour: 'Un mot de passe changé ne se retrouve pas : redéfinis-en un avec la même commande.',
     sources: [{ label: 'samba-tool', url: 'https://www.samba.org/samba/docs/current/man-html/samba-tool.8.html' }, { label: 'grep(1)', url: `${MAN}/man1/grep.1.html` }],
+  }),
+];
+
+// ===========================================================================
+// CLAVIER ET LANGUE — KJEMO-CLAVIER-01
+// ===========================================================================
+const SUDO = 'Utilisateur ordinaire autorisé à utiliser sudo.';
+const LECTURE = 'Aucun privilège particulier : utilisateur ordinaire.';
+const LOCALE = { id: 'langue', label: 'langue du système', type: 'choix', choix: ['fr_CA.UTF-8', 'en_CA.UTF-8', 'fr_FR.UTF-8', 'en_US.UTF-8'], exemple: 'fr_CA.UTF-8', aide: 'fr_CA : français du Canada. Le suffixe .UTF-8 est obligatoire.' };
+const DISPOSITION = { id: 'disposition', label: 'disposition du clavier', type: 'choix', choix: ['ca', 'us', 'fr', 'gb', 'de'], exemple: 'ca', aide: 'ca : clavier canadien (français ou multilingue), us : américain, fr : AZERTY français.' };
+const LOC = 'https://www.freedesktop.org/software/systemd/man/latest';
+
+export const PROCEDURES_LINUX_CLAVIER = [
+  fiche({
+    id: 'linux-clavier-voir', titre: 'Voir la disposition du clavier et la langue actuelles', effet: 'lecture', privileges: LECTURE,
+    resume: 'Affiche la disposition du clavier (console et session graphique) et la langue du système. Première lecture quand les touches ne donnent pas le bon caractère ou que les messages changent de langue.',
+    intentions: ['localectl status', 'quelle disposition de clavier est utilisée sous linux', 'le clavier écrit le mauvais caractère linux', 'voir la langue du système linux', 'echo $lang'],
+    motsCles: ['clavier', 'keymap', 'localectl', 'locale', 'langue', 'setxkbmap', 'azerty', 'qwerty'],
+    params: [],
+    etapes: [
+      lec('État du clavier et de la langue', 'localectl résume la langue du système (System Locale), la disposition de la console (VC Keymap) et celle de la session graphique (X11 Layout).', [sh('localectl status')], 'Des lignes « System Locale », « VC Keymap » et « X11 Layout ». Plusieurs dispositions séparées par une virgule (par exemple « us,ca ») expliquent un clavier qui change tout seul.'),
+      lec('Langue vue par ta session', 'Les variables LANG et LC_* de ta session. Elles peuvent différer du système : une connexion SSH peut transmettre la langue du poste client.', [sh('locale')], 'LANG=fr_CA.UTF-8 par exemple. Des valeurs différentes d’une ligne à l’autre : langues mélangées.'),
+      lec('Disposition de la session graphique (facultatif)', 'Seulement dans une session graphique : setxkbmap lit la disposition active du moment.', [sh('setxkbmap -query')], 'Les lignes « layout » et « variant ». « Cannot open display » : tu n’es pas dans une session graphique, ce n’est pas une erreur.', { facultatif: true }),
+    ],
+    verification: ['Tu sais quelle disposition et quelle langue sont réellement actives, à la console, en session graphique et dans ta session.'],
+    sources: [{ label: 'localectl(1)', url: `${LOC}/localectl.html` }, { label: 'locale(1)', url: `${MAN}/man1/locale.1.html` }],
+  }),
+  fiche({
+    id: 'linux-clavier-changer', titre: 'Fixer la disposition du clavier du système (localectl)', effet: 'modification', privileges: SUDO,
+    resume: 'Définit une seule disposition de clavier pour la console et la session graphique. Remplace une liste de plusieurs dispositions, cause fréquente d’un clavier qui change tout seul.',
+    intentions: ['localectl set-keymap', 'changer le clavier sous linux', 'clavier qwerty au lieu de azerty ubuntu', 'passer le clavier en canadien français linux', 'dpkg-reconfigure keyboard-configuration'],
+    motsCles: ['clavier', 'localectl', 'set-keymap', 'set-x11-keymap', 'disposition', 'ca', 'etc default keyboard'],
+    params: [DISPOSITION],
+    etapes: [
+      lec('Voir les dispositions disponibles', 'Vérifie que le nom existe avant de l’appliquer (la console et la session graphique n’utilisent pas toujours les mêmes noms).', [sh('localectl list-keymaps | grep -x {{disposition}}'), sh('localectl list-x11-keymap-layouts | grep -x {{disposition}}')], 'Le nom apparaît dans chaque liste. Rien : choisis une autre disposition.'),
+      mod('Fixer la disposition de la console', 'Écrit la disposition de la console texte (celle de la machine virtuelle ou du serveur sans écran graphique).', [sh('sudo localectl set-keymap {{disposition}}')], 'Aucun message en cas de succès.'),
+      mod('Fixer la disposition de la session graphique', 'Écrit la disposition du serveur graphique. Une seule valeur remplace une liste « us,ca ».', [sh('sudo localectl set-x11-keymap {{disposition}}')], 'Aucun message en cas de succès.', { important: 'Une session graphique déjà ouverte garde l’ancienne disposition jusqu’à la fermeture de session. Un réglage personnel du bureau peut aussi l’emporter : voir la fiche sur la session graphique.' }),
+      lec('Vérifier', 'Les deux lignes doivent afficher la nouvelle disposition, sans virgule.', [sh('localectl status')], 'VC Keymap et X11 Layout égaux à la disposition choisie.', { verification: true }),
+    ],
+    verification: ['VC Keymap et X11 Layout affichent la disposition choisie, et les touches donnent les bons caractères après une nouvelle ouverture de session.'],
+    retour: 'Relance les deux commandes avec l’ancienne disposition (visible dans le résultat de l’étape « Voir » de la fiche précédente).',
+    sources: [{ label: 'localectl(1)', url: `${LOC}/localectl.html` }, { label: 'keyboard(5)', url: `${MAN}/man5/keyboard.5.html` }],
+  }),
+  fiche({
+    id: 'linux-clavier-session', titre: 'Régler le clavier de la session graphique (GNOME, setxkbmap)', effet: 'modification', privileges: LECTURE,
+    resume: 'Fixe la disposition de ta session graphique, qui prend le dessus sur le réglage du système. À utiliser quand le clavier revient à une autre disposition après chaque ouverture de session.',
+    intentions: ['gsettings input-sources', 'le clavier change de disposition tout seul gnome', 'setxkbmap ca', 'retirer une disposition de clavier gnome', 'raccourci super espace change le clavier'],
+    motsCles: ['gsettings', 'gnome', 'input-sources', 'setxkbmap', 'clavier', 'session', 'disposition'],
+    params: [DISPOSITION],
+    etapes: [
+      lec('Voir les dispositions de la session', 'GNOME garde la liste des dispositions de chaque utilisateur. Plusieurs entrées : le raccourci Super+Espace bascule de l’une à l’autre.', [sh('gsettings get org.gnome.desktop.input-sources sources')], 'Par exemple [(\'xkb\', \'us\'), (\'xkb\', \'ca\')]. Une seule entrée : pas de basculement possible.'),
+      mod('Ne garder que la disposition voulue', 'Remplace la liste par une seule entrée : plus de basculement involontaire.', [sh('gsettings set org.gnome.desktop.input-sources sources "[(\'xkb\', \'{{disposition}}\')]"')], 'Aucun message en cas de succès. « No such schema » : tu n’es pas sous GNOME, utilise l’étape suivante.', { important: 'À lancer dans la session graphique elle-même (terminal du bureau), pas par SSH ni avec sudo.' }),
+      mod('Appliquer tout de suite sans GNOME (temporaire)', 'setxkbmap change la disposition de la session en cours, jusqu’à sa fermeture.', [sh('setxkbmap {{disposition}}')], 'Aucun message. Les touches changent immédiatement.', { facultatif: true }),
+      lec('Vérifier', 'La liste doit contenir une seule entrée.', [sh('gsettings get org.gnome.desktop.input-sources sources')], 'Une seule entrée, avec la disposition choisie.', { verification: true }),
+    ],
+    verification: ['Une seule disposition reste dans la session et les touches donnent les bons caractères après une nouvelle ouverture de session.'],
+    retour: 'gsettings reset org.gnome.desktop.input-sources sources remet le réglage par défaut du système.',
+    sources: [{ label: 'setxkbmap(1)', url: `${MAN}/man1/setxkbmap.1.html` }, { label: 'GNOME : sources de saisie', url: 'https://help.gnome.org/users/gnome-help/stable/keyboard-layouts.html' }],
+  }),
+  fiche({
+    id: 'linux-langue-systeme', titre: 'Changer la langue du système (locale)', effet: 'modification', privileges: SUDO,
+    resume: 'Définit la langue des messages et des formats (dates, nombres) du système. Génère la langue si elle manque, puis l’enregistre pour toutes les prochaines sessions.',
+    intentions: ['localectl set-locale', 'changer la langue ubuntu en français', 'locale-gen fr_ca.utf-8', 'les messages du système sont en anglais', 'warning setlocale cannot set lc_all'],
+    motsCles: ['locale', 'langue', 'localectl', 'locale-gen', 'lang', 'utf-8', 'fr_ca', 'setlocale'],
+    params: [LOCALE],
+    etapes: [
+      lec('Voir les langues déjà générées', 'Seules les langues générées sur la machine peuvent être utilisées.', [sh('locale -a | grep -i {{langue}}')], 'Une ligne avec la langue choisie. Rien : génère-la à l’étape suivante.'),
+      mod('Générer la langue', 'Compile la langue sur la machine (Debian et Ubuntu).', [sh('sudo locale-gen {{langue}}')], 'Le message « Generating locales… done ».'),
+      mod('Définir la langue du système', 'Écrit LANG dans le fichier de configuration du système.', [sh('sudo localectl set-locale LANG={{langue}}')], 'Aucun message en cas de succès.', { important: 'Appliquée à la prochaine ouverture de session. En SSH, la langue du poste client peut être transmise et l’emporter : un avertissement « setlocale » vient d’une langue non générée.' }),
+      lec('Vérifier', 'System Locale doit afficher la nouvelle langue.', [sh('localectl status')], 'System Locale : LANG=<la langue choisie>.', { verification: true }),
+    ],
+    verification: ['System Locale affiche la langue choisie et, après une nouvelle ouverture de session, la commande locale aussi.'],
+    retour: 'sudo localectl set-locale LANG=en_US.UTF-8 remet l’anglais.',
+    sources: [{ label: 'localectl(1)', url: `${LOC}/localectl.html` }, { label: 'locale-gen(8)', url: `${MAN}/man8/locale-gen.8.html` }, { label: 'locale(7)', url: `${MAN}/man7/locale.7.html` }],
   }),
 ];

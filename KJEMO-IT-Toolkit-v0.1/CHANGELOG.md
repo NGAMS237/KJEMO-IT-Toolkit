@@ -1,3 +1,8 @@
+## CLAVIER-01 (2026-10-31)
+- 8 fiches : Linux (voir la disposition, fixer avec localectl, régler la session GNOME/setxkbmap, changer la langue du système) et Windows (voir langues et claviers, garder une seule langue, désactiver Alt+Maj, régler le format régional).
+- Causes ciblées d’un clavier qui change tout seul : plusieurs dispositions installées, raccourci de basculement, réglage de session qui prend le dessus, écran de connexion distinct, langue transmise par SSH.
+- Testé : contrat, rangement, recherche, valeurs refusées. Les commandes localectl, gsettings et PowerShell ne sont PAS exécutées sur un vrai poste.
+
 ## LINUX-COMPTES-01 (2026-10-31)
 - 5 fiches : lister les comptes locaux, lister les groupes locaux (avec membres), changer un mot de passe local (passwd), voir un compte Samba AD (samba-tool user show), changer un mot de passe Samba AD (samba-tool user setpassword).
 - Un mot de passe ne se retrouve pas (seule l’empreinte est stockée) : il se remplace. Dit dans les fiches.

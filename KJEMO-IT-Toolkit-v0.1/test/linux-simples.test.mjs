@@ -16,19 +16,20 @@ import { tmpdir } from 'node:os';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const M = await imp('memo.mjs'); const C = await imp('classement.mjs');
-const { PROCEDURES_LINUX_SIMPLES: L5, PROCEDURES_LINUX_COMPTES: LC } = await imp('procedures-linux-simples.mjs');
-const L = [...L5, ...LC];
+const { PROCEDURES_LINUX_SIMPLES: L5, PROCEDURES_LINUX_COMPTES: LC, PROCEDURES_LINUX_CLAVIER: LK } = await imp('procedures-linux-simples.mjs');
+const { PROCEDURES_WINDOWS_LANGUE: WL } = await imp('procedures-windows-langue.mjs');
+const L = [...L5, ...LC, ...LK, ...WL];
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const fiche = (id) => L.find((p) => p.id === id);
 
 console.log('1. Contrat');
-assert(L5.length === 5 && LC.length === 5 && L.length === 10, '5 fiches de texte + 5 fiches de comptes');
+assert(L5.length === 5 && LC.length === 5 && LK.length === 4 && WL.length === 4 && L.length === 18, '5 fiches de texte + 5 de comptes + 4 clavier Linux + 4 clavier Windows');
 for (const p of L) {
   const pb = P.incoherencesProcedure(p);
   assert(pb.length === 0, `contrat : ${p.id}`, pb.join(' | '));
   const e = T.entreeParId(p.id);
-  assert(e?.kind === 'procedure' && e.plateformes.length === 1 && e.plateformes[0] === 'Linux', `${p.id} : plateforme Linux seule`);
+  assert(e?.kind === 'procedure' && e.plateformes.length === 1 && e.plateformes[0] === (WL.includes(p) ? 'Windows' : 'Linux'), `${p.id} : une seule plateforme, la bonne`);
   assert(M.toutesLesFichesMemo().filter((x) => x === p.id).length === 1, `${p.id} : rangée UNE fois dans l’aide-mémoire`);
   assert(Boolean(C.cheminDe(e)?.famille), `${p.id} : classée dans le catalogue`);
   assert(Object.keys(M.AJOUTS).includes(p.id), `${p.id} : badge « nouveau »`);
@@ -129,6 +130,25 @@ console.log('6. Comptes, groupes et mots de passe');
     assert(ids.slice(0, 6).includes(attendu), `recherche « ${req} » : ${attendu}`, ids.slice(0, 6).join());
   }
   assert(LC.every((p) => /remplac|hash|empreinte|récupér|retrouver/i.test(JSON.stringify(p)) || !/mot-de-passe/.test(p.id)), 'fiches mot de passe : précisent qu’on remplace, on ne relit pas');
+}
+
+console.log('7. Clavier et langue');
+{
+  const rendu = (id, val) => P.rendreMethode(fiche(id).methodes[0], fiche(id).params, val).etapes.map((e) => e.rendu.texteCopie).join('\n');
+  assert(!v('linux-clavier-changer', 'disposition', 'ca; rm -rf /').ok && !v('linux-clavier-changer', 'disposition', 'xx').ok && v('linux-clavier-changer', 'disposition', 'ca').ok, 'disposition : seulement la liste fermée');
+  assert(!v('linux-langue-systeme', 'langue', 'fr_CA').ok && v('linux-langue-systeme', 'langue', 'fr_CA.UTF-8').ok, 'langue Linux : liste fermée avec .UTF-8');
+  assert(!v('win-clavier-fixer', 'langue', 'fr-CA; Remove-Item').ok && v('win-clavier-fixer', 'langue', 'fr-CA').ok, 'langue Windows : liste fermée');
+  assert(/sudo localectl set-keymap ca/.test(rendu('linux-clavier-changer', { disposition: 'ca' })) && /set-x11-keymap ca/.test(rendu('linux-clavier-changer', { disposition: 'ca' })), 'localectl : console et X11');
+  assert(/gsettings set org\.gnome\.desktop\.input-sources sources "\[\('xkb', 'us'\)\]"/.test(rendu('linux-clavier-session', { disposition: 'us' })), 'gsettings : une seule entrée rendue correctement');
+  assert(/New-WinUserLanguageList -Language fr-CA\) -Force/.test(rendu('win-clavier-fixer', { langue: 'fr-CA' })), 'Windows : liste remplacée par une seule langue');
+  assert(rendu('win-clavier-raccourci', {}).includes('Language Hotkey') && rendu('win-clavier-raccourci', {}).includes('"3"'), 'Windows : raccourci désactivé (valeur 3)');
+  // Exécution réelle : les parties qui ne dépendent pas d'un bureau (locale -a, grep de la liste) tournent ici.
+  const loc = spawnSync('bash', ['-c', 'locale -a | grep -ci "^c"'], { encoding: 'utf8' });
+  assert(loc.status === 0, 'locale -a s’exécute sur cette machine');
+  for (const [req, attendu, plat] of [['localectl set-keymap', 'linux-clavier-changer', 'Linux'], ['clavier qwerty azerty linux', 'linux-clavier-changer', 'Linux'], ['gsettings input-sources', 'linux-clavier-session', 'Linux'], ['locale-gen', 'linux-langue-systeme', 'Linux'], ['alt shift clavier', 'win-clavier-raccourci', 'Windows'], ['set-winuserlanguagelist', 'win-clavier-fixer', 'Windows'], ['set-culture', 'win-region-format', 'Windows'], ['clavier change tout seul', 'win-langue-voir', 'Windows']]) {
+    const res = T.chercher(req, { plateforme: plat }); const ids = (res.resultats ?? res).map((x) => x.entree?.id ?? x.id);
+    assert(ids.slice(0, 6).includes(attendu), `recherche « ${req} » : ${attendu}`, ids.slice(0, 6).join());
+  }
 }
 
 console.log('5. Contre-épreuves');

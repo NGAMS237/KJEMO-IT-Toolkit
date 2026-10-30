@@ -51,6 +51,7 @@ export const MEMO_GROUPES = [
       { id: 'services', titre: 'Services', fiches: ['cours-service-ancien'] },
       { id: 'processus', titre: 'Processus, état et arrêt', fiches: ['cours-processus', 'cours-etat-systeme', 'cours-arret-redemarrage'] },
       { id: 'planifier', titre: 'Tâches planifiées', fiches: ['cours-planifier-taches'] },
+      { id: 'clavier', titre: 'Clavier et langue', fiches: ['linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme'] },
     ] },
   { id: 'reseau', titre: 'Réseau', icone: '🌐', couleur: '#0891b2', commandes: 'ip, ping, netplan',
     resume: 'Adresse et carte réseau d’un poste.',
@@ -89,6 +90,7 @@ export const MEMO_GROUPES = [
       { id: 'infos', titre: 'Informations sur le poste', fiches: ['win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat'] },
       { id: 'processus', titre: 'Processus, arrêt et sessions', fiches: ['win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer'] },
       { id: 'reglages', titre: 'Tâches, variables et accès à distance', fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser'] },
+      { id: 'langue', titre: 'Clavier, langue et format régional', fiches: ['win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format'] },
     ] },
   { id: 'win-fichiers', titre: 'Disque, fichiers et logiciels', icone: '📂', couleur: '#a16207', commandes: 'robocopy, Get-FileHash, takeown, winget',
     resume: 'Vérifier un disque, copier, chercher, compresser, reprendre un dossier, installer et mettre à jour des logiciels.',
@@ -212,7 +214,7 @@ export const AJOUTS = Object.fromEntries([
 ).concat(
   ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier', 'cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee', 'cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-service-stockage', 'cours-az-point-prive-stockage', 'cours-az-lb-creer', 'cours-az-lb-etat'].map((id) => [id, '2026-10-28']),
   ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
-  ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe'].map((id) => [id, '2026-10-31']),
+  ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe', 'linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme', 'win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format'].map((id) => [id, '2026-10-31']),
 ));
 
 const JOUR = 86400000;
