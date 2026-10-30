@@ -30,6 +30,7 @@ const { PROCEDURES_COURS } = await imp('procedures-cours.mjs');
 const FAUX = `#!/bin/bash
 D="$FAKE_DIR"
 echo "$*" >> "$D/calls.log"
+[ -n "$FAKE_GOURMAND" ] && cat > /dev/null
 case "$1 $2" in
   "user list") cat "$D/users"; exit 0 ;;
   "group list") cat "$D/groups"; exit 0 ;;
@@ -59,13 +60,13 @@ function banc(scriptSamba) {
   writeFileSync(join(bin, 'samba-tool'), FAUX); chmodSync(join(bin, 'samba-tool'), 0o755);
   writeFileSync(join(racine, 'menu.sh'), scriptSamba); chmodSync(join(racine, 'menu.sh'), 0o755);
   let n = 0;
-  const lancer = (touches, { csv = null, users = '', groupes = '', fail = '' } = {}) => {
+  const lancer = (touches, { csv = null, users = '', groupes = '', fail = '', gourmand = '' } = {}) => {
     const dir = join(racine, 'run' + (++n)); mkdirSync(dir);
     writeFileSync(join(dir, 'users'), 'Administrator\nGuest\n' + users);
     writeFileSync(join(dir, 'groups'), 'Domain Admins\n' + groupes);
     if (csv !== null) writeFileSync(join(dir, 'c.csv'), csv);
     const r = spawnSync('bash', [join(racine, 'menu.sh')], { cwd: dir, input: touches, encoding: 'utf8', timeout: 20000,
-      env: { PATH: `${bin}:${process.env.PATH}`, HOME: dir, TERM: 'xterm', FAKE_DIR: dir, FAKE_FAIL: fail, LC_ALL: 'C.UTF-8' } });
+      env: { PATH: `${bin}:${process.env.PATH}`, HOME: dir, TERM: 'xterm', FAKE_DIR: dir, FAKE_FAIL: fail, FAKE_GOURMAND: gourmand, LC_ALL: 'C.UTF-8' } });
     const lire = (f) => { try { return readFileSync(join(dir, f), 'utf8'); } catch { return ''; } };
     return { sortie: nettoie(r.stdout + r.stderr), code: r.status, users: lire('users'), groups: lire('groups'), calls: lire('calls.log'), membres: (g) => lire('m_' + g) };
   };
@@ -100,7 +101,15 @@ function banc(scriptSamba) {
   t(r.sortie.includes('ÉCHEC : chef_fin') && !r.membres('Finance').includes('chef_fin') && !/Charlie3/.test(r.sortie), 'création refusée : pas d’ajout au groupe, mot de passe masqué');
   r = lancer('1\nc.csv\n\n5\n', { csv: CSV, fail: 'group addmembers chef_vm' });
   t(r.sortie.includes('n\'a pas pu être ajouté au groupe Ventes'), 'ajout au groupe refusé : signalé');
-  // CRLF : limite connue, dite (le mot de passe garderait un \r) — le CSV doit venir de nano sur la VM
+  // une commande qui lit le clavier ne doit pas avaler le reste du CSV
+  r = lancer('1\nc.csv\n\n5\n', { csv: CSV, gourmand: '1' });
+  t(['chef_vm', 'emp_vm', 'chef_fin'].every((u) => r.users.includes(u)), 'samba-tool qui lit l’entrée standard : les trois comptes sont quand même créés');
+  // fins de ligne Windows et dernière ligne sans retour à la ligne
+  r = lancer('1\nc.csv\n\n5\n', { csv: CSV.replace(/\n/g, '\r\n').replace(/\r\n$/, '') });
+  t(['chef_vm', 'emp_vm', 'chef_fin'].every((u) => r.users.includes(u)) && !r.calls.includes('\r') && !r.calls.includes('Finance\r'), 'CRLF et dernière ligne sans retour à la ligne : trois comptes créés, sans \\r');
+  // la raison de l’échec est affichée, sans le mot de passe
+  r = lancer('1\nc.csv\n\n5\n', { csv: CSV, fail: 'user create chef_fin' });
+  t(r.sortie.includes('ERROR: complexite') && !/Charlie3/.test(r.sortie), 'échec de création : la raison de samba-tool est affichée, mot de passe masqué');
   return { ok, ko };
 }
 
@@ -145,8 +154,10 @@ const MUTATIONS = [
   ['en-tête non sautée', muter('if [ "$login" = "login" ]; then', 'if [ "$login" = "zzz" ]; then')],
   ['mot de passe FICTIF accepté', muter('FICTIF-*)', 'ZZZZ-*)')],
   ['fichier absent non testé', muter('if [ ! -f "$csv" ]; then', 'if false; then')],
-  ['échec de création ignoré', muter('      continue\n    fi\n    if samba-tool group addmembers', '      echo "Compte créé : $login"\n    fi\n    if samba-tool group addmembers')],
-  ['mot de passe affiché', muter('samba-tool user create "$login" "$mdp" > /dev/null 2>&1', 'samba-tool user create "$login" "$mdp"')],
+  ['échec de création ignoré', muter('      continue\n    fi\n    if erreur=$(samba-tool group addmembers', '      echo "Compte créé : $login"\n    fi\n    if erreur=$(samba-tool group addmembers')],
+  ['mot de passe affiché', muter('${erreur//"$mdp"/***}', '${erreur}')],
+  ['entrée standard non protégée', muter('read -r -u 3 login', 'read -r login').replace('done 3< "$csv"', 'done < "$csv"').replace(/ < \/dev\/null\)/g, ')')],
+  ['fins de ligne Windows non gérées', muter('    dept=${dept%$\'\\r\'}\n', '')],
   ['département non validé', muter('if [ -z "$dept" ]; then', 'if false; then')],
 ];
 for (const [nom, script] of MUTATIONS) {
