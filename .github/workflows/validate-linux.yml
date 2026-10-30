@@ -600,6 +600,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/windows-simples.test.mjs
 
+      - name: Commandes texte Linux (sed, CSV, fins de ligne)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/linux-simples.test.mjs
+
       - name: Aide-memoire - groupes, filtres calcules, routes, contre-epreuves, marquage des portes
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/memo.test.mjs

@@ -36,6 +36,7 @@ export const MEMO_GROUPES = [
     sous: [
       { id: 'lire', titre: 'Lire et afficher', fiches: ['cours-lire-fichiers', 'cours-afficher-texte'] },
       { id: 'filtrer', titre: 'Chercher, comparer, enchaîner', fiches: ['cours-grep-wc', 'cours-comparer-trier', 'cours-redirections-tubes'] },
+      { id: 'modifier', titre: 'Modifier, corriger, vérifier un fichier', fiches: ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows'] },
     ] },
   { id: 'comptes', titre: 'Comptes et droits', icone: '👤', couleur: '#db2777', commandes: 'useradd, chmod, chown',
     resume: 'Comptes et groupes locaux, sessions ouvertes, droits d’un dossier.',
@@ -210,6 +211,7 @@ export const AJOUTS = Object.fromEntries([
 ).concat(
   ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier', 'cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee', 'cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-service-stockage', 'cours-az-point-prive-stockage', 'cours-az-lb-creer', 'cours-az-lb-etat'].map((id) => [id, '2026-10-28']),
   ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
+  ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows'].map((id) => [id, '2026-10-31']),
 ));
 
 const JOUR = 86400000;

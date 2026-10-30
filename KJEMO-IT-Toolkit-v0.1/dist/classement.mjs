@@ -144,7 +144,7 @@ export const ARBRE = {
       F('archives', 'Archiver et compresser', { fiches: ['cours-archives', 'cours-gzip-fichier'] }),
       F('localiser', 'Trouver une commande ou un fichier', { fiches: ['cours-trouver-commande'] }),
     ] }),
-    F('texte', 'Lire, chercher et filtrer du texte', { fiches: ['cours-lire-fichiers', 'cours-grep-wc', 'cours-find-fichiers', 'cours-redirections-tubes', 'cours-comparer-trier'] }),
+    F('texte', 'Lire, chercher et filtrer du texte', { fiches: ['cours-lire-fichiers', 'cours-grep-wc', 'cours-find-fichiers', 'cours-redirections-tubes', 'cours-comparer-trier', 'linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows'] }),
     F('services', 'Services, paquets et heure', { sujets: [
       F('systemd', 'Services systemd', { hotes: ['systemd-service-diagnostic', 'systemd-service-control'], fiches: ['cours-service-ancien'] }),
       F('processus', 'Processus, état du système et arrêt', { fiches: ['cours-processus', 'cours-etat-systeme', 'cours-arret-redemarrage'] }),
