@@ -1,3 +1,7 @@
+## CHOIX-LISTE-01 (2026-10-31)
+- Les paramètres « choix » (disposition de clavier, langue, région Azure, masque, rôle…) s’affichent en liste déroulante au lieu d’un champ à taper. Un paramètre peut porter des libellés lisibles (QWERTY, AZERTY, QWERTZ) : la valeur technique reste celle qui est validée et copiée.
+- Clavier : ajout de l’allemand et de l’espagnol, retrait du britannique (nom différent à la console). Testé : test/browser-choix.test.mjs.
+
 ## CLAVIER-01 (2026-10-31)
 - 8 fiches : Linux (voir la disposition, fixer avec localectl, régler la session GNOME/setxkbmap, changer la langue du système) et Windows (voir langues et claviers, garder une seule langue, désactiver Alt+Maj, régler le format régional).
 - Causes ciblées d’un clavier qui change tout seul : plusieurs dispositions installées, raccourci de basculement, réglage de session qui prend le dessus, écran de connexion distinct, langue transmise par SSH.

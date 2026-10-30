@@ -399,6 +399,19 @@ function vuePasMarkup(procedure, methode, rendu, ctx) {
 
 function champMarkup(p, saisies) {
   const id = `p-${p.id}`;
+  // Valeur parmi une liste fermée : liste déroulante. `libelles` (facultatif) donne un nom lisible
+  // à chaque valeur ; la valeur technique reste celle qui est validée et copiée.
+  if (p.type === 'choix') {
+    const courant = String(saisies[p.id] ?? '');
+    const options = `<option value=""${courant === '' ? ' selected' : ''}>— Choisir —</option>`
+      + (p.choix ?? []).map((c) => `<option value="${esc(c)}"${c === courant ? ' selected' : ''}>${esc(p.libelles?.[c] ?? c)}</option>`).join('');
+    return `<div class="param">`
+      + `<label for="${id}">${esc(p.label.charAt(0).toUpperCase() + p.label.slice(1))}</label>`
+      + `<select id="${id}" name="${esc(p.id)}" data-param="${esc(p.id)}" aria-describedby="${id}-aide ${id}-err">${options}</select>`
+      + `<p class="param-aide" id="${id}-aide">${esc(p.aide ?? '')}</p>`
+      + `<p class="param-err" id="${id}-err" role="alert"></p>`
+      + `</div>`;
+  }
   return `<div class="param">`
     + `<label for="${id}">${esc(p.label.charAt(0).toUpperCase() + p.label.slice(1))}</label>`
     + `<input id="${id}" name="${esc(p.id)}" data-param="${esc(p.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" `

@@ -192,8 +192,8 @@ export const PROCEDURES_LINUX_COMPTES = [
 // ===========================================================================
 const SUDO = 'Utilisateur ordinaire autorisé à utiliser sudo.';
 const LECTURE = 'Aucun privilège particulier : utilisateur ordinaire.';
-const LOCALE = { id: 'langue', label: 'langue du système', type: 'choix', choix: ['fr_CA.UTF-8', 'en_CA.UTF-8', 'fr_FR.UTF-8', 'en_US.UTF-8'], exemple: 'fr_CA.UTF-8', aide: 'fr_CA : français du Canada. Le suffixe .UTF-8 est obligatoire.' };
-const DISPOSITION = { id: 'disposition', label: 'disposition du clavier', type: 'choix', choix: ['ca', 'us', 'fr', 'gb', 'de'], exemple: 'ca', aide: 'ca : clavier canadien (français ou multilingue), us : américain, fr : AZERTY français.' };
+const LOCALE = { id: 'langue', label: 'langue du système', type: 'choix', choix: ['fr_CA.UTF-8', 'en_CA.UTF-8', 'fr_FR.UTF-8', 'en_US.UTF-8'], libelles: { 'fr_CA.UTF-8': 'Français (Canada)', 'en_CA.UTF-8': 'Anglais (Canada)', 'fr_FR.UTF-8': 'Français (France)', 'en_US.UTF-8': 'Anglais (États-Unis)' }, exemple: 'fr_CA.UTF-8', aide: 'fr_CA : français du Canada. Le suffixe .UTF-8 est obligatoire.' };
+const DISPOSITION = { id: 'disposition', label: 'disposition du clavier', type: 'choix', choix: ['ca', 'us', 'fr', 'de', 'es'], libelles: { ca: 'Canadien (ca) : QWERTY canadien français ou multilingue', us: 'Américain (us) : QWERTY', fr: 'Français (fr) : AZERTY', de: 'Allemand (de) : QWERTZ', es: 'Espagnol (es) : QWERTY' }, exemple: 'ca', aide: 'QWERTY, AZERTY et QWERTZ désignent la disposition des lettres. Au Québec, choisis « Canadien ».' };
 const LOC = 'https://www.freedesktop.org/software/systemd/man/latest';
 
 export const PROCEDURES_LINUX_CLAVIER = [
@@ -218,7 +218,7 @@ export const PROCEDURES_LINUX_CLAVIER = [
     motsCles: ['clavier', 'localectl', 'set-keymap', 'set-x11-keymap', 'disposition', 'ca', 'etc default keyboard'],
     params: [DISPOSITION],
     etapes: [
-      lec('Voir les dispositions disponibles', 'Vérifie que le nom existe avant de l’appliquer (la console et la session graphique n’utilisent pas toujours les mêmes noms).', [sh('localectl list-keymaps | grep -x {{disposition}}'), sh('localectl list-x11-keymap-layouts | grep -x {{disposition}}')], 'Le nom apparaît dans chaque liste. Rien : choisis une autre disposition.'),
+      lec('Voir les dispositions disponibles', 'Vérifie que le nom existe avant de l’appliquer (la console et la session graphique n’utilisent pas toujours les mêmes noms).', [sh('localectl list-keymaps | grep -x {{disposition}}'), sh('localectl list-x11-keymap-layouts | grep -x {{disposition}}')], 'Le nom apparaît dans la liste de la session graphique. La console peut nommer le clavier canadien « cf » : si rien ne sort de la première commande pour « ca », lance localectl list-keymaps | grep -E \'^(ca|cf)\' et utilise le nom trouvé avec set-keymap.'),
       mod('Fixer la disposition de la console', 'Écrit la disposition de la console texte (celle de la machine virtuelle ou du serveur sans écran graphique).', [sh('sudo localectl set-keymap {{disposition}}')], 'Aucun message en cas de succès.'),
       mod('Fixer la disposition de la session graphique', 'Écrit la disposition du serveur graphique. Une seule valeur remplace une liste « us,ca ».', [sh('sudo localectl set-x11-keymap {{disposition}}')], 'Aucun message en cas de succès.', { important: 'Une session graphique déjà ouverte garde l’ancienne disposition jusqu’à la fermeture de session. Un réglage personnel du bureau peut aussi l’emporter : voir la fiche sur la session graphique.' }),
       lec('Vérifier', 'Les deux lignes doivent afficher la nouvelle disposition, sans virgule.', [sh('localectl status')], 'VC Keymap et X11 Layout égaux à la disposition choisie.', { verification: true }),

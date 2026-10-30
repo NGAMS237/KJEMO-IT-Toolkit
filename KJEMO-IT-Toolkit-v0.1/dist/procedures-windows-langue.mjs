@@ -9,7 +9,7 @@
 import { fiche, ps, lec, mod, src, USER, ADMIN } from './procedures-windows-simples.mjs';
 
 const INTL = '/powershell/module/international';
-const LANGUE = { id: 'langue', label: 'langue et clavier à garder', type: 'choix', choix: ['fr-CA', 'en-CA', 'en-US', 'fr-FR'], exemple: 'fr-CA', aide: 'fr-CA : français du Canada, en-US : anglais des États-Unis, fr-FR : français de France.' };
+const LANGUE = { id: 'langue', label: 'langue et clavier à garder', type: 'choix', choix: ['fr-CA', 'en-CA', 'en-US', 'fr-FR'], libelles: { 'fr-CA': 'Français (Canada)', 'en-CA': 'Anglais (Canada)', 'en-US': 'Anglais (États-Unis)', 'fr-FR': 'Français (France)' }, exemple: 'fr-CA', aide: 'fr-CA : français du Canada, en-US : anglais des États-Unis, fr-FR : français de France.' };
 
 export const PROCEDURES_WINDOWS_LANGUE = [
   fiche({
