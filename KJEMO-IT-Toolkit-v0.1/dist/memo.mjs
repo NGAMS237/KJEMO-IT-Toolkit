@@ -54,6 +54,7 @@ export const MEMO_GROUPES = [
     resume: 'Adresse et carte réseau d’un poste.',
     sous: [
       { id: 'poste', titre: 'Carte réseau d’un poste', fiches: ['cours-ubuntu-reseau-client', 'cours-ifconfig-ancien'] },
+      { id: 'tester', titre: 'Tester et résoudre un nom (Windows et Linux)', fiches: ['tester-ping', 'resoudre-nom-dns', 'vider-cache-dns'] },
     ] },
   { id: 'stockage', titre: 'Disques, RAID, quotas', icone: '💽', couleur: '#65a30d', commandes: 'fdisk, mdadm, edquota',
     resume: 'Ajouter un disque, partitionner, monter, limiter, mettre en miroir.',
@@ -76,19 +77,36 @@ export const MEMO_GROUPES = [
     sous: [
       { id: 'services', titre: 'Services et journaux', fiches: ['windows-etat-service', 'redemarrer-service-windows', 'journal-evenements-windows'] },
       { id: 'reparer', titre: 'Réparer et surveiller', fiches: ['reparer-fichiers-systeme', 'espace-disque-windows'] },
-      { id: 'locaux', titre: 'Comptes locaux', fiches: ['win-local-voir-comptes', 'win-local-creer-utilisateur'] },
+      { id: 'caches', titre: 'Vider les caches', fiches: ['win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-cache-arp', 'win-cache-netbios'] },
+      { id: 'locaux', titre: 'Comptes locaux', fiches: ['win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] },
       { id: 'imprimantes', titre: 'Imprimantes', fiches: ['imprimantes-inventaire-windows', 'imprimante-file-bloquee'] },
+    ] },
+  { id: 'win-systeme', titre: 'Système, processus et arrêt', icone: '🧰', couleur: '#0f766e', commandes: 'systeminfo, Get-Process, shutdown, schtasks',
+    resume: 'Informations sur le poste, processus, arrêt et sessions, tâches planifiées, variables, Bureau à distance et heure.',
+    sous: [
+      { id: 'infos', titre: 'Informations sur le poste', fiches: ['win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat'] },
+      { id: 'processus', titre: 'Processus, arrêt et sessions', fiches: ['win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer'] },
+      { id: 'reglages', titre: 'Tâches, variables et accès à distance', fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser'] },
+    ] },
+  { id: 'win-fichiers', titre: 'Disque, fichiers et logiciels', icone: '📂', couleur: '#a16207', commandes: 'robocopy, Get-FileHash, takeown, winget',
+    resume: 'Vérifier un disque, copier, chercher, compresser, reprendre un dossier, installer et mettre à jour des logiciels.',
+    sous: [
+      { id: 'fichiers', titre: 'Disque, fichiers, archives et droits', fiches: ['win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession'] },
+      { id: 'logiciels', titre: 'Logiciels et correctifs', fiches: ['win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes'] },
     ] },
   { id: 'win-reseau', titre: 'Réseau Windows', icone: '🛜', couleur: '#0369a1', commandes: 'ipconfig, Test-NetConnection, netstat',
     resume: 'Voir et fixer l’adresse IP, renouveler le bail DHCP, tester un port, voir les ports en écoute.',
     sous: [
-      { id: 'adresse', titre: 'Adresse IP', fiches: ['windows-voir-ip', 'windows-ip-fixe', 'renouveler-bail-dhcp'] },
-      { id: 'tester', titre: 'Tester et diagnostiquer', fiches: ['tester-port-tcp', 'windows-ports-ecoute', 'scenario-windows-diagnostic-reseau'] },
+      { id: 'adresse', titre: 'Adresse IP', fiches: ['windows-voir-ip', 'win-ipconfig-complet', 'windows-ip-fixe', 'renouveler-bail-dhcp', 'win-ip-liberer', 'win-wifi-profils'] },
+      { id: 'tester', titre: 'Tester et diagnostiquer', fiches: ['tester-port-tcp', 'win-tracert', 'win-pathping', 'windows-ports-ecoute', 'scenario-windows-diagnostic-reseau'] },
+      { id: 'tables', titre: 'Routes et voisins', fiches: ['win-route-voir', 'win-arp-voir'] },
+      { id: 'pare-feu', titre: 'Pare-feu', fiches: ['win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port'] },
+      { id: 'reparer', titre: 'Réparer la pile réseau', fiches: ['win-winsock-reinit'] },
     ] },
   { id: 'win-ad', titre: 'Active Directory', icone: '🏛', couleur: '#6d28d9', commandes: 'New-ADUser, New-ADOrganizationalUnit, Add-Computer',
     resume: 'Voir et créer des OU, des comptes et des groupes ; dépanner un compte ; joindre un poste au domaine.',
     sous: [
-      { id: 'lire', titre: 'Voir le domaine', fiches: ['win-ad-voir-ou', 'win-ad-voir-utilisateurs'] },
+      { id: 'lire', titre: 'Voir le domaine', fiches: ['win-ad-voir-ou', 'win-ad-voir-utilisateurs', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'] },
       { id: 'creer', titre: 'Créer OU, comptes et groupes', fiches: ['win-ad-creer-ou', 'win-ad-creer-utilisateur', 'win-ad-creer-groupe', 'win-ad-ajouter-membre'] },
       { id: 'comptes', titre: 'Dépanner et gérer un compte', fiches: ['ad-debloquer-compte', 'win-ad-reinit-mot-de-passe', 'win-ad-desactiver-compte', 'win-ad-deplacer-objet'] },
       { id: 'domaine', titre: 'Poste et domaine', fiches: ['win-ad-joindre-domaine', 'ad-etat-replication'] },
@@ -191,6 +209,7 @@ export const AJOUTS = Object.fromEntries([
   ['win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-ad-voir-ou', 'win-ad-voir-utilisateurs', 'win-ad-creer-ou', 'win-ad-creer-utilisateur', 'win-ad-creer-groupe', 'win-ad-ajouter-membre', 'win-ad-reinit-mot-de-passe', 'win-ad-desactiver-compte', 'win-ad-deplacer-objet', 'win-ad-joindre-domaine', 'win-gpo-lister', 'win-gpo-resultat', 'win-gpo-creer-lier', 'win-dhcp-installer', 'win-dhcp-etendue', 'win-dhcp-reservation', 'win-dhcp-baux', 'win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a', 'win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'].map((id) => [id, '2026-10-28']),
 ).concat(
   ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier', 'cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee', 'cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-service-stockage', 'cours-az-point-prive-stockage', 'cours-az-lb-creer', 'cours-az-lb-etat'].map((id) => [id, '2026-10-28']),
+  ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
 ));
 
 const JOUR = 86400000;

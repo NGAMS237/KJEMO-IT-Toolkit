@@ -596,6 +596,10 @@ jobs:
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/azure-cours.test.mjs
 
+      - name: Commandes courantes Windows (55 fiches)
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/windows-simples.test.mjs
+
       - name: Aide-memoire - groupes, filtres calcules, routes, contre-epreuves, marquage des portes
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/memo.test.mjs
@@ -708,6 +712,10 @@ jobs:
       - name: Navigateur - cours Azure
         working-directory: KJEMO-IT-Toolkit-v0.1
         run: node test/browser-azure-cours.test.mjs
+
+      - name: Navigateur - commandes courantes Windows
+        working-directory: KJEMO-IT-Toolkit-v0.1
+        run: node test/browser-windows-simples.test.mjs
 
       - name: Navigateur LOT 7 - categories, 46 routes, recherche, favoris, clavier, 390 px
         working-directory: KJEMO-IT-Toolkit-v0.1

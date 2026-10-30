@@ -56,7 +56,7 @@ const ca = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Azure'
 ok(cw >= 45 && cl > 0 && cc === 26 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
 // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
 const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
-ok(gw.length === 5, `5 groupes Windows attendus, ${gw.length}`);
+ok(gw.length === 7, `7 groupes Windows attendus, ${gw.length}`);
 for (const g of gw) {
   ok(M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }) === M.fichesDuGroupe(g).length, `${g.id} : toutes les fiches sont Windows`);
   ok(M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }) === 0 && M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }) === 0, `${g.id} : aucune fiche Linux ni Cisco (groupe grisé hors Windows)`);
@@ -99,7 +99,7 @@ ok(V.retourMemoFicheMarkup(g0).includes('id="retourMemo"'), 'retour de fiche');
   const masques = (w.match(/class="groupe-masque"/g) ?? []).length;
   const actifs = (w.match(/<details class="groupe-bloc"/g) ?? []).length;
   ok(masques + actifs === M.MEMO_GROUPES.length, `Windows : ${actifs} groupes actifs + ${masques} nommés dans la ligne = ${M.MEMO_GROUPES.length} (rien n’est retiré sans explication)`);
-  ok(M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-')).every((g) => w.includes(`<details class="groupe-bloc" style="--gc:${g.couleur}" data-groupe="${g.id}"`)), 'Windows : les 5 groupes Windows sont dépliables');
+  ok(M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-')).every((g) => w.includes(`<details class="groupe-bloc" style="--gc:${g.couleur}" data-groupe="${g.id}"`)), 'Windows : les 7 groupes Windows sont dépliables');
   const az = mk('Azure');
   const azA = (az.match(/<details class="groupe-bloc"/g) ?? []).length; const azM = (az.match(/class="groupe-masque"/g) ?? []).length;
 ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'].every((id) => az.includes(`data-groupe="${id}"`)), `Azure : ${azA} groupes actifs (dont les 4 groupes Azure) + ${azM} nommés dans la ligne`);

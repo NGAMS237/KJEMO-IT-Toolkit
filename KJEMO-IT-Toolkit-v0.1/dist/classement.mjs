@@ -84,6 +84,13 @@ export const ARBRE = {
     F('securite', 'Sécurité', { sub: ['Sécurité'] }),
     F('reparation', 'Réparation Windows', { sub: ['Réparation Windows'] }),
     F('stockage', 'Stockage et nettoyage', { sub: ['Stockage et nettoyage'] }),
+    F('caches', 'Vider les caches', { fiches: ['win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger'] }),
+    F('systeme', 'Informations sur le poste', { fiches: ['win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat'] }),
+    F('processus', 'Processus, arrêt et sessions', { fiches: ['win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer'] }),
+    F('fichiers', 'Fichiers, archives et droits', { fiches: ['win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession'] }),
+    F('logiciels', 'Logiciels et correctifs (en commande)', { fiches: ['win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes'] }),
+    F('reglages', 'Tâches, variables et accès à distance', { fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser'] }),
+    F('comptes-locaux', 'Comptes locaux (en commande)', { fiches: ['win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] }),
   ],
   'analyse-disques': [
     F('occupation', 'Occupation de l’espace', { sub: ['Occupation de l’espace'] }),
@@ -102,6 +109,7 @@ export const ARBRE = {
     F('maintenance', 'Maintenance des objets', { sub: ['Maintenance des objets'] }),
     F('rsat', 'Outils d’administration à distance (RSAT)', { fiches: ['cours-rsat-windows'] }),
     F('session-domaine', 'Ouvrir une session de domaine (poste Windows)', { fiches: ['cours-windows-connexion-domaine'] }),
+    F('consultation', 'Consulter le domaine (en commande)', { fiches: ['win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'] }),
   ],
   gpo: [
     F('diagnostic', 'Diagnostic et inventaire', { sub: ['Diagnostic et inventaire'] }),
@@ -119,6 +127,7 @@ export const ARBRE = {
     F('acces', 'Accès aux ressources', { sub: ['Accès aux ressources'] }),
     F('wifi', 'Wi-Fi et VPN', { sub: ['Wi-Fi et VPN'] }),
     F('calculs', 'Calculs réseau', { sub: ['Calculs réseau'] }),
+    F('poste-windows', 'Outils réseau du poste Windows', { fiches: ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port'] }),
   ],
   imprimantes: [
     F('diagnostic', 'Diagnostic et inventaire', { sub: ['Inventaire et diagnostic Windows'] }),

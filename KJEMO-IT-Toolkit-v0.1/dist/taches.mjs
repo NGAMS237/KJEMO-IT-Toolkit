@@ -27,6 +27,9 @@ import { PROCEDURES_VAGUE2 } from './procedures-vague2.mjs';
 import { PROCEDURES_VAGUE3 } from './procedures-vague3.mjs';
 import { PROCEDURES_COURS } from './procedures-cours.mjs';
 import { PROCEDURES_WINDOWS } from './procedures-windows.mjs';
+import { PROCEDURES_WINDOWS_SIMPLES } from './procedures-windows-simples.mjs';
+import { PROCEDURES_WINDOWS_POSTE } from './procedures-windows-poste.mjs';
+import { PROCEDURES_WINDOWS_AD } from './procedures-windows-ad-simples.mjs';
 import { aliasesDe } from './cours.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { CATEGORIES } from './categories.mjs';
@@ -339,7 +342,7 @@ function entreeAssistant(t) {
 // ---------------------------------------------------------------------------
 
 /** Toutes les fiches rédigées à la main, pilotes puis seconde vague. */
-export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...PROCEDURES_WINDOWS, ...SCENARIOS];
+export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...SCENARIOS];
 const procedures = PROCEDURES_REDIGEES.map(entreeProcedure);
 const commandes = COMMANDES_RAPIDES.map(entreeCommande);
 const assistants = tools.map(entreeAssistant);

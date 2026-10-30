@@ -85,6 +85,8 @@
     "test:windows-fiches": "node test/windows-fiches.test.mjs",
     "test:cisco-reseau": "node test/cisco-reseau.test.mjs",
     "test:azure-cours": "node test/azure-cours.test.mjs",
+    "test:windows-simples": "node test/windows-simples.test.mjs",
+    "test:browser:windows-simples": "node test/browser-windows-simples.test.mjs",
     "test:browser:azure-cours": "node test/browser-azure-cours.test.mjs",
     "test:browser:cisco-s07": "node test/browser-cisco-s07.test.mjs",
     "test:browser:cisco-reseau": "node test/browser-cisco-reseau.test.mjs",
