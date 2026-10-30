@@ -106,3 +106,83 @@ export const PROCEDURES_LINUX_SIMPLES = [
     sources: [{ label: 'sed (manuel GNU)', url: SED }, { label: 'file(1)', url: `${MAN}/man1/file.1.html` }],
   }),
 ];
+
+const COMPTE = { id: 'compte', label: 'nom du compte', type: 'identifiant', exemple: 'christian_chef', aide: 'Le nom de connexion, sans espace.' };
+const GROUPE = { id: 'groupe', label: 'nom du groupe', type: 'identifiant', exemple: 'users', aide: 'Le nom du groupe, sans espace.' };
+const ADMIN = 'Administrateur : sudo.';
+
+export const PROCEDURES_LINUX_COMPTES = [
+  fiche({
+    id: 'linux-comptes-locaux-lister', titre: 'Lister les comptes locaux et voir le détail d’un compte', effet: 'lecture',
+    resume: 'Affiche les comptes de personnes de la machine (UID 1000 et plus) avec leur dossier personnel et leur interpréteur, puis le détail d’un compte et l’état de son mot de passe. Le mot de passe lui-même n’est jamais lisible : seule une empreinte est stockée.',
+    intentions: ['lister les comptes locaux linux', 'getent passwd', 'voir tous les utilisateurs de la machine', 'cat /etc/passwd lisible', 'quels comptes existent sur ce serveur'],
+    motsCles: ['comptes', 'utilisateurs', 'getent', 'passwd', 'uid', 'liste', 'local', 'mot de passe'],
+    params: [COMPTE],
+    etapes: [
+      lec('Lister les comptes de personnes', 'getent passwd lit la base des comptes (fichier et domaine si configuré). awk garde les UID de 1000 à 59999 : les comptes créés par un administrateur, sans les comptes système.', [sh('getent passwd | awk -F: \'$3 >= 1000 && $3 < 60000 {print $1, $3, $6, $7}\'')], 'Une ligne par compte : nom, UID, dossier personnel, interpréteur. Aucune ligne : aucun compte de personne n’existe.'),
+      lec('Voir le détail d’un compte', 'Les sept champs séparés par « : » : nom, x (le mot de passe est ailleurs), UID, GID du groupe principal, description, dossier personnel, interpréteur.', [sh('getent passwd {{compte}}'), sh('id {{compte}}')], 'Une ligne getent et une ligne id avec les groupes. Aucune sortie : le compte n’existe pas.'),
+      lec('Voir l’état du mot de passe', 'Le deuxième champ indique P (mot de passe défini), L (compte verrouillé) ou NP (aucun mot de passe), puis la date du dernier changement. Le mot de passe en clair n’existe nulle part.', [sh('sudo passwd -S {{compte}}')], 'Par exemple « christian_chef P 10/17/2026 0 99999 7 -1 ».', { verification: true }),
+    ],
+    verification: ['Le compte attendu figure dans la liste et son état de mot de passe est P.'],
+    sources: [{ label: 'getent(1)', url: `${MAN}/man1/getent.1.html` }, { label: 'passwd(1)', url: `${MAN}/man1/passwd.1.html` }, { label: 'id(1)', url: `${MAN}/man1/id.1.html` }],
+  }),
+  fiche({
+    id: 'linux-groupes-locaux-lister', titre: 'Lister les groupes locaux et leurs membres', effet: 'lecture',
+    resume: 'Affiche les groupes créés sur la machine avec leurs membres, le détail d’un groupe et les groupes d’un compte. Lecture seule.',
+    intentions: ['lister les groupes locaux linux', 'getent group', 'qui est membre du groupe', 'voir les membres d’un groupe linux', 'cat /etc/group lisible'],
+    motsCles: ['groupes', 'getent', 'group', 'membres', 'gid', 'liste', 'local'],
+    params: [GROUPE, COMPTE],
+    etapes: [
+      lec('Lister les groupes de personnes', 'Les groupes dont le GID est de 1000 à 59999, avec leurs membres supplémentaires (le groupe principal d’un compte n’y apparaît pas toujours).', [sh('getent group | awk -F: \'$3 >= 1000 && $3 < 60000 {print $1, $3, $4}\'')], 'Une ligne par groupe : nom, GID, membres séparés par des virgules.'),
+      lec('Voir un groupe', 'Le nom, le GID et la liste des membres.', [sh('getent group {{groupe}}')], 'Une ligne « groupe:x:GID:membre1,membre2 ». Aucune sortie : le groupe n’existe pas.'),
+      lec('Voir les groupes d’un compte', 'Le groupe principal est le premier ; les autres suivent.', [sh('id {{compte}}'), sh('groups {{compte}}')], 'uid=…, gid=… et la liste complète des groupes.', { verification: true }),
+    ],
+    verification: ['Le groupe et ses membres attendus apparaissent.'],
+    sources: [{ label: 'getent(1)', url: `${MAN}/man1/getent.1.html` }, { label: 'id(1)', url: `${MAN}/man1/id.1.html` }, { label: 'groups(1)', url: `${MAN}/man1/groups.1.html` }],
+  }),
+  fiche({
+    id: 'linux-mot-de-passe-local', titre: 'Changer le mot de passe d’un compte local', effet: 'modification',
+    resume: 'Définit un nouveau mot de passe pour un compte local avec passwd. Le mot de passe est demandé à l’invite (saisie masquée) : il n’apparaît ni à l’écran ni dans l’historique. Un mot de passe oublié se remplace, il ne se retrouve pas.',
+    intentions: ['changer le mot de passe d’un compte linux', 'passwd compte', 'mot de passe linux oublié', 'réinitialiser le mot de passe d’un utilisateur local', 'forcer le changement de mot de passe à la connexion'],
+    motsCles: ['passwd', 'mot de passe', 'compte local', 'réinitialiser', 'chage', 'expiration'],
+    params: [COMPTE],
+    etapes: [
+      lec('Vérifier le compte', 'Contrôle que le compte existe et lis l’état actuel de son mot de passe (P défini, L verrouillé).', [sh('getent passwd {{compte}}'), sh('sudo passwd -S {{compte}}')], 'Une ligne de compte, puis son état (par exemple « P »).'),
+      mod('Définir le nouveau mot de passe', 'passwd demande le mot de passe deux fois, sans l’afficher.', [sh('sudo passwd {{compte}}')], 'Le message « passwd : mot de passe mis à jour avec succès ».', { interactions: [{ attend: 'Nouveau mot de passe', reponds: 'Tape le mot de passe (rien ne s’affiche), Entrée, puis retape-le pour confirmer.' }], important: 'Ne tape jamais le mot de passe dans la commande elle-même (echo … | passwd) : il resterait dans l’historique.' }),
+      mod('Exiger un changement à la prochaine connexion (facultatif)', 'Pratique quand tu donnes un mot de passe provisoire à quelqu’un.', [sh('sudo passwd -e {{compte}}')], 'Le message « passwd : date d’expiration du mot de passe modifiée ».', { facultatif: true }),
+      lec('Vérifier', 'La date du dernier changement doit être celle d’aujourd’hui.', [sh('sudo passwd -S {{compte}}')], 'État P et la date du jour.', { verification: true }),
+    ],
+    verification: ['L’état est P, la date de changement est celle d’aujourd’hui, et la connexion avec le nouveau mot de passe fonctionne.'],
+    retour: 'Un mot de passe changé ne se retrouve pas : redéfinis-en un avec la même commande. sudo passwd -l COMPTE verrouille le compte, sudo passwd -u le déverrouille.',
+    sources: [{ label: 'passwd(1)', url: `${MAN}/man1/passwd.1.html` }, { label: 'getent(1)', url: `${MAN}/man1/getent.1.html` }],
+  }),
+  fiche({
+    id: 'samba-compte-voir', titre: 'Lister les comptes Samba AD et voir le détail d’un compte', effet: 'lecture',
+    resume: 'Liste les comptes du domaine Samba, puis affiche le détail d’un compte : groupes, dernier changement de mot de passe, tentatives ratées, verrouillage. Le mot de passe en clair n’est jamais stocké : on ne peut que le remplacer.',
+    intentions: ['samba-tool user show', 'voir les détails d’un compte samba', 'lister les comptes du domaine samba', 'groupes d’un compte samba ad', 'compte samba verrouillé'],
+    motsCles: ['samba-tool', 'user list', 'user show', 'compte', 'domaine', 'memberof', 'pwdlastset', 'verrouillé'],
+    params: [COMPTE],
+    etapes: [
+      lec('Lister les comptes du domaine', 'À lancer sur le contrôleur de domaine Samba.', [sh('sudo samba-tool user list')], 'Un login par ligne (Administrator, Guest, krbtgt et tes comptes).'),
+      lec('Compter les comptes', 'Pour comparer avec le nombre de lignes de ton CSV (plus les comptes par défaut).', [sh('sudo samba-tool user list | wc -l')], 'Un nombre.'),
+      lec('Voir le détail d’un compte', 'On ne garde que les lignes utiles : le groupe d’appartenance (memberOf), la date du dernier changement de mot de passe, les tentatives ratées et le verrouillage.', [sh('sudo samba-tool user show {{compte}} | grep -E \'^(sAMAccountName|memberOf|pwdLastSet|badPwdCount|lockoutTime|userAccountControl):\'')], 'sAMAccountName : le compte ; un memberOf par groupe ; badPwdCount : 0 pour un compte sain. Aucune sortie : le compte n’existe pas.', { verification: true }),
+    ],
+    verification: ['Le compte attendu figure dans la liste et appartient au bon groupe.'],
+    sources: [{ label: 'samba-tool', url: 'https://www.samba.org/samba/docs/current/man-html/samba-tool.8.html' }, { label: 'grep(1)', url: `${MAN}/man1/grep.1.html` }],
+  }),
+  fiche({
+    id: 'samba-mot-de-passe', titre: 'Changer le mot de passe d’un compte Samba AD', effet: 'modification',
+    resume: 'Définit un nouveau mot de passe pour un compte du domaine Samba. Le mot de passe est demandé à l’invite (saisie masquée). Il doit respecter la complexité du domaine : sept caractères au moins et trois types parmi majuscule, minuscule, chiffre, symbole. Un mot de passe oublié se remplace, il ne se retrouve pas (seule une empreinte est stockée).',
+    intentions: ['samba-tool user setpassword', 'changer le mot de passe d’un compte samba', 'réinitialiser le mot de passe du domaine samba', 'mot de passe refusé complexité samba', 'mdp0001 refusé samba'],
+    motsCles: ['samba-tool', 'setpassword', 'mot de passe', 'compte', 'domaine', 'complexité', 'réinitialiser'],
+    params: [COMPTE],
+    etapes: [
+      lec('Vérifier le compte', 'Contrôle que le compte existe et note la date actuelle du dernier changement.', [sh('sudo samba-tool user show {{compte}} | grep -E \'^(sAMAccountName|pwdLastSet):\'')], 'sAMAccountName et pwdLastSet. Aucune sortie : le compte n’existe pas.'),
+      mod('Définir le nouveau mot de passe', 'samba-tool demande le mot de passe deux fois, sans l’afficher. Un mot de passe trop simple (MDP0001 : majuscules et chiffres seulement) est refusé avec un message sur la complexité.', [sh('sudo samba-tool user setpassword {{compte}}')], 'Le message « Changed password OK ». Une erreur « does not meet the complexity criteria » : ajoute un type de caractère (minuscule ou symbole).', { interactions: [{ attend: 'New Password', reponds: 'Tape le mot de passe (rien ne s’affiche), Entrée, puis retape-le pour confirmer.' }], important: 'Ne mets jamais le mot de passe dans la commande (--newpassword=…) : il serait visible dans l’historique et dans la liste des processus.' }),
+      lec('Vérifier', 'pwdLastSet doit avoir changé. Teste ensuite l’ouverture de session du compte depuis un poste du domaine.', [sh('sudo samba-tool user show {{compte}} | grep -E \'^pwdLastSet:\'')], 'Une valeur pwdLastSet différente de celle de l’étape 1.', { verification: true }),
+    ],
+    verification: ['pwdLastSet a changé et le compte ouvre une session avec le nouveau mot de passe.'],
+    retour: 'Un mot de passe changé ne se retrouve pas : redéfinis-en un avec la même commande.',
+    sources: [{ label: 'samba-tool', url: 'https://www.samba.org/samba/docs/current/man-html/samba-tool.8.html' }, { label: 'grep(1)', url: `${MAN}/man1/grep.1.html` }],
+  }),
+];

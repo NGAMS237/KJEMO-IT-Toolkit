@@ -2,7 +2,7 @@
 /**
  * linux-simples.test.mjs — KJEMO-LINUX-SIMPLES-01 · KJEMO IT Toolkit
  * -------------------------------------------------------------------
- * Les 5 fiches de traitement de texte (sed, CSV, fins de ligne). Contrat, rendu, valeurs piégées
+ * Les 5 fiches de traitement de texte (sed, CSV, fins de ligne) + 5 fiches comptes/groupes/mots de passe (locaux et Samba). Contrat, rendu, valeurs piégées
  * refusées, rangement/recherche, ET exécution RÉELLE des commandes rendues dans un dossier temporaire
  * (bash, sed, awk, cut, diff, file) sur de vrais fichiers : l'effet est constaté, pas supposé.
  * NE PROUVE PAS : le comportement sur une autre version de sed/awk (testé avec celles de la machine).
@@ -16,13 +16,14 @@ import { tmpdir } from 'node:os';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const M = await imp('memo.mjs'); const C = await imp('classement.mjs');
-const { PROCEDURES_LINUX_SIMPLES: L } = await imp('procedures-linux-simples.mjs');
+const { PROCEDURES_LINUX_SIMPLES: L5, PROCEDURES_LINUX_COMPTES: LC } = await imp('procedures-linux-simples.mjs');
+const L = [...L5, ...LC];
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const fiche = (id) => L.find((p) => p.id === id);
 
 console.log('1. Contrat');
-assert(L.length === 5, '5 fiches');
+assert(L5.length === 5 && LC.length === 5 && L.length === 10, '5 fiches de texte + 5 fiches de comptes');
 for (const p of L) {
   const pb = P.incoherencesProcedure(p);
   assert(pb.length === 0, `contrat : ${p.id}`, pb.join(' | '));
@@ -110,6 +111,24 @@ for (const [req, attendu] of [['sed -i', 'linux-sed-remplacer'], ['remplacer un 
   const res = T.chercher(req, { plateforme: 'Linux' });
   const ids = (res.resultats ?? res).map((x) => x.entree?.id ?? x.id);
   assert(ids.slice(0, 5).includes(attendu), `recherche « ${req} » : ${attendu} parmi les 5 premiers`, ids.slice(0, 5).join());
+}
+
+console.log('6. Comptes, groupes et mots de passe');
+{
+  const r = lancer('linux-comptes-locaux-lister', { compte: 'root' }, {});
+  assert(r.sorties[0].code === 0 && !/^root:/m.test(r.sorties[0].out), 'comptes : la liste des comptes ordinaires n’affiche pas root (UID 0)');
+  const g = lancer('linux-groupes-locaux-lister', { groupe: 'root' }, {}, { etapes: [0, 1] });
+  assert(g.sorties[0].code === 0 && g.sorties[1].out.startsWith('root:'), 'groupes : getent group root renvoie le groupe');
+  const rendu = (id, val) => P.rendreMethode(fiche(id).methodes[0], fiche(id).params, val).etapes.map((e) => e.rendu.texteCopie).join('\n');
+  assert(/samba-tool user show christian_chef/.test(rendu('samba-compte-voir', { compte: 'christian_chef' })), 'samba : user show rendu');
+  assert(/samba-tool user setpassword christian_chef/.test(rendu('samba-mot-de-passe', { compte: 'christian_chef' })) && !/--newpassword/.test(rendu('samba-mot-de-passe', { compte: 'christian_chef' })), 'samba : setpassword sans mot de passe en clair dans la commande');
+  assert(/passwd christian_chef/.test(rendu('linux-mot-de-passe-local', { compte: 'christian_chef' })), 'local : passwd rendu');
+  assert(!v('linux-mot-de-passe-local', 'compte', 'a; rm -rf /').ok && !v('samba-mot-de-passe', 'compte', '$(id)').ok && !v('linux-groupes-locaux-lister', 'groupe', 'x y').ok, 'comptes : valeurs piégées refusées');
+  for (const [req, attendu] of [['lister les utilisateurs locaux', 'linux-comptes-locaux-lister'], ['getent group', 'linux-groupes-locaux-lister'], ['changer le mot de passe linux', 'linux-mot-de-passe-local'], ['samba-tool user show', 'samba-compte-voir'], ['samba-tool user setpassword', 'samba-mot-de-passe']]) {
+    const res = T.chercher(req, { plateforme: 'Linux' }); const ids = (res.resultats ?? res).map((x) => x.entree?.id ?? x.id);
+    assert(ids.slice(0, 6).includes(attendu), `recherche « ${req} » : ${attendu}`, ids.slice(0, 6).join());
+  }
+  assert(LC.every((p) => /remplac|hash|empreinte|récupér|retrouver/i.test(JSON.stringify(p)) || !/mot-de-passe/.test(p.id)), 'fiches mot de passe : précisent qu’on remplace, on ne relit pas');
 }
 
 console.log('5. Contre-épreuves');

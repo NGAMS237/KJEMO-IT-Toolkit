@@ -46,6 +46,8 @@ export const HOTE_PROCEDURE = {
   'cours-samba-groupes': 'samba-ad-user-manage',
   'cours-samba-import-csv': 'samba-ad-user-manage',
   'cours-samba-script-menu': 'samba-ad-user-manage',
+  'samba-compte-voir': 'samba-ad-user-manage',
+  'samba-mot-de-passe': 'samba-ad-user-manage',
   'cours-samba-dns': 'samba-ad-health',
   'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
   // KJEMO-COURS-TP2-01-R1 : postes clients du TP2.
@@ -154,7 +156,7 @@ export const ARBRE = {
     ] }),
     F('utilisateurs', 'Utilisateurs et permissions', { sujets: [
       F('permissions', 'Permissions et ACL', { hotes: ['linux-permission-audit', 'linux-permission-change', 'linux-permission-acl'] }),
-      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local'] }),
+      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local'] }),
     ] }),
     F('stockage', 'Stockage', { sujets: [
       F('disques', 'Disques, partitions et montages', { hotes: ['linux-storage-diagnostic', 'linux-disk-partition-mount'] }),

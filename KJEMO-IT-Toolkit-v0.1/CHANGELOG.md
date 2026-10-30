@@ -1,3 +1,8 @@
+## LINUX-COMPTES-01 (2026-10-31)
+- 5 fiches : lister les comptes locaux, lister les groupes locaux (avec membres), changer un mot de passe local (passwd), voir un compte Samba AD (samba-tool user show), changer un mot de passe Samba AD (samba-tool user setpassword).
+- Un mot de passe ne se retrouve pas (seule l’empreinte est stockée) : il se remplace. Dit dans les fiches.
+- Testé : getent/awk exécutés pour de vrai ; les commandes samba-tool ne sont PAS exécutées sur un vrai contrôleur de domaine.
+
 ## LINUX-SIMPLES-01 (2026-10-31)
 - Constat : `sed -i` et les contrôles de CSV n'existaient pas comme fiches (seulement dans quelques assistants du catalogue pro), alors que le TP2 en a besoin (CSV à séparateurs, fins de ligne Windows).
 - 5 fiches à commande directe (`dist/procedures-linux-simples.mjs`) : remplacer du texte (sed -i avec copie .bak, aperçu avant), afficher ou supprimer des lignes, vérifier le format d'un CSV (séparateur, colonnes, ^M), extraire une colonne (cut), corriger les fins de ligne Windows.
