@@ -1,3 +1,10 @@
+## TROUVER-01 (2026-10-31)
+- Petit texte « À lire sur : poste + commande » sous les cases, généralisé : de 11 à environ 210 cases sur 501, via une table centrale (dist/trouver.mjs) par fiche, famille de fiches (Samba : le serveur) et plateforme (Linux, Windows, Cisco, Azure).
+- Seules les valeurs qu’on LIT sont notées ; une valeur inventée (nouveau nom, groupe à créer, VNet à créer) n’a pas de note. Les scénarios n’en reçoivent pas.
+- Les définitions de paramètres partagées entre fiches ne sont jamais modifiées (copie), pour qu’une note ne déteigne pas d’une fiche à l’autre.
+- Classement Azure : test de la famille « Peering, routage » mis en accord avec la règle « une fiche suit son assistant hôte » (point de service du stockage).
+- Testé : test/trouver.test.mjs (51), test/browser-choix.test.mjs (20). Commandes de lecture NON exécutées sur de vrais postes.
+
 ## JONCTION-01 (2026-10-31)
 - Fiche « Joindre un poste Ubuntu à un domaine Samba AD » réécrite (même identifiant) : 30 étapes sur deux postes, chacune étiquetée « Sur : Serveur » ou « Sur : Client Ubuntu » avec copie séparée par poste. Préparation du serveur (service, heure, pare-feu, DNS A et PTR), préparation du client, jonction, confirmation sur le serveur, tests.
 - Partie finale « Annuler ou purger » en étapes copiables : realm leave --remove, mkhomedir, cache SSSD, netplan et heure, nom d’hôte, désinstallation des paquets, puis sur le serveur compte machine et enregistrements DNS.

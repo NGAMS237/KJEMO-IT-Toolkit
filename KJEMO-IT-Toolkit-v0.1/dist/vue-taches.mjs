@@ -20,6 +20,7 @@
 
 import { etiquetteSortie, extensionDe } from './plateforme.mjs';
 import { EFFETS, METHODES, MACHINES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
+import { POSTES_LECTURE } from './trouver.mjs';
 import { figureMarkup } from './schemas-cisco.mjs';
 
 /** Échappement HTML complet (guillemets inclus : le texte peut aller dans un attribut). */
@@ -401,7 +402,7 @@ function vuePasMarkup(procedure, methode, rendu, ctx) {
 function noteTrouver(p, id) {
   const t = p.trouver;
   if (!t) return '';
-  const m = MACHINES[t.poste];
+  const m = MACHINES[t.poste] ?? POSTES_LECTURE[t.poste];
   const poste = m ? `<span class="trouver-poste machine-${esc(t.poste)}">${esc(m.court)}</span>` : '';
   const cmd = t.commande ? ` <code class="trouver-cmd">${esc(t.commande)}</code>` : '';
   const texte = t.texte ? ` ${esc(t.texte)}` : '';

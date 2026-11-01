@@ -195,7 +195,7 @@ export const ARBRE = {
     F('identites', 'Identités (Entra ID)', { sub: ['Microsoft Entra ID'] }),
     F('vm', 'Machines virtuelles', { sub: ['Machines virtuelles'] }),
     F('reseau', 'Réseau Azure', { sub: ['Réseau Azure'], fiches: ['cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee'] }),
-    F('peering-routage', 'Peering, routage et accès privé', { fiches: ['cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-route-personnalisee', 'cours-az-point-prive-stockage'] }),
+    F('peering-routage', 'Peering, routage et accès privé', { fiches: ['cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-prive-stockage'] }),
     F('equilibrage', 'Équilibrage de charge', { fiches: ['cours-az-lb-creer', 'cours-az-lb-etat'] }),
     F('stockage', 'Stockage et protection', { sub: ['Stockage et protection'] }),
     F('surveillance', 'Surveillance et coûts', { sub: ['Surveillance et coûts'] }),

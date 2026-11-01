@@ -313,7 +313,9 @@ console.log('8. Pages de fiche, classement et aide-mémoire');
   assert(html.includes('id="rappel-cours"') && !/id="rappel-cours" open/.test(html), 'fiche peering : rappel du cours PLIÉ');
   assert(html.includes('az network vnet peering create') && !/<script|onclick=|javascript:/i.test(html), 'fiche peering : commande visible, aucun script');
   const ids = C.noeud('azure-entra', 'peering-routage')?.famille;
-  assert(ids && ['cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-service-stockage', 'cours-az-point-prive-stockage'].every((id) => ids.fiches.includes(id)), 'famille « Peering, routage et accès privé » : 6 fiches');
+  assert(ids && ['cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-prive-stockage'].every((id) => ids.fiches.includes(id)), 'famille « Peering, routage et accès privé » : 5 fiches');
+  // Le point de terminaison de service suit son assistant hôte (azure-stockage-exposition) : rubrique « Stockage et protection ».
+  assert(C.cheminDe(T.entreeParId('cours-az-point-service-stockage'))?.famille?.id === 'stockage', 'fiche point de service : rangée avec son assistant hôte (stockage)');
   assert(C.noeud('azure-entra', 'equilibrage')?.famille?.fiches?.join() === 'cours-az-lb-creer,cours-az-lb-etat', 'famille « Équilibrage de charge » : 2 fiches');
   assert(C.noeud('azure-entra', 'acces')?.famille?.fiches?.includes('cours-az-role-coequipier'), 'famille « Connexion, contexte et accès » : le rôle de coéquipier');
   const memoIds = ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'];

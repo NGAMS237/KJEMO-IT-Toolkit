@@ -30,6 +30,7 @@ import { PROCEDURES_WINDOWS } from './procedures-windows.mjs';
 import { PROCEDURES_WINDOWS_SIMPLES } from './procedures-windows-simples.mjs';
 import { PROCEDURES_WINDOWS_POSTE } from './procedures-windows-poste.mjs';
 import { PROCEDURES_WINDOWS_AD } from './procedures-windows-ad-simples.mjs';
+import { completerTrouver } from './trouver.mjs';
 import { PROCEDURES_WINDOWS_SSH } from './procedures-windows-ssh.mjs';
 import { PROCEDURES_WINDOWS_LANGUE } from './procedures-windows-langue.mjs';
 import { PROCEDURES_LINUX_SIMPLES, PROCEDURES_LINUX_COMPTES, PROCEDURES_LINUX_CLAVIER, PROCEDURES_LINUX_SYSTEME } from './procedures-linux-simples.mjs';
@@ -355,6 +356,9 @@ const ASSISTANTS_REPLIES = new Set(procedures.map((p) => p.assistant).filter(Boo
 
 /** Toutes les entrées, sans rien replier : pour les contrôles de couverture. */
 export const TOUTES_LES_ENTREES = [...procedures, ...commandes, ...assistants];
+
+// « À lire sur : poste + commande » sous les cases (trouver.mjs) : complété une fois, en place.
+for (const e of TOUTES_LES_ENTREES) if (e.procedure) completerTrouver(e.procedure, e.plateformes);
 
 /** Entrées listées en recherche : un assistant couvert par une fiche n'est pas listé deux fois. */
 export const ENTREES_LISTEES = [...procedures, ...commandes, ...assistants.filter((a) => !ASSISTANTS_REPLIES.has(a.id))];
