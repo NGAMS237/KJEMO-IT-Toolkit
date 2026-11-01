@@ -574,3 +574,53 @@ COURS_SAMBA_MEMO.push((() => {
   f.origine = 'memo';
   return f;
 })());
+
+/** Parcourir un partage Samba depuis Ubuntu : session smbclient, montage cifs, dépannage « la lecture seule laisse écrire ». */
+COURS_SAMBA_MEMO.push((() => {
+  const cl = (e) => ({ ...e, machine: U });
+  const sv = (e) => ({ ...e, machine: S });
+  const annul = { facultatif: true, annulation: true, phase: 'Annuler ou défaire' };
+  const mdp = { attend: 'Password for', reponds: 'Tape le mot de passe du compte (rien ne s’affiche), puis Entrée.' };
+  const f = ficheLinux({
+    id: 'samba-partage-parcourir',
+    titre: 'Parcourir un partage Samba depuis Ubuntu (smbclient, montage)',
+    resume: 'Un partage vit sur le serveur : « cd » et « ls -l » du terminal ne le voient pas. Deux façons de s’y promener : la session interactive de smbclient (invite smb:) ou le montage cifs, qui en fait un vrai dossier. Dépannage « le compte en lecture seule peut écrire ». Option graphique : Fichiers › Autres emplacements.',
+    effet: 'modification',
+    intentions: ['parcourir un partage samba', 'smbclient session interactive', 'cd partage samba ne marche pas', 'monter un partage samba ubuntu', 'mount -t cifs', 'smb: prompt ls cd put get', 'lecture seule peut écrire samba', 'read list ne marche pas', 'naviguer dans le dossier partagé'],
+    motsCles: ['smbclient', 'cifs', 'mount', 'partage', 'samba', 'smb', 'read list', 'lecture seule', 'cd', 'ls', 'put', 'get', 'testparm'],
+    prerequis: [{ texte: 'Le partage et le compte existent côté serveur.', fiche: 'cours-samba-partage-groupe' }],
+    params: [
+      { id: 'serveur', label: 'nom ou adresse IP du serveur', type: 'identifiant', exemple: '192.168.20.1', aide: 'Celle du serveur Samba.' },
+      { id: 'partage', label: 'nom du partage', type: 'identifiant', exemple: 'direction', aide: 'Le nom déclaré entre crochets dans smb.conf.' },
+      { id: 'domaine', label: 'nom NetBIOS du domaine', type: 'identifiant', exemple: 'SERVEUR2', aide: 'Le « workgroup » du domaine (testparm l’affiche), PAS le nom DNS (ad.lab).', trouver: { poste: 'serveur', commande: 'grep workgroup /etc/samba/smb.conf' } },
+      { id: 'compte', label: 'compte du domaine', type: 'identifiant', exemple: 'receptioniste', aide: 'Écris-le exactement comme dans « samba-tool user list » (une lettre de trop ou en moins donne NT_STATUS_LOGON_FAILURE).', trouver: { poste: 'serveur', commande: 'sudo samba-tool user list' } },
+    ],
+    privileges: 'Utilisateur du client Ubuntu ; sudo pour installer et monter. Les mots de passe se tapent à l’invite.',
+    etapes: [
+      cl(mod('Installer smbclient et cifs-utils', 'smbclient sert à la session interactive, cifs-utils au montage.', [sh('sudo apt install smbclient cifs-utils')], 'Les paquets sont installés (ou déjà à jour).', { facultatif: true })),
+      cl(lec('Lister les partages du serveur', 'Vérifie que le compte est accepté et que le partage existe. -W prend le nom NetBIOS court du domaine.', [sh('smbclient -L //{{serveur}} -W {{domaine}} -U {{compte}}')], 'Une table de partages dont {{partage}}. NT_STATUS_LOGON_FAILURE : compte mal orthographié, mauvais mot de passe ou mauvais nom de domaine.', { interactions: [mdp] })),
+      cl(itr('Entrer dans le partage (session interactive)', 'Sans -c, smbclient ouvre l’invite « smb: \\> ». Les commandes ne sont plus celles de ton terminal : ls, cd, pwd, mkdir, put (envoyer un fichier local), get (rapatrier un fichier), rm, rmdir, lcd (changer le dossier LOCAL), exit. « ls -l » et « cd /{{partage}} » du terminal ne voient pas le partage : il est sur le serveur.', [sh('smbclient //{{serveur}}/{{partage}} -W {{domaine}} -U {{compte}}')], 'L’invite devient smb: \\>. Tape ls pour voir le contenu, puis exit pour sortir.', { facultatif: true, interactions: [mdp, { attend: 'smb: \\>', reponds: 'ls, cd nom, pwd, get fichier, put fichier, puis exit pour quitter.' }] })),
+      cl(lec('Une commande à la fois (-c)', 'Avec -c, smbclient exécute les commandes entre apostrophes puis se ferme : pratique pour un test rapide.', [sh('smbclient //{{serveur}}/{{partage}} -W {{domaine}} -U {{compte}} -c \'pwd; ls\'')], 'Le dossier courant du partage et son contenu.', { interactions: [mdp] })),
+      cl(mod('Monter le partage comme un dossier (facultatif)', 'Après le montage, cd et ls -l fonctionnent normalement dans /mnt/{{partage}}. Le mot de passe est demandé à l’invite, jamais écrit dans la commande.', [sh('sudo mkdir -p /mnt/{{partage}}'), sh('sudo mount -t cifs //{{serveur}}/{{partage}} /mnt/{{partage}} -o username={{compte}},domain={{domaine}}')], 'Aucun message. Une erreur « mount error(13) » : identifiants refusés ; « mount error(2) » : partage introuvable.', { facultatif: true, interactions: [mdp] })),
+      cl(lec('Parcourir le dossier monté', 'Si tu as monté le partage, c’est un dossier ordinaire.', [sh('ls -l /mnt/{{partage}}')], 'Le contenu du partage, avec les droits.', { verification: true })),
+      cl(mod('Annuler — démonter le partage', 'Libère le dossier de montage. À faire avant de supprimer le point de montage.', [sh('sudo umount /mnt/{{partage}}')], 'Aucun message ; ls -l /mnt/{{partage}} est vide.', annul)),
+      cl(des('Annuler — supprimer le point de montage', 'Supprime le dossier vide /mnt/{{partage}} (échoue s’il n’est pas vide : c’est voulu).', [sh('sudo rmdir /mnt/{{partage}}')], 'Aucun message.', annul)),
+      sv(lec('Dépannage : le compte en lecture seule peut écrire — voir le partage', 'À lancer sur le SERVEUR. Regarde les lignes « read list », « write list » et « valid users » du partage. Le nom du compte doit y être écrit EXACTEMENT comme dans l’annuaire : avec une lettre de différence, Samba ne le reconnaît pas et le laisse écrire par son groupe.', [sh('sudo testparm -s 2>/dev/null | sed -n \'/^\\[{{partage}}\\]/,/^$/p\'')], 'Les réglages du partage ; la ligne read list contient le compte en lecture seule.')),
+      sv(lec('Dépannage : comparer avec les comptes de l’annuaire', 'Cherche l’orthographe exacte du compte.', [sh('sudo samba-tool user list')], 'La liste des comptes ; l’orthographe doit être identique à celle de read list.', { verification: true })),
+    ],
+    verification: ['Le contenu du partage s’affiche dans la session smbclient ou dans le dossier monté, et le compte en lecture seule reçoit NT_STATUS_ACCESS_DENIED quand il essaie d’écrire.'],
+    retour: null,
+    sources: [{ label: 'smbclient(1)', url: `${SAMBA_DOC}/smbclient.1.html` }, { label: 'smb.conf — read list, write list', url: `${SAMBA_DOC}/smb.conf.5.html` }, { label: 'mount.cifs(8)', url: `${MAN}/man8/mount.cifs.8.html` }],
+  });
+  f.origine = 'memo';
+  f.methodes.unshift({
+    id: 'gui', privileges: 'Utilisateur ordinaire du client Ubuntu Desktop.',
+    etapes: [
+      gui('Ouvrir le partage dans Fichiers', 'lecture', 'Le gestionnaire de fichiers monte le partage sans rien installer : tu y navigues comme dans un dossier.', ['Ouvre **Fichiers**, puis **Autres emplacements**.', 'En bas, dans **Se connecter à un serveur**, tape `smb://` suivi de l’adresse du serveur, puis `/` et le nom du partage. **Se connecter**.', 'Choisis **Utilisateur enregistré**, saisis le compte et le domaine (nom NetBIOS), le mot de passe dans cette fenêtre, puis **Se connecter**.'], 'Le contenu du partage s’affiche ; on y navigue en double-cliquant.'),
+      gui('Annuler — éjecter le partage', 'modification', 'Ferme la connexion : indispensable avant de te reconnecter avec un autre compte.', ['Dans la barre latérale, clique l’icône **Éjecter** à côté du partage.'], 'Le partage disparaît de la barre latérale.', annul),
+    ],
+    verification: ['Le contenu du partage est visible dans Fichiers.'],
+    retour: 'Éjecter le partage.',
+  });
+  return f;
+})());

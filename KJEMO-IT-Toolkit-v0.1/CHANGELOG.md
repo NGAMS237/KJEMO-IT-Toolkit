@@ -1,3 +1,8 @@
+## PARCOURIR-01 (2026-11-01)
+- Nouvelle fiche « Parcourir un partage Samba depuis Ubuntu (smbclient, montage) » (aide-mémoire › Samba › Postes clients) : pourquoi « cd » et « ls -l » ne voient pas un partage, session interactive (invite smb:), une commande avec -c, montage cifs et démontage, option graphique Fichiers › Autres emplacements.
+- Dépannage « le compte en lecture seule peut écrire » : afficher la section du partage (read list, write list) et comparer l’orthographe avec samba-tool user list.
+- Testé : test/samba-partage-parcourir.test.mjs (11), dont l’extraction de la section du partage exécutée pour de vrai ; smbclient, mount.cifs et testparm NON exécutés.
+
 ## SUDO-SU-01 (2026-11-01)
 - Nouvelle fiche « sudo, sudo -u, su et su - : lequel utiliser ? » (aide-mémoire › Linux › Comptes locaux) : qui suis-je (whoami), sudo (ton mot de passe), sudo -u, su - (mot de passe du compte), erreur « su -compte », annulation avec exit, remarque sur les comptes Samba.
 - Testé : test/linux-simples.test.mjs (238).

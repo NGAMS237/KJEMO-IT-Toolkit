@@ -43,6 +43,7 @@ export const HOTE_PROCEDURE = {
   'cours-samba-partage-utilisateurs': 'samba-share-create',
   'cours-samba-partage-groupe': 'samba-share-create',
   'cours-smbclient-transferts': 'samba-diagnostic',
+  'samba-partage-parcourir': 'samba-diagnostic',
   'cours-samba-groupes': 'samba-ad-user-manage',
   'cours-samba-import-csv': 'samba-ad-user-manage',
   'cours-samba-script-menu': 'samba-ad-user-manage',
