@@ -771,6 +771,7 @@ export function incoherencesProcedure(p) {
   if (!Array.isArray(p.intentions) || p.intentions.length < 2) pb.push('intentions de recherche : au moins 2');
   if (!Array.isArray(p.sources) || !p.sources.length) pb.push('aucune source');
   for (const s of p.sources ?? []) if (!/^https:\/\//.test(s.url ?? '')) pb.push(`source non HTTPS : ${s.label}`);
+  for (const q of p.params ?? []) if (q.trouver && (!MACHINES[q.trouver.poste] || !(q.trouver.commande || q.trouver.texte))) pb.push(`paramètre ${q.id} : « trouver » doit nommer un poste connu et une commande`);
   if (!Array.isArray(p.methodes) || !p.methodes.length) pb.push('aucune méthode');
   if (p.kind && !['procedure', 'scenario'].includes(p.kind)) pb.push(`nature inconnue : ${p.kind}`);
   if (scenario) {

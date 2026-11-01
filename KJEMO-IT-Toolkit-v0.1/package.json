@@ -88,6 +88,7 @@
     "test:windows-simples": "node test/windows-simples.test.mjs",
     "test:linux-simples": "node test/linux-simples.test.mjs",
     "test:browser:choix": "node test/browser-choix.test.mjs",
+    "test:jonction-ad": "node test/jonction-ad.test.mjs",
     "test:browser:windows-simples": "node test/browser-windows-simples.test.mjs",
     "test:browser:azure-cours": "node test/browser-azure-cours.test.mjs",
     "test:browser:cisco-s07": "node test/browser-cisco-s07.test.mjs",

@@ -397,6 +397,17 @@ function vuePasMarkup(procedure, methode, rendu, ctx) {
 // Paramètres : champs simples et tableaux
 // ---------------------------------------------------------------------------
 
+/** Petit texte sous un champ : sur QUEL poste et avec QUELLE commande on lit la valeur à saisir. */
+function noteTrouver(p, id) {
+  const t = p.trouver;
+  if (!t) return '';
+  const m = MACHINES[t.poste];
+  const poste = m ? `<span class="trouver-poste machine-${esc(t.poste)}">${esc(m.court)}</span>` : '';
+  const cmd = t.commande ? ` <code class="trouver-cmd">${esc(t.commande)}</code>` : '';
+  const texte = t.texte ? ` ${esc(t.texte)}` : '';
+  return `<p class="param-trouver" id="${id}-trouver">À lire sur : ${poste}${cmd}${texte}</p>`;
+}
+
 function champMarkup(p, saisies) {
   const id = `p-${p.id}`;
   // Valeur parmi une liste fermée : liste déroulante. `libelles` (facultatif) donne un nom lisible
@@ -409,6 +420,7 @@ function champMarkup(p, saisies) {
       + `<label for="${id}">${esc(p.label.charAt(0).toUpperCase() + p.label.slice(1))}</label>`
       + `<select id="${id}" name="${esc(p.id)}" data-param="${esc(p.id)}" aria-describedby="${id}-aide ${id}-err">${options}</select>`
       + `<p class="param-aide" id="${id}-aide">${esc(p.aide ?? '')}</p>`
+      + noteTrouver(p, id)
       + `<p class="param-err" id="${id}-err" role="alert"></p>`
       + `</div>`;
   }
@@ -417,6 +429,7 @@ function champMarkup(p, saisies) {
     + `<input id="${id}" name="${esc(p.id)}" data-param="${esc(p.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" `
     + `placeholder="Exemple : ${esc(p.exemple)}" value="${esc(saisies[p.id] ?? '')}" aria-describedby="${id}-aide ${id}-err">`
     + `<p class="param-aide" id="${id}-aide">${esc(p.aide ?? '')}</p>`
+    + noteTrouver(p, id)
     + `<p class="param-err" id="${id}-err" role="alert"></p>`
     + `</div>`;
 }

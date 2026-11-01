@@ -1,3 +1,9 @@
+## JONCTION-01 (2026-10-31)
+- Fiche « Joindre un poste Ubuntu à un domaine Samba AD » réécrite (même identifiant) : 30 étapes sur deux postes, chacune étiquetée « Sur : Serveur » ou « Sur : Client Ubuntu » avec copie séparée par poste. Préparation du serveur (service, heure, pare-feu, DNS A et PTR), préparation du client, jonction, confirmation sur le serveur, tests.
+- Partie finale « Annuler ou purger » en étapes copiables : realm leave --remove, mkhomedir, cache SSSD, netplan et heure, nom d’hôte, désinstallation des paquets, puis sur le serveur compte machine et enregistrements DNS.
+- Paramètres : petit texte sous chaque case (« À lire sur : Client Ubuntu  ip -br link »), champ `trouver` validé par le contrat.
+- Testé : test/jonction-ad.test.mjs (118) et test/browser-choix.test.mjs. Commandes samba-tool, realm et SSSD NON exécutées sur un vrai serveur ni client.
+
 ## SYSTEME-01 (2026-10-31)
 - 4 fiches : changer le nom de la machine Linux (hostnamectl et /etc/hosts), savoir sur quelle machine on est (nom, version, IP), installer le client SSH sous Ubuntu et sous Windows.
 - Testé : mise à jour de /etc/hosts exécutée pour de vrai sur un fichier temporaire ; hostnamectl, apt et Add-WindowsCapability NON exécutés.
