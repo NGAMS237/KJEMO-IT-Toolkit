@@ -52,6 +52,9 @@ export const HOTE_PROCEDURE = {
   'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
   'cours-ubuntu-jonction-ad-graphique': 'samba-ad-dc-readiness',
   'samba-ad-installer': 'samba-ad-dc-provision',
+  'samba-ad-reconstruire': 'samba-ad-dc-provision',
+  'linux-domaine-quitter-hors-ligne': 'samba-ad-dc-readiness',
+  'win-domaine-quitter-hors-ligne': 'windows-domain-join',
   // KJEMO-COURS-TP2-01-R1 : postes clients du TP2.
   'cours-hyperviseur-ajouter-disque': 'linux-disk-partition-mount',
   'cours-ubuntu-reseau-client': 'linux-network-diagnostic',
@@ -132,7 +135,7 @@ export const ARBRE = {
     F('acces', 'Accès aux ressources', { sub: ['Accès aux ressources'] }),
     F('wifi', 'Wi-Fi et VPN', { sub: ['Wi-Fi et VPN'] }),
     F('calculs', 'Calculs réseau', { sub: ['Calculs réseau'] }),
-    F('poste-windows', 'Outils réseau du poste Windows', { fiches: ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port'] }),
+    F('poste-windows', 'Outils réseau du poste Windows', { fiches: ['win-dns-poste-regler', 'win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port'] }),
   ],
   imprimantes: [
     F('diagnostic', 'Diagnostic et inventaire', { sub: ['Inventaire et diagnostic Windows'] }),

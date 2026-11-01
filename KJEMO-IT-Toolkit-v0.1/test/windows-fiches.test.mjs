@@ -29,15 +29,15 @@ for (const p of W) {
   assert(e?.kind === 'procedure' && (e.plateformes ?? []).includes('Windows'), `${p.id} : fiche, plateforme Windows`);
   assert(p.origine === 'memo', `${p.id} : origine « memo » (hors des tâches courantes de l'accueil)`);
   assert(Boolean(T.entreeParId(p.assistant)), `${p.id} : l'assistant complet « ${p.assistant} » existe (voie guidée conservée)`);
-  assert(p.methodes.length === 1 && ['powershell', 'cmd'].includes(p.methodes[0].id), `${p.id} : une méthode console`);
-  assert(p.methodes[0].etapes.some((s) => s.verification), `${p.id} : une étape de vérification`);
+  assert(p.methodes.filter((m) => m.id !== 'gui').length === 1 && ['powershell', 'cmd'].includes(p.methodes.find((m) => m.id !== 'gui').id), `${p.id} : une méthode console`);
+  assert(p.methodes.find((m) => m.id !== 'gui').etapes.some((s) => s.verification), `${p.id} : une étape de vérification`);
   assert(p.validation && /non exécutées/.test(p.validation), `${p.id} : honnêteté « non exécutées »`);
 }
 
 console.log('2. Commandes rendues avec les valeurs d’exemple');
 for (const p of W) {
   const ex = Object.fromEntries(p.params.map((q) => [q.id, q.exemple]));
-  const r = P.rendreMethode(p.methodes[0], p.params, ex);
+  const r = P.rendreMethode(p.methodes.find((m) => m.id !== 'gui'), p.params, ex);
   const lignes = r.etapes.filter((e) => e.rendu).map((e) => e.rendu.texteCopie ?? '').join('\n');
   assert(r.manquants.length === 0, `${p.id} : tous les paramètres d'exemple sont acceptés`, r.manquants.join(','));
   assert(!/\{\{|‹|›/.test(lignes), `${p.id} : aucune marque non remplacée`);
@@ -50,9 +50,9 @@ for (const p of W) {
 }
 {
   const p = W.find((x) => x.id === 'win-ad-creer-ou');
-  const r = P.rendreMethode(p.methodes[0], p.params, { ou: 'Ventes', parent: 'DC=lab,DC=local' });
+  const r = P.rendreMethode(p.methodes.find((m) => m.id !== 'gui'), p.params, { ou: 'Ventes', parent: 'DC=lab,DC=local' });
   assert(r.etapes[1].rendu.texteCopie === 'New-ADOrganizationalUnit -Name "Ventes" -Path "DC=lab,DC=local" -ProtectedFromAccidentalDeletion $true', 'Créer une OU : la commande rendue est exacte', r.etapes[1].rendu.texteCopie);
-  const vide = P.rendreMethode(p.methodes[0], p.params, { ou: '', parent: '' });
+  const vide = P.rendreMethode(p.methodes.find((m) => m.id !== 'gui'), p.params, { ou: '', parent: '' });
   assert(vide.texteComplet == null && vide.etapes[1].rendu.bloque, 'Créer une OU : copie refusée tant que les valeurs sont vides');
 }
 

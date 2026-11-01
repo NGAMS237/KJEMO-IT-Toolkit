@@ -1,3 +1,10 @@
+## RECONSTRUIRE-01 (2026-11-01)
+- Parcours « Reconstruire le domaine Samba AD : l’ordre des fiches » : sortir les clients, nouvelle VM, installer le contrôleur, DNS des clients, joindre, vérifier ; chaque étape dit sur quel poste et renvoie à sa fiche.
+- Trois nouvelles fiches : « Régler le DNS d’un poste Windows », « Sortir Ubuntu d’un domaine dont le serveur n’existe plus » (realm leave sans --remove), « Sortir Windows d’un domaine dont le serveur n’existe plus ».
+- Option graphique ajoutée en premier onglet de chaque fiche (ncpa.cpl, Cockpit, sysdm.cpl) et à « Joindre un poste Windows au domaine » ; mentionnée dans le résumé.
+- Honnêteté : libellés de fenêtres, bouton Cockpit « quitter le domaine », Remove-Computer / WMI hors ligne NON vérifiés sur de vrais postes. Pour sortir un domaine, la voie classique est sysdm.cpl (pas Accès professionnel).
+- Testé : test/domaine-reconstruire.test.mjs (50), dont le retrait de la ligne /etc/hosts exécuté pour de vrai.
+
 ## DC-INSTALL-01 (2026-11-01)
 - Nouvelle fiche « Installer un contrôleur de domaine Samba AD sur Ubuntu » (aide-mémoire › Samba › Domaine, DNS et outils), d’après la documentation Ubuntu Server : nom complet et /etc/hosts (jamais 127.0.1.1), paquets samba-ad-dc/krb5-user/bind9-dnsutils, services smbd/nmbd/winbind masqués, provisionnement, nouveau mot de passe tapé au terminal, DNS en amont (jamais 127.0.0.53), systemd-resolved arrêté avant le démarrage, krb5.conf, vérifications (port 53, SRV, kinit), pare-feu.
 - Étapes facultatives : adresse IP fixe (netplan try) et service de l’heure aux clients (chrony) — sans lui, un client réglé sur NTP=adresse du serveur n’obtient aucune réponse.

@@ -305,7 +305,7 @@ export const COURS_SAMBA = [
   ficheLinux({
     id: 'cours-ubuntu-jonction-ad',
     titre: 'Joindre un poste Ubuntu à un domaine Samba AD (serveur et client)',
-    resume: 'Parcours complet sur deux postes : préparer le contrôleur Samba, préparer le client Ubuntu (DNS, nom, heure, realmd et SSSD), joindre le domaine, tester, puis annuler ou purger des deux côtés en cas d’erreur. Chaque étape dit sur quel poste elle se fait.',
+    resume: 'Parcours complet sur deux postes : préparer le contrôleur Samba, préparer le client Ubuntu (DNS, nom, heure, realmd et SSSD), joindre le domaine, tester, puis annuler ou purger des deux côtés en cas d’erreur. Chaque étape dit sur quel poste elle se fait. Option graphique : fiche « … par l’interface graphique ».',
     effet: 'interruption',
     intentions: ['joindre ubuntu au domaine ad', 'realm join', 'sssd ad ubuntu', 'pam-auth-update mkhomedir', 'client ubuntu samba ad', 'realm discover', 'se connecter avec un compte du domaine ubuntu', 'realm leave', 'annuler la jonction au domaine', 'samba-tool computer delete'],
     motsCles: ['realm', 'realmd', 'sssd', 'adcli', 'pam-auth-update', 'mkhomedir', 'resolvectl', 'netplan', 'timesyncd', 'kerberos', 'domaine', 'jonction', 'ubuntu', 'serveur', 'client', 'purge', 'annuler'],

@@ -74,7 +74,7 @@ export const MEMO_GROUPES = [
       { id: 'comptes', titre: 'Comptes et groupes du domaine', fiches: ['cours-samba-groupes', 'cours-samba-script-menu', 'cours-samba-import-csv', 'samba-compte-voir', 'samba-mot-de-passe'] },
       { id: 'partages', titre: 'Partages', fiches: ['cours-samba-partage-utilisateurs', 'cours-samba-partage-groupe', 'cours-samba-connexions'] },
       { id: 'clients', titre: 'Postes clients', fiches: ['cours-smbclient-transferts', 'cours-ubuntu-acces-partage', 'cours-windows-acces-partage', 'cours-windows-connexion-domaine'] },
-      { id: 'domaine', titre: 'Domaine, DNS et outils', fiches: ['samba-ad-installer', 'cours-samba-dns', 'cours-ubuntu-jonction-ad', 'cours-ubuntu-jonction-ad-graphique', 'cours-rsat-windows'] },
+      { id: 'domaine', titre: 'Domaine, DNS et outils', fiches: ['samba-ad-reconstruire', 'samba-ad-installer', 'cours-samba-dns', 'cours-ubuntu-jonction-ad', 'cours-ubuntu-jonction-ad-graphique', 'linux-domaine-quitter-hors-ligne', 'cours-rsat-windows'] },
     ] },
   // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01) : uniquement des fiches à commande directe (les assistants complets restent dans le catalogue pro).
   { id: 'win-poste', titre: 'Poste Windows', icone: '🖥', couleur: '#1d4ed8', commandes: 'Get-Service, sfc, Get-LocalUser',
@@ -103,7 +103,7 @@ export const MEMO_GROUPES = [
   { id: 'win-reseau', titre: 'Réseau Windows', icone: '🛜', couleur: '#0369a1', commandes: 'ipconfig, Test-NetConnection, netstat',
     resume: 'Voir et fixer l’adresse IP, renouveler le bail DHCP, tester un port, voir les ports en écoute.',
     sous: [
-      { id: 'adresse', titre: 'Adresse IP', fiches: ['windows-voir-ip', 'win-ipconfig-complet', 'windows-ip-fixe', 'renouveler-bail-dhcp', 'win-ip-liberer', 'win-wifi-profils'] },
+      { id: 'adresse', titre: 'Adresse IP', fiches: ['windows-voir-ip', 'win-dns-poste-regler', 'win-ipconfig-complet', 'windows-ip-fixe', 'renouveler-bail-dhcp', 'win-ip-liberer', 'win-wifi-profils'] },
       { id: 'tester', titre: 'Tester et diagnostiquer', fiches: ['tester-port-tcp', 'win-tracert', 'win-pathping', 'windows-ports-ecoute', 'scenario-windows-diagnostic-reseau'] },
       { id: 'tables', titre: 'Routes et voisins', fiches: ['win-route-voir', 'win-arp-voir'] },
       { id: 'pare-feu', titre: 'Pare-feu', fiches: ['win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port'] },
@@ -115,7 +115,7 @@ export const MEMO_GROUPES = [
       { id: 'lire', titre: 'Voir le domaine', fiches: ['win-ad-voir-ou', 'win-ad-voir-utilisateurs', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'] },
       { id: 'creer', titre: 'Créer OU, comptes et groupes', fiches: ['win-ad-creer-ou', 'win-ad-creer-utilisateur', 'win-ad-creer-groupe', 'win-ad-ajouter-membre'] },
       { id: 'comptes', titre: 'Dépanner et gérer un compte', fiches: ['ad-debloquer-compte', 'win-ad-reinit-mot-de-passe', 'win-ad-desactiver-compte', 'win-ad-deplacer-objet'] },
-      { id: 'domaine', titre: 'Poste et domaine', fiches: ['win-ad-joindre-domaine', 'ad-etat-replication'] },
+      { id: 'domaine', titre: 'Poste et domaine', fiches: ['win-ad-joindre-domaine', 'win-domaine-quitter-hors-ligne', 'ad-etat-replication'] },
     ] },
   { id: 'win-gpo', titre: 'Stratégies de groupe (GPO)', icone: '📋', couleur: '#be123c', commandes: 'gpupdate, gpresult, New-GPO',
     resume: 'Lister les GPO, en créer une et la lier à une OU, forcer et vérifier son application.',
@@ -218,7 +218,7 @@ export const AJOUTS = Object.fromEntries([
   ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
   ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe', 'linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme', 'win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format', 'linux-hostname-changer', 'linux-systeme-identite', 'linux-ssh-client-installer', 'win-ssh-client-installer'].map((id) => [id, '2026-10-31']),
 ).concat(
-  ['cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer'].map((id) => [id, '2026-11-01']),
+  ['cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
 ));
 
 const JOUR = 86400000;

@@ -32,7 +32,9 @@ import { PROCEDURES_WINDOWS_POSTE } from './procedures-windows-poste.mjs';
 import { PROCEDURES_WINDOWS_AD } from './procedures-windows-ad-simples.mjs';
 import { completerTrouver } from './trouver.mjs';
 import { COURS_SAMBA_MEMO } from './cours-fiches-samba.mjs';
+import { PROCEDURES_DOMAINE_RECONSTRUIRE } from './procedures-domaine-reconstruire.mjs';
 import { completerAnnulations } from './annulations.mjs';
+import { completerOptionsGraphiques } from './options-graphiques.mjs';
 import { PROCEDURES_WINDOWS_SSH } from './procedures-windows-ssh.mjs';
 import { PROCEDURES_WINDOWS_LANGUE } from './procedures-windows-langue.mjs';
 import { PROCEDURES_LINUX_SIMPLES, PROCEDURES_LINUX_COMPTES, PROCEDURES_LINUX_CLAVIER, PROCEDURES_LINUX_SYSTEME } from './procedures-linux-simples.mjs';
@@ -348,7 +350,7 @@ function entreeAssistant(t) {
 // ---------------------------------------------------------------------------
 
 /** Toutes les fiches rédigées à la main, pilotes puis seconde vague. */
-export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...COURS_SAMBA_MEMO, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
+export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...COURS_SAMBA_MEMO, ...PROCEDURES_DOMAINE_RECONSTRUIRE, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
 const procedures = PROCEDURES_REDIGEES.map(entreeProcedure);
 const commandes = COMMANDES_RAPIDES.map(entreeCommande);
 const assistants = tools.map(entreeAssistant);
@@ -360,7 +362,7 @@ const ASSISTANTS_REPLIES = new Set(procedures.map((p) => p.assistant).filter(Boo
 export const TOUTES_LES_ENTREES = [...procedures, ...commandes, ...assistants];
 
 // « À lire sur : poste + commande » sous les cases (trouver.mjs) : complété une fois, en place.
-for (const e of TOUTES_LES_ENTREES) if (e.procedure) { completerAnnulations(e.procedure); completerTrouver(e.procedure, e.plateformes); }
+for (const e of TOUTES_LES_ENTREES) if (e.procedure) { completerOptionsGraphiques(e.procedure); completerAnnulations(e.procedure); completerTrouver(e.procedure, e.plateformes); }
 
 /** Entrées listées en recherche : un assistant couvert par une fiche n'est pas listé deux fois. */
 export const ENTREES_LISTEES = [...procedures, ...commandes, ...assistants.filter((a) => !ASSISTANTS_REPLIES.has(a.id))];
