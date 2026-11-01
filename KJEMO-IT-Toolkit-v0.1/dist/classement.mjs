@@ -165,7 +165,7 @@ export const ARBRE = {
     ] }),
     F('utilisateurs', 'Utilisateurs et permissions', { sujets: [
       F('permissions', 'Permissions et ACL', { hotes: ['linux-permission-audit', 'linux-permission-change', 'linux-permission-acl'] }),
-      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local'] }),
+      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-sudo-su-expliquer', 'linux-mot-de-passe-local'] }),
     ] }),
     F('stockage', 'Stockage', { sujets: [
       F('disques', 'Disques, partitions et montages', { hotes: ['linux-storage-diagnostic', 'linux-disk-partition-mount'] }),

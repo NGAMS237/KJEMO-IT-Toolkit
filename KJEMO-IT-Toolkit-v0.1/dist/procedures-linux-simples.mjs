@@ -9,7 +9,7 @@
  * rien n'est exécuté par le Toolkit. Les valeurs saisies sont validées : aucun
  * caractère spécial de l'interpréteur (le séparateur est un CHOIX fermé).
  */
-import { lec, mod, des, gui, sh, MAN, CATEGORIE_LINUX, V_COURS } from './cours-outils.mjs';
+import { lec, mod, des, itr, gui, sh, MAN, CATEGORIE_LINUX, V_COURS } from './cours-outils.mjs';
 
 const SED = 'https://www.gnu.org/software/sed/manual/sed.html';
 const FICHIER = { id: 'fichier', label: 'fichier à traiter', type: 'arg', exemple: 'comptes_tp2.csv', aide: 'Un fichier texte existant, dans le dossier courant ou avec son chemin.' };
@@ -218,6 +218,24 @@ export const PROCEDURES_LINUX_COMPTES = [
     });
     return f;
   })(),
+  fiche({
+    id: 'linux-sudo-su-expliquer', titre: 'sudo, sudo -u, su et su - : lequel utiliser ?', effet: 'lecture',
+    resume: 'Montre par l’exemple la différence entre sudo (une commande avec des droits élevés, TON mot de passe), su (devenir un autre compte, SON mot de passe) et su - (session complète du compte). Comment savoir qui on est, et comment revenir avec exit.',
+    intentions: ['différence sudo su', 'su - compte', 'su -c erreur invalid option', 'sudo -u compte commande', 'devenir un autre utilisateur linux', 'changer d’utilisateur dans le terminal', 'whoami linux qui suis-je', 'sudo -i', 'quitter une session su exit'],
+    motsCles: ['sudo', 'su', 'whoami', 'utilisateur', 'root', 'session', 'exit', 'mot de passe', 'compte'],
+    params: [COMPTE],
+    privileges: 'Aucun privilège particulier : utilisateur ordinaire (sudo pour les étapes qui l’utilisent).',
+    etapes: [
+      lec('Savoir qui tu es', 'À faire avant et après chaque changement de compte. whoami donne le nom du compte courant, id ses groupes.', [sh('whoami'), sh('id')], 'Ton nom de connexion et la liste de tes groupes.'),
+      lec('sudo : UNE commande avec les droits administrateur', 'sudo demande TON mot de passe (pas celui de root), exécute la commande, puis te rend la main sous ton propre compte.', [sh('sudo whoami'), sh('whoami')], 'La première ligne affiche root ; la seconde affiche de nouveau ton nom : sudo n’a rien changé à ta session.'),
+      lec('sudo -u : une commande EN TANT QU’un autre compte', 'Toujours ton mot de passe. Pratique pour tester ce qu’un compte peut lire ou écrire sans ouvrir sa session.', [sh('sudo -u {{compte}} whoami')], 'Le nom du compte. Une erreur « unknown user » : le compte n’existe pas sur cette machine (un compte du domaine s’écrit compte@domaine, et la machine doit être jointe).'),
+      itr('su - : ouvrir la session complète d’un autre compte (facultatif)', 'su demande le mot de passe du COMPTE visé, pas le tien. Le tiret, séparé par une espace, charge son environnement et son dossier personnel. « su -compte » (sans espace) est une erreur : su lit « -c » comme une option. Sur un serveur Samba, un compte du domaine n’a pas de dossier personnel : l’avertissement « cannot change directory » est sans gravité, mais ce n’est pas le bon test d’un partage (utilise smbclient).', [sh('su - {{compte}}')], 'Le prompt change pour le nom du compte. « Authentication failure » : mauvais mot de passe pour ce compte.', { facultatif: true, interactions: [{ attend: 'Password', reponds: 'Tape le mot de passe du compte visé (rien ne s’affiche), puis Entrée.' }] }),
+      lec('Vérifier dans quelle session tu es', 'Après su, whoami doit afficher le compte visé ; après exit, ton compte d’origine.', [sh('whoami'), sh('pwd')], 'Le nom du compte courant et son dossier de travail.', { verification: true }),
+      itr('Annuler — revenir à ton compte avec exit', 'exit ferme la session ouverte par su (ou sudo -i) et te ramène à ton compte d’origine. Sur ta session d’origine, il ferme le terminal.', [sh('exit')], 'Le prompt d’origine revient ; whoami affiche ton nom.', { facultatif: true, annulation: true, phase: 'Annuler ou défaire' }),
+    ],
+    verification: ['whoami affiche le compte attendu à chaque étape, et exit ramène au compte d’origine.'],
+    sources: [{ label: 'sudo(8)', url: `${MAN}/man8/sudo.8.html` }, { label: 'su(1)', url: `${MAN}/man1/su.1.html` }, { label: 'whoami(1)', url: `${MAN}/man1/whoami.1.html` }],
+  }),
 ];
 
 // ===========================================================================

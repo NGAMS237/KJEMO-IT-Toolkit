@@ -25,7 +25,7 @@ const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.err
 const fiche = (id) => L.find((p) => p.id === id);
 
 console.log('1. Contrat');
-assert(L5.length === 5 && LC.length === 6 && LK.length === 4 && WL.length === 4 && LS.length === 3 && WS.length === 1 && L.length === 23, '23 fiches : texte, comptes, clavier, nom/identité/SSH');
+assert(L5.length === 5 && LC.length === 7 && LK.length === 4 && WL.length === 4 && LS.length === 3 && WS.length === 1 && L.length === 24, '24 fiches : texte, comptes, clavier, nom/identité/SSH');
 for (const p of L) {
   const pb = P.incoherencesProcedure(p);
   assert(pb.length === 0, `contrat : ${p.id}`, pb.join(' | '));

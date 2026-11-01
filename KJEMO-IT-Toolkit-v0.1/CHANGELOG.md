@@ -1,3 +1,7 @@
+## SUDO-SU-01 (2026-11-01)
+- Nouvelle fiche « sudo, sudo -u, su et su - : lequel utiliser ? » (aide-mémoire › Linux › Comptes locaux) : qui suis-je (whoami), sudo (ton mot de passe), sudo -u, su - (mot de passe du compte), erreur « su -compte », annulation avec exit, remarque sur les comptes Samba.
+- Testé : test/linux-simples.test.mjs (238).
+
 ## COMPTE-SAMBA-01 (2026-11-01)
 - Nouvelle fiche « Créer un utilisateur Samba AD » (aide-mémoire › Samba › Comptes et groupes) : vérifier que le nom est libre, `samba-tool user create` (mot de passe à l’invite), vérification, et annulations (désactiver, supprimer).
 - Option graphique en premier onglet : console dsa.msc (RSAT) — libellés non vérifiés sur un vrai poste.
