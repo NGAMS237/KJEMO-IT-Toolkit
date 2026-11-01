@@ -91,6 +91,16 @@ assert((await page.$('#p-groupe-trouver')) === null, 'groupe à CRÉER : aucune 
 await page.goto(BASE + '/#/tache/cours-az-vnet-creer');
 await page.waitForSelector('#p-vnet', { state: 'attached' });
 assert((await page.$('#p-vnet-trouver')) === null && (await page.$('#p-groupe-trouver')) !== null, 'Azure : le VNet à créer sans note, le groupe existant avec note');
+await page.goto(BASE + '/#/tache/cours-ubuntu-jonction-ad-graphique');
+await page.waitForSelector('.tache');
+const onglets = await page.$$eval('[role="tab"], .method-tab, .methode-onglet', (e) => e.map((x) => x.textContent.trim()));
+assert(onglets.length >= 2, 'jonction graphique : deux onglets de méthode (graphique et terminal)', onglets.join(' | '));
+const titres = await page.$$eval('.step-title', (e) => e.map((x) => x.textContent));
+assert(titres.some((x) => /Cockpit/.test(x)), 'jonction graphique : une étape Cockpit');
+assert(await page.locator('.flag-annul').count() >= 1, 'jonction graphique : étape(s) Annulation signalée(s)');
+await page.goto(BASE + '/#/tache/cours-ubuntu-jonction-ad');
+await page.waitForSelector('.tache');
+assert((await page.textContent('body')).includes('127.0.1.1'), 'jonction par commandes : la ligne /etc/hosts accompagne le changement de nom');
 assert(erreurs.length === 0, 'aucune erreur de page', erreurs.join(' | '));
 await browser.close(); server.close();
 console.log(`\nbrowser-choix : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

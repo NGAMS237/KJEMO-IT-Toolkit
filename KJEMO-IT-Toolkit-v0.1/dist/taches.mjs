@@ -31,6 +31,7 @@ import { PROCEDURES_WINDOWS_SIMPLES } from './procedures-windows-simples.mjs';
 import { PROCEDURES_WINDOWS_POSTE } from './procedures-windows-poste.mjs';
 import { PROCEDURES_WINDOWS_AD } from './procedures-windows-ad-simples.mjs';
 import { completerTrouver } from './trouver.mjs';
+import { COURS_SAMBA_MEMO } from './cours-fiches-samba.mjs';
 import { completerAnnulations } from './annulations.mjs';
 import { PROCEDURES_WINDOWS_SSH } from './procedures-windows-ssh.mjs';
 import { PROCEDURES_WINDOWS_LANGUE } from './procedures-windows-langue.mjs';
@@ -347,7 +348,7 @@ function entreeAssistant(t) {
 // ---------------------------------------------------------------------------
 
 /** Toutes les fiches rédigées à la main, pilotes puis seconde vague. */
-export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
+export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...COURS_SAMBA_MEMO, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
 const procedures = PROCEDURES_REDIGEES.map(entreeProcedure);
 const commandes = COMMANDES_RAPIDES.map(entreeCommande);
 const assistants = tools.map(entreeAssistant);

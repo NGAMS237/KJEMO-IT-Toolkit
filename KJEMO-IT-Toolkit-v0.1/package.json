@@ -91,6 +91,7 @@
     "test:jonction-ad": "node test/jonction-ad.test.mjs",
     "test:trouver": "node test/trouver.test.mjs",
     "test:annulations": "node test/annulations.test.mjs",
+    "test:jonction-graphique": "node test/jonction-graphique.test.mjs",
     "test:browser:windows-simples": "node test/browser-windows-simples.test.mjs",
     "test:browser:azure-cours": "node test/browser-azure-cours.test.mjs",
     "test:browser:cisco-s07": "node test/browser-cisco-s07.test.mjs",

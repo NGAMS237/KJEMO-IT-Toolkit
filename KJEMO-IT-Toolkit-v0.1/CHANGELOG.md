@@ -1,3 +1,10 @@
+## JONCTION-GUI-01 (2026-11-01)
+- Nouvelle fiche « Joindre Ubuntu à un domaine Samba AD par l’interface graphique » (aide-mémoire › Samba › Domaine, DNS et outils), alternative à la jonction par commandes : onglet graphique (Cockpit sur https://localhost:9090 › Vue d’ensemble › Joindre le domaine, puis ouverture de session compte@domaine ; variante Paramètres › Utilisateurs › Connexion d’entreprise) et onglet Terminal (contrôle du DNS du serveur, DNS du client par nmcli, domaine trouvé, installation, jonction, vérification, annulations).
+- Le contrôle du port 53 du serveur vient en premier : un « Connection refused » côté client veut dire que rien n’écoute le DNS.
+- Correction de la fiche par commandes : le nom complet du poste est maintenant écrit dans /etc/hosts (sinon sudo répond « impossible de résoudre l’hôte »), et retiré à l’annulation.
+- Honnêteté : l’option Paramètres › Connexion d’entreprise vient du guide GNOME et n’est PAS vérifiée sur Ubuntu 24.04 ; le libellé exact du bouton « Quitter le domaine » de Cockpit n’est pas confirmé. Rien n’a été exécuté sur un vrai Ubuntu.
+- Testé : test/jonction-graphique.test.mjs (11), test/browser-choix.test.mjs (24), batterie complète.
+
 ## ANNULER-01 (2026-10-31)
 - 91 méthodes de fiches qui modifient un poste reçoivent des étapes « Annuler » COPIABLES (116 étapes) au lieu d’une simple phrase : DNS et DHCP Windows, pare-feu, partages, GPO, comptes AD et locaux, quotas, RAID 1, partition, Samba, VLAN, STP, routes, RIP, EtherChannel, adresse IP fixe, nom d’hôte, clavier et langue, ufw, montages, NFS (table centrale dist/annulations.mjs).
 - Chaque étape est FACULTATIVE (jamais dans la copie de toute la fiche), signalée par la puce « Annulation » et rangée dans sa propre carte « Annuler ou défaire », après la vérification. Sur une fiche à deux postes, chaque annulation dit « Sur : Serveur » ou « Sur : Client Ubuntu ».

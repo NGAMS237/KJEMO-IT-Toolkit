@@ -16,7 +16,7 @@
  *    séparant les groupes.
  */
 import { SCRIPT_IMPORT_LIGNES } from './cours-script-import.mjs';
-import { MAN, CATEGORIE_LINUX, V_COURS, lec, mod, des, itr, sh, ps, ficheLinux } from './cours-outils.mjs';
+import { MAN, CATEGORIE_LINUX, V_COURS, lec, mod, des, itr, sh, ps, gui, ficheLinux } from './cours-outils.mjs';
 
 const SAMBA_DOC = 'https://www.samba.org/samba/docs/current/man-html';
 const SAMBA_WIKI = 'https://wiki.samba.org/index.php';
@@ -338,7 +338,7 @@ export const COURS_SAMBA = [
       sur(U, lec('Client — lire le réseau, le DNS et le nom actuel', 'Relève le nom de l’interface, les serveurs DNS actuels et le nom d’hôte : ce sont tes points de retour.', [sh('ip -br link'), sh('resolvectl status'), sh('hostnamectl --static')], 'Une ligne par interface ; les serveurs DNS actuels ; le nom d’hôte actuel (à noter).', { important: 'Sur Ubuntu récent, /etc/resolv.conf pointe vers 127.0.0.53 (systemd-resolved) : c’est normal. Ne le modifie pas à la main.' })),
       cl(JONCTION_ANCIENNES[1]),
       cl(JONCTION_ANCIENNES[2]),
-      sur(U, mod('Client — nommer le poste', 'realm et Kerberos exigent un nom d’hôte complet dans le domaine. Le nom précédent a été noté à l’étape de lecture.', [sh('sudo hostnamectl set-hostname {{poste}}.{{domaine}}')], 'Aucun message.')),
+      sur(U, mod('Client — nommer le poste', 'realm et Kerberos exigent un nom d’hôte complet dans le domaine. Le nom précédent a été noté à l’étape de lecture.', [sh('echo "127.0.1.1 {{poste}}.{{domaine}} {{poste}}" | sudo tee -a /etc/hosts'), sh('sudo hostnamectl set-hostname {{poste}}.{{domaine}}')], 'Aucune erreur ; hostname -f affiche le nom complet.', { important: 'La ligne ajoutée dans /etc/hosts évite le message « sudo : impossible de résoudre l’hôte » après le changement de nom.' })),
       cl(JONCTION_ANCIENNES[4]),
       cl(JONCTION_ANCIENNES[5]),
       cl(JONCTION_ANCIENNES[6]),
@@ -356,7 +356,7 @@ export const COURS_SAMBA = [
       sur(U, mod('Annuler — retirer la création automatique des dossiers personnels', 'Défait le profil mkhomedir activé pendant la jonction.', [sh('sudo pam-auth-update --remove mkhomedir')], 'Aucun message en cas de succès.', { facultatif: true })),
       sur(U, mod('Annuler — vider le cache SSSD', 'Oublie les comptes du domaine gardés en mémoire.', [sh('sudo sss_cache -E')], 'Aucun message. « command not found » : SSSD est déjà désinstallé, passe à la suite.', { facultatif: true })),
       sur(U, itr('Annuler — retirer le DNS et l’heure du domaine', 'Supprime les deux fichiers de configuration ajoutés pendant la préparation, puis réapplique. netplan try annule tout seul si tu ne confirmes pas.', [sh('sudo rm /etc/netplan/60-domaine-ad.yaml'), sh('sudo rm /etc/systemd/timesyncd.conf.d/domaine-ad.conf'), sh('sudo netplan try'), sh('sudo systemctl restart systemd-timesyncd')], 'netplan try demande confirmation (Entrée) ; resolvectl status n’affiche plus le serveur du domaine.', { facultatif: true, interactions: [{ attend: 'Press ENTER before the timeout to accept the new configuration', reponds: 'Entrée, une fois que tu vérifies que la connexion fonctionne encore.' }], important: 'Ces deux fichiers sont ceux créés par cette fiche. Si tu avais déjà un fichier du même nom, ne le supprime pas.' })),
-      sur(U, mod('Annuler — rendre au poste son nom d’origine', 'Remet le nom d’hôte noté au début.', [sh('sudo hostnamectl set-hostname {{ancienNom}}')], 'Aucun message.', { facultatif: true })),
+      sur(U, mod('Annuler — rendre au poste son nom d’origine', 'Retire la ligne ajoutée dans /etc/hosts et remet le nom d’hôte noté au début.', [sh('sudo sed -i \'/{{poste}}.{{domaine}}/d\' /etc/hosts'), sh('sudo hostnamectl set-hostname {{ancienNom}}')], 'Aucune erreur.', { facultatif: true })),
       sur(U, des('Purger — désinstaller realmd et SSSD (facultatif)', 'Retire les paquets de jonction et leurs réglages. À faire seulement pour revenir à un poste vierge ; le poste fonctionne très bien sans cette étape.', [sh('sudo apt purge -y realmd sssd sssd-ad sssd-tools adcli oddjob oddjob-mkhomedir'), sh('sudo apt autoremove -y')], 'apt liste les paquets retirés sans erreur.', { facultatif: true, important: 'samba-common-bin, packagekit, libnss-sss et libpam-sss sont laissés : d’autres logiciels peuvent en dépendre. Un mauvais autoremove retire des paquets que tu n’as pas listés : lis la liste avant de confirmer.' })),
       sur(S, lec('Serveur — vérifier que le compte machine a disparu', 'Après realm leave --remove, le compte d’ordinateur ne doit plus figurer dans l’annuaire.', [sh('sudo samba-tool computer list | grep -i {{poste}}')], 'Aucune ligne. Une ligne : le compte est resté, supprime-le à l’étape suivante.', { facultatif: true })),
       sur(S, des('Serveur — supprimer le compte machine resté (après un échec)', 'Un realm join raté ou un realm leave sans --remove laisse un compte d’ordinateur dans l’annuaire. Il faut le supprimer pour pouvoir rejoindre avec le même nom.', [sh('sudo samba-tool computer delete {{poste}}')], 'Un message de suppression réussie. « Unable to find » : il n’y a plus rien à supprimer.', { facultatif: true, important: 'Supprime un compte d’ordinateur de l’annuaire, sans corbeille. Vérifie le nom à l’étape précédente.' })),
@@ -402,3 +402,80 @@ export const COURS_SAMBA = [
 ];
 
 export { CATEGORIE_LINUX };
+
+/** Fiches de l'aide-mémoire (origine « memo ») rattachées au TP2 : jonction par l'interface graphique. */
+export const COURS_SAMBA_MEMO = [
+(() => {
+    const U2 = (e) => ({ ...e, machine: U });
+    const S2 = (e) => ({ ...e, machine: S });
+    const annul = { facultatif: true, annulation: true, phase: 'Annuler ou défaire' };
+    const f = ficheLinux({
+      id: 'cours-ubuntu-jonction-ad-graphique',
+      titre: 'Joindre Ubuntu à un domaine Samba AD par l’interface graphique',
+      resume: 'Alternative aux commandes : préparer le DNS du client, puis joindre le domaine avec Cockpit (navigateur) ou avec Paramètres. La préparation (DNS, heure, paquets) reste indispensable ; l’onglet Terminal la fait pas à pas et contrôle le serveur.',
+      effet: 'interruption',
+      intentions: ['joindre ubuntu au domaine avec interface graphique', 'cockpit join domain', 'ubuntu rejoindre active directory sans terminal', 'connexion d’entreprise ubuntu', 'enterprise login ubuntu', 'realm join graphique', 'connection refused resolvectl domaine', 'le client ne trouve pas le domaine'],
+      motsCles: ['cockpit', 'graphique', 'interface', 'paramètres', 'connexion d’entreprise', 'enterprise login', 'realmd', 'domaine', 'jonction', 'ubuntu', 'dns', 'networkmanager'],
+      prerequis: [
+        { texte: 'Le contrôleur de domaine Samba est installé et démarré, et le client Ubuntu le joint par ping.', fiche: 'cours-ubuntu-reseau-client' },
+      ],
+      params: [
+        { id: 'domaine', label: 'nom du domaine', type: 'fqdn', exemple: 'ad.lab', aide: 'Le nom DNS du domaine Active Directory.', trouver: { poste: 'serveur', commande: 'sudo samba-tool domain info 127.0.0.1' } },
+        { id: 'dns', label: 'adresse IP du contrôleur de domaine (DNS)', type: 'ipv4', exemple: '192.168.20.1', aide: 'Le serveur DNS du domaine : le contrôleur lui-même.', trouver: { poste: 'serveur', commande: 'ip -br address' } },
+        { id: 'admin', label: 'compte qui joint le poste', type: 'identifiant', exemple: 'administrator', aide: 'Un compte du domaine autorisé à joindre des machines. Son mot de passe est demandé à l’invite ou dans la fenêtre.', trouver: { poste: 'serveur', commande: 'sudo samba-tool user list' } },
+        { id: 'connexion', label: 'nom de la connexion réseau du client', type: 'nom', exemple: 'Wired connection 1', aide: 'Celle de la carte reliée au serveur.', trouver: { poste: 'client-ubuntu', commande: 'nmcli -f NAME,DEVICE connection show --active' } },
+        { id: 'poste', label: 'nom court voulu pour le client', type: 'hote', exemple: 'ubuntuclient', aide: 'Lettres, chiffres et tirets, sans point.', trouver: { poste: 'client-ubuntu', commande: 'hostnamectl --static', texte: '(le nom actuel, à noter pour pouvoir y revenir)' } },
+        { id: 'ancienNom', label: 'nom actuel du client (pour y revenir)', type: 'hote', exemple: 'ubuntu', aide: 'Sert seulement à la partie « Annuler ».', trouver: { poste: 'client-ubuntu', commande: 'hostnamectl --static' } },
+        { id: 'compteTest', label: 'compte du domaine pour le test', type: 'identifiant', exemple: 'user1', aide: 'Un compte existant du domaine.', trouver: { poste: 'serveur', commande: 'sudo samba-tool user list' } },
+      ],
+      privileges: 'Administrateur du poste client (sudo) ; le serveur sert aux contrôles.',
+      etapes: [
+        // ----------------------------------------------------------- Terminal : préparer, joindre, vérifier
+        S2(lec('Serveur — le service de domaine répond sur le DNS (port 53)', 'Un « Connection refused » côté client veut dire que rien n’écoute le DNS sur le serveur. Contrôle d’abord le service puis le port : sans DNS, ni le terminal ni l’interface graphique ne peuvent joindre le domaine.', [sh('sudo systemctl is-active samba-ad-dc'), sh('sudo ss -lunpt | grep \':53 \''), sh('sudo ufw status')], '« active », une ligne qui écoute sur le port 53 (samba ou named), et ufw inactif ou avec une règle pour le port 53.', { important: 'Si le port 53 n’est pas écouté, ne continue pas : lis « sudo systemctl status samba-ad-dc » et corrige le serveur.' })),
+        U2(lec('Client — joindre le serveur', 'Repère la connexion et vérifie que le serveur répond au ping.', [sh('nmcli -f NAME,DEVICE connection show --active'), sh('ip -br address'), sh('ping -c 2 {{dns}}')], 'Une connexion active, une adresse du même réseau que le serveur, 0% packet loss.')),
+        U2(itr('Client — pointer le DNS vers le serveur (NetworkManager)', 'Sur Ubuntu Desktop, c’est NetworkManager qui gère la carte : on règle le DNS avec nmcli (même effet que l’onglet IPv4 de Paramètres). La connexion se coupe une seconde.', [sh('sudo nmcli connection modify \'{{connexion}}\' ipv4.dns {{dns}} ipv4.dns-search {{domaine}}'), sh('sudo nmcli connection up \'{{connexion}}\'')], 'Connection successfully activated.')),
+        U2(lec('Client — vérifier que le domaine est trouvé', 'Le nom du domaine et l’enregistrement SRV du contrôleur doivent être résolus.', [sh('resolvectl query {{domaine}}'), sh('resolvectl query -t SRV _ldap._tcp.{{domaine}}')], 'Une adresse pour le domaine et un enregistrement SRV.', { verification: true, important: 'Tant que cette étape échoue, la jonction échouera.' })),
+        U2(mod('Client — nommer le poste', 'Le nom complet est aussi écrit dans /etc/hosts, sinon sudo se plaint de ne pas pouvoir résoudre le nom du poste.', [sh('echo "127.0.1.1 {{poste}}.{{domaine}} {{poste}}" | sudo tee -a /etc/hosts'), sh('sudo hostnamectl set-hostname {{poste}}.{{domaine}}')], 'Aucune erreur ; hostname -f affiche le nom complet.')),
+        U2(lec('Client — contrôler l’heure', 'Kerberos refuse l’authentification si l’écart avec le serveur dépasse cinq minutes. Compare avec l’heure du serveur.', [sh('timedatectl')], '« System clock synchronized: yes » et une heure correcte.')),
+        U2(mod('Client — installer Cockpit, realmd et SSSD', 'Cockpit est l’interface web d’administration ; realmd et SSSD font la jonction. Installés à l’avance, ils évitent une installation en cours de route.', [sh('sudo apt update'), sh('sudo apt install -y cockpit realmd sssd sssd-ad sssd-tools libnss-sss libpam-sss adcli samba-common-bin oddjob oddjob-mkhomedir packagekit'), sh('sudo systemctl enable --now cockpit.socket')], 'Les paquets s’installent ; cockpit.socket est actif (port 9090).')),
+        U2(lec('Client — découvrir le domaine', 'realm discover interroge le DNS : si le domaine est trouvé, la jonction graphique le sera aussi.', [sh('realm discover {{domaine}}')], 'Le nom du domaine, « type: kerberos » et « server-software: active-directory ».', { verification: true })),
+        U2(itr('Client — joindre le domaine (équivalent du bouton Joindre)', 'Même opération que dans Cockpit, en une commande. Utilise-la si la fenêtre graphique échoue : son message d’erreur est plus précis. Le mot de passe est demandé à l’invite.', [sh('sudo realm join --user={{admin}} {{domaine}}')], 'Aucun message : le poste est joint.', { interactions: [{ attend: 'Password for administrator:', reponds: 'Le mot de passe du compte du domaine, tapé au terminal (rien ne s’affiche).' }], facultatif: true })),
+        U2(mod('Client — créer automatiquement le dossier personnel', 'Sans cela, un compte du domaine n’a pas de dossier à sa première ouverture de session.', [sh('sudo pam-auth-update --enable mkhomedir')], 'Aucun message.')),
+        U2(lec('Client — vérifier la jonction', 'realm list montre le domaine ; id retrouve un compte du domaine.', [sh('realm list'), sh('id {{compteTest}}@{{domaine}}')], 'Le domaine avec « configured: kerberos-member », puis l’identifiant du compte.', { verification: true })),
+        // ----------------------------------------------------------- Annuler (terminal)
+        U2(lec('Annuler — constater l’état du client', 'Avant de défaire, regarde ce qui est en place.', [sh('realm list'), sh('hostnamectl --static')], 'Le domaine joint (ou rien) et le nom actuel.', { facultatif: true, phase: 'Annuler ou défaire' })),
+        U2(des('Annuler — quitter le domaine', 'Sort le poste du domaine et supprime son compte machine côté serveur. Le mot de passe est demandé à l’invite.', [sh('sudo realm leave --remove --user={{admin}} {{domaine}}')], 'Aucun message ; realm list ne montre plus le domaine.', { ...annul, interactions: [{ attend: 'Password for administrator:', reponds: 'Le mot de passe du compte du domaine, tapé au terminal (rien ne s’affiche).' }] })),
+        U2(mod('Annuler — retirer la création des dossiers personnels', 'Annule pam-auth-update --enable mkhomedir.', [sh('sudo pam-auth-update --remove mkhomedir')], 'Aucun message.', annul)),
+        U2(itr('Annuler — rendre le DNS au réseau', 'Efface le DNS et le domaine de recherche imposés à la connexion ; le DHCP les redonne.', [sh('sudo nmcli connection modify \'{{connexion}}\' ipv4.dns "" ipv4.dns-search ""'), sh('sudo nmcli connection up \'{{connexion}}\'')], 'Connection successfully activated.', annul)),
+        U2(mod('Annuler — rendre au poste son nom d’origine', 'Retire la ligne ajoutée dans /etc/hosts et remet l’ancien nom.', [sh('sudo sed -i \'/{{poste}}.{{domaine}}/d\' /etc/hosts'), sh('sudo hostnamectl set-hostname {{ancienNom}}')], 'Aucune erreur ; hostnamectl --static affiche l’ancien nom.', annul)),
+        S2(mod('Annuler — supprimer le compte machine resté sur le serveur', 'Seulement si la jonction a échoué à moitié et que le compte machine existe encore.', [sh('sudo samba-tool computer list | grep -i {{poste}}'), sh('sudo samba-tool computer delete {{poste}}')], 'La liste ne montre plus le poste.', annul)),
+      ],
+      verification: ['realm discover trouve le domaine.', 'realm list montre « kerberos-member ».', 'id retrouve un compte du domaine.'],
+      retour: 'Les commandes sont dans les étapes « Annuler » : quitter le domaine, rendre le DNS et le nom d’origine.',
+      sources: [
+        { label: 'Cockpit — realmd (joindre un domaine)', url: 'https://cockpit-project.org/guide/latest/feature-realmd.html' },
+        { label: 'Oracle Linux — Cockpit : joindre un domaine Active Directory', url: 'https://docs.oracle.com/en/operating-systems/oracle-linux/cockpit/cockpit-system_join_a_domain.html' },
+        { label: 'Guide GNOME — connexion avec des identifiants d’entreprise', url: 'https://help.gnome.org/system-admin-guide/login-enterprise.html' },
+        { label: 'realm(8)', url: `${MAN}/man8/realm.8.html` },
+        { label: 'nmcli — référence', url: 'https://networkmanager.dev/docs/api/latest/nmcli.html' },
+      ],
+    });
+    f.origine = 'memo';
+    const gui2 = (e) => U2(e);
+    f.methodes.unshift({
+      id: 'gui', privileges: 'Administrateur du poste client Ubuntu Desktop (mot de passe demandé).',
+      etapes: [
+        gui2(gui('Faire la préparation d’abord', 'lecture', 'La jonction graphique a les mêmes exigences que la jonction par commandes : le client doit trouver le domaine par le DNS, avoir la bonne heure et avoir realmd. Un « Connection refused » à ce stade vient presque toujours du serveur (le DNS n’écoute pas).', ['Ouvre l’onglet **Terminal** de cette fiche et fais, dans l’ordre : le contrôle du serveur, le DNS du client, **vérifier que le domaine est trouvé**, le nom du poste, l’heure et l’installation de Cockpit.', 'Ne passe à la suite que si **realm discover** trouve le domaine.'], 'realm discover affiche le domaine.', { important: 'Les étapes de préparation sont des commandes : elles n’ont pas d’équivalent fiable en clics.' })),
+        gui2(gui('Ouvrir Cockpit', 'lecture', 'Cockpit est une page web servie par le client lui-même, sur le port 9090.', ['Dans **Firefox**, ouvre l’adresse **https://localhost:9090**.', 'Accepte l’avertissement de certificat (certificat auto-signé de ton propre poste).', 'Ouvre une session avec ton compte local, puis clique **Accès limité** (en haut) et saisis ton mot de passe pour passer en mode administrateur.'], 'Le tableau de bord de Cockpit s’affiche, sans cadenas « accès limité ».')),
+        gui2(gui('Joindre le domaine depuis Cockpit', 'interruption', 'Cockpit appelle realmd, comme la commande realm join.', ['Dans le menu de gauche, clique **Vue d’ensemble** (Overview).', 'Dans le panneau **Configuration**, ligne **Domaine**, clique **Joindre le domaine** (Join domain).', 'Saisis l’**adresse du domaine**, le **compte administrateur du domaine** (par exemple administrator) et son **mot de passe**, puis clique **Joindre**.', 'Si Cockpit propose d’installer des paquets manquants, accepte.'], 'La ligne Domaine affiche le nom du domaine.', { important: 'Si la fenêtre affiche une erreur, note-la et utilise l’étape « joindre le domaine » de l’onglet Terminal : son message est plus précis.' })),
+        gui2(gui('Créer automatiquement le dossier personnel', 'modification', 'Cockpit ne règle pas les dossiers personnels des comptes du domaine : c’est une commande.', ['Dans l’onglet **Terminal**, fais l’étape **créer automatiquement le dossier personnel**.'], 'Aucun message.')),
+        gui2(gui('Ouvrir une session avec un compte du domaine', 'lecture', 'Le nom de connexion s’écrit compte@domaine.', ['Ferme ta session (menu en haut à droite, **Fermer la session**).', 'À l’écran de connexion, choisis **Non listé ?** s’il est proposé, puis saisis **compte@domaine** et le mot de passe du compte.'], 'La session s’ouvre ; un dossier personnel est créé.', { verification: true })),
+        gui2(gui('Variante : Paramètres › Utilisateurs › Connexion d’entreprise', 'modification', 'Le guide GNOME décrit cette voie. Je ne l’ai pas vérifiée sur Ubuntu 24.04 : si l’option n’apparaît pas, utilise Cockpit.', ['Ouvre **Paramètres**, puis **Utilisateurs**, clique **Déverrouiller** et saisis ton mot de passe.', 'Clique **+**, choisis **Connexion d’entreprise** (Enterprise Login).', 'Saisis le **domaine**, le **compte** et le **mot de passe**, puis clique **Ajouter**.'], 'Le compte du domaine apparaît dans la liste des utilisateurs.', { facultatif: true })),
+        gui2(gui('Annuler — quitter le domaine', 'modification', 'Cockpit affiche le domaine joint dans la vue d’ensemble, avec la possibilité de le quitter. Je n’ai pas pu confirmer le libellé exact du bouton.', ['Dans **Cockpit › Vue d’ensemble**, clique le **nom du domaine** (ligne Domaine) puis **Quitter le domaine** (Leave domain).', 'Si ce n’est pas proposé, fais l’étape **Annuler — quitter le domaine** de l’onglet Terminal.', 'Pour le DNS et le nom du poste : étapes **Annuler** de l’onglet Terminal.'], 'La ligne Domaine n’affiche plus le domaine (et realm list ne le montre plus).', annul)),
+      ],
+      verification: ['Cockpit affiche le domaine dans la vue d’ensemble.', 'Une session s’ouvre avec compte@domaine.'],
+      retour: 'Cockpit › Vue d’ensemble › nom du domaine › Quitter le domaine ; puis les étapes Annuler de l’onglet Terminal.',
+    });
+    return f;
+  })()
+];
