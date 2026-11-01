@@ -225,7 +225,7 @@ console.log('5. Marquage HTML');
   const html1 = V.tachePageMarkup(e, { methodeId: 'ios', saisies: { vlan: '10', nom: 'ADMIN' }, vue: 'pas' });
   assert(!/<mark class="ph"/.test(html1) && !/class="copy-step"[^>]*aria-disabled/.test(html1), 'valeurs renseignées : plus de repère, copie active');
   assert(/vlan 10/.test(html1) && /name ADMIN/.test(html1), 'valeurs reflétées dans l’affichage');
-  assert((html1.match(/class="copy-step"/g) ?? []).length === 6, 'un bouton Copier par bloc de commande (6)');
+  assert((html1.match(/class="copy-step"/g) ?? []).length === 8, 'un bouton Copier par bloc de commande (6 de la procédure + 2 étapes « Annuler »)');
   assert(/Facultatif/.test(html1) && /Résultat attendu/.test(html1), 'étape facultative et résultat attendu étiquetés');
   assert(/id="assistantLink"[^>]*href="#\/outil\/cisco-vlan-creation"/.test(html1), 'lien vers l’assistant complet');
   assert(/Sources et limites de validation/.test(html1) && /aucune de ces commandes n’a été exécutée/.test(html1), 'limites de validation affichées honnêtement');

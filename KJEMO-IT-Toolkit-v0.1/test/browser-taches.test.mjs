@@ -132,10 +132,11 @@ console.log('3. Fiche tâche : paramètres, copie, blocage');
   assert(await page.evaluate(() => location.hash) === '#/tache/cisco-creer-vlan', 'route #/tache/cisco-creer-vlan');
   assert((await page.$eval('.tache h1', (e) => e.textContent)) === 'Créer un VLAN', 'titre court orienté tâche');
   const nbBoutons = await page.locator('.copy-step').count();
-  assert(nbBoutons === 6, `un bouton Copier par bloc (${nbBoutons})`);
-  assert(await page.locator('.copy-step[aria-disabled="true"]').count() === 3, 'sans valeur : les 3 blocs qui en dépendent sont bloqués (3 restent copiables)');
-  assert(await page.locator('.step-num').count() === 6 && (await page.$$eval('.step-title', (e) => e.map((x) => x.textContent))).every((t) => /^Étape \d+ :/.test(t)), 'étapes numérotées, titre lisible');
-  assert(await page.locator('.step-attendu').count() === 6, 'résultat attendu présent à chaque étape (mode Débutant)');
+  assert(nbBoutons === 8, `un bouton Copier par bloc, étapes « Annuler » comprises (${nbBoutons})`);
+  assert(await page.locator('.copy-step[aria-disabled="true"]').count() === 5, 'sans valeur : les 5 blocs qui en dépendent sont bloqués (3 restent copiables)');
+  assert(await page.locator('.flag-annul').count() >= 2 && await page.locator('.step-facultative .flag-annul').count() >= 2, 'étapes « Annuler » : puce Annulation, étapes facultatives');
+  assert(await page.locator('.step-num').count() === 8 && (await page.$$eval('.step-title', (e) => e.map((x) => x.textContent))).every((t) => /^Étape \d+ :/.test(t)), 'étapes numérotées, titre lisible');
+  assert(await page.locator('.step-attendu').count() === 8, 'résultat attendu présent à chaque étape (mode Débutant)');
   assert(await page.locator('.step-important').count() === 2 && await page.locator('.assistant-link').count() === 1, 'effet important affiché ; lien vers l’assistant complet');
 
   await page.evaluate(() => navigator.clipboard.writeText('SENTINELLE'));
@@ -364,7 +365,7 @@ console.log('9. Mode Technicien : explications repliées, rien de masqué en sé
   assert(await page.getAttribute('#vue-rapide', 'aria-pressed') === 'true' && await page.locator('.step-attendu').count() === 0, 'Technicien : Vue rapide par défaut, résultat attendu hors de la procédure rapide');
   assert(await page.locator('.step-important').count() === 2 && await page.isVisible('.step-important'), 'Technicien : l’effet important reste visible');
   await page.click('#vue-pas');
-  assert(await page.locator('.step-attendu').count() === 6 && await page.isVisible('.step-attendu'), 'le résultat attendu s’affiche d’un clic (Pas à pas)');
+  assert(await page.locator('.step-attendu').count() === 8 && await page.isVisible('.step-attendu'), 'le résultat attendu s’affiche d’un clic (Pas à pas)');
   await context.close();
 }
 

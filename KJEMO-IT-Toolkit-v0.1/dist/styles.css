@@ -422,6 +422,7 @@ nav button{max-width:100%}
 .step-flag{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;border:1px solid var(--border)}
 .flag-verif{background:var(--ok-bg);color:var(--ok-text);border-color:var(--ok-border)}
 .flag-fac{background:var(--surface-2);color:var(--text-soft)}
+.flag-annul{background:var(--warn-bg-2);color:var(--warn-text);border-color:var(--warn-border)}
 .flag-dernier{background:var(--danger-bg);color:var(--danger-text);border-color:var(--danger-border)}
 .step-body{display:grid;gap:10px;padding-left:40px}
 .step-expl{margin:0;color:var(--text-soft);line-height:1.55;font-size:14.5px}

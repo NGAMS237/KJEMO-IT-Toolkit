@@ -842,6 +842,7 @@ export function incoherencesProcedure(p) {
       if (m.id !== 'scenario' && e.equipement) pb.push(`${nom} : « equipement » n'a de sens que dans un scénario`);
       if (e.machine !== undefined && !MACHINES[e.machine]) pb.push(`${nom} : machine inconnue « ${e.machine} »`);
       if (m.etapes.some((x) => x.machine) && !e.machine) pb.push(`${nom} : la fiche désigne des machines, cette étape n'en désigne aucune`);
+      if (e.annulation && (!e.facultatif || !['modification', 'destructif', 'interruption'].includes(e.effet))) pb.push(`${nom} : une étape d'annulation est facultative et modifie quelque chose`);
       if (e.suppose !== undefined && txt(e.suppose).length < 10) pb.push(`${nom} : « suppose » trop court`);
       if (m.id === 'gui') {
         if (e.lignes) pb.push(`${nom} : une étape graphique n'a pas de ligne de commande`);

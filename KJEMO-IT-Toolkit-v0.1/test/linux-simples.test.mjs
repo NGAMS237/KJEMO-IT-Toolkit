@@ -59,7 +59,7 @@ function lancer(id, valeurs, fichiers, { etapes = null } = {}) {
   for (const [n, c] of Object.entries(fichiers)) writeFileSync(join(dir, n), c);
   const r = P.rendreMethode(p.methodes[0], p.params, valeurs);
   const sorties = r.etapes.map((e, i) => {
-    if (etapes && !etapes.includes(i)) return null;
+    if (etapes ? !etapes.includes(i) : e.annulation) return null;
     const res = spawnSync('bash', ['-c', e.rendu.texteCopie], { cwd: dir, encoding: 'utf8' });
     return { out: res.stdout, err: res.stderr, code: res.status };
   });
@@ -72,6 +72,17 @@ const CSV = 'login;motdepasse;departement\nchef_ventes;MDP0001;Ventes\nvendeur1;
   assert(!r.lire('c.csv').includes('MDP0001') && (r.lire('c.csv').match(/Mdp0001x/g) ?? []).length === 3, 'sed : les 3 occurrences remplacées dans le fichier');
   assert(r.lire('c.csv.bak') === CSV, 'sed : la copie .bak est l’original exact');
   assert(r.sorties[2].out.includes('<') && r.sorties[2].code === 1, 'sed : diff .bak/fichier montre les différences');
+}
+{
+  // Annulation EXÉCUTÉE pour de vrai : après le remplacement, l'étape « Annuler » rend le fichier d'origine.
+  const p = fiche('linux-sed-remplacer');
+  const iA = p.methodes[0].etapes.findIndex((e) => e.annulation);
+  const iR = p.methodes[0].etapes.findIndex((e) => e.titre.startsWith('Appliquer'));
+  assert(iA > iR && iR >= 0, 'sed : une étape « Annuler » existe, après le remplacement');
+  const dir = mkdtempSync(join(tmpdir(), 'kjemo-ls-')); writeFileSync(join(dir, 'c.csv'), CSV);
+  const r = P.rendreMethode(p.methodes[0], p.params, { fichier: 'c.csv', ancien: 'MDP0001', nouveau: 'Mdp0001x' });
+  for (const i of [iR, iA]) spawnSync('bash', ['-c', r.etapes[i].rendu.texteCopie], { cwd: dir, encoding: 'utf8' });
+  assert(readFileSync(join(dir, 'c.csv'), 'utf8') === CSV, 'sed : après « Annuler », le fichier est identique à l’original');
 }
 {
   const r = lancer('linux-sed-remplacer', { fichier: 'c.csv', ancien: 'ZZZ', nouveau: 'y' }, { 'c.csv': CSV }, { etapes: [0] });

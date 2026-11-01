@@ -31,7 +31,7 @@ for (const p of W) {
   assert(e?.kind === 'procedure' && (e.plateformes ?? []).includes('Windows') && e.plateformes.length === 1, `${p.id} : fiche, plateforme Windows seule`);
   assert(p.origine === 'memo', `${p.id} : origine « memo »`);
   assert(p.methodes.length === 1 && p.methodes[0].id === 'powershell', `${p.id} : une méthode console`);
-  assert(p.methodes[0].etapes.at(-1).verification === true, `${p.id} : la dernière étape est la vérification`);
+  assert(p.methodes[0].etapes.filter((e) => !e.annulation).at(-1).verification === true, `${p.id} : la dernière étape de la procédure est la vérification (les étapes « Annuler » viennent après)`);
   assert(/non exécutées/.test(p.validation), `${p.id} : honnêteté « non exécutées »`);
   assert(p.sources.every((s) => s.url.startsWith('https://learn.microsoft.com/')), `${p.id} : sources HTTPS Microsoft`);
   if (p.effet !== 'lecture') assert(Boolean(p.methodes[0].retour), `${p.id} : une action qui modifie a un retour arrière`);

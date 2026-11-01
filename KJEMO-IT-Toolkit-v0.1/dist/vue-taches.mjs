@@ -179,6 +179,7 @@ function etiquettesEtape(etape) {
   return [
     puceMachine(etape.machine),
     etape.verification ? '<span class="step-flag flag-verif"><span aria-hidden="true">✔</span> Vérification</span>' : '',
+    etape.annulation ? '<span class="step-flag flag-annul"><span aria-hidden="true">↩</span> Annulation</span>' : '',
     etape.facultatif ? '<span class="step-flag flag-fac">Facultatif</span>' : '',
     etape.dernierRecours ? '<span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : '',
   ].join('');
@@ -335,7 +336,7 @@ function segmentMarkup(seg, rendu, ctx, { boutonSegment, numeros }) {
   const signale = true;
   const corps = etapes.map((e) => {
     const titre = signale
-      ? `<span class="cmd-comment"><span class="cmd-comment-titre"># ${numeros.get(rendu.etapes.indexOf(e))}. ${esc(e.titre)}</span>${e.facultatif ? ' <span class="step-flag flag-fac">Facultatif</span>' : ''}${e.dernierRecours ? ' <span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : ''}</span>`
+      ? `<span class="cmd-comment"><span class="cmd-comment-titre"># ${numeros.get(rendu.etapes.indexOf(e))}. ${esc(e.titre)}</span>${e.annulation ? ' <span class="step-flag flag-annul">Annulation</span>' : ''}${e.facultatif ? ' <span class="step-flag flag-fac">Facultatif</span>' : ''}${e.dernierRecours ? ' <span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : ''}</span>`
       : '';
     return titre + lignesCode(e.rendu.lignes);
   }).join('');

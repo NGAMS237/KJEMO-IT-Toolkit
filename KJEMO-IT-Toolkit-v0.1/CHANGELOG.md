@@ -1,3 +1,12 @@
+## ANNULER-01 (2026-10-31)
+- 91 méthodes de fiches qui modifient un poste reçoivent des étapes « Annuler » COPIABLES (116 étapes) au lieu d’une simple phrase : DNS et DHCP Windows, pare-feu, partages, GPO, comptes AD et locaux, quotas, RAID 1, partition, Samba, VLAN, STP, routes, RIP, EtherChannel, adresse IP fixe, nom d’hôte, clavier et langue, ufw, montages, NFS (table centrale dist/annulations.mjs).
+- Chaque étape est FACULTATIVE (jamais dans la copie de toute la fiche), signalée par la puce « Annulation » et rangée dans sa propre carte « Annuler ou défaire », après la vérification. Sur une fiche à deux postes, chaque annulation dit « Sur : Serveur » ou « Sur : Client Ubuntu ».
+- Les valeurs d’origine à relire (ancien groupe, ancien nom…) sont des repères en majuscules (ANCIEN_GROUPE…) que l’explication nomme ; les autres commandes n’emploient que les paramètres déjà saisis. Le PATH Windows est reconstruit sans le dossier ajouté, sans valeur à recopier.
+- Azure : aucune commande de suppression (règle du dépôt) ; seules les annulations sans « delete » sont ajoutées, les suppressions restent à taper à la main.
+- Contrat : une étape d’annulation doit être facultative et modifier quelque chose. Méthodes clonées, jamais de tableau partagé modifié.
+- Tests ajustés : la « dernière étape de la procédure est la vérification » ignore désormais les étapes « Annuler » ; browser-taches (8 blocs sur Créer un VLAN).
+- Testé : test/annulations.test.mjs (1375), dont l’annulation sed exécutée pour de vrai (test/linux-simples). Les autres commandes d’annulation NON exécutées sur de vrais postes.
+
 ## TROUVER-01 (2026-10-31)
 - Petit texte « À lire sur : poste + commande » sous les cases, généralisé : de 11 à environ 210 cases sur 501, via une table centrale (dist/trouver.mjs) par fiche, famille de fiches (Samba : le serveur) et plateforme (Linux, Windows, Cisco, Azure).
 - Seules les valeurs qu’on LIT sont notées ; une valeur inventée (nouveau nom, groupe à créer, VNet à créer) n’a pas de note. Les scénarios n’en reçoivent pas.
