@@ -16,20 +16,21 @@ import { tmpdir } from 'node:os';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const M = await imp('memo.mjs'); const C = await imp('classement.mjs');
-const { PROCEDURES_LINUX_SIMPLES: L5, PROCEDURES_LINUX_COMPTES: LC, PROCEDURES_LINUX_CLAVIER: LK } = await imp('procedures-linux-simples.mjs');
+const { PROCEDURES_LINUX_SIMPLES: L5, PROCEDURES_LINUX_COMPTES: LC, PROCEDURES_LINUX_CLAVIER: LK, PROCEDURES_LINUX_SYSTEME: LS } = await imp('procedures-linux-simples.mjs');
 const { PROCEDURES_WINDOWS_LANGUE: WL } = await imp('procedures-windows-langue.mjs');
-const L = [...L5, ...LC, ...LK, ...WL];
+const { PROCEDURES_WINDOWS_SSH: WS } = await imp('procedures-windows-ssh.mjs');
+const L = [...L5, ...LC, ...LK, ...LS, ...WL, ...WS];
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const fiche = (id) => L.find((p) => p.id === id);
 
 console.log('1. Contrat');
-assert(L5.length === 5 && LC.length === 5 && LK.length === 4 && WL.length === 4 && L.length === 18, '5 fiches de texte + 5 de comptes + 4 clavier Linux + 4 clavier Windows');
+assert(L5.length === 5 && LC.length === 5 && LK.length === 4 && WL.length === 4 && LS.length === 3 && WS.length === 1 && L.length === 22, '22 fiches : texte, comptes, clavier, nom/identité/SSH');
 for (const p of L) {
   const pb = P.incoherencesProcedure(p);
   assert(pb.length === 0, `contrat : ${p.id}`, pb.join(' | '));
   const e = T.entreeParId(p.id);
-  assert(e?.kind === 'procedure' && e.plateformes.length === 1 && e.plateformes[0] === (WL.includes(p) ? 'Windows' : 'Linux'), `${p.id} : une seule plateforme, la bonne`);
+  assert(e?.kind === 'procedure' && e.plateformes.length === 1 && e.plateformes[0] === (WL.includes(p) || WS.includes(p) ? 'Windows' : 'Linux'), `${p.id} : une seule plateforme, la bonne`);
   assert(M.toutesLesFichesMemo().filter((x) => x === p.id).length === 1, `${p.id} : rangée UNE fois dans l’aide-mémoire`);
   assert(Boolean(C.cheminDe(e)?.famille), `${p.id} : classée dans le catalogue`);
   assert(Object.keys(M.AJOUTS).includes(p.id), `${p.id} : badge « nouveau »`);
@@ -146,6 +147,31 @@ console.log('7. Clavier et langue');
   const loc = spawnSync('bash', ['-c', 'locale -a | grep -ci "^c"'], { encoding: 'utf8' });
   assert(loc.status === 0, 'locale -a s’exécute sur cette machine');
   for (const [req, attendu, plat] of [['localectl set-keymap', 'linux-clavier-changer', 'Linux'], ['clavier qwerty azerty linux', 'linux-clavier-changer', 'Linux'], ['gsettings input-sources', 'linux-clavier-session', 'Linux'], ['locale-gen', 'linux-langue-systeme', 'Linux'], ['alt shift clavier', 'win-clavier-raccourci', 'Windows'], ['set-winuserlanguagelist', 'win-clavier-fixer', 'Windows'], ['set-culture', 'win-region-format', 'Windows'], ['clavier change tout seul', 'win-langue-voir', 'Windows']]) {
+    const res = T.chercher(req, { plateforme: plat }); const ids = (res.resultats ?? res).map((x) => x.entree?.id ?? x.id);
+    assert(ids.slice(0, 6).includes(attendu), `recherche « ${req} » : ${attendu}`, ids.slice(0, 6).join());
+  }
+}
+
+console.log('8. Nom de la machine, identité, client SSH');
+{
+  const dir = mkdtempSync(join(tmpdir(), 'kjemo-hn-'));
+  writeFileSync(join(dir, 'hosts'), '127.0.0.1 localhost\n127.0.1.1 ancien-nom\n::1 ip6-localhost\n');
+  const h = fiche('linux-hostname-changer');
+  const rendu = P.rendreMethode(h.methodes[0], h.params, { nom: 'client-ubuntu01' }).etapes.map((e) => e.rendu.texteCopie);
+  const sedCmd = rendu.find((c) => c.includes('sed -i.bak')).replace('sudo ', '').replace('/etc/hosts', 'hosts');
+  const r = spawnSync('bash', ['-c', sedCmd], { cwd: dir, encoding: 'utf8' });
+  const apres = readFileSync(join(dir, 'hosts'), 'utf8');
+  assert(r.status === 0 && apres.includes('127.0.1.1 client-ubuntu01') && !apres.includes('ancien-nom') && apres.includes('127.0.0.1 localhost') && apres.includes('::1 ip6-localhost'), 'hosts : seule la ligne 127.0.1.1 est changée (exécuté pour de vrai)');
+  assert(readFileSync(join(dir, 'hosts.bak'), 'utf8').includes('ancien-nom'), 'hosts : la copie .bak garde l’original');
+  assert(!P.validerParametre(h.params[0], 'a b').ok && !P.validerParametre(h.params[0], 'nom;rm').ok && !P.validerParametre(h.params[0], 'srv.lab.local').ok && P.validerParametre(h.params[0], 'client-ubuntu01').ok, 'nom : espace, injection et point refusés');
+  const ident = P.rendreMethode(fiche('linux-systeme-identite').methodes[0], [], {});
+  for (const [i, e] of ident.etapes.entries()) {
+    if (i === 3) continue; // uptime : peut manquer dans un conteneur
+    const res = spawnSync('bash', ['-c', e.rendu.texteCopie.split('\n').filter((l) => !/ip -br|hostname -I/.test(l)).join('\n') || 'true'], { encoding: 'utf8' });
+    assert(res.status === 0, `identité : étape ${i + 1} s’exécute`, res.stderr);
+  }
+  assert(!P.validerParametre(fiche('linux-ssh-client-installer').params[0], 'blaise@srv; rm -rf /').ok && P.validerParametre(fiche('linux-ssh-client-installer').params[0], 'blaise@srvblaise').ok, 'ssh : cible validée');
+  for (const [req, attendu, plat] of [['hostnamectl set-hostname', 'linux-hostname-changer', 'Linux'], ['changer le nom de la machine', 'linux-hostname-changer', 'Linux'], ['quelle version ubuntu', 'linux-systeme-identite', 'Linux'], ['installer ssh client', 'linux-ssh-client-installer', 'Linux'], ['ssh command not found', 'linux-ssh-client-installer', 'Linux'], ['installer ssh windows', 'win-ssh-client-installer', 'Windows']]) {
     const res = T.chercher(req, { plateforme: plat }); const ids = (res.resultats ?? res).map((x) => x.entree?.id ?? x.id);
     assert(ids.slice(0, 6).includes(attendu), `recherche « ${req} » : ${attendu}`, ids.slice(0, 6).join());
   }

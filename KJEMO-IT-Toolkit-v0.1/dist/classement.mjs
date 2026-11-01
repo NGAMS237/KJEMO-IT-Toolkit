@@ -91,7 +91,7 @@ export const ARBRE = {
     F('processus', 'Processus, arrêt et sessions', { fiches: ['win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer'] }),
     F('fichiers', 'Fichiers, archives et droits', { fiches: ['win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession'] }),
     F('logiciels', 'Logiciels et correctifs (en commande)', { fiches: ['win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes'] }),
-    F('reglages', 'Tâches, variables et accès à distance', { fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser'] }),
+    F('reglages', 'Tâches, variables et accès à distance', { fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-ssh-client-installer', 'win-heure-synchroniser'] }),
     F('langue', 'Clavier, langue et format régional', { fiches: ['win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format'] }),
     F('comptes-locaux', 'Comptes locaux (en commande)', { fiches: ['win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] }),
   ],
@@ -154,6 +154,7 @@ export const ARBRE = {
       F('planification', 'Tâches planifiées', { fiches: ['cours-planifier-taches'] }),
       F('paquets', 'Paquets', { hotes: ['linux-package-diagnostic'] }),
       F('heure', 'Heure et NTP', { hotes: ['linux-time-sync-diagnostic'] }),
+      F('identite', 'Nom et identité de la machine', { fiches: ['linux-hostname-changer', 'linux-systeme-identite'] }),
       F('clavier', 'Clavier et langue', { fiches: ['linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme'] }),
     ] }),
     F('utilisateurs', 'Utilisateurs et permissions', { sujets: [
@@ -171,7 +172,7 @@ export const ARBRE = {
       F('pare-feu', 'Pare-feu', { hotes: ['linux-firewall-audit'] }),
     ] }),
     F('acces-distant', 'Accès distant', { sujets: [
-      F('ssh', 'SSH', { hotes: ['ssh-server-readiness', 'ssh-client-diagnostic', 'ssh-key-readiness', 'ssh-hardening-audit'] }),
+      F('ssh', 'SSH', { hotes: ['ssh-server-readiness', 'ssh-client-diagnostic', 'ssh-key-readiness', 'ssh-hardening-audit'], fiches: ['linux-ssh-client-installer'] }),
       F('cockpit', 'Cockpit', { hotes: ['cockpit-install-readiness', 'cockpit-connection-diagnostic'] }),
     ] }),
     F('partages', 'Partages de fichiers', { sujets: [

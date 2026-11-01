@@ -15,7 +15,7 @@ const SED = 'https://www.gnu.org/software/sed/manual/sed.html';
 const FICHIER = { id: 'fichier', label: 'fichier à traiter', type: 'arg', exemple: 'comptes_tp2.csv', aide: 'Un fichier texte existant, dans le dossier courant ou avec son chemin.' };
 const SEP = { id: 'sep', label: 'séparateur de colonnes', type: 'choix', choix: [';', ',', ':', '|'], exemple: ';', aide: 'Le caractère qui sépare les colonnes. Le TP2 utilise le point-virgule.' };
 
-function fiche({ id, titre, resume, effet, intentions, motsCles, params, etapes, verification, retour = null, sources, privileges = 'Utilisateur ordinaire, avec le droit d’écrire dans le dossier du fichier.' }) {
+function fiche({ id, titre, resume, effet, intentions, motsCles, params = [], etapes, verification, retour = null, sources, privileges = 'Utilisateur ordinaire, avec le droit d’écrire dans le dossier du fichier.' }) {
   return {
     id, titre, categorie: CATEGORIE_LINUX, resume, effet, intentions, motsCles, params,
     origine: 'memo',
@@ -258,5 +258,59 @@ export const PROCEDURES_LINUX_CLAVIER = [
     verification: ['System Locale affiche la langue choisie et, après une nouvelle ouverture de session, la commande locale aussi.'],
     retour: 'sudo localectl set-locale LANG=en_US.UTF-8 remet l’anglais.',
     sources: [{ label: 'localectl(1)', url: `${LOC}/localectl.html` }, { label: 'locale-gen(8)', url: `${MAN}/man8/locale-gen.8.html` }, { label: 'locale(7)', url: `${MAN}/man7/locale.7.html` }],
+  }),
+];
+
+// ===========================================================================
+// NOM, IDENTITÉ ET CLIENT SSH — KJEMO-SYSTEME-01
+// ===========================================================================
+const HOTE = { id: 'nom', label: 'nouveau nom de la machine', type: 'hote', exemple: 'client-ubuntu01', aide: 'Lettres, chiffres et tirets, sans espace ni point. Exemple : client-ubuntu01.' };
+
+export const PROCEDURES_LINUX_SYSTEME = [
+  fiche({
+    id: 'linux-hostname-changer', titre: 'Voir et changer le nom de la machine (hostname)', effet: 'modification', privileges: SUDO,
+    resume: 'Affiche le nom actuel de la machine puis le change avec hostnamectl, et met à jour /etc/hosts pour que le système se retrouve lui-même sous son nouveau nom.',
+    intentions: ['hostnamectl set-hostname', 'changer le nom de la machine ubuntu', 'renommer mon client linux', 'modifier le hostname', 'quel est le nom de ma machine linux'],
+    motsCles: ['hostname', 'hostnamectl', 'nom', 'renommer', 'machine', 'etc hosts', '127.0.1.1'],
+    params: [HOTE],
+    etapes: [
+      lec('Voir le nom actuel', 'Trois façons de lire le nom ; hostnamectl donne aussi la distribution et le noyau.', [sh('hostname'), sh('hostnamectl')], 'Le nom actuel, puis le détail (Static hostname, Operating System, Kernel).'),
+      lec('Voir la ligne du nom dans /etc/hosts', 'Sur Ubuntu, la ligne 127.0.1.1 porte l’ancien nom : il faut la mettre à jour aussi, sinon sudo affiche « unable to resolve host ».', [sh('grep 127.0.1.1 /etc/hosts')], 'Une ligne « 127.0.1.1 ancien-nom ». Aucune ligne : saute l’étape de mise à jour.'),
+      mod('Changer le nom', 'Écrit le nom dans /etc/hostname et l’applique tout de suite.', [sh('sudo hostnamectl set-hostname {{nom}}')], 'Aucun message en cas de succès.'),
+      mod('Mettre à jour /etc/hosts', 'Remplace le nom de la ligne 127.0.1.1 et garde l’original dans /etc/hosts.bak.', [sh('sudo sed -i.bak \'s/^127\\.0\\.1\\.1.*/127.0.1.1 {{nom}}/\' /etc/hosts')], 'Aucun message en cas de succès.', { facultatif: true, important: 'À faire seulement si l’étape précédente a trouvé une ligne 127.0.1.1.' }),
+      lec('Vérifier', 'Le nom doit être le nouveau, et sudo ne doit plus se plaindre.', [sh('hostnamectl --static'), sh('sudo true')], 'Le nouveau nom, puis aucun message d’erreur.', { verification: true }),
+    ],
+    verification: ['hostnamectl --static affiche le nouveau nom et sudo ne signale aucune erreur de résolution.'],
+    retour: 'Relance la commande hostnamectl avec l’ancien nom ; sudo mv /etc/hosts.bak /etc/hosts remet le fichier hosts d’origine.',
+    sources: [{ label: 'hostnamectl(1)', url: `${LOC}/hostnamectl.html` }, { label: 'hostname(5)', url: `${MAN}/man5/hostname.5.html` }, { label: 'hosts(5)', url: `${MAN}/man5/hosts.5.html` }],
+  }),
+  fiche({
+    id: 'linux-systeme-identite', titre: 'Savoir sur quelle machine je suis (nom, version, adresse IP)', effet: 'lecture', privileges: LECTURE,
+    resume: 'Rassemble en quelques commandes le nom de la machine, la version d’Ubuntu, le noyau, l’adresse IP, le compte connecté et la durée de fonctionnement. Utile en début de TP ou par SSH, pour vérifier qu’on est sur la bonne machine.',
+    intentions: ['lsb_release -a', 'quelle version d’ubuntu j’utilise', 'quelle est mon adresse ip linux', 'uname -r', 'sur quelle machine suis-je connecté en ssh'],
+    motsCles: ['version', 'ubuntu', 'noyau', 'adresse ip', 'whoami', 'hostname', 'os-release', 'uptime'],
+    etapes: [
+      lec('Qui et où', 'Le compte connecté et le nom de la machine.', [sh('whoami'), sh('hostname')], 'Ton compte, puis le nom de la machine.'),
+      lec('Version du système', 'La distribution et sa version, puis la version du noyau.', [sh('cat /etc/os-release'), sh('uname -r')], 'Des lignes NAME, VERSION (par exemple Ubuntu 24.04) puis le numéro du noyau.'),
+      lec('Adresse IP', '-br donne un résumé court : une ligne par carte réseau, avec son état et son adresse.', [sh('ip -br address'), sh('hostname -I')], 'Une ligne par carte (UP et l’adresse). hostname -I donne seulement les adresses.'),
+      lec('Depuis quand elle tourne', 'Durée de fonctionnement et charge.', [sh('uptime')], 'Une ligne avec l’heure, la durée (up …) et la charge moyenne.', { verification: true }),
+    ],
+    verification: ['Tu sais quel compte, quelle machine, quelle version et quelle adresse IP tu utilises.'],
+    sources: [{ label: 'os-release(5)', url: `${MAN}/man5/os-release.5.html` }, { label: 'ip(8)', url: `${MAN}/man8/ip.8.html` }, { label: 'uname(1)', url: `${MAN}/man1/uname.1.html` }],
+  }),
+  fiche({
+    id: 'linux-ssh-client-installer', titre: 'Installer ou vérifier le client SSH sous Ubuntu', effet: 'modification', privileges: SUDO,
+    resume: 'Vérifie que la commande ssh est présente et installe le paquet openssh-client si elle manque, puis teste la connexion vers un serveur. Le client sert à se connecter ; le serveur sert à recevoir des connexions.',
+    intentions: ['ssh -v version', 'installer le client ssh ubuntu', 'apt install openssh-client', 'ssh command not found', 'se connecter à un serveur par ssh depuis ubuntu'],
+    motsCles: ['ssh', 'openssh-client', 'client', 'installer', 'apt', 'connexion', 'port 22'],
+    params: [{ id: 'cible', label: 'compte et serveur à joindre', type: 'arg', exemple: 'blaise@srvblaise', aide: 'Format compte@serveur, le serveur étant un nom ou une adresse IP.' }],
+    etapes: [
+      lec('Vérifier si le client est déjà là', '-V affiche la version ; « command not found » signifie qu’il manque.', [sh('ssh -V')], 'Par exemple « OpenSSH_9.6p1 Ubuntu… ». « command not found » : passe à l’installation.'),
+      mod('Installer le client', 'Installe le paquet openssh-client (la commande ssh, scp, ssh-keygen). Sans effet s’il est déjà installé.', [sh('sudo apt update'), sh('sudo apt install openssh-client')], 'La fin de l’installation sans erreur.'),
+      lec('Se connecter', 'La première connexion demande de confirmer l’empreinte du serveur (tape yes), puis le mot de passe du compte.', [sh('ssh {{cible}}')], 'L’invite du serveur distant. « Connection refused » : le serveur SSH n’est pas installé ou démarré ; « timed out » : adresse, réseau ou pare-feu.', { verification: true }),
+    ],
+    verification: ['ssh -V affiche une version et la connexion au serveur s’ouvre.'],
+    retour: 'sudo apt remove openssh-client retire le client (rarement utile).',
+    sources: [{ label: 'ssh(1)', url: `${MAN}/man1/ssh.1.html` }, { label: 'Ubuntu : OpenSSH', url: 'https://ubuntu.com/server/docs/openssh-server' }],
   }),
 ];

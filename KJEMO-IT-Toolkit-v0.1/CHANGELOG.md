@@ -1,3 +1,7 @@
+## SYSTEME-01 (2026-10-31)
+- 4 fiches : changer le nom de la machine Linux (hostnamectl et /etc/hosts), savoir sur quelle machine on est (nom, version, IP), installer le client SSH sous Ubuntu et sous Windows.
+- Testé : mise à jour de /etc/hosts exécutée pour de vrai sur un fichier temporaire ; hostnamectl, apt et Add-WindowsCapability NON exécutés.
+
 ## CHOIX-LISTE-01 (2026-10-31)
 - Les paramètres « choix » (disposition de clavier, langue, région Azure, masque, rôle…) s’affichent en liste déroulante au lieu d’un champ à taper. Un paramètre peut porter des libellés lisibles (QWERTY, AZERTY, QWERTZ) : la valeur technique reste celle qui est validée et copiée.
 - Clavier : ajout de l’allemand et de l’espagnol, retrait du britannique (nom différent à la console). Testé : test/browser-choix.test.mjs.
