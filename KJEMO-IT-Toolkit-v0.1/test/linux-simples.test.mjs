@@ -25,7 +25,7 @@ const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.err
 const fiche = (id) => L.find((p) => p.id === id);
 
 console.log('1. Contrat');
-assert(L5.length === 5 && LC.length === 5 && LK.length === 4 && WL.length === 4 && LS.length === 3 && WS.length === 1 && L.length === 22, '22 fiches : texte, comptes, clavier, nom/identité/SSH');
+assert(L5.length === 5 && LC.length === 6 && LK.length === 4 && WL.length === 4 && LS.length === 3 && WS.length === 1 && L.length === 23, '23 fiches : texte, comptes, clavier, nom/identité/SSH');
 for (const p of L) {
   const pb = P.incoherencesProcedure(p);
   assert(pb.length === 0, `contrat : ${p.id}`, pb.join(' | '));
@@ -135,6 +135,8 @@ console.log('6. Comptes, groupes et mots de passe');
   const rendu = (id, val) => P.rendreMethode(fiche(id).methodes[0], fiche(id).params, val).etapes.map((e) => e.rendu.texteCopie).join('\n');
   assert(/samba-tool user show christian_chef/.test(rendu('samba-compte-voir', { compte: 'christian_chef' })), 'samba : user show rendu');
   assert(/samba-tool user setpassword christian_chef/.test(rendu('samba-mot-de-passe', { compte: 'christian_chef' })) && !/--newpassword/.test(rendu('samba-mot-de-passe', { compte: 'christian_chef' })), 'samba : setpassword sans mot de passe en clair dans la commande');
+  const cree = P.rendreMethode(fiche('samba-compte-creer').methodes.find((m) => m.id === 'linux'), fiche('samba-compte-creer').params, { compte: 'christian_chef' }).etapes.filter((e) => e.rendu).map((e) => e.rendu.texteCopie).join('\n');
+  assert(/samba-tool user create christian_chef/.test(cree) && !/--random-password/.test(cree) && fiche('samba-compte-creer').methodes[0].id === 'gui', 'samba : user create sans mot de passe en clair, option graphique en premier');
   assert(/passwd christian_chef/.test(rendu('linux-mot-de-passe-local', { compte: 'christian_chef' })), 'local : passwd rendu');
   assert(!v('linux-mot-de-passe-local', 'compte', 'a; rm -rf /').ok && !v('samba-mot-de-passe', 'compte', '$(id)').ok && !v('linux-groupes-locaux-lister', 'groupe', 'x y').ok, 'comptes : valeurs piégées refusées');
   for (const [req, attendu] of [['lister les utilisateurs locaux', 'linux-comptes-locaux-lister'], ['getent group', 'linux-groupes-locaux-lister'], ['changer le mot de passe linux', 'linux-mot-de-passe-local'], ['samba-tool user show', 'samba-compte-voir'], ['samba-tool user setpassword', 'samba-mot-de-passe']]) {

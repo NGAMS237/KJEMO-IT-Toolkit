@@ -48,6 +48,7 @@ export const HOTE_PROCEDURE = {
   'cours-samba-script-menu': 'samba-ad-user-manage',
   'samba-compte-voir': 'samba-ad-user-manage',
   'samba-mot-de-passe': 'samba-ad-user-manage',
+  'samba-compte-creer': 'samba-ad-user-manage',
   'cours-samba-dns': 'samba-ad-health',
   'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
   'cours-ubuntu-jonction-ad-graphique': 'samba-ad-dc-readiness',

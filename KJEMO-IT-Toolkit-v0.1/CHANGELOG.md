@@ -1,3 +1,8 @@
+## COMPTE-SAMBA-01 (2026-11-01)
+- Nouvelle fiche « Créer un utilisateur Samba AD » (aide-mémoire › Samba › Comptes et groupes) : vérifier que le nom est libre, `samba-tool user create` (mot de passe à l’invite), vérification, et annulations (désactiver, supprimer).
+- Option graphique en premier onglet : console dsa.msc (RSAT) — libellés non vérifiés sur un vrai poste.
+- Testé : test/linux-simples.test.mjs (rendu de la commande, aucun mot de passe dans la commande, option graphique en premier).
+
 ## RECONSTRUIRE-01 (2026-11-01)
 - Parcours « Reconstruire le domaine Samba AD : l’ordre des fiches » : sortir les clients, nouvelle VM, installer le contrôleur, DNS des clients, joindre, vérifier ; chaque étape dit sur quel poste et renvoie à sa fiche.
 - Trois nouvelles fiches : « Régler le DNS d’un poste Windows », « Sortir Ubuntu d’un domaine dont le serveur n’existe plus » (realm leave sans --remove), « Sortir Windows d’un domaine dont le serveur n’existe plus ».

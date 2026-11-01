@@ -9,7 +9,7 @@
  * rien n'est exécuté par le Toolkit. Les valeurs saisies sont validées : aucun
  * caractère spécial de l'interpréteur (le séparateur est un CHOIX fermé).
  */
-import { lec, mod, sh, MAN, CATEGORIE_LINUX, V_COURS } from './cours-outils.mjs';
+import { lec, mod, des, gui, sh, MAN, CATEGORIE_LINUX, V_COURS } from './cours-outils.mjs';
 
 const SED = 'https://www.gnu.org/software/sed/manual/sed.html';
 const FICHIER = { id: 'fichier', label: 'fichier à traiter', type: 'arg', exemple: 'comptes_tp2.csv', aide: 'Un fichier texte existant, dans le dossier courant ou avec son chemin.' };
@@ -185,6 +185,39 @@ export const PROCEDURES_LINUX_COMPTES = [
     retour: 'Un mot de passe changé ne se retrouve pas : redéfinis-en un avec la même commande.',
     sources: [{ label: 'samba-tool', url: 'https://www.samba.org/samba/docs/current/man-html/samba-tool.8.html' }, { label: 'grep(1)', url: `${MAN}/man1/grep.1.html` }],
   }),
+  (() => {
+    const annul = { facultatif: true, annulation: true, phase: 'Annuler ou défaire' };
+    const f = fiche({
+      id: 'samba-compte-creer', titre: 'Créer un utilisateur Samba AD', effet: 'modification',
+      resume: 'Crée un compte dans le domaine Samba, vérifie qu’il existe, puis permet de le désactiver ou de le supprimer. Le mot de passe est demandé à l’invite (saisie masquée) et doit respecter la complexité du domaine. Option graphique : « Utilisateurs et ordinateurs Active Directory » depuis un poste Windows.',
+      intentions: ['samba-tool user create', 'créer un utilisateur samba', 'créer un compte du domaine samba ad', 'ajouter un utilisateur au domaine samba', 'nouveau compte active directory samba', 'créer un utilisateur dans l’ad'],
+      motsCles: ['samba-tool', 'user create', 'compte', 'utilisateur', 'domaine', 'mot de passe', 'complexité', 'dsa.msc'],
+      privileges: 'Sur le contrôleur de domaine Samba : utilisateur autorisé à utiliser sudo.',
+      params: [COMPTE],
+      etapes: [
+        lec('Vérifier que le compte n’existe pas', 'Évite un doublon. Une erreur « Unable to find user » est la bonne réponse ici : le nom est libre.', [sh('sudo samba-tool user show {{compte}} | grep -E \'^sAMAccountName:\'')], 'Aucune sortie ou une erreur « Unable to find user » : le nom est libre.'),
+        mod('Créer le compte', 'samba-tool demande le mot de passe deux fois, sans l’afficher. Un mot de passe trop simple (MDP0001 : majuscules et chiffres seulement) est refusé avec un message sur la complexité.', [sh('sudo samba-tool user create {{compte}}')], 'Le message « User \'…\' added successfully ». Une erreur « does not meet the complexity criteria » : ajoute un type de caractère (minuscule ou symbole). Une erreur « already exists » : le compte existe déjà.', { interactions: [{ attend: 'New Password', reponds: 'Tape le mot de passe (rien ne s’affiche), Entrée, puis retape-le pour confirmer.' }], important: 'Ne mets jamais le mot de passe dans la commande : il resterait dans l’historique du shell.' }),
+        lec('Vérifier le compte', 'Le compte doit apparaître avec son nom de connexion et sa date de création du mot de passe.', [sh('sudo samba-tool user show {{compte}} | grep -E \'^(sAMAccountName|pwdLastSet|userAccountControl):\'')], 'sAMAccountName : le compte ; pwdLastSet : une valeur non nulle.', { verification: true }),
+        { titre: 'Annuler — désactiver le compte', effet: 'modification', explication: 'Le compte ne peut plus ouvrir de session mais reste dans l’annuaire avec ses groupes : on peut le réactiver avec « samba-tool user enable ».', lignes: [sh('sudo samba-tool user disable {{compte}}')], attendu: 'Le message « Disabled user … ».', ...annul },
+        des('Annuler — supprimer le compte', 'Supprime définitivement le compte de l’annuaire ; il quitte aussi ses groupes. Ses fichiers sur les partages restent, mais n’ont plus de propriétaire connu.', [sh('sudo samba-tool user delete {{compte}}')], 'Le message « Deleted user … ».', annul),
+      ],
+      verification: ['samba-tool user show affiche le compte, et le compte ouvre une session depuis un poste du domaine.'],
+      retour: 'Les commandes de désactivation et de suppression sont dans les étapes « Annuler » ci-dessus. Pour mettre le compte dans un groupe : fiche « Gérer un groupe Samba ».',
+      sources: [{ label: 'samba-tool', url: 'https://www.samba.org/samba/docs/current/man-html/samba-tool.8.html' }, { label: 'grep(1)', url: `${MAN}/man1/grep.1.html` }],
+    });
+    f.methodes.unshift({
+      id: 'gui', privileges: 'Poste Windows du domaine, avec les outils RSAT installés et un compte autorisé à créer des utilisateurs.',
+      etapes: [
+        gui('Ouvrir la console des utilisateurs', 'lecture', 'dsa.msc est la console « Utilisateurs et ordinateurs Active Directory » (outils RSAT).', ['Appuie sur **Windows + R**, tape **dsa.msc**, puis **Entrée**.', 'Dans le volet de gauche, clique sur le conteneur voulu (**Users**, ou une unité d’organisation).'], 'La console s’ouvre sur ton domaine.'),
+        gui('Créer l’utilisateur', 'modification', 'Un assistant demande le nom, le nom de connexion et le mot de passe.', ['Clique droit sur le conteneur, **Nouveau › Utilisateur**.', 'Renseigne le **Nom** et le **Nom d’ouverture de session**, puis **Suivant**.', 'Saisis le mot de passe deux fois (il doit respecter la complexité du domaine), choisis si l’utilisateur doit le changer à la première ouverture de session, puis **Suivant › Terminer**.'], 'Le compte apparaît dans la liste du conteneur.', { important: 'Si la console dit que le mot de passe ne respecte pas la stratégie, ajoute une minuscule ou un symbole.' }),
+        gui('Vérifier le compte', 'lecture', 'Le compte doit s’ouvrir sans erreur.', ['Double-clique sur le compte : l’onglet **Compte** affiche le nom de connexion.'], 'Les propriétés du compte s’affichent.', { verification: true }),
+        gui('Annuler — désactiver ou supprimer le compte', 'modification', 'Désactiver garde le compte ; supprimer l’efface de l’annuaire.', ['Clique droit sur le compte, **Désactiver le compte** (réversible : **Activer le compte**).', 'Pour supprimer : clique droit, **Supprimer**, puis confirme.'], 'Le compte est grisé (désactivé) ou a disparu de la liste.', annul),
+      ],
+      verification: ['Le compte figure dans la console et ouvre une session depuis un poste du domaine.'],
+      retour: 'Clique droit sur le compte : Désactiver le compte ou Supprimer.',
+    });
+    return f;
+  })(),
 ];
 
 // ===========================================================================
