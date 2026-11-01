@@ -1,3 +1,10 @@
+## DC-INSTALL-01 (2026-11-01)
+- Nouvelle fiche « Installer un contrôleur de domaine Samba AD sur Ubuntu » (aide-mémoire › Samba › Domaine, DNS et outils), d’après la documentation Ubuntu Server : nom complet et /etc/hosts (jamais 127.0.1.1), paquets samba-ad-dc/krb5-user/bind9-dnsutils, services smbd/nmbd/winbind masqués, provisionnement, nouveau mot de passe tapé au terminal, DNS en amont (jamais 127.0.0.53), systemd-resolved arrêté avant le démarrage, krb5.conf, vérifications (port 53, SRV, kinit), pare-feu.
+- Étapes facultatives : adresse IP fixe (netplan try) et service de l’heure aux clients (chrony) — sans lui, un client réglé sur NTP=adresse du serveur n’obtient aucune réponse.
+- Partie « Annuler ou défaire » complète : supprimer le domaine, remettre smb.conf, resolv.conf/systemd-resolved, /etc/hosts, services, et désinstaller les paquets.
+- La fiche de jonction (commandes et graphique) renvoie vers elle comme prérequis.
+- Testé : test/samba-ad-installer.test.mjs (16), dont le remplacement du « dns forwarder » et le retrait de la ligne 127.0.1.1 exécutés pour de vrai sur des fichiers temporaires ; test/browser-choix.test.mjs. samba-tool, systemctl, apt, chrony et netplan NON exécutés sur un vrai Ubuntu.
+
 ## JONCTION-GUI-01 (2026-11-01)
 - Nouvelle fiche « Joindre Ubuntu à un domaine Samba AD par l’interface graphique » (aide-mémoire › Samba › Domaine, DNS et outils), alternative à la jonction par commandes : onglet graphique (Cockpit sur https://localhost:9090 › Vue d’ensemble › Joindre le domaine, puis ouverture de session compte@domaine ; variante Paramètres › Utilisateurs › Connexion d’entreprise) et onglet Terminal (contrôle du DNS du serveur, DNS du client par nmcli, domaine trouvé, installation, jonction, vérification, annulations).
 - Le contrôle du port 53 du serveur vient en premier : un « Connection refused » côté client veut dire que rien n’écoute le DNS.

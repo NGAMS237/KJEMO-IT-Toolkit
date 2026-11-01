@@ -101,6 +101,13 @@ assert(await page.locator('.flag-annul').count() >= 1, 'jonction graphique : ét
 await page.goto(BASE + '/#/tache/cours-ubuntu-jonction-ad');
 await page.waitForSelector('.tache');
 assert((await page.textContent('body')).includes('127.0.1.1'), 'jonction par commandes : la ligne /etc/hosts accompagne le changement de nom');
+await page.goto(BASE + '/#/tache/samba-ad-installer');
+await page.waitForSelector('#p-domaine', { state: 'attached' });
+assert((await page.$$('.param-trouver')).length >= 6, 'installation du domaine : notes « à lire sur » sous les cases');
+assert(await page.locator('.flag-annul').count() >= 5, 'installation du domaine : étapes « Annuler » signalées');
+assert((await page.textContent('body')).includes('systemd-resolved'), 'installation du domaine : étape systemd-resolved présente');
+await page.setViewportSize({ width: 390, height: 800 });
+assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'installation du domaine : pas de débordement à 390 px');
 assert(erreurs.length === 0, 'aucune erreur de page', erreurs.join(' | '));
 await browser.close(); server.close();
 console.log(`\nbrowser-choix : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

@@ -51,6 +51,7 @@ export const HOTE_PROCEDURE = {
   'cours-samba-dns': 'samba-ad-health',
   'cours-ubuntu-jonction-ad': 'samba-ad-dc-readiness',
   'cours-ubuntu-jonction-ad-graphique': 'samba-ad-dc-readiness',
+  'samba-ad-installer': 'samba-ad-dc-provision',
   // KJEMO-COURS-TP2-01-R1 : postes clients du TP2.
   'cours-hyperviseur-ajouter-disque': 'linux-disk-partition-mount',
   'cours-ubuntu-reseau-client': 'linux-network-diagnostic',

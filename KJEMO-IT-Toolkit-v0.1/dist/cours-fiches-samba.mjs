@@ -417,7 +417,8 @@ export const COURS_SAMBA_MEMO = [
       intentions: ['joindre ubuntu au domaine avec interface graphique', 'cockpit join domain', 'ubuntu rejoindre active directory sans terminal', 'connexion d’entreprise ubuntu', 'enterprise login ubuntu', 'realm join graphique', 'connection refused resolvectl domaine', 'le client ne trouve pas le domaine'],
       motsCles: ['cockpit', 'graphique', 'interface', 'paramètres', 'connexion d’entreprise', 'enterprise login', 'realmd', 'domaine', 'jonction', 'ubuntu', 'dns', 'networkmanager'],
       prerequis: [
-        { texte: 'Le contrôleur de domaine Samba est installé et démarré, et le client Ubuntu le joint par ping.', fiche: 'cours-ubuntu-reseau-client' },
+        { texte: 'Le contrôleur de domaine Samba est installé et démarré (service samba-ad-dc actif, DNS sur le port 53).', fiche: 'samba-ad-installer' },
+        { texte: 'Le client Ubuntu a une adresse du même réseau et joint le serveur par ping.', fiche: 'cours-ubuntu-reseau-client' },
       ],
       params: [
         { id: 'domaine', label: 'nom du domaine', type: 'fqdn', exemple: 'ad.lab', aide: 'Le nom DNS du domaine Active Directory.', trouver: { poste: 'serveur', commande: 'sudo samba-tool domain info 127.0.0.1' } },
@@ -479,3 +480,97 @@ export const COURS_SAMBA_MEMO = [
     return f;
   })()
 ];
+
+/** Installer un contrôleur de domaine Samba AD (Ubuntu récent), d'après la documentation Ubuntu Server. */
+COURS_SAMBA_MEMO.push((() => {
+  const sv = (e) => ({ ...e, machine: S });
+  const annul = { facultatif: true, annulation: true, phase: 'Annuler ou défaire' };
+  const f = ficheLinux({
+    id: 'samba-ad-installer',
+    titre: 'Installer un contrôleur de domaine Samba AD sur Ubuntu',
+    resume: 'Du serveur vide au domaine qui répond : nom et adresse, paquets, provisionnement, DNS et Kerberos, vérifications, puis annulation complète pour recommencer. Le mot de passe de l’administrateur se tape au terminal, jamais dans l’app.',
+    effet: 'interruption',
+    intentions: ['installer samba active directory ubuntu', 'samba-tool domain provision', 'créer un domaine samba ad', 'contrôleur de domaine samba ubuntu', 'samba-ad-dc ne démarre pas port 53', 'systemd-resolved samba ad dns', 'dns forwarder samba', 'recommencer le provisionnement samba', 'purger un domaine samba', 'installer le domaine ad.lab'],
+    motsCles: ['samba', 'samba-tool', 'provision', 'active directory', 'contrôleur de domaine', 'kerberos', 'krb5', 'samba-ad-dc', 'systemd-resolved', 'dns forwarder', 'chrony', 'domaine', 'serveur', 'purge', 'annuler'],
+    params: [
+      { id: 'domaine', label: 'nom DNS du domaine', type: 'fqdn', exemple: 'ad.lab', aide: 'En minuscules. Évite un nom qui existe sur Internet (.com) ; .lab ou .internal conviennent au laboratoire.', trouver: { poste: 'serveur', commande: 'sudo samba-tool domain info 127.0.0.1', texte: '(s’il existe déjà ; sinon, tu l’inventes)' } },
+      { id: 'royaume', label: 'royaume Kerberos (realm)', type: 'fqdn', exemple: 'AD.LAB', aide: 'Le nom du domaine en MAJUSCULES.' },
+      { id: 'netbios', label: 'nom court du domaine (NetBIOS)', type: 'identifiant', exemple: 'AD', aide: '15 caractères au plus, en majuscules ; c’est le préfixe de connexion (AD\\compte).' },
+      { id: 'hote', label: 'nom court du serveur', type: 'hote', exemple: 'serverdc', aide: 'Lettres, chiffres et tirets, sans point.', trouver: { poste: 'serveur', commande: 'hostnamectl --static' } },
+      { id: 'fqdn', label: 'nom complet du serveur', type: 'fqdn', exemple: 'serverdc.ad.lab', aide: 'Le nom court suivi du domaine.' },
+      { id: 'ipServeur', label: 'adresse IP du serveur', type: 'ipv4', exemple: '192.168.20.1', aide: 'Une adresse FIXE ; ce sera aussi le DNS des clients.', trouver: { poste: 'serveur', commande: 'ip -br address' } },
+      { id: 'reseau', label: 'réseau des clients', type: 'cidr', exemple: '192.168.20.0/24', aide: 'Le réseau d’où viennent les clients, avec son préfixe.', trouver: { poste: 'serveur', commande: 'ip -br address', texte: '(l’adresse du serveur avec le dernier nombre à 0)' } },
+      { id: 'forwarder', label: 'DNS en amont (Internet)', type: 'ipv4', exemple: '192.168.1.1', aide: 'Le serveur DNS qui répond aux noms d’Internet : souvent le routeur. PAS 127.0.0.53.', trouver: { poste: 'serveur', commande: 'resolvectl status', texte: '(ligne « Current DNS Server », AVANT de désactiver systemd-resolved)' } },
+      { id: 'interface', label: 'interface réseau du serveur', type: 'identifiant', exemple: 'eth1', aide: 'Seulement pour fixer l’adresse (étape facultative).', trouver: { poste: 'serveur', commande: 'ip -br link' } },
+      { id: 'prefixe', label: 'longueur du préfixe', type: 'prefixe', exemple: '24', aide: 'Ex. 24 pour 255.255.255.0.' },
+      { id: 'passerelle', label: 'passerelle', type: 'ipv4', exemple: '192.168.20.254', aide: 'Seulement pour fixer l’adresse (étape facultative). Le routeur du réseau.', trouver: { poste: 'serveur', commande: 'ip route show default' } },
+    ],
+    privileges: 'Administrateur du serveur : sudo. Un serveur Ubuntu dédié (une VM suffit), avec accès Internet pour installer les paquets.',
+    etapes: [
+      // ---------------------------------------------------------- 1. PRÉPARER
+      sv(lec('Lire l’état de départ', 'Note le nom, l’adresse et la présence d’un ancien smb.conf : provision refuse de travailler si un smb.conf existe.', [sh('hostnamectl --static'), sh('ip -br address'), sh('ls -l /etc/samba')], 'Un nom, une adresse du bon réseau, et pas de domaine déjà provisionné.', { phase: 'Préparer' })),
+      sv(itr('Fixer l’adresse IP du serveur (facultatif)', 'Une adresse qui change casse tout le domaine. Si ton adresse est déjà fixe (réservation DHCP, hyperviseur), saute cette étape. netplan try annule tout seul au bout de 120 secondes si tu ne confirmes pas.', [
+        sh('sudo tee /etc/netplan/60-samba-ad.yaml <<\'EOF\''),
+        sh('network:'), sh('  version: 2'), sh('  ethernets:'), sh('    {{interface}}:'), sh('      dhcp4: false'), sh('      addresses: [{{ipServeur}}/{{prefixe}}]'),
+        sh('      routes:'), sh('        - to: default'), sh('          via: {{passerelle}}'), sh('      nameservers:'), sh('        addresses: [{{forwarder}}]'), sh('EOF'),
+        sh('sudo chmod 600 /etc/netplan/60-samba-ad.yaml'), sh('sudo netplan try'),
+      ], 'netplan try demande de confirmer avec Entrée avant la fin du compte à rebours.', { facultatif: true, phase: 'Préparer', interactions: [{ attend: 'Press ENTER before the timeout to accept the new configuration', reponds: 'Entrée, une fois que tu vérifies que la connexion fonctionne encore.' }], important: 'Si un autre fichier de /etc/netplan configure déjà cette interface (cloud-init, installateur), les deux se combinent : lis-les avant. Fais-le depuis la console de la VM, pas en SSH.' })),
+      sv(mod('Donner au serveur son nom complet', 'Le nom complet doit se résoudre vers l’adresse RÉELLE du serveur, jamais vers 127.0.1.1 : sinon le domaine publie une mauvaise adresse. On sauvegarde /etc/hosts, on retire la ligne 127.0.1.1 et on ajoute la bonne.', [
+        sh('sudo cp -a /etc/hosts /etc/hosts.avant-ad'), sh('sudo sed -i \'/^127\\.0\\.1\\.1/d\' /etc/hosts'),
+        sh('echo "{{ipServeur}} {{fqdn}} {{hote}}" | sudo tee -a /etc/hosts'), sh('sudo hostnamectl set-hostname {{fqdn}}'),
+      ], 'Aucune erreur.', { phase: 'Préparer' })),
+      sv(lec('Vérifier le nom', 'hostname -f doit afficher le nom complet, et getent l’adresse réelle du serveur.', [sh('hostname -f'), sh('getent hosts {{fqdn}}')], 'Le nom complet, puis l’adresse du serveur (pas 127.0.1.1).', { phase: 'Préparer', verification: true })),
+      sv(mod('Servir l’heure aux clients (facultatif)', 'Kerberos refuse un écart de plus de cinq minutes. Un client réglé avec NTP=adresse du serveur n’obtient aucune réponse tant que le serveur ne sert pas l’heure : c’est ce que fait chrony (« Packet count: 0 » côté client). « local stratum 10 » lui permet de servir sa propre horloge sans Internet.', [
+        sh('sudo apt install -y chrony'), sh('sudo mkdir -p /etc/chrony/conf.d'),
+        sh('printf \'allow {{reseau}}\\nlocal stratum 10\\n\' | sudo tee /etc/chrony/conf.d/domaine-ad.conf'), sh('sudo systemctl restart chrony'), sh('chronyc tracking'),
+      ], 'chronyc tracking affiche une ligne « Reference ID » et « Leap status : Normal ».', { facultatif: true, phase: 'Préparer', important: 'Installer chrony remplace systemd-timesyncd sur ce serveur. Non testé ici : lis chronyc tracking avant de t’y fier.' })),
+      // ---------------------------------------------------------- 2. INSTALLER
+      sv(mod('Installer les paquets', 'samba-ad-dc est le contrôleur de domaine ; krb5-user donne kinit pour tester ; bind9-dnsutils donne dig. DEBIAN_FRONTEND=noninteractive évite les questions de krb5 (le fichier est de toute façon remplacé plus loin).', [sh('sudo apt update'), sh('sudo DEBIAN_FRONTEND=noninteractive apt install -y samba-ad-dc krb5-user bind9-dnsutils')], 'Les paquets s’installent sans erreur.', { phase: 'Installer' })),
+      sv(mod('Arrêter les services de partage classiques', 'Un contrôleur de domaine utilise un seul service, samba-ad-dc. smbd, nmbd et winbind sont arrêtés et masqués pour qu’ils ne démarrent jamais en même temps. Un message « unit not found » pour l’un d’eux est sans gravité.', [
+        sh('sudo systemctl disable --now smbd nmbd winbind'), sh('sudo systemctl mask smbd nmbd winbind'), sh('sudo systemctl unmask samba-ad-dc'), sh('sudo systemctl enable samba-ad-dc'),
+      ], 'Aucune erreur bloquante ; samba-ad-dc est enabled mais pas encore démarré.', { phase: 'Installer' })),
+      sv(mod('Mettre l’ancien smb.conf de côté', 'provision refuse d’écraser un smb.conf existant. On le range sous un autre nom : l’annulation pourra le remettre.', [sh('sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.orig')], 'Aucune erreur (ou « No such file » si aucun smb.conf n’existait).', { phase: 'Installer' })),
+      sv(mod('Provisionner le domaine', 'Crée le domaine : bases de données, comptes, DNS interne (SAMBA_INTERNAL), Kerberos. Sans --adminpass, un mot de passe aléatoire est généré et affiché dans le résultat.', [sh('sudo samba-tool domain provision --domain {{netbios}} --realm={{royaume}} --server-role=dc --use-rfc2307 --dns-backend=SAMBA_INTERNAL')], 'Les dernières lignes affichent « Server Role: active directory domain controller », le domaine et le mot de passe de l’administrateur.', { phase: 'Installer', important: 'IRRÉVERSIBLE : il n’existe pas de « dé-provisionner ». Pour recommencer, utilise la partie « Annuler ou défaire ». Note le mot de passe affiché : l’étape suivante le remplace.' })),
+      sv(itr('Choisir le mot de passe de l’administrateur', 'Remplace le mot de passe aléatoire. Il se tape ICI, au terminal : l’app ne le voit jamais. Le domaine exige un mot de passe complexe (8 caractères, majuscule, minuscule, chiffre).', [sh('sudo samba-tool user setpassword Administrator')], 'Changed password OK.', { phase: 'Installer', interactions: [{ attend: 'New Password:', reponds: 'Le nouveau mot de passe, tapé au terminal (rien ne s’affiche), puis une seconde fois pour confirmer.' }] })),
+      // ---------------------------------------------------------- 3. DNS ET KERBEROS
+      sv(lec('Lire le DNS en amont proposé', 'provision recopie souvent le DNS du système, qui est ici le relais local de systemd-resolved (127.0.0.53) : il disparaîtra à l’étape suivante et le domaine ne résoudrait plus Internet.', [sh('grep -n "dns forwarder" /etc/samba/smb.conf')], 'Une ligne « dns forwarder = … ».', { phase: 'DNS et Kerberos' })),
+      sv(mod('Fixer le DNS en amont', 'Remplace la valeur par le vrai DNS d’Internet (le routeur, par exemple). Les clients résolvent le domaine chez Samba, et Samba relaie le reste.', [sh('sudo sed -i \'s/^[[:space:]]*dns forwarder = .*/\\tdns forwarder = {{forwarder}}/\' /etc/samba/smb.conf'), sh('grep -n "dns forwarder" /etc/samba/smb.conf'), sh('sudo testparm -s > /dev/null')], 'La ligne affiche votre DNS ; testparm ne signale aucune erreur.', { phase: 'DNS et Kerberos', important: 'Si grep ne montre aucune ligne, ajoute « dns forwarder = … » dans la section [global] avec un éditeur (sudo nano /etc/samba/smb.conf).' })),
+      sv(itr('Libérer le port 53 et pointer le serveur sur lui-même', 'systemd-resolved occupe déjà le port 53 : sans cette étape, samba-ad-dc ne peut pas démarrer son DNS. Le serveur utilise ensuite son propre DNS (127.0.0.1).', [
+        sh('sudo systemctl disable --now systemd-resolved'), sh('sudo unlink /etc/resolv.conf'),
+        sh('printf \'nameserver 127.0.0.1\\nsearch {{domaine}}\\n\' | sudo tee /etc/resolv.conf'),
+      ], 'resolv.conf contient « nameserver 127.0.0.1 ». sudo peut se plaindre de DNS jusqu’au démarrage de Samba.', { phase: 'DNS et Kerberos', important: 'C’est la cause la plus fréquente de « Connection refused » côté client : le DNS n’écoute pas parce que le port 53 est pris ou que le service n’a pas démarré.' })),
+      sv(mod('Installer la configuration Kerberos générée', 'provision a écrit un krb5.conf exact pour ce domaine.', [sh('sudo cp -f /var/lib/samba/private/krb5.conf /etc/krb5.conf')], 'Aucune erreur.', { phase: 'DNS et Kerberos' })),
+      sv(itr('Démarrer le contrôleur de domaine', 'Démarre le service. Le premier démarrage prend quelques secondes.', [sh('sudo systemctl start samba-ad-dc')], 'Aucune sortie ; l’étape suivante confirme.', { phase: 'DNS et Kerberos' })),
+      // ---------------------------------------------------------- 4. VÉRIFIER
+      sv(lec('Le service tourne et le DNS écoute', 'samba-ad-dc doit être actif et quelque chose doit écouter le port 53 en UDP et en TCP.', [sh('sudo systemctl is-active samba-ad-dc'), sh('sudo ss -lunpt | grep \':53 \'')], '« active », puis des lignes sur le port 53 (samba).', { phase: 'Vérifier', verification: true, important: 'Si le service est « failed » : sudo journalctl -u samba-ad-dc -n 50 --no-pager. Port 53 déjà pris : revois l’étape systemd-resolved.' })),
+      sv(lec('Les enregistrements du domaine existent', 'Le DNS de Samba doit publier les services du domaine (SRV) et l’adresse du serveur.', [sh('dig @localhost +short -t SRV _ldap._tcp.{{domaine}}'), sh('dig @localhost +short -t SRV _kerberos._tcp.{{domaine}}'), sh('dig @localhost +short -t A {{fqdn}}')], 'Des lignes avec le nom du serveur, puis son adresse IP.', { phase: 'Vérifier', verification: true })),
+      sv(lec('Obtenir un ticket Kerberos', 'Prouve que le royaume et le mot de passe fonctionnent. Se lance sans sudo.', [sh('kinit Administrator'), sh('klist')], 'klist affiche un ticket krbtgt pour votre royaume.', { phase: 'Vérifier', verification: true, interactions: [{ attend: 'Password for Administrator@AD.LAB:', reponds: 'Le mot de passe de l’administrateur du domaine, tapé au terminal (rien ne s’affiche).' }] })),
+      sv(lec('Lire le domaine et ses comptes', 'Confirme que le domaine est créé et que les comptes de base existent.', [sh('sudo samba-tool domain info 127.0.0.1'), sh('sudo samba-tool user list')], 'Forest, Domain et Netbios domain name ; la liste contient Administrator et krbtgt.', { phase: 'Vérifier', verification: true })),
+      sv(mod('Ouvrir le pare-feu aux clients (si ufw est actif)', 'Si « sudo ufw status » dit inactive, saute cette étape. Sinon, ouvre les ports du domaine (DNS, Kerberos, heure, RPC, LDAP, SMB) au réseau des clients seulement.', [
+        sh('sudo ufw status'), sh('for p in 53 88 123 135 389 445 464 636 3268 3269; do sudo ufw allow from {{reseau}} to any port $p; done'), sh('sudo ufw allow from {{reseau}} to any port 49152:65535 proto tcp'),
+      ], 'ufw liste les règles ajoutées.', { facultatif: true, phase: 'Vérifier' })),
+      // ---------------------------------------------------------- ANNULER
+      sv(lec('Annuler — constater l’état', 'Avant de défaire, regarde ce qui est en place.', [sh('sudo systemctl is-active samba-ad-dc'), sh('ls /var/lib/samba/private'), sh('ls -l /etc/samba')], 'Le service et les fichiers du domaine, s’ils existent.', { facultatif: true, phase: 'Annuler ou défaire' })),
+      sv(des('Annuler — supprimer le domaine', 'EFFACE le domaine : comptes, groupes, DNS, mots de passe. Tous les clients joints devront être purgés. Sur Ubuntu, les bases sont dans /var/lib/samba.', [
+        sh('sudo systemctl stop samba-ad-dc'), sh('sudo systemctl disable samba-ad-dc'), sh('sudo rm -f /etc/samba/smb.conf'),
+        sh('sudo rm -rf /var/lib/samba/private/* /var/lib/samba/sysvol'), sh('sudo rm -f /var/lib/samba/*.tdb /var/lib/samba/*.ldb'),
+      ], 'Le service est arrêté ; /var/lib/samba/private est vide.', { ...annul, important: 'Irréversible. Vérifie que tu es bien sur le serveur de laboratoire.' })),
+      sv(mod('Annuler — remettre l’ancien smb.conf', 'Remet le fichier rangé avant le provisionnement, s’il existait.', [sh('sudo mv /etc/samba/smb.conf.orig /etc/samba/smb.conf')], 'Aucune erreur (ou « No such file » si aucun ancien fichier).', annul)),
+      sv(itr('Annuler — rendre le DNS au système', 'Remet le lien habituel de resolv.conf et relance systemd-resolved.', [sh('sudo rm -f /etc/resolv.conf'), sh('sudo ln -s ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf'), sh('sudo systemctl enable --now systemd-resolved')], 'resolvectl status répond ; un nom d’Internet se résout.', annul)),
+      sv(mod('Annuler — remettre /etc/hosts, l’heure et l’adresse', 'Remet le fichier hosts d’avant, retire la configuration chrony et le fichier netplan ajoutés (seulement si tu avais fait ces étapes facultatives).', [sh('sudo cp -a /etc/hosts.avant-ad /etc/hosts'), sh('sudo rm -f /etc/chrony/conf.d/domaine-ad.conf'), sh('sudo rm -f /etc/netplan/60-samba-ad.yaml')], 'Aucune erreur.', annul)),
+      sv(mod('Annuler — rendre leurs services à smbd, nmbd et winbind', 'Les retire de l’état « masqué » pour pouvoir en faire un simple serveur de fichiers plus tard.', [sh('sudo systemctl unmask smbd nmbd winbind')], 'Aucune erreur.', annul)),
+      sv(des('Annuler — désinstaller les paquets (facultatif)', 'Seulement si tu veux repartir d’une machine sans Samba.', [sh('sudo apt purge -y samba-ad-dc krb5-user'), sh('sudo apt autoremove -y')], 'Les paquets sont retirés.', annul)),
+      sv(lec('Annuler — vérifier le retour à zéro', 'Plus de domaine, plus de service sur le port 53 de Samba.', [sh('sudo systemctl is-active samba-ad-dc'), sh('ls /var/lib/samba/private')], '« inactive » (ou unit not found) et un dossier vide.', { facultatif: true, phase: 'Annuler ou défaire' })),
+    ],
+    verification: ['samba-ad-dc est actif et le port 53 est écouté.', 'dig trouve les enregistrements SRV et l’adresse du serveur.', 'kinit Administrator donne un ticket.'],
+    retour: 'Les commandes sont dans les étapes « Annuler ou défaire » : supprimer le domaine, remettre smb.conf, le DNS et /etc/hosts.',
+    sources: [
+      { label: 'Ubuntu Server — Provisioning a Samba Active Directory Domain Controller', url: 'https://ubuntu.com/server/docs/how-to/samba/provision-samba-ad-controller/' },
+      { label: 'Wiki Samba — Setting up Samba as an Active Directory Domain Controller', url: `${SAMBA_WIKI}/Setting_up_Samba_as_an_Active_Directory_Domain_Controller` },
+      { label: 'samba-tool — domain provision', url: `${SAMBA_DOC}/samba-tool.8.html` },
+      { label: 'chrony — documentation', url: 'https://chrony-project.org/documentation.html' },
+    ],
+  });
+  f.origine = 'memo';
+  return f;
+})());
