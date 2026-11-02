@@ -151,7 +151,7 @@ for (const e of [...T.TOUTES_LES_ENTREES.filter((x) => x.procedure)]) {
     // Plusieurs machines : un texte PAR machine, jamais un seul (instances).
     const tout = r.etapes.filter((s) => s.rendu).flatMap((s) => (s.rendu.multi ? s.rendu.instances.map((i) => i.texteCopie) : [s.rendu.texteCopie]));
     // Les exemples de commandes rapides n'utilisent pas toujours TOUS les jetons d'une étape de vérification.
-    assert(tout.every((t) => t !== null && !t.includes('‹') && !/^\s*(\$|PS>|Switch)/m.test(t)), `exemples → texte copiable propre : ${e.id}/${m.id}`);
+    assert(tout.every((t) => t !== null && !t.includes('‹') && !/^\s*(\$\s|PS>|Switch)/m.test(t)), `exemples → texte copiable propre : ${e.id}/${m.id}`);
   }
 }
 

@@ -1,3 +1,14 @@
+## EXAMEN-WS-01 (2026-11-02)
+- Nouveau groupe « Examen Windows Server 2022 » en TÊTE de l’aide-mémoire (7 fiches) : le plan des 6 questions de l’examen pratique Serveur I, puis une fiche par question. Chaque fiche offre l’option graphique (console) en premier onglet, les commandes PowerShell en second, et des étapes « Annuler ».
+- Q2 « Ajouter un disque à un serveur Windows » (Initialize-Disk, New-Partition, Format-Volume ; Gestion des disques) et « Mettre un quota sur un dossier (FSRM) » (New-FsrmQuota strict ou souple ; console FSRM).
+- Q3 « Planifier une sauvegarde incrémentale » (New-WBPolicy, Set-WBSchedule 13 h et 16 h, disque dédié, Start-WBBackup, wbadmin ; assistant de planification et restauration).
+- Q4 « Créer un miroir RAID 1 sous Windows et le restaurer » (Gestion des disques, diskpart ; panne simulée et reconstruction).
+- Q5 « Exclure une plage d’adresses d’une étendue DHCP » (Add-DhcpServerv4ExclusionRange ; console DHCP). Rangée dans le groupe de l’examen et dans le catalogue, sous DHCP.
+- Q6 « Script PowerShell : créer un utilisateur, son dossier et son partage » (Read-Host, nom.prenom, New-SmbShare en lecture) avec un modèle param() + Import-Csv.
+- « Examen Windows Server 2022 : les 6 questions et leurs fiches » : un lien vers chaque fiche, y compris les fiches déjà existantes (utilisateurs, groupes, IP fixe, installer DHCP, étendue).
+- Honnêteté : commandes d’après la documentation Microsoft ; NON exécutées sur un vrai serveur. Non confirmés dans la documentation lue : la syntaxe diskpart (add disk=, break disk=… nokeep), le mode incrémentiel en PowerShell (la page Microsoft est incohérente avec elle-même) et les libellés exacts des assistants graphiques ; ces points sont signalés dans les fiches.
+- Testé : test/windows-examen.test.mjs (106) ; chaque ligne PowerShell est analysée par PowerShell 7 et le bloc qui écrit le script du Q6 est exécuté pour de vrai. Tests existants adaptés (8 groupes Windows ; une ligne PowerShell peut commencer par « $ »).
+
 ## PARCOURIR-01 (2026-11-01)
 - Nouvelle fiche « Parcourir un partage Samba depuis Ubuntu (smbclient, montage) » (aide-mémoire › Samba › Postes clients) : pourquoi « cd » et « ls -l » ne voient pas un partage, session interactive (invite smb:), une commande avec -c, montage cifs et démontage, option graphique Fichiers › Autres emplacements.
 - Dépannage « le compte en lecture seule peut écrire » : afficher la section du partage (read list, write list) et comparer l’orthographe avec samba-tool user list.

@@ -23,6 +23,17 @@ export const ROUTE_CATALOGUE = '#/catalogue';
 
 /** Chaque sous-groupe : un nom, et les identifiants de fiches (ordre d'affichage). */
 export const MEMO_GROUPES = [
+  // Examen pratique Serveur I (Windows Server 2022) : le plan, puis une fiche par question (KJEMO-EXAMEN-WS-01).
+  { id: 'win-examen', titre: 'Examen Windows Server 2022', icone: '🎓', couleur: '#b91c1c', commandes: 'New-FsrmQuota, New-WBPolicy, diskpart, Add-DhcpServerv4ExclusionRange',
+    resume: 'Le plan de l’examen pratique Serveur I, puis le disque, le quota, la sauvegarde, le miroir RAID 1, l’exclusion DHCP et le script PowerShell.',
+    sous: [
+      { id: 'plan', titre: 'Le plan : les 6 questions', fiches: ['win-examen-parcours'] },
+      { id: 'q2', titre: 'Q2 — Disque et quota', fiches: ['win-disque-ajouter', 'win-quota-fsrm'] },
+      { id: 'q3', titre: 'Q3 — Sauvegarde planifiée', fiches: ['win-sauvegarde-planifier'] },
+      { id: 'q4', titre: 'Q4 — RAID 1', fiches: ['win-miroir-raid1'] },
+      { id: 'q5', titre: 'Q5 — DHCP : exclusion', fiches: ['win-dhcp-exclusion'] },
+      { id: 'q6', titre: 'Q6 — Script PowerShell', fiches: ['win-script-utilisateur-partage'] },
+    ] },
   { id: 'fichiers', titre: 'Fichiers et dossiers', icone: '📁', couleur: '#2563eb', commandes: 'ls, cp, mv, find, tar',
     resume: 'Se repérer, créer, copier, supprimer, archiver et retrouver.',
     sous: [
@@ -218,7 +229,7 @@ export const AJOUTS = Object.fromEntries([
   ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
   ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe', 'linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme', 'win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format', 'linux-hostname-changer', 'linux-systeme-identite', 'linux-ssh-client-installer', 'win-ssh-client-installer'].map((id) => [id, '2026-10-31']),
 ).concat(
-  ['cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'samba-compte-creer', 'linux-sudo-su-expliquer', 'samba-partage-parcourir', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
+  ['cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'samba-compte-creer', 'win-examen-parcours', 'win-disque-ajouter', 'win-quota-fsrm', 'win-sauvegarde-planifier', 'win-miroir-raid1', 'win-dhcp-exclusion', 'win-script-utilisateur-partage', 'linux-sudo-su-expliquer', 'samba-partage-parcourir', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
 ));
 
 const JOUR = 86400000;

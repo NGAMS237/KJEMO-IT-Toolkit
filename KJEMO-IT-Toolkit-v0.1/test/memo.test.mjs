@@ -56,7 +56,7 @@ const ca = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Azure'
 ok(cw >= 45 && cl > 0 && cc === 26 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
 // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
 const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
-ok(gw.length === 7, `7 groupes Windows attendus, ${gw.length}`);
+ok(gw.length === 8, `8 groupes Windows attendus, ${gw.length}`);
 for (const g of gw) {
   ok(M.compteGroupe(g, { plat: 'Windows', plateformesDe, lies }) === M.fichesDuGroupe(g).length, `${g.id} : toutes les fiches sont Windows`);
   ok(M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }) === 0 && M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }) === 0, `${g.id} : aucune fiche Linux ni Cisco (groupe grisé hors Windows)`);
