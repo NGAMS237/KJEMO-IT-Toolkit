@@ -52,7 +52,7 @@ export const MEMO_GROUPES = [
   { id: 'comptes', titre: 'Comptes et droits', icone: '👤', couleur: '#db2777', commandes: 'useradd, chmod, chown',
     resume: 'Comptes et groupes locaux, sessions ouvertes, droits d’un dossier.',
     sous: [
-      { id: 'locaux', titre: 'Comptes et groupes locaux', fiches: ['cours-creer-compte-local', 'cours-groupes-locaux', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local'] },
+      { id: 'locaux', titre: 'Comptes et groupes locaux', fiches: ['linux-kiosque-configurer', 'cours-creer-compte-local', 'cours-groupes-locaux', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local'] },
       { id: 'retrouver', titre: 'Lister les comptes, les groupes et changer un mot de passe', fiches: ['linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'linux-sudo-su-expliquer'] },
       { id: 'droits', titre: 'Droits d’un dossier', fiches: ['cours-droits-dossier-partage', 'cours-donner-dossier-compte'] },
     ] },
@@ -94,7 +94,7 @@ export const MEMO_GROUPES = [
       { id: 'services', titre: 'Services et journaux', fiches: ['windows-etat-service', 'redemarrer-service-windows', 'journal-evenements-windows'] },
       { id: 'reparer', titre: 'Réparer et surveiller', fiches: ['reparer-fichiers-systeme', 'espace-disque-windows'] },
       { id: 'caches', titre: 'Vider les caches', fiches: ['win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-cache-arp', 'win-cache-netbios'] },
-      { id: 'locaux', titre: 'Comptes locaux', fiches: ['win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] },
+      { id: 'locaux', titre: 'Comptes locaux', fiches: ['win-kiosque-configurer', 'win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] },
       { id: 'imprimantes', titre: 'Imprimantes', fiches: ['imprimantes-inventaire-windows', 'imprimante-file-bloquee'] },
     ] },
   { id: 'win-systeme', titre: 'Système, processus et arrêt', icone: '🧰', couleur: '#0f766e', commandes: 'systeminfo, Get-Process, shutdown, schtasks',
@@ -167,7 +167,7 @@ export const MEMO_GROUPES = [
     resume: 'Un groupe de ressources par laboratoire, un verrou contre la suppression, un rôle pour un coéquipier.',
     sous: [
       { id: 'organiser', titre: 'Organiser et protéger', fiches: ['cours-az-groupe-ressources', 'cours-az-verrou-ressource'] },
-      { id: 'acces', titre: 'Partager l’accès', fiches: ['cours-az-role-coequipier'] },
+      { id: 'acces', titre: 'Partager l’accès', fiches: ['cours-az-role-coequipier', 'azure-intune-kiosque'] },
     ] },
   { id: 'az-reseau', titre: 'Azure : réseau virtuel et DNS', icone: '🕸', couleur: '#0e7490', commandes: 'az network vnet create, az vm create, az network dns zone create',
     resume: 'Créer un VNet et ses sous-réseaux, relire le plan d’adressage, les adresses IP, une machine, puis le DNS public et privé.',
@@ -229,7 +229,7 @@ export const AJOUTS = Object.fromEntries([
   ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
   ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe', 'linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme', 'win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format', 'linux-hostname-changer', 'linux-systeme-identite', 'linux-ssh-client-installer', 'win-ssh-client-installer'].map((id) => [id, '2026-10-31']),
 ).concat(
-  ['linux-cockpit-installer', 'linux-openrsat-installer', 'cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'samba-compte-creer', 'win-examen-parcours', 'win-disque-ajouter', 'win-quota-fsrm', 'win-sauvegarde-planifier', 'win-miroir-raid1', 'win-dhcp-exclusion', 'win-script-utilisateur-partage', 'linux-sudo-su-expliquer', 'samba-partage-parcourir', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
+  ['win-kiosque-configurer', 'linux-kiosque-configurer', 'azure-intune-kiosque', 'linux-cockpit-installer', 'linux-openrsat-installer', 'cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'samba-compte-creer', 'win-examen-parcours', 'win-disque-ajouter', 'win-quota-fsrm', 'win-sauvegarde-planifier', 'win-miroir-raid1', 'win-dhcp-exclusion', 'win-script-utilisateur-partage', 'linux-sudo-su-expliquer', 'samba-partage-parcourir', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
 ));
 
 const JOUR = 86400000;

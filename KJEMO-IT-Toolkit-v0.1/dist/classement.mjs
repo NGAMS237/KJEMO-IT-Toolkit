@@ -101,7 +101,7 @@ export const ARBRE = {
     F('logiciels', 'Logiciels et correctifs (en commande)', { fiches: ['win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes'] }),
     F('reglages', 'Tâches, variables et accès à distance', { fiches: ['win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-ssh-client-installer', 'win-heure-synchroniser'] }),
     F('langue', 'Clavier, langue et format régional', { fiches: ['win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format'] }),
-    F('comptes-locaux', 'Comptes locaux (en commande)', { fiches: ['win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver'] }),
+    F('comptes-locaux', 'Comptes locaux (en commande)', { fiches: ['win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-kiosque-configurer'] }),
   ],
   'analyse-disques': [
     F('occupation', 'Occupation de l’espace', { sub: ['Occupation de l’espace'] }),
@@ -169,7 +169,7 @@ export const ARBRE = {
     ] }),
     F('utilisateurs', 'Utilisateurs et permissions', { sujets: [
       F('permissions', 'Permissions et ACL', { hotes: ['linux-permission-audit', 'linux-permission-change', 'linux-permission-acl'] }),
-      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-sudo-su-expliquer', 'linux-mot-de-passe-local'] }),
+      F('comptes', 'Comptes locaux', { hotes: ['linux-user-audit', 'linux-user-create'], fiches: ['linux-kiosque-configurer', 'cours-creer-compte-local', 'cours-sessions-utilisateurs', 'cours-supprimer-compte-local', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-sudo-su-expliquer', 'linux-mot-de-passe-local'] }),
     ] }),
     F('stockage', 'Stockage', { sujets: [
       F('disques', 'Disques, partitions et montages', { hotes: ['linux-storage-diagnostic', 'linux-disk-partition-mount'] }),
@@ -201,7 +201,7 @@ export const ARBRE = {
     F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-bash-menu', 'cours-afficher-texte'] }),
   ],
   'azure-entra': [
-    F('acces', 'Connexion, contexte et accès', { sub: ['Connexion, contexte et accès'], fiches: ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier'] }),
+    F('acces', 'Connexion, contexte et accès', { sub: ['Connexion, contexte et accès'], fiches: ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier', 'azure-intune-kiosque'] }),
     F('identites', 'Identités (Entra ID)', { sub: ['Microsoft Entra ID'] }),
     F('vm', 'Machines virtuelles', { sub: ['Machines virtuelles'] }),
     F('reseau', 'Réseau Azure', { sub: ['Réseau Azure'], fiches: ['cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee'] }),

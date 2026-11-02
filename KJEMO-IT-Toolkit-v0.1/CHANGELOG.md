@@ -1,3 +1,11 @@
+## KIOSQUE-01 (2026-11-02)
+- Trois fiches « mode kiosque », chacune avec l’option graphique en premier, les commandes, la vérification, la sortie du kiosque et le retrait :
+  - Windows : « Configurer un kiosque Windows (une seule application) » — Paramètres › Comptes › Autres utilisateurs › Configurer un kiosque (Edge plein écran) ou PowerShell (New-LocalUser, Set-AssignedAccess, Get-/Clear-AssignedAccess, retrait d’un kiosque posé par XML/MDM). Rangée dans Aide-mémoire › Poste Windows › Comptes locaux.
+  - Ubuntu : « Configurer un kiosque Ubuntu (une page web en plein écran) » — compte dédié, connexion automatique GDM (custom.conf avec sauvegarde), Firefox --kiosk lancé par un fichier autostart, veille désactivée, sortie par Ctrl+Alt+F3, retrait complet.
+  - Azure : « Déployer un kiosque Windows avec Intune (profil Azure) » — profil Kiosque du centre d’administration Intune (application unique, Edge, ouverture automatique) ; Azure CLI pour le groupe d’appareils Entra ID, l’appartenance et le contrôle de l’affectation.
+- Honnêteté : sources Microsoft Learn et guide GNOME lues ; NON exécuté sur un vrai poste, Ubuntu ou locataire Intune. Libellés des écrans non vérifiés. Set-AssignedAccess ne gère qu’une application du Store (pour Edge : option graphique). La création du profil Intune se fait dans le portail (le corps Graph du kiosque à application unique n’a pas pu être confirmé). Appels Graph en version beta, consentement d’Azure CLI parfois refusé.
+- Testé : test/kiosque.test.mjs (86) — syntaxe PowerShell (pwsh) et Bash (bash -n) de chaque ligne, et exécution réelle du sed de GDM (lignes commentées ou déjà actives) et du fichier .desktop produit.
+
 ## OUTILS-ADMIN-01 (2026-11-02)
 - Nouvelle fiche « Installer Cockpit sur Ubuntu et s’y connecter » : option graphique (https://adresse:9090, certificat auto-signé, accès administrateur) et commandes (apt, systemctl enable --now cockpit.socket, ss, ufw facultatif, annulation). Rangée dans Accès distant › Cockpit et dans l’aide-mémoire.
 - Nouvelle fiche « Installer OpenRSAT sur Ubuntu » (RSAT libre de Tranquil IT pour Samba AD) : .deb officiel v0.4.519 (numéro de version en paramètre), contrôle DNS et ports 389/636, variante binaire autonome, annulation. Rangée dans Domaine et annuaire.
