@@ -1,3 +1,7 @@
+## EXAMEN-WS-02 (2026-11-02)
+- « Mes cours et TP » contient maintenant « Examen Serveur I — Windows Server 2022 (6 questions) » : six parcours (Q1 à Q6) dont chaque point renvoie à l’étape précise de la fiche, en option graphique ou en PowerShell. Les fiches restent aussi dans l’aide-mémoire.
+- Nouveau module dist/cours-windows-examen.mjs ; coché = « je l’ai fait », rien n’est exécuté.
+
 ## EXAMEN-WS-01 (2026-11-02)
 - Nouveau groupe « Examen Windows Server 2022 » en TÊTE de l’aide-mémoire (7 fiches) : le plan des 6 questions de l’examen pratique Serveur I, puis une fiche par question. Chaque fiche offre l’option graphique (console) en premier onglet, les commandes PowerShell en second, et des étapes « Annuler ».
 - Q2 « Ajouter un disque à un serveur Windows » (Initialize-Disk, New-Partition, Format-Volume ; Gestion des disques) et « Mettre un quota sur un dossier (FSRM) » (New-FsrmQuota strict ou souple ; console FSRM).

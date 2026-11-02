@@ -21,6 +21,7 @@ import { RESUME_S07 } from './cours-resume-cisco.mjs';
 import { IDS_SCHEMAS } from './schemas-cisco.mjs';
 import { COURS_CISCO_RESEAU_PARCOURS } from './cours-cisco-reseau.mjs';
 import { COURS_AZURE_PARCOURS } from './cours-azure.mjs';
+import { COURS_WINDOWS_EXAMEN } from './cours-windows-examen.mjs';
 
 export const ROUTE_COURS = '#/cours';
 export const ROUTE_LABO = '#/labo';
@@ -277,6 +278,7 @@ export const COURS = [
   // Semaines 1 à 5 et TP2 (KJEMO-CISCO-COURS-RESEAU-01), dans l'ordre du cours.
   ...COURS_CISCO_RESEAU_PARCOURS,
   ...COURS_AZURE_PARCOURS,
+  ...COURS_WINDOWS_EXAMEN,
 ];
 
 export const COURS_PAR_ID = new Map(COURS.map((c) => [c.id, c]));

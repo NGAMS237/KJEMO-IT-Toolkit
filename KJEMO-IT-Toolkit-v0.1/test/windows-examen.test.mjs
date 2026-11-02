@@ -89,6 +89,15 @@ if (pwshOk) {
 } else {
   console.log('  (pwsh absent : contrôles de syntaxe ignorés)');
 }
+
+// --- Entrée « Mes cours et TP » (EXAMEN-WS-02) ---
+{
+  const { COURS } = await import(pathToFileURL(fileURLToPath(new URL('../dist/cours.mjs', import.meta.url))).href);
+  const c = COURS.find((x) => x.id === 'examen-serveur-1-windows-2022');
+  assert(!!c && c.plateformes.includes('Windows'), 'cours : l’examen est dans « Mes cours et TP », plateforme Windows');
+  assert(c && c.parcours.map((p) => p.lettre).join('') === 'ABCDEF', 'cours : un parcours par question, Q1 à Q6');
+  assert(c && c.parcours.every((p, i) => p.titre.startsWith(`Q${i + 1} `)), 'cours : les titres des parcours portent Q1 à Q6');
+}
 console.log(`\nwindows-examen.test.mjs : ${passed} OK, ${failed} échec(s)`);
 console.log('Exécution réelle sur Windows Server : NON EXÉCUTÉE (seuls la syntaxe PowerShell et l’écriture du script sont vérifiées).');
 process.exit(failed ? 1 : 0);
