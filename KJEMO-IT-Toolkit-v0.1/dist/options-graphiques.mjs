@@ -21,6 +21,21 @@ const OPTIONS = {
       retour: 'Modifier › Groupe de travail dans sysdm.cpl.',
     }),
   },
+  'cours-rsat-windows': {
+    resumeAjout: ' Option graphique : Fonctionnalités facultatives (Windows 10/11) ou Gestionnaire de serveur (Windows Server).',
+    methode: () => ({
+      id: 'gui', privileges: 'Compte administrateur local, accès Internet (Windows Update). Les libellés exacts varient selon la version de Windows et ne sont pas vérifiés ici.',
+      etapes: [
+        gui('Ouvrir les fonctionnalités facultatives (Windows 11)', 'lecture', 'Les outils RSAT sont des « fonctionnalités facultatives » de Windows 10 et 11.', ['**Paramètres › Système › Fonctionnalités facultatives** (Windows 10 : **Paramètres › Applications › Fonctionnalités facultatives**).', 'Clique **Afficher les fonctionnalités** (ou **Ajouter une fonctionnalité**).'], 'La liste des fonctionnalités à ajouter s’affiche.'),
+        gui('Choisir et installer les outils AD et DNS', 'modification', 'Cherche « RSAT » : coche les deux outils utiles à Samba AD.', ['Dans la recherche, tape **RSAT**.', 'Coche **RSAT : Outils des services de domaine Active Directory et des services AD LDS** et **RSAT : Outils du serveur DNS**.', 'Clique **Suivant**, puis **Ajouter** ; attends la fin de l’installation (plusieurs minutes).'], 'Les deux outils apparaissent dans la liste des fonctionnalités installées.'),
+        gui('Variante : Windows Server (Gestionnaire de serveur)', 'modification', 'Sur Windows Server, les mêmes outils sont des fonctionnalités du serveur.', ['**Gestionnaire de serveur › Gérer › Ajouter des rôles et fonctionnalités**, puis **Suivant** jusqu’à **Fonctionnalités**.', 'Déroule **Outils d’administration de serveur distant › Outils d’administration de rôles** et coche **Outils AD DS et AD LDS** et **Outils du serveur DNS**, puis **Installer**.'], 'L’assistant affiche « Installation réussie ».'),
+        gui('Vérifier que les consoles s’ouvrent', 'lecture', 'dsa.msc et dnsmgmt.msc sont les consoles installées.', ['Appuie sur **Windows + R**, tape **dsa.msc**, puis **Entrée** : « Utilisateurs et ordinateurs Active Directory » s’ouvre.', 'Refais avec **dnsmgmt.msc** : le Gestionnaire DNS s’ouvre.'], 'Les deux consoles s’ouvrent.', { verification: true }),
+        gui('Annuler — désinstaller les outils', 'modification', 'Retire les fonctionnalités ajoutées ; les comptes du domaine ne sont pas touchés.', ['**Paramètres › Système › Fonctionnalités facultatives**, liste **Fonctionnalités installées**, cherche **RSAT**.', 'Clique sur chaque outil, puis **Désinstaller**.'], 'Les outils RSAT disparaissent de la liste.', { facultatif: true, annulation: true, phase: 'Annuler ou défaire' }),
+      ],
+      verification: ['dsa.msc et dnsmgmt.msc s’ouvrent.'],
+      retour: 'Fonctionnalités facultatives › RSAT › Désinstaller.',
+    }),
+  },
 };
 
 export function completerOptionsGraphiques(procedure) {

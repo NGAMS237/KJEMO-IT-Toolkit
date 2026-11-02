@@ -33,6 +33,7 @@ import { PROCEDURES_WINDOWS_AD } from './procedures-windows-ad-simples.mjs';
 import { completerTrouver } from './trouver.mjs';
 import { COURS_SAMBA_MEMO } from './cours-fiches-samba.mjs';
 import { PROCEDURES_DOMAINE_RECONSTRUIRE } from './procedures-domaine-reconstruire.mjs';
+import { PROCEDURES_LINUX_ACCES_OUTILS } from './procedures-linux-acces-outils.mjs';
 import { PROCEDURES_WINDOWS_EXAMEN } from './procedures-windows-examen.mjs';
 import { completerAnnulations } from './annulations.mjs';
 import { completerOptionsGraphiques } from './options-graphiques.mjs';
@@ -351,7 +352,7 @@ function entreeAssistant(t) {
 // ---------------------------------------------------------------------------
 
 /** Toutes les fiches rédigées à la main, pilotes puis seconde vague. */
-export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...COURS_SAMBA_MEMO, ...PROCEDURES_DOMAINE_RECONSTRUIRE, ...PROCEDURES_WINDOWS_EXAMEN, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
+export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...COURS_SAMBA_MEMO, ...PROCEDURES_DOMAINE_RECONSTRUIRE, ...PROCEDURES_WINDOWS_EXAMEN, ...PROCEDURES_LINUX_ACCES_OUTILS, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
 const procedures = PROCEDURES_REDIGEES.map(entreeProcedure);
 const commandes = COMMANDES_RAPIDES.map(entreeCommande);
 const assistants = tools.map(entreeAssistant);

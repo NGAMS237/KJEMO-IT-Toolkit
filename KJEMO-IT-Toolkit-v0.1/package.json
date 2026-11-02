@@ -96,6 +96,7 @@
     "test:domaine-reconstruire": "node test/domaine-reconstruire.test.mjs",
     "test:samba-partage-parcourir": "node test/samba-partage-parcourir.test.mjs",
     "test:windows-examen": "node test/windows-examen.test.mjs",
+    "test:outils-admin": "node test/outils-admin.test.mjs",
     "test:browser:windows-simples": "node test/browser-windows-simples.test.mjs",
     "test:browser:azure-cours": "node test/browser-azure-cours.test.mjs",
     "test:browser:cisco-s07": "node test/browser-cisco-s07.test.mjs",

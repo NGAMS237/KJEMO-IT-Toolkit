@@ -1,3 +1,10 @@
+## OUTILS-ADMIN-01 (2026-11-02)
+- Nouvelle fiche « Installer Cockpit sur Ubuntu et s’y connecter » : option graphique (https://adresse:9090, certificat auto-signé, accès administrateur) et commandes (apt, systemctl enable --now cockpit.socket, ss, ufw facultatif, annulation). Rangée dans Accès distant › Cockpit et dans l’aide-mémoire.
+- Nouvelle fiche « Installer OpenRSAT sur Ubuntu » (RSAT libre de Tranquil IT pour Samba AD) : .deb officiel v0.4.519 (numéro de version en paramètre), contrôle DNS et ports 389/636, variante binaire autonome, annulation. Rangée dans Domaine et annuaire.
+- La fiche RSAT Windows reçoit son option graphique (Fonctionnalités facultatives Windows 10/11, Gestionnaire de serveur) et son annulation.
+- Honnêteté : sources officielles lues (cockpit-project.org, dépôt OpenRSAT, documentation Samba-AD de Tranquil IT) ; NON exécuté sur un vrai Ubuntu/Windows ; libellés des écrans (App Center, OpenRSAT, Paramètres) non vérifiés ; OpenRSAT est encore en développement.
+- Testé : test/outils-admin.test.mjs (42) + suites existantes.
+
 ## EXAMEN-WS-02 (2026-11-02)
 - « Mes cours et TP » contient maintenant « Examen Serveur I — Windows Server 2022 (6 questions) » : six parcours (Q1 à Q6) dont chaque point renvoie à l’étape précise de la fiche, en option graphique ou en PowerShell. Les fiches restent aussi dans l’aide-mémoire.
 - Nouveau module dist/cours-windows-examen.mjs ; coché = « je l’ai fait », rien n’est exécuté.

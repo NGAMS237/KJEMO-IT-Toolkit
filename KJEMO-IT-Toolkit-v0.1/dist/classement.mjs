@@ -183,7 +183,7 @@ export const ARBRE = {
     ] }),
     F('acces-distant', 'Accès distant', { sujets: [
       F('ssh', 'SSH', { hotes: ['ssh-server-readiness', 'ssh-client-diagnostic', 'ssh-key-readiness', 'ssh-hardening-audit'], fiches: ['linux-ssh-client-installer'] }),
-      F('cockpit', 'Cockpit', { hotes: ['cockpit-install-readiness', 'cockpit-connection-diagnostic'] }),
+      F('cockpit', 'Cockpit', { hotes: ['cockpit-install-readiness', 'cockpit-connection-diagnostic'], fiches: ['linux-cockpit-installer'] }),
     ] }),
     F('partages', 'Partages de fichiers', { sujets: [
       F('samba', 'Samba / SMB', {
@@ -197,7 +197,7 @@ export const ARBRE = {
       }),
       F('nfs', 'NFS', { hotes: ['nfs-server-readiness', 'nfs-export-create'] }),
     ] }),
-    F('annuaire', 'Domaine et annuaire (Samba Active Directory)', { sub: ['Samba AD'] }),
+    F('annuaire', 'Domaine et annuaire (Samba Active Directory)', { sub: ['Samba AD'], fiches: ['linux-openrsat-installer'] }),
     F('bash', 'Bash et automatisation', { sub: ['Bash et automatisation'], fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-bash-menu', 'cours-afficher-texte'] }),
   ],
   'azure-entra': [
