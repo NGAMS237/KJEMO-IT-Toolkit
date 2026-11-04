@@ -1,3 +1,8 @@
+## CISCO-SHOW-01 (2026-11-04)
+- Nouvelle fiche de référence « Commandes show Cisco : toutes les lectures utiles, par groupe » : 15 groupes (identifier l’équipement, configuration, interfaces, MAC/ARP/voisins, VLAN/trunks/VTP/DTP, Spanning Tree, EtherChannel, sécurité des ports, routage IPv4 et IPv6, DHCP, NAT/PAT, accès à distance et ACL, santé et journaux, filtres), 76 commandes, chacune expliquée dans « Comprendre les commandes », plus une étape « Cibler une interface ou un VLAN » avec valeurs à saisir. Lecture seule.
+- Visibilité : première entrée de « Réseau et Cisco » dans le classement, premier groupe de la section Cisco de l’aide-mémoire, bandeau épinglé en haut de l’aide-mémoire (et de la section Cisco), et rappel dans le « soutien » des 8 cours Cisco.
+- Testé : test/cisco-show.test.mjs (264) et toutes les suites Node et navigateur. NON EXÉCUTÉ dans Packet Tracer ni sur un équipement réel : la disponibilité de chaque commande selon le modèle et la version d’IOS n’est pas démontrée.
+
 ## CISCO-NAT-01 (2026-11-04)
 - Notes de cours du jour intégrées : nouveau cours « Architecture réseau II — NAT, PAT, types d’adresses et récapitulation » (Mes cours et TP > Cisco), parcours A (NAT, PAT, redirection de port, socket, NAT64), B (modes de diffusion dont la télévision IP d’un hôtel, types IPv6, SLAAC et DHCP), C (routes statiques, récapitulatives, flottantes) et D (rappel express VTP, VLAN, RIP, SSH, sécurité des ports).
 - 7 fiches IOS : NAT statique, NAT dynamique, PAT (overload), redirection de port, lire et vider la table NAT, route statique récapitulative (avec variante Null0), résumé RIPv2. Annulations incluses. Nouveau groupe d’aide-mémoire « NAT, PAT et redirection de port » (6 groupes Cisco) et rubrique « NAT et PAT » du classement.

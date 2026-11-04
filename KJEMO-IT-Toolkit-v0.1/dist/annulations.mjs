@@ -83,6 +83,7 @@ export const ANNULATIONS = {
     ],
   },
   'cours-nat-verifier|ios': null,
+  'cours-show-cisco|ios': null,
   'cours-route-recap-statique|ios': {
     steps: [
       an('retirer la route récapitulative', 'Retire la route regroupée ; si tu avais supprimé les routes détaillées, remets-les avant, sinon les réseaux deviennent injoignables.', [rt('no ip route {{reseau}} {{masque}} {{saut}}')], '« show ip route static » ne montre plus le préfixe regroupé.'),

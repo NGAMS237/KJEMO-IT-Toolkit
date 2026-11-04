@@ -128,6 +128,12 @@ function platChipsMarkup(plat) {
     + `</div>`;
 }
 
+/** Fiche épinglée en tête de page (ex. les commandes show Cisco), visible sauf si une autre plateforme est choisie. */
+function epingleMarkup(plat) {
+  return SECTIONS_MEMO.filter((x) => x.epingle && (!plat || plat === x.id)).map((x) => `<a class="epingle" data-epingle="${esc(x.epingle.fiche)}" href="#/tache/${esc(x.epingle.fiche)}">`
+    + `<span class="epingle-titre"><span aria-hidden="true">⭐</span> ${esc(x.epingle.titre)}</span><span class="epingle-texte">${esc(x.epingle.texte)}</span><span class="epingle-ouvrir">Ouvrir →</span></a>`).join('');
+}
+
 function chipsFiltreMarkup(filtres, actif, compteParFiltre) {
   return `<div class="chips memo-filtres" role="group" aria-label="Filtrer l’aide-mémoire">`
     + filtres.map((f) => `<button type="button" class="chip${actif === f.id ? ' is-on' : ''}" data-memo-filtre="${esc(f.id)}" aria-pressed="${actif === f.id}">${esc(f.libelle)} <span class="chip-n">${compteParFiltre[f.id] ?? 0}</span></button>`).join('')
@@ -174,6 +180,7 @@ export function memoPageMarkup({ groupes, filtre, filtres, compteParFiltre, plat
     + `<h1 class="titre-memo"><span aria-hidden="true">⌘</span> Aide-mémoire du cours</h1>`
     + `<p class="intro">Classé par ce que tu veux faire. ${total} fiches ; les groupes grandissent avec les cours : compteurs et badges « nouveau » se calculent tout seuls. Pour une commande précise, utilise la recherche de l’<a href="#/">accueil</a>.</p>`
     + pastilleFiltreMarkup(plat)
+    + epingleMarkup(plat)
     + platChipsMarkup(plat)
     + chipsFiltreMarkup(filtres, filtre, compteParFiltre)
     + `<p class="memo-outils"><button type="button" class="chip" id="memoToutDeplier">Tout déplier</button> <button type="button" class="chip" id="memoToutReplier">Tout replier</button></p>`

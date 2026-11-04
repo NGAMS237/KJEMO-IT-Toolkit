@@ -101,6 +101,7 @@ export const COURS_CISCO_S09_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cours-rt-tester', pourquoi: 'ping et traceroute pour tester un plan d’adressage.' },
       { fiche: 'cisco-enregistrer-config', pourquoi: 'enregistrer la configuration quand le travail est validé.' },
       { fiche: 'cours-dhcp4-depanner', pourquoi: 'chercher pourquoi un poste ne reçoit pas d’adresse.' },

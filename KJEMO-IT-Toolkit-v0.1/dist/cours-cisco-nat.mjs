@@ -82,6 +82,7 @@ export const COURS_CISCO_NAT_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cours-rt-tester', pourquoi: 'ping et traceroute pour vérifier qu’une traduction ou une route récapitulative laisse passer le trafic.' },
       { fiche: 'cisco-enregistrer-config', pourquoi: 'enregistrer la configuration quand le travail est validé.' },
       { fiche: 'cours-nat-verifier', pourquoi: 'lire la table NAT quand un poste ne sort pas.' },

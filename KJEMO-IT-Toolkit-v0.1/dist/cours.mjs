@@ -268,6 +268,7 @@ export const COURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cours-ec-statique', pourquoi: 'le mode « on » du cours, et pourquoi il est risqué.' },
       { fiche: 'cisco-voir-trunks', pourquoi: 'lire les trunks (VLAN autorisés, natif) avant et après un canal.' },
       { fiche: 'cisco-enregistrer-config', pourquoi: 'sauvegarder la configuration une fois le travail validé.' },

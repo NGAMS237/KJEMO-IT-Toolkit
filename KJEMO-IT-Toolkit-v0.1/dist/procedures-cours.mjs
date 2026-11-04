@@ -16,5 +16,6 @@ import { COURS_AZURE } from './cours-fiches-azure.mjs';
 import { COURS_CISCO_RESEAU } from './cours-fiches-cisco-reseau.mjs';
 import { COURS_CISCO_S09 } from './cours-fiches-cisco-s09.mjs';
 import { COURS_CISCO_NAT } from './cours-fiches-cisco-nat.mjs';
+import { COURS_CISCO_SHOW } from './cours-fiches-cisco-show.mjs';
 
-export const PROCEDURES_COURS = [...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO, ...COURS_FORMATIFS, ...COURS_CISCO, ...COURS_CISCO_RESEAU, ...COURS_CISCO_S09, ...COURS_CISCO_NAT, ...COURS_AZURE];
+export const PROCEDURES_COURS = [...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO, ...COURS_FORMATIFS, ...COURS_CISCO, ...COURS_CISCO_RESEAU, ...COURS_CISCO_S09, ...COURS_CISCO_NAT, ...COURS_CISCO_SHOW, ...COURS_AZURE];

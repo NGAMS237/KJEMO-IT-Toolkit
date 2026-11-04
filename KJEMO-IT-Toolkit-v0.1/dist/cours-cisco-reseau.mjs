@@ -58,6 +58,7 @@ export const COURS_CISCO_RESEAU_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cours-rt-tester', pourquoi: 'ping et traceroute pour tester un plan d’adressage.' },
     ],
     ambiguites: [
@@ -118,6 +119,7 @@ export const COURS_CISCO_RESEAU_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cisco-voir-trunks', pourquoi: 'lire les trunks quand un port ne se comporte pas comme prévu.' },
     ],
     ambiguites: [
@@ -165,6 +167,7 @@ export const COURS_CISCO_RESEAU_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cisco-enregistrer-config', pourquoi: 'enregistrer la configuration quand le travail est validé.' },
     ],
     ambiguites: [
@@ -223,6 +226,7 @@ export const COURS_CISCO_RESEAU_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cisco-voir-vlans', pourquoi: 'lire la liste des VLAN et des ports.' },
     ],
     ambiguites: [
@@ -289,6 +293,7 @@ export const COURS_CISCO_RESEAU_PARCOURS = [
       },
     ],
     soutien: [
+      { fiche: 'cours-show-cisco', pourquoi: 'toutes les commandes show utiles, rangées par groupe : à garder sous la main.' },
       { fiche: 'cisco-enregistrer-config', pourquoi: 'enregistrer la configuration de chaque équipement.' },
       { fiche: 'cours-config-portable', pourquoi: 'copier la configuration d’un routeur vers un autre.' },
     ],
