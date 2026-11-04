@@ -856,7 +856,10 @@ li.etape-cible{scroll-margin-top:20px}
 .filtre-actif-sortie:hover{border-color:var(--danger);color:var(--danger)}
 .chip-n{display:inline-block;margin-left:4px;padding:0 6px;border-radius:99px;background:rgba(127,127,127,.25);font-size:12px}
 .memo-filtres{margin:10px 0 16px}
-.groupes-liste{display:grid;gap:10px}
+.groupes-liste{display:grid;gap:18px}
+.memo-section{display:grid;gap:10px}
+.memo-section-titre{font-size:1.15rem;margin:6px 0 2px;padding-bottom:4px;border-bottom:2px solid var(--bord,#cbd5e1)}
+.memo-plats,.memo-outils{margin:8px 0}
 .groupe-bloc{border:1px solid var(--border);border-left:6px solid var(--gc);border-radius:12px;background:var(--surface);padding:6px 14px 10px}
 .groupe-bloc summary{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:48px;cursor:pointer;font-weight:700;color:var(--text-strong)}
 .groupe-bloc .groupe-compte{position:static}

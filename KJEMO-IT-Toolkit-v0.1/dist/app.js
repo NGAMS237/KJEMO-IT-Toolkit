@@ -2047,6 +2047,13 @@ function renderPortes() {
     renderPortes();
     view.querySelector(`[data-memo-filtre="${memoFiltre}"]`)?.focus();
   }));
+  view.querySelectorAll('[data-memo-plat]').forEach((b) => b.addEventListener('click', () => {
+    platFiltre = b.dataset.memoPlat || null;
+    renderPortes();
+    view.querySelector(`[data-memo-plat="${platFiltre ?? ''}"]`)?.focus();
+  }));
+  view.querySelector('#memoToutDeplier')?.addEventListener('click', () => view.querySelectorAll('details.groupe-bloc').forEach((d) => { d.open = true; }));
+  view.querySelector('#memoToutReplier')?.addEventListener('click', () => view.querySelectorAll('details.groupe-bloc').forEach((d) => { d.open = false; }));
   view.querySelector('#filtreSortie')?.addEventListener('click', () => {
     platFiltre = null; renderPortes();
     view.querySelector('h1')?.setAttribute('tabindex', '-1'); view.querySelector('h1')?.focus();

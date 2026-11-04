@@ -148,7 +148,8 @@ for (const p of ['Windows', 'Azure']) {
   await page.evaluate(() => { document.querySelector('#platFilters [data-plat="Windows"]').click(); });
   assert(!(await debordement(page)), 'mobile Windows : pas de défilement horizontal');
   await page.goto(`${BASE}/#/memo`);
-  await page.locator('#portesView .groupe-bloc summary').first().click();
+  // Sous un filtre de plateforme, les groupes sont dépliés d’emblée : on ne clique que s’il est replié.
+  if (!(await page.locator('#portesView .groupe-bloc').first().evaluate((d) => d.open))) await page.locator('#portesView .groupe-bloc summary').first().click();
   await page.locator('#portesView .fiche-ligne h3 a').first().click();
   const r = await page.locator('.fiche-modale').evaluate((e) => { const b = e.getBoundingClientRect(); return { l: b.left, w: b.width }; });
   assert(r.w <= 391 && r.l >= -1, 'mobile : la fenêtre tient dans l’écran', JSON.stringify(r));

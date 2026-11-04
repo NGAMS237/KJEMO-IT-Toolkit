@@ -1,3 +1,8 @@
+## MEMO-SECTIONS-01 (2026-11-04)
+- Aide-mémoire réorganisé par plateforme : quatre sections (Linux et serveurs, Windows, Cisco, Azure) avec leur nombre de fiches ; les cinq groupes Cisco sont réunis dans l’ordre du cours (accès et ports, VLAN/VTP/DTP, commutation, adressage et routage, DHCP et IPv6) au lieu d’être dispersés.
+- Puces de plateforme directement sur la page (Toutes, Linux, Windows, Cisco, Azure), boutons « Tout déplier » / « Tout replier » ; sous un filtre de plateforme, les groupes s’ouvrent d’emblée.
+- Testé : test/memo.test.mjs (598, dont sections et contre-épreuve), suites navigateur portes, plateformes, cours, choix.
+
 ## CISCO-S09-01 (2026-11-04)
 - Cours de la semaine 9 intégré (Mes cours et TP > Cisco > « Architecture réseau II — Semaine 9 ») : parcours A à D = les 4 exercices du formatif 08 (DHCPv4 PT 7.2.10, adressage IPv6 PT 8.2.5.3, routes IPv6 statique et par défaut PT 6.2.4.4, DHCPv6 labo 8.5.1), parcours E = théorie.
 - 13 fiches IOS rangées sous Réseau Cisco (DHCPv4 sur routeur ; IPv6 : adresses et routes ; SLAAC et DHCPv6), dans l’aide-mémoire (groupe « DHCP et IPv6 Cisco »), avec annulations. Types de paramètre ipv6 et cidr6.

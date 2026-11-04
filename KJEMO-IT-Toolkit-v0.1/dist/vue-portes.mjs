@@ -15,7 +15,7 @@
  *  - aucune commande ici : ce ne sont que des liens vers des fiches.
  */
 import { esc, badgeEffet } from './vue-taches.mjs';
-import { ROUTE_MEMO, ROUTE_CATALOGUE, routeMemo } from './memo.mjs';
+import { ROUTE_MEMO, ROUTE_CATALOGUE, routeMemo, SECTIONS_MEMO } from './memo.mjs';
 
 const ROUTE_ACCUEIL = '#/';
 const couleurSure = (c) => (/^#[0-9a-f]{6}$/i.test(c ?? '') ? c : '#475569');
@@ -121,6 +121,13 @@ export function ficheLigneMarkup(l, couleur) {
     + `<a class="fiche-ouvrir" href="${esc(href)}" aria-label="Ouvrir : ${esc(l.titre)}">Ouvrir <span aria-hidden="true">→</span></a></article>`;
 }
 
+/** Puces de plateforme de la page : « Toutes » plus une puce par section. */
+function platChipsMarkup(plat) {
+  return `<div class="chips memo-plats" role="group" aria-label="Plateforme">`
+    + [null, ...SECTIONS_MEMO.map((x) => x.id)].map((p) => `<button type="button" class="chip${plat === p ? ' is-on' : ''}" data-memo-plat="${esc(p ?? '')}" aria-pressed="${plat === p}">${esc(p ?? 'Toutes')}</button>`).join('')
+    + `</div>`;
+}
+
 function chipsFiltreMarkup(filtres, actif, compteParFiltre) {
   return `<div class="chips memo-filtres" role="group" aria-label="Filtrer l’aide-mémoire">`
     + filtres.map((f) => `<button type="button" class="chip${actif === f.id ? ' is-on' : ''}" data-memo-filtre="${esc(f.id)}" aria-pressed="${actif === f.id}">${esc(f.libelle)} <span class="chip-n">${compteParFiltre[f.id] ?? 0}</span></button>`).join('')
@@ -137,15 +144,25 @@ export function memoPageMarkup({ groupes, filtre, filtres, compteParFiltre, plat
   // ils sont REGROUPÉS dans une seule ligne qui les nomme (rien n'est retiré sans explication).
   const regroupe = Boolean(plat);
   const vides = groupes.filter((x) => x.compte === 0);
-  const blocs = groupes.map(({ g, compte, nouveaux, sous }) => {
+  const ouvert = regroupe ? ' open' : '';
+  const bloc = ({ g, compte, nouveaux, sous }) => {
     if (compte === 0) {
       return regroupe ? '' : `<div class="groupe-bloc is-vide" style="--gc:${couleurSure(g.couleur)}" data-groupe="${esc(g.id)}"><p><span aria-hidden="true">${esc(g.icone)}</span> ${esc(g.titre)} <span class="groupe-compte">0</span> <span class="vide-raison">aucune fiche avec ces filtres</span></p></div>`;
     }
-    return `<details class="groupe-bloc" style="--gc:${couleurSure(g.couleur)}" data-groupe="${esc(g.id)}">`
+    return `<details class="groupe-bloc" style="--gc:${couleurSure(g.couleur)}" data-groupe="${esc(g.id)}"${ouvert}>`
       + `<summary><span class="groupe-nom"><span aria-hidden="true">${esc(g.icone)}</span> ${esc(g.titre)}${nouveaux ? ` <span class="badge-nouveau">+${nouveaux} nouveau</span>` : ''}</span><span class="groupe-compte">${compte}</span></summary>`
       + `<p class="groupe-resume">${esc(g.resume)} <a href="${esc(routeMemo(g.id))}">Ouvrir le groupe →</a></p>`
       + sous.map((s) => `<h3 class="sous-titre">${esc(s.titre)} <span class="sous-n">${s.fiches.length}</span></h3>${s.fiches.map((l) => ficheLigneMarkup(l, g.couleur)).join('')}`).join('')
       + `</details>`;
+  };
+  const parId = new Map(groupes.map((x) => [x.g.id, x]));
+  const blocs = SECTIONS_MEMO.map((sec) => {
+    const gs = sec.groupes.map((id) => parId.get(id)).filter(Boolean);
+    const n = gs.reduce((t, x) => t + x.compte, 0);
+    if (regroupe && n === 0) return '';
+    return `<section class="memo-section" data-section="${esc(sec.id)}" aria-labelledby="sec-${esc(sec.id)}">`
+      + `<h2 class="memo-section-titre" id="sec-${esc(sec.id)}"><span aria-hidden="true">${esc(sec.icone)}</span> ${esc(sec.titre)} <span class="sous-n">${n} fiche${n > 1 ? 's' : ''}</span></h2>`
+      + gs.map(bloc).join('') + `</section>`;
   }).join('');
   const masques = regroupe && vides.length
     ? `<p class="groupes-masques" id="groupesMasques">${vides.length} groupe${vides.length > 1 ? 's' : ''} sans fiche pour ce filtre (${esc(plat)}) :`
@@ -157,7 +174,9 @@ export function memoPageMarkup({ groupes, filtre, filtres, compteParFiltre, plat
     + `<h1 class="titre-memo"><span aria-hidden="true">⌘</span> Aide-mémoire du cours</h1>`
     + `<p class="intro">Classé par ce que tu veux faire. ${total} fiches ; les groupes grandissent avec les cours : compteurs et badges « nouveau » se calculent tout seuls. Pour une commande précise, utilise la recherche de l’<a href="#/">accueil</a>.</p>`
     + pastilleFiltreMarkup(plat)
+    + platChipsMarkup(plat)
     + chipsFiltreMarkup(filtres, filtre, compteParFiltre)
+    + `<p class="memo-outils"><button type="button" class="chip" id="memoToutDeplier">Tout déplier</button> <button type="button" class="chip" id="memoToutReplier">Tout replier</button></p>`
     + `<div class="groupes-liste">${blocs}</div>`
     + masques
     + `<div class="retours retour-bas"><a class="retour-btn retour-accueil" href="${ROUTE_ACCUEIL}">⌂ Accueil</a><a class="retour-btn retour-cours" href="#/cours">Mes cours et TP →</a></div>`

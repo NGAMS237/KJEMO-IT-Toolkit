@@ -141,20 +141,6 @@ export const MEMO_GROUPES = [
       { id: 'dns', titre: 'DNS', fiches: ['win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a'] },
       { id: 'partages', titre: 'Partages et droits', fiches: ['win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'] },
     ] },
-  { id: 'cisco-adressage-routage', titre: 'Adressage et routage Cisco', icone: '🧭', couleur: '#b45309', commandes: 'ip address, ip route, router rip, ping',
-    resume: 'Adresser les interfaces, écrire des routes statiques (par défaut, flottantes), tester, puis RIPv2.',
-    sous: [
-      { id: 'interfaces', titre: 'Adresses et interfaces', fiches: ['cours-rt-interface-ip', 'cours-sw-gestion-ip'] },
-      { id: 'statique', titre: 'Routes statiques et tests', fiches: ['cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester'] },
-      { id: 'rip', titre: 'Routage dynamique RIP', fiches: ['cours-rip-configurer', 'cours-rip-verifier'] },
-    ] },
-  { id: 'cisco-dhcp-ipv6', titre: 'DHCP et IPv6 Cisco', icone: '🌐', couleur: '#0f766e', commandes: 'ip dhcp pool, ip helper-address, ipv6 address, ipv6 route, ipv6 dhcp pool',
-    resume: 'Routeur serveur, relais et client DHCPv4 ; adresses et routes statiques IPv6 ; SLAAC, DHCPv6 sans état, avec état et relais.',
-    sous: [
-      { id: 'dhcp4', titre: 'DHCPv4 sur routeur', fiches: ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner'] },
-      { id: 'ipv6', titre: 'Adresses et routes IPv6', fiches: ['cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante'] },
-      { id: 'dhcp6', titre: 'SLAAC et DHCPv6', fiches: ['cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'] },
-    ] },
   { id: 'cisco-acces-ports', titre: 'Accès et ports du commutateur', icone: '🔐', couleur: '#9333ea', commandes: 'hostname, speed, duplex, port-security',
     resume: 'Configuration de base, vitesse et duplex, diagnostic d’un port, ports inutilisés, sécurité des ports, sauvegarde.',
     sous: [
@@ -168,6 +154,26 @@ export const MEMO_GROUPES = [
       { id: 'vtp', titre: 'VTP et VLAN étendus', fiches: ['cours-vtp-reseau', 'cours-vtp-transparent-etendus'] },
       { id: 'dtp', titre: 'DTP et trunks', fiches: ['cours-dtp-trunk'] },
       { id: 'depanner', titre: 'Dépanner VTP et DTP', fiches: ['cours-vtp-dtp-depanner'] },
+    ] },
+  { id: 'cisco-commutation', titre: 'Commutation Cisco', icone: '🔀', couleur: '#0e7490', commandes: 'channel-group, show etherchannel, spanning-tree',
+    resume: 'Regrouper des liens (EtherChannel), les vérifier, les dépanner, régler Spanning Tree.',
+    sous: [
+      { id: 'etherchannel', titre: 'EtherChannel', fiches: ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner'] },
+      { id: 'stp', titre: 'Spanning Tree', fiches: ['cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'] },
+    ] },
+  { id: 'cisco-adressage-routage', titre: 'Adressage et routage Cisco', icone: '🧭', couleur: '#b45309', commandes: 'ip address, ip route, router rip, ping',
+    resume: 'Adresser les interfaces, écrire des routes statiques (par défaut, flottantes), tester, puis RIPv2.',
+    sous: [
+      { id: 'interfaces', titre: 'Adresses et interfaces', fiches: ['cours-rt-interface-ip', 'cours-sw-gestion-ip'] },
+      { id: 'statique', titre: 'Routes statiques et tests', fiches: ['cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester'] },
+      { id: 'rip', titre: 'Routage dynamique RIP', fiches: ['cours-rip-configurer', 'cours-rip-verifier'] },
+    ] },
+  { id: 'cisco-dhcp-ipv6', titre: 'DHCP et IPv6 Cisco', icone: '🌐', couleur: '#0f766e', commandes: 'ip dhcp pool, ip helper-address, ipv6 address, ipv6 route, ipv6 dhcp pool',
+    resume: 'Routeur serveur, relais et client DHCPv4 ; adresses et routes statiques IPv6 ; SLAAC, DHCPv6 sans état, avec état et relais.',
+    sous: [
+      { id: 'dhcp4', titre: 'DHCPv4 sur routeur', fiches: ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner'] },
+      { id: 'ipv6', titre: 'Adresses et routes IPv6', fiches: ['cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante'] },
+      { id: 'dhcp6', titre: 'SLAAC et DHCPv6', fiches: ['cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'] },
     ] },
   // Groupes Azure (KJEMO-AZURE-COURS-01) : fiches de construction en Azure CLI ; les assistants de lecture restent dans le catalogue pro.
   { id: 'az-base', titre: 'Azure : abonnement et groupes', icone: '☁', couleur: '#0369a1', commandes: 'az group create, az lock create, az role assignment create',
@@ -194,17 +200,22 @@ export const MEMO_GROUPES = [
     sous: [
       { id: 'lb', titre: 'Azure Load Balancer', fiches: ['cours-az-lb-creer', 'cours-az-lb-etat'] },
     ] },
-  { id: 'cisco-commutation', titre: 'Commutation Cisco', icone: '🔀', couleur: '#0e7490', commandes: 'channel-group, show etherchannel, spanning-tree',
-    resume: 'Regrouper des liens (EtherChannel), les vérifier, les dépanner, régler Spanning Tree.',
-    sous: [
-      { id: 'etherchannel', titre: 'EtherChannel', fiches: ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner'] },
-      { id: 'stp', titre: 'Spanning Tree', fiches: ['cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'] },
-    ] },
   { id: 'bash', titre: 'Bash', icone: '⌨', couleur: '#475569', commandes: 'if, for, select, printf',
     resume: 'Écrire de petits scripts : conditions, boucles, fonctions.',
     sous: [
       { id: 'scripts', titre: 'Scripts', fiches: ['cours-bash-condition', 'cours-bash-boucles', 'cours-bash-fonctions', 'cours-bash-menu'] },
     ] },
+];
+
+/**
+ * Sections de la page « Aide-mémoire » : chaque groupe appartient à UNE plateforme.
+ * Le banc vérifie que tous les groupes sont rangés, une seule fois.
+ */
+export const SECTIONS_MEMO = [
+  { id: 'Linux', titre: 'Linux et serveurs', icone: '🐧', groupes: ['fichiers', 'texte', 'comptes', 'services', 'reseau', 'stockage', 'samba', 'bash'] },
+  { id: 'Windows', titre: 'Windows', icone: '🪟', groupes: ['win-examen', 'win-poste', 'win-systeme', 'win-fichiers', 'win-reseau', 'win-ad', 'win-gpo', 'win-serveur'] },
+  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', groupes: ['cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6'] },
+  { id: 'Azure', titre: 'Azure', icone: '☁', groupes: ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'] },
 ];
 
 export const MEMO_PAR_ID = new Map(MEMO_GROUPES.map((g) => [g.id, g]));

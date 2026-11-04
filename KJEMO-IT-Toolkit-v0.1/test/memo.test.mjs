@@ -112,5 +112,25 @@ ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-p
   ok(V.ficheLigneMarkup({ id: 'x', titre: 't', resume: 'r', effet: 'lecture', plateformes: [], assistant: true, route: 'javascript:alert(1)', nbEtapes: 0 }, '#000000').includes('href="javascript:alert(1)"') === false, 'route d’assistant échappée/neutralisée');
 }
 
+// Sections par plateforme (KJEMO-MEMO-SECTIONS-01)
+{
+  const rang = SECTIONS_ORDRE();
+  function SECTIONS_ORDRE() { return M.SECTIONS_MEMO.flatMap((x) => x.groupes); }
+  ok(M.SECTIONS_MEMO.map((x) => x.id).join() === 'Linux,Windows,Cisco,Azure', 'sections : Linux, Windows, Cisco, Azure');
+  ok(rang.length === M.MEMO_GROUPES.length && new Set(rang).size === rang.length && M.MEMO_GROUPES.every((g) => rang.includes(g.id)), 'sections : chaque groupe rangé une seule fois');
+  const cis = M.SECTIONS_MEMO.find((x) => x.id === 'Cisco').groupes;
+  ok(cis.join() === 'cisco-acces-ports,cisco-vlan-vtp,cisco-commutation,cisco-adressage-routage,cisco-dhcp-ipv6', 'Cisco : cinq groupes réunis, dans l’ordre du cours');
+  const idx = cis.map((id) => M.MEMO_GROUPES.findIndex((g) => g.id === id));
+  ok(idx.every((v, i) => i === 0 || v === idx[i - 1] + 1), 'Cisco : groupes contigus dans MEMO_GROUPES');
+  const groupes = M.MEMO_GROUPES.map((g) => ({ g, compte: 1, nouveaux: 0, sous: g.sous.map((s) => ({ ...s, fiches: [] })) }));
+  const h = V.memoPageMarkup({ groupes, filtre: 'tous', filtres: M.FILTRES_MEMO, compteParFiltre: { tous: 1, nouveau: 0, tp: 0 }, plat: null, total: 1 });
+  ok((h.match(/class="memo-section"/g) ?? []).length === 4 && h.includes('data-memo-plat="Cisco"') && h.includes('id="memoToutDeplier"'), 'page : 4 sections, puces de plateforme, tout déplier');
+  ok(!/<details class="groupe-bloc"[^>]* open/.test(h), 'sans filtre : groupes repliés');
+  const hc = V.memoPageMarkup({ groupes: groupes.map((x) => ({ ...x, compte: x.g.id.startsWith('cisco-') ? 1 : 0 })), filtre: 'tous', filtres: M.FILTRES_MEMO, compteParFiltre: { tous: 1, nouveau: 0, tp: 0 }, plat: 'Cisco', total: 1 });
+  ok((hc.match(/<details class="groupe-bloc"[^>]* open>/g) ?? []).length === 5 && (hc.match(/class="memo-section"/g) ?? []).length === 1, 'filtre Cisco : une section, 5 groupes dépliés d’emblée');
+  // contre-épreuve : un groupe oublié des sections serait détecté
+  const sansUn = M.SECTIONS_MEMO.flatMap((x) => x.groupes).filter((id) => id !== 'cisco-dhcp-ipv6');
+  ok(!M.MEMO_GROUPES.every((g) => sansUn.includes(g.id)), 'contre-épreuve : un groupe retiré des sections est détecté');
+}
 console.log(`memo.test.mjs : ${passed} OK, ${failed} échec(s)`);
 process.exit(failed ? 1 : 0);
