@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC :
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
 const existe = (id) => { const e = T.entreeParId(id); return Boolean(e?.procedure) || (e?.kind === 'assistant' && String(e.route).startsWith('#/outil/')); };
 
-// 1. cohérence : chaque fiche existe, rangée UNE fois, les 111 fiches de cours toutes rangées
+// 1. cohérence : chaque fiche existe, rangée UNE fois, les 118 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
 ok(pb.length === 0, `incohérences : ${pb.join(' | ')}`);
-ok(idsCours.length === 111, `111 fiches de cours attendues, ${idsCours.length} trouvées`);
+ok(idsCours.length === 118, `118 fiches de cours attendues, ${idsCours.length} trouvées`);
 ok(M.toutesLesFichesMemo().length === new Set(M.toutesLesFichesMemo()).size, 'aucune fiche rangée deux fois');
 for (const id of M.toutesLesFichesMemo()) {
   const e = T.entreeParId(id);
@@ -53,7 +53,7 @@ const cw = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Window
 const cl = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }), 0);
 const cc = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }), 0);
 const ca = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Azure', plateformesDe, lies }), 0);
-ok(cw >= 45 && cl > 0 && cc === 39 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
+ok(cw >= 45 && cl > 0 && cc === 46 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
 // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
 const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
 ok(gw.length === 8, `8 groupes Windows attendus, ${gw.length}`);
@@ -119,7 +119,7 @@ ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-p
   ok(M.SECTIONS_MEMO.map((x) => x.id).join() === 'Linux,Windows,Cisco,Azure', 'sections : Linux, Windows, Cisco, Azure');
   ok(rang.length === M.MEMO_GROUPES.length && new Set(rang).size === rang.length && M.MEMO_GROUPES.every((g) => rang.includes(g.id)), 'sections : chaque groupe rangé une seule fois');
   const cis = M.SECTIONS_MEMO.find((x) => x.id === 'Cisco').groupes;
-  ok(cis.join() === 'cisco-acces-ports,cisco-vlan-vtp,cisco-commutation,cisco-adressage-routage,cisco-dhcp-ipv6', 'Cisco : cinq groupes réunis, dans l’ordre du cours');
+  ok(cis.join() === 'cisco-acces-ports,cisco-vlan-vtp,cisco-commutation,cisco-adressage-routage,cisco-dhcp-ipv6,cisco-nat', 'Cisco : six groupes réunis, dans l’ordre du cours');
   const idx = cis.map((id) => M.MEMO_GROUPES.findIndex((g) => g.id === id));
   ok(idx.every((v, i) => i === 0 || v === idx[i - 1] + 1), 'Cisco : groupes contigus dans MEMO_GROUPES');
   const groupes = M.MEMO_GROUPES.map((g) => ({ g, compte: 1, nouveaux: 0, sous: g.sous.map((s) => ({ ...s, fiches: [] })) }));
@@ -127,7 +127,7 @@ ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-p
   ok((h.match(/class="memo-section"/g) ?? []).length === 4 && h.includes('data-memo-plat="Cisco"') && h.includes('id="memoToutDeplier"'), 'page : 4 sections, puces de plateforme, tout déplier');
   ok(!/<details class="groupe-bloc"[^>]* open/.test(h), 'sans filtre : groupes repliés');
   const hc = V.memoPageMarkup({ groupes: groupes.map((x) => ({ ...x, compte: x.g.id.startsWith('cisco-') ? 1 : 0 })), filtre: 'tous', filtres: M.FILTRES_MEMO, compteParFiltre: { tous: 1, nouveau: 0, tp: 0 }, plat: 'Cisco', total: 1 });
-  ok((hc.match(/<details class="groupe-bloc"[^>]* open>/g) ?? []).length === 5 && (hc.match(/class="memo-section"/g) ?? []).length === 1, 'filtre Cisco : une section, 5 groupes dépliés d’emblée');
+  ok((hc.match(/<details class="groupe-bloc"[^>]* open>/g) ?? []).length === 6 && (hc.match(/class="memo-section"/g) ?? []).length === 1, 'filtre Cisco : une section, 6 groupes dépliés d’emblée');
   // contre-épreuve : un groupe oublié des sections serait détecté
   const sansUn = M.SECTIONS_MEMO.flatMap((x) => x.groupes).filter((id) => id !== 'cisco-dhcp-ipv6');
   ok(!M.MEMO_GROUPES.every((g) => sansUn.includes(g.id)), 'contre-épreuve : un groupe retiré des sections est détecté');

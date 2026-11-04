@@ -16,6 +16,7 @@
 
 import { SCHEMAS_RESEAU } from './schemas-cisco-reseau.mjs';
 import { SCHEMAS_S09 } from './schemas-cisco-s09.mjs';
+import { SCHEMAS_NAT } from './schemas-cisco-nat.mjs';
 import { SCHEMAS_AZURE } from './schemas-azure.mjs';
 
 const T = 'var(--text-strong,#fff)';
@@ -286,6 +287,8 @@ export const SCHEMAS = {
   ...SCHEMAS_RESEAU,
   // Semaine 9 : DHCP et IPv6 (KJEMO-CISCO-S09-01).
   ...SCHEMAS_S09,
+  // NAT, PAT, ports, NAT64, types d’adresses et récapitulation (KJEMO-CISCO-NAT-01).
+  ...SCHEMAS_NAT,
   // Cours d'infonuagique Azure (KJEMO-AZURE-COURS-01).
   ...SCHEMAS_AZURE,
 };

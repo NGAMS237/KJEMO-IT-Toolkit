@@ -31,7 +31,7 @@ const textes = (p) => p.methodes.flatMap((m) => m.etapes.flatMap((e) => [e.titre
 
 // ---------------------------------------------------------------------------
 console.log('1. Les fiches du cours');
-assert(FICHES.length === 111, `111 fiches : 53 Linux, 39 Cisco et 19 Azure (${FICHES.length})`);
+assert(FICHES.length === 118, `118 fiches : 53 Linux, 46 Cisco et 19 Azure (${FICHES.length})`);
 assert(new Set(FICHES.map((p) => p.id)).size === FICHES.length, 'identifiants uniques');
 for (const p of FICHES) {
   const pb = P.incoherencesProcedure(p);

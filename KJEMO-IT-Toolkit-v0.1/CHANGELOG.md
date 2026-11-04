@@ -1,3 +1,10 @@
+## CISCO-NAT-01 (2026-11-04)
+- Notes de cours du jour intégrées : nouveau cours « Architecture réseau II — NAT, PAT, types d’adresses et récapitulation » (Mes cours et TP > Cisco), parcours A (NAT, PAT, redirection de port, socket, NAT64), B (modes de diffusion dont la télévision IP d’un hôtel, types IPv6, SLAAC et DHCP), C (routes statiques, récapitulatives, flottantes) et D (rappel express VTP, VLAN, RIP, SSH, sécurité des ports).
+- 7 fiches IOS : NAT statique, NAT dynamique, PAT (overload), redirection de port, lire et vider la table NAT, route statique récapitulative (avec variante Null0), résumé RIPv2. Annulations incluses. Nouveau groupe d’aide-mémoire « NAT, PAT et redirection de port » (6 groupes Cisco) et rubrique « NAT et PAT » du classement.
+- Résumé pliable (7 points essentiels, 7 sections, 13 commandes, 8 pièges, 6 questions) et 9 schémas SVG originaux : vocabulaire NAT, trois types, table PAT, socket et ports, NAT64, types d’adresses IPv6 et usages réels, modes de diffusion, télévision IP d’un hôtel, récapitulation de routes.
+- NAT64 expliqué sans fiche : sa syntaxe varie selon la plateforme et n’existe pas dans Packet Tracer (ambiguïté N-2). « route recap » lu comme récapitulation de routes (confirmé). WDS (Windows) non traité : lot à part.
+- Testé : test/cisco-nat.test.mjs (472, dont masques génériques, récapitulation /22 et adresse NAT64 recalculés) et toutes les suites Node et navigateur. NON EXÉCUTÉ dans Packet Tracer ni sur un routeur réel.
+
 ## MEMO-SECTIONS-01 (2026-11-04)
 - Aide-mémoire réorganisé par plateforme : quatre sections (Linux et serveurs, Windows, Cisco, Azure) avec leur nombre de fiches ; les cinq groupes Cisco sont réunis dans l’ordre du cours (accès et ports, VLAN/VTP/DTP, commutation, adressage et routage, DHCP et IPv6) au lieu d’être dispersés.
 - Puces de plateforme directement sur la page (Toutes, Linux, Windows, Cisco, Azure), boutons « Tout déplier » / « Tout replier » ; sous un filtre de plateforme, les groupes s’ouvrent d’emblée.

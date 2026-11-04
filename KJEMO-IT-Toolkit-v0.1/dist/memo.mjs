@@ -165,7 +165,7 @@ export const MEMO_GROUPES = [
     resume: 'Adresser les interfaces, écrire des routes statiques (par défaut, flottantes), tester, puis RIPv2.',
     sous: [
       { id: 'interfaces', titre: 'Adresses et interfaces', fiches: ['cours-rt-interface-ip', 'cours-sw-gestion-ip'] },
-      { id: 'statique', titre: 'Routes statiques et tests', fiches: ['cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester'] },
+      { id: 'statique', titre: 'Routes statiques et tests', fiches: ['cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester', 'cours-route-recap-statique', 'cours-route-recap-rip'] },
       { id: 'rip', titre: 'Routage dynamique RIP', fiches: ['cours-rip-configurer', 'cours-rip-verifier'] },
     ] },
   { id: 'cisco-dhcp-ipv6', titre: 'DHCP et IPv6 Cisco', icone: '🌐', couleur: '#0f766e', commandes: 'ip dhcp pool, ip helper-address, ipv6 address, ipv6 route, ipv6 dhcp pool',
@@ -174,6 +174,13 @@ export const MEMO_GROUPES = [
       { id: 'dhcp4', titre: 'DHCPv4 sur routeur', fiches: ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner'] },
       { id: 'ipv6', titre: 'Adresses et routes IPv6', fiches: ['cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante'] },
       { id: 'dhcp6', titre: 'SLAAC et DHCPv6', fiches: ['cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'] },
+    ] },
+  { id: 'cisco-nat', titre: 'NAT, PAT et redirection de port', icone: '🔁', couleur: '#c2410c', commandes: 'ip nat inside, ip nat outside, ip nat inside source, show ip nat translations',
+    resume: 'Traduire les adresses privées : NAT statique, NAT dynamique, PAT (une adresse pour tout un réseau), redirection de port, puis lire la table de traduction.',
+    sous: [
+      { id: 'nat-types', titre: 'NAT statique, dynamique et PAT', fiches: ['cours-nat-statique', 'cours-nat-dynamique', 'cours-nat-pat'] },
+      { id: 'nat-ports', titre: 'Redirection de port', fiches: ['cours-nat-redirection-port'] },
+      { id: 'nat-lire', titre: 'Lire la table NAT', fiches: ['cours-nat-verifier'] },
     ] },
   // Groupes Azure (KJEMO-AZURE-COURS-01) : fiches de construction en Azure CLI ; les assistants de lecture restent dans le catalogue pro.
   { id: 'az-base', titre: 'Azure : abonnement et groupes', icone: '☁', couleur: '#0369a1', commandes: 'az group create, az lock create, az role assignment create',
@@ -214,7 +221,7 @@ export const MEMO_GROUPES = [
 export const SECTIONS_MEMO = [
   { id: 'Linux', titre: 'Linux et serveurs', icone: '🐧', groupes: ['fichiers', 'texte', 'comptes', 'services', 'reseau', 'stockage', 'samba', 'bash'] },
   { id: 'Windows', titre: 'Windows', icone: '🪟', groupes: ['win-examen', 'win-poste', 'win-systeme', 'win-fichiers', 'win-reseau', 'win-ad', 'win-gpo', 'win-serveur'] },
-  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', groupes: ['cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6'] },
+  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', groupes: ['cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
   { id: 'Azure', titre: 'Azure', icone: '☁', groupes: ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'] },
 ];
 
@@ -250,6 +257,8 @@ export const AJOUTS = Object.fromEntries([
   ['win-kiosque-configurer', 'linux-kiosque-configurer', 'azure-intune-kiosque', 'linux-cockpit-installer', 'linux-openrsat-installer', 'cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'samba-compte-creer', 'win-examen-parcours', 'win-disque-ajouter', 'win-quota-fsrm', 'win-sauvegarde-planifier', 'win-miroir-raid1', 'win-dhcp-exclusion', 'win-script-utilisateur-partage', 'linux-sudo-su-expliquer', 'samba-partage-parcourir', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
 ).concat(
   ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner', 'cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante', 'cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'].map((id) => [id, '2026-11-04']),
+).concat(
+  ['cours-nat-statique', 'cours-nat-dynamique', 'cours-nat-pat', 'cours-nat-redirection-port', 'cours-nat-verifier', 'cours-route-recap-statique', 'cours-route-recap-rip'].map((id) => [id, '2026-11-04']),
 ));
 
 const JOUR = 86400000;

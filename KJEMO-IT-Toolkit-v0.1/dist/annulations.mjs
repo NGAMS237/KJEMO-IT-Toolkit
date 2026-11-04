@@ -55,6 +55,43 @@ export const ANNULATIONS = {
   'cisco-affecter-port-vlan|ios': {
     steps: [an('remettre le port dans le VLAN 1', 'Retire l’affectation : le port retourne dans le VLAN 1 (par défaut). Pour un autre VLAN d’origine, retape « switchport access vlan » avec l’ancien numéro relevé à l’étape 1.', [sw('interface {{interface}}'), swi('no switchport access vlan'), swi('end')], '« show vlan brief » montre le port dans le VLAN 1.')],
   },
+  // ---- NAT, PAT et récapitulation (KJEMO-CISCO-NAT-01) ------------------------------------------
+  'cours-nat-statique|ios': {
+    steps: [
+      an('retirer la correspondance', 'Retire la ligne statique : l’adresse publique n’est plus associée au serveur et sa traduction disparaît de la table.', [rt('no ip nat inside source static {{locale}} {{globale}}')], '« show ip nat translations » ne montre plus la ligne.'),
+      an('retirer les marques d’interface', 'À ne faire que si aucune autre règle NAT n’utilise ces interfaces : sinon elles cessent de traduire.', [rt('interface {{interne}}'), rti('no ip nat inside'), rt('interface {{externe}}'), rti('no ip nat outside')], 'Les deux interfaces n’affichent plus « ip nat ».'),
+    ],
+  },
+  'cours-nat-dynamique|ios': {
+    steps: [
+      an('retirer la règle de traduction', 'Retire le lien entre la liste d’accès et le pool : plus aucune nouvelle traduction.', [rt('no ip nat inside source list {{acl}} pool {{pool}}')], '« show running-config | include ip nat » ne montre plus la règle.'),
+      an('retirer le pool et la liste', 'Supprime la réserve d’adresses puis la liste d’accès. Ne le fais pas si une autre règle les utilise.', [rt('no ip nat pool {{pool}}'), rt('no access-list {{acl}}')], 'Le pool et la liste ont disparu.'),
+      an('retirer les marques d’interface', 'À ne faire que si aucune autre règle NAT n’utilise ces interfaces.', [rt('interface {{interne}}'), rti('no ip nat inside'), rt('interface {{externe}}'), rti('no ip nat outside')], 'Les deux interfaces n’affichent plus « ip nat ».'),
+    ],
+  },
+  'cours-nat-pat|ios': {
+    steps: [
+      an('retirer la règle de surcharge', 'Retire le PAT : les postes ne sortent plus vers Internet par cette adresse.', [rt('no ip nat inside source list {{acl}} interface {{externe}} overload')], '« show running-config | include ip nat » ne montre plus la règle.'),
+      an('retirer la liste d’accès', 'Supprime la liste qui désignait les adresses traduites (si une autre règle ne s’en sert pas).', [rt('no access-list {{acl}}')], '« show access-lists » ne la montre plus.'),
+      an('retirer les marques d’interface', 'À ne faire que si aucune autre règle NAT n’utilise ces interfaces.', [rt('interface {{interne}}'), rti('no ip nat inside'), rt('interface {{externe}}'), rti('no ip nat outside')], 'Les deux interfaces n’affichent plus « ip nat ».'),
+    ],
+  },
+  'cours-nat-redirection-port|ios': {
+    steps: [
+      an('retirer la redirection', 'Retire la redirection : le port public n’arrive plus sur le serveur.', [rt('no ip nat inside source static {{protocole}} {{locale}} {{portLocal}} {{globale}} {{portGlobal}}')], '« show ip nat translations » ne montre plus la ligne.'),
+      an('retirer les marques d’interface', 'À ne faire que si aucune autre règle NAT n’utilise ces interfaces.', [rt('interface {{interne}}'), rti('no ip nat inside'), rt('interface {{externe}}'), rti('no ip nat outside')], 'Les deux interfaces n’affichent plus « ip nat ».'),
+    ],
+  },
+  'cours-nat-verifier|ios': null,
+  'cours-route-recap-statique|ios': {
+    steps: [
+      an('retirer la route récapitulative', 'Retire la route regroupée ; si tu avais supprimé les routes détaillées, remets-les avant, sinon les réseaux deviennent injoignables.', [rt('no ip route {{reseau}} {{masque}} {{saut}}')], '« show ip route static » ne montre plus le préfixe regroupé.'),
+      an('retirer la route Null0', 'Retire la route récapitulative qui jette les paquets (si tu l’avais posée).', [rt('no ip route {{reseau}} {{masque}} Null0')], 'La ligne « directly connected, Null0 » a disparu.'),
+    ],
+  },
+  'cours-route-recap-rip|ios': {
+    steps: [an('retirer le résumé', 'Retire le résumé de l’interface : le voisin recevra de nouveau les réseaux détaillés.', [rt('interface {{interface}}'), rti('no ip summary-address rip {{reseau}} {{masque}}')], 'Le voisin revoit les routes détaillées après un cycle de 30 secondes.')],
+  },
   // ---- Semaine 9 : DHCP et IPv6 -----------------------------------------------------------------
   'cours-dhcp4-serveur-routeur|ios': {
     steps: [

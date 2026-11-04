@@ -183,7 +183,7 @@ const resolveur = {
 assert(COURS_CISCO_RESEAU_PARCOURS.map((c) => c.id).join() === COURS_IDS.join(), '5 cours dans l’ordre du semestre');
 {
   const ordre = K.COURS.filter((c) => c.plateformes.includes('Cisco')).map((c) => c.id);
-  assert(ordre.length === 7 && ordre.includes('cisco-tp2-routage-statique') && ordre.at(-1) === 'cisco-s09-dhcp-ipv6' && ordre.includes('cisco-s07-etherchannel'), '7 cours Cisco au total (5 nouveaux, la semaine 7 et la semaine 9)');
+  assert(ordre.length === 8 && ordre.includes('cisco-tp2-routage-statique') && ordre.includes('cisco-s09-dhcp-ipv6') && ordre.at(-1) === 'cisco-nat-adressage-recap' && ordre.includes('cisco-s07-etherchannel'), '8 cours Cisco au total (5 nouveaux, la semaine 7, la semaine 9 et NAT)');
 }
 for (const cid of COURS_IDS) {
   const c = K.COURS_PAR_ID.get(cid);
@@ -308,7 +308,7 @@ console.log('8. Pages de fiche, classement et aide-mémoire');
   const memoIds = ['cisco-adressage-routage', 'cisco-acces-ports', 'cisco-vlan-vtp'];
   assert(memoIds.every((id) => M.MEMO_PAR_ID.has(id)), '3 groupes d’aide-mémoire ajoutés');
   const rangees = memoIds.flatMap((id) => M.fichesDuGroupe(M.MEMO_PAR_ID.get(id)));
-  assert(rangees.length === 17 && IDS.every((id) => rangees.includes(id)), 'les 17 fiches sont rangées une fois, dans les trois groupes', String(rangees.length));
+  assert(IDS.every((id) => rangees.filter((x) => x === id).length === 1), 'les 17 fiches sont rangées une fois, dans les trois groupes', String(rangees.length));
   assert(IDS.every((id) => M.AJOUTS[id]), 'badge « nouveau » : les 17 fiches ont une date d’ajout');
   const pbMemo = M.incoherencesMemo({ existe: (id) => Boolean(T.entreeParId(id)), fichesAttendues: IDS });
   assert(pbMemo.length === 0, 'aide-mémoire cohérent', pbMemo.join(' | '));
