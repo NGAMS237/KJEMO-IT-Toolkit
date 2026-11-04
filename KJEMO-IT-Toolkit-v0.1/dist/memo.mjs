@@ -148,6 +148,13 @@ export const MEMO_GROUPES = [
       { id: 'statique', titre: 'Routes statiques et tests', fiches: ['cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester'] },
       { id: 'rip', titre: 'Routage dynamique RIP', fiches: ['cours-rip-configurer', 'cours-rip-verifier'] },
     ] },
+  { id: 'cisco-dhcp-ipv6', titre: 'DHCP et IPv6 Cisco', icone: '🌐', couleur: '#0f766e', commandes: 'ip dhcp pool, ip helper-address, ipv6 address, ipv6 route, ipv6 dhcp pool',
+    resume: 'Routeur serveur, relais et client DHCPv4 ; adresses et routes statiques IPv6 ; SLAAC, DHCPv6 sans état, avec état et relais.',
+    sous: [
+      { id: 'dhcp4', titre: 'DHCPv4 sur routeur', fiches: ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner'] },
+      { id: 'ipv6', titre: 'Adresses et routes IPv6', fiches: ['cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante'] },
+      { id: 'dhcp6', titre: 'SLAAC et DHCPv6', fiches: ['cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'] },
+    ] },
   { id: 'cisco-acces-ports', titre: 'Accès et ports du commutateur', icone: '🔐', couleur: '#9333ea', commandes: 'hostname, speed, duplex, port-security',
     resume: 'Configuration de base, vitesse et duplex, diagnostic d’un port, ports inutilisés, sécurité des ports, sauvegarde.',
     sous: [
@@ -230,6 +237,8 @@ export const AJOUTS = Object.fromEntries([
   ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe', 'linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme', 'win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format', 'linux-hostname-changer', 'linux-systeme-identite', 'linux-ssh-client-installer', 'win-ssh-client-installer'].map((id) => [id, '2026-10-31']),
 ).concat(
   ['win-kiosque-configurer', 'linux-kiosque-configurer', 'azure-intune-kiosque', 'linux-cockpit-installer', 'linux-openrsat-installer', 'cours-ubuntu-jonction-ad-graphique', 'samba-ad-installer', 'samba-ad-reconstruire', 'samba-compte-creer', 'win-examen-parcours', 'win-disque-ajouter', 'win-quota-fsrm', 'win-sauvegarde-planifier', 'win-miroir-raid1', 'win-dhcp-exclusion', 'win-script-utilisateur-partage', 'linux-sudo-su-expliquer', 'samba-partage-parcourir', 'linux-domaine-quitter-hors-ligne', 'win-domaine-quitter-hors-ligne', 'win-dns-poste-regler'].map((id) => [id, '2026-11-01']),
+).concat(
+  ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner', 'cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante', 'cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'].map((id) => [id, '2026-11-04']),
 ));
 
 const JOUR = 86400000;

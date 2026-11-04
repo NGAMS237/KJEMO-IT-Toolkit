@@ -277,7 +277,7 @@ for (const [nom, r, schemas] of [['01', R.RESUME_AZ_01, ['az-modeles-service', '
 // ---------------------------------------------------------------------------
 console.log('7. Les 10 schémas originaux');
 {
-  assert(SCHEMAS_NEUFS.length === 10 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 32, '10 schémas ajoutés aux 22 existants', String(S.IDS_SCHEMAS.length));
+  assert(SCHEMAS_NEUFS.length === 10 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 41, '10 schémas ajoutés aux 31 existants (22 + 9 de la semaine 9)', String(S.IDS_SCHEMAS.length));
   const tmp = mkdtempSync(resolve(tmpdir(), 'svg-'));
   for (const id of SCHEMAS_NEUFS) {
     const sc = S.SCHEMAS[id]; const svg = sc.svg();
@@ -321,7 +321,7 @@ console.log('8. Pages de fiche, classement et aide-mémoire');
   const memoIds = ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'];
   assert(memoIds.every((id) => M.MEMO_PAR_ID.has(id)), '4 groupes d’aide-mémoire Azure ajoutés');
   const rangees = memoIds.flatMap((id) => M.fichesDuGroupe(M.MEMO_PAR_ID.get(id)));
-  assert(rangees.length === 19 && IDS.every((id) => rangees.includes(id)), 'les 19 fiches sont rangées une fois, dans les quatre groupes', String(rangees.length));
+  assert(rangees.filter((id) => IDS.includes(id)).length === 19 && IDS.every((id) => rangees.includes(id)), 'les 19 fiches sont rangées une fois, dans les quatre groupes', String(rangees.length));
   assert(IDS.every((id) => M.AJOUTS[id]), 'badge « nouveau » : les 19 fiches ont une date d’ajout');
   const pbMemo = M.incoherencesMemo({ existe: (id) => Boolean(T.entreeParId(id)), fichesAttendues: IDS });
   assert(pbMemo.length === 0, 'aide-mémoire cohérent', pbMemo.join(' | '));

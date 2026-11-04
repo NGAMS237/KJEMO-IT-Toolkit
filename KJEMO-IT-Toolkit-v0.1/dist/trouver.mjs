@@ -144,6 +144,14 @@ const FICHES = {
   'cours-rt-statique': { interface: null, sortie: t('cisco', 'show ip interface brief') },
   'cours-rt-interface-ip': { interface: t('cisco', 'show ip interface brief') },
   'cours-rip-configurer': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp4-relais': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp4-client-routeur': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp4-depanner': { interface: t('cisco', 'show ip interface brief') },
+  'cours-ipv6-adresser-interface': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp6-slaac': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp6-sans-etat': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp6-avec-etat': { interface: t('cisco', 'show ip interface brief') },
+  'cours-dhcp6-verifier': { interface: t('cisco', 'show ip interface brief') },
 };
 
 /** Paramètres dont le LIBELLÉ dit qu'on invente la valeur : jamais de note, quelle que soit la règle. */

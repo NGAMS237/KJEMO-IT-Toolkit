@@ -55,6 +55,47 @@ export const ANNULATIONS = {
   'cisco-affecter-port-vlan|ios': {
     steps: [an('remettre le port dans le VLAN 1', 'Retire l’affectation : le port retourne dans le VLAN 1 (par défaut). Pour un autre VLAN d’origine, retape « switchport access vlan » avec l’ancien numéro relevé à l’étape 1.', [sw('interface {{interface}}'), swi('no switchport access vlan'), swi('end')], '« show vlan brief » montre le port dans le VLAN 1.')],
   },
+  // ---- Semaine 9 : DHCP et IPv6 -----------------------------------------------------------------
+  'cours-dhcp4-serveur-routeur|ios': {
+    steps: [
+      an('retirer le pool', 'Supprime le pool et ses options (réseau, passerelle, DNS, domaine). Les baux déjà accordés continuent jusqu’à leur fin.', [rt('no ip dhcp pool {{pool}}')], '« show running-config | section dhcp » ne montre plus le pool.'),
+      an('retirer les exclusions', 'Retape l’exclusion avec « no » devant, avec les mêmes adresses.', [rt('no ip dhcp excluded-address {{debut}} {{fin}}')], 'L’exclusion n’apparaît plus.'),
+    ],
+  },
+  'cours-dhcp4-relais|ios': {
+    steps: [an('retirer le relais', 'Retire l’adresse d’assistance de l’interface : les postes de ce réseau ne joignent plus le serveur éloigné.', [rt('interface {{interface}}'), rti('no ip helper-address {{serveur}}')], '« show running-config interface » ne montre plus « ip helper-address ».')],
+  },
+  'cours-dhcp4-client-routeur|ios': {
+    steps: [an('rendre l’interface muette', 'Retire la demande DHCP. Pour une adresse fixe, retape ensuite « ip address » avec l’adresse voulue ; sinon éteins l’interface.', [rt('interface {{interface}}'), rti('no ip address dhcp'), rti('shutdown')], '« show ip interface brief » montre l’interface sans adresse (administratively down).')],
+  },
+  'cours-dhcp4-depanner|ios': null,
+  'cours-ipv6-adresser-interface|ios': {
+    steps: [an('retirer les adresses IPv6', 'Retire les adresses de l’interface (globale et link-local). « no ipv6 unicast-routing » n’est PAS donné ici : il couperait le routage IPv6 de tout le routeur.', [rt('interface {{interface}}'), rti('no ipv6 address {{adresse}}'), rti('no ipv6 address {{lien}} link-local')], '« show ipv6 interface brief » ne montre plus ces adresses.')],
+  },
+  'cours-ipv6-routes-statiques|ios': {
+    steps: [an('retirer la route', 'Retape la forme que tu as utilisée avec « no » devant : même réseau, même saut ou même interface.', [rt('no ipv6 route {{reseau}} {{saut}}'), rt('no ipv6 route {{reseau}} {{interface}}'), rt('no ipv6 route {{reseau}} {{interface}} {{saut}}')], '« show ipv6 route static » ne montre plus la route.')],
+  },
+  'cours-ipv6-defaut-flottante|ios': {
+    steps: [an('retirer les routes par défaut', 'Retire la route principale et la route de secours : mêmes paramètres que ceux posés.', [rt('no ipv6 route ::/0 {{saut}}'), rt('no ipv6 route ::/0 {{secours}} {{distance}}')], '« show ipv6 route static » ne montre plus de S* ::/0.')],
+  },
+  'cours-dhcp6-slaac|ios': {
+    steps: [an('retirer les adresses de l’interface', 'Retire les adresses IPv6 de l’interface : le routeur n’annonce plus ce préfixe. « no ipv6 unicast-routing » n’est pas donné ici : il couperait le routage IPv6 de tout le routeur.', [rt('interface {{interface}}'), rti('no ipv6 address {{adresse}}'), rti('no ipv6 address {{lien}} link-local')], 'Les postes ne reçoivent plus d’adresse dans ce préfixe.')],
+  },
+  'cours-dhcp6-sans-etat|ios': {
+    steps: [
+      an('retirer le lien et l’indicateur O', 'Détache le pool de l’interface et remet l’indicateur O à 0.', [rt('interface {{interface}}'), rti('no ipv6 dhcp server {{pool}}'), rti('no ipv6 nd other-config-flag')], '« show running-config interface » ne montre plus ces lignes.'),
+      an('supprimer le pool', 'Supprime le pool DHCPv6 et ses options.', [rt('no ipv6 dhcp pool {{pool}}')], '« show ipv6 dhcp pool » ne le liste plus.'),
+    ],
+  },
+  'cours-dhcp6-avec-etat|ios': {
+    steps: [
+      an('retirer le lien et l’indicateur M', 'Détache le pool de l’interface et remet l’indicateur M à 0.', [rt('interface {{interface}}'), rti('no ipv6 dhcp server {{pool}}'), rti('no ipv6 nd managed-config-flag')], '« show running-config interface » ne montre plus ces lignes.'),
+      an('supprimer le pool', 'Supprime le pool DHCPv6, son préfixe et ses options.', [rt('no ipv6 dhcp pool {{pool}}')], '« show ipv6 dhcp pool » ne le liste plus.'),
+    ],
+  },
+  'cours-dhcp6-relais|ios': {
+    steps: [an('retirer le relais', 'Retape la commande avec « no » devant ; reprends la forme que tu as utilisée (avec ou sans interface de sortie).', [rt('interface {{interface}}'), rti('no ipv6 dhcp relay destination {{serveur}}'), rti('no ipv6 dhcp relay destination {{serveur}} {{sortie}}')], 'La ligne du relais n’apparaît plus sur l’interface.')],
+  },
   'cours-ec-pagp|ios': null, 'cours-ec-lacp|ios': null, 'cours-ec-statique|ios': null,
   'cours-stp-racines|ios': {
     steps: [

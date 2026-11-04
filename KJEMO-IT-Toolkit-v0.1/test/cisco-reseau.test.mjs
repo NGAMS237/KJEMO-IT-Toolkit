@@ -79,7 +79,7 @@ for (const p of COURS_CISCO_RESEAU) {
       assert(!/\{\{|\}\}/.test(l.copie) && !/‹|›/.test(l.copie), `aucune marque non remplacée : ${p.id}`, l.copie);
       assert(!/\b(reload|erase|write erase|delete|format)\b/i.test(l.copie), `aucune commande destructrice de la mémoire de l’équipement : ${p.id}`, l.copie);
       // un mot de passe n'est jamais écrit : la ligne à secret s'arrête sur le mot qui le précède
-      if (/\b(password|secret)\s*$/.test(l.copie.trimEnd())) assert(/ $/.test(l.copie) || l.secret !== false, `ligne à secret terminée sans mot de passe : ${p.id}`, l.copie);
+      if (/\b(password|secret)\s*$/.test(l.copie.trimEnd()) && !/^no /.test(l.copie)) assert(/ $/.test(l.copie) || l.secret !== false, `ligne à secret terminée sans mot de passe : ${p.id}`, l.copie);
     }
   }
 }
@@ -183,7 +183,7 @@ const resolveur = {
 assert(COURS_CISCO_RESEAU_PARCOURS.map((c) => c.id).join() === COURS_IDS.join(), '5 cours dans l’ordre du semestre');
 {
   const ordre = K.COURS.filter((c) => c.plateformes.includes('Cisco')).map((c) => c.id);
-  assert(ordre.length === 6 && ordre.at(-1) === 'cisco-tp2-routage-statique' && ordre.includes('cisco-s07-etherchannel'), '6 cours Cisco au total (5 nouveaux + la semaine 7)');
+  assert(ordre.length === 7 && ordre.includes('cisco-tp2-routage-statique') && ordre.at(-1) === 'cisco-s09-dhcp-ipv6' && ordre.includes('cisco-s07-etherchannel'), '7 cours Cisco au total (5 nouveaux, la semaine 7 et la semaine 9)');
 }
 for (const cid of COURS_IDS) {
   const c = K.COURS_PAR_ID.get(cid);

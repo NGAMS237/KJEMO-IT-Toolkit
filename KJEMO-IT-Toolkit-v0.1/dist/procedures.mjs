@@ -34,7 +34,7 @@ import {
 import {
   validateNomUnite, validateCheminAbsolu, validatePortTcp, validateEntierBorne,
 } from './validateurs-linux.mjs';
-import { validateIPv4, validerFqdn, validerNomHote } from './validateurs.mjs';
+import { validateIPv4, validerFqdn, validerNomHote, validerIPv6 } from './validateurs.mjs';
 
 // ---------------------------------------------------------------------------
 // Vocabulaire
@@ -260,6 +260,16 @@ export const TYPES_PARAM = {
     return n >= 8 && n <= 30 && m[2] === String(n) ? ok(`${a.valeur}/${n}`) : ko(`${p.label} : un préfixe de 8 à 30 (par exemple /24).`);
   },
   ipv4:    (v, p) => adapter(validateIPv4(v)),
+  // KJEMO-CISCO-S09-01 : adresse IPv6 seule, ou réseau/adresse IPv6 avec préfixe (1 à 128).
+  ipv6:    (v, p) => { const s = String(v ?? '').trim(); if (s.includes('/')) return ko(`${p.label} : une adresse IPv6 sans préfixe (le /64 se tape à part).`); const r = validerIPv6(s); return r.ok ? ok(s) : ko(`${p.label} : ${r.error}`); },
+  cidr6:   (v, p) => {
+    const m = /^([^/]+)\/(\d{1,3})$/.exec(String(v ?? '').trim());
+    if (!m) return ko(`${p.label} : une adresse IPv6 avec son préfixe, par exemple 2001:db8:acad:1::1/64.`);
+    const a = validerIPv6(m[1]);
+    if (!a.ok) return ko(`${p.label} : ${a.error}`);
+    const n = Number(m[2]);
+    return n >= 1 && n <= 128 && m[2] === String(n) ? ok(`${m[1].trim()}/${n}`) : ko(`${p.label} : un préfixe de 1 à 128 (en général /64).`);
+  },
   hote:    (v) => adapter(validerNomHote(v)),
   fqdn:    (v) => adapter(validerFqdn(v)),
   unite:   (v, p) => adapter(validateNomUnite(v, p.label)),

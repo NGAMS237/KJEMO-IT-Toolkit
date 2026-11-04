@@ -217,6 +217,9 @@ export const ARBRE = {
     F('trunks', 'Trunks, DTP et VTP', { sub: ['Trunks et DTP', 'VTP et diagnostic'], fiches: ['cours-vtp-transparent-etendus'] }),
     F('commutation', 'EtherChannel et Spanning Tree', { fiches: ['cours-ec-avant-de-grouper', 'cours-ec-pagp', 'cours-ec-lacp', 'cours-ec-statique', 'cours-ec-verifier', 'cours-ec-depanner', 'cours-stp-lire', 'cours-stp-racines', 'cours-stp-portfast-bpduguard'] }),
     F('routage', 'Routage', { fiches: ['cours-rt-interface-ip', 'cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester', 'cours-rip-configurer', 'cours-rip-verifier'] }),
+    F('dhcp-cisco', 'DHCPv4 sur routeur', { fiches: ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner'] }),
+    F('ipv6-cisco', 'IPv6 : adresses et routes', { fiches: ['cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante'] }),
+    F('dhcpv6-cisco', 'SLAAC et DHCPv6', { fiches: ['cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'] }),
   ],
 };
 

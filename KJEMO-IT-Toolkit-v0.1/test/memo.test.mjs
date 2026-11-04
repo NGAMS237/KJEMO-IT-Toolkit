@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC :
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
 const existe = (id) => { const e = T.entreeParId(id); return Boolean(e?.procedure) || (e?.kind === 'assistant' && String(e.route).startsWith('#/outil/')); };
 
-// 1. cohérence : chaque fiche existe, rangée UNE fois, les 98 fiches de cours toutes rangées
+// 1. cohérence : chaque fiche existe, rangée UNE fois, les 111 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
 ok(pb.length === 0, `incohérences : ${pb.join(' | ')}`);
-ok(idsCours.length === 98, `98 fiches de cours attendues, ${idsCours.length} trouvées`);
+ok(idsCours.length === 111, `111 fiches de cours attendues, ${idsCours.length} trouvées`);
 ok(M.toutesLesFichesMemo().length === new Set(M.toutesLesFichesMemo()).size, 'aucune fiche rangée deux fois');
 for (const id of M.toutesLesFichesMemo()) {
   const e = T.entreeParId(id);
@@ -53,7 +53,7 @@ const cw = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Window
 const cl = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Linux', plateformesDe, lies }), 0);
 const cc = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Cisco', plateformesDe, lies }), 0);
 const ca = M.MEMO_GROUPES.reduce((n, g) => n + M.compteGroupe(g, { plat: 'Azure', plateformesDe, lies }), 0);
-ok(cw >= 45 && cl > 0 && cc === 26 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
+ok(cw >= 45 && cl > 0 && cc === 39 && ca >= 19 && cl + cw + cc + ca >= total - 0, `plateforme : Linux ${cl}, Windows ${cw}, Cisco ${cc}, Azure ${ca}, total ${total}`);
 // Groupes Windows (KJEMO-UX-MEMO-WINDOWS-01)
 const gw = M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-'));
 ok(gw.length === 8, `8 groupes Windows attendus, ${gw.length}`);

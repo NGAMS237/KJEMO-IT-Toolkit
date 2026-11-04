@@ -334,3 +334,6 @@ export const SCHEMAS_RESEAU = {
   'dtp-modes': { titre: 'Modes DTP et trunk', legende: 'Matrice de négociation : un trunk se forme si un bout propose et que l’autre accepte.', svg: dtpModes },
   'tp2-topologie': { titre: 'Topologie du TP2', legende: 'Trois routeurs en triangle, un LAN par routeur et le lien R2-R3 à ne pas oublier.', svg: tp2Topologie },
 };
+
+/** Outils de dessin partagés avec les autres modules de schémas (semaine 9…). */
+export const DESSIN = { svg, txt, boite, ligne, fl, routeur, nuage, tableau, oui, non, att, T, S, FOND, CASE, BORD, ACC, CYAN, OK, KO, WARN };

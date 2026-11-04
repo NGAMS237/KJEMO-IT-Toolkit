@@ -1,3 +1,10 @@
+## CISCO-S09-01 (2026-11-04)
+- Cours de la semaine 9 intégré (Mes cours et TP > Cisco > « Architecture réseau II — Semaine 9 ») : parcours A à D = les 4 exercices du formatif 08 (DHCPv4 PT 7.2.10, adressage IPv6 PT 8.2.5.3, routes IPv6 statique et par défaut PT 6.2.4.4, DHCPv6 labo 8.5.1), parcours E = théorie.
+- 13 fiches IOS rangées sous Réseau Cisco (DHCPv4 sur routeur ; IPv6 : adresses et routes ; SLAAC et DHCPv6), dans l’aide-mémoire (groupe « DHCP et IPv6 Cisco »), avec annulations. Types de paramètre ipv6 et cidr6.
+- Résumé pliable (essentiel, 9 sections, 16 commandes, 8 pièges, 7 questions) et 9 schémas SVG originaux (DORA, relais, structure et types d’adresses IPv6, EUI-64, indicateurs A/O/M, qui fournit quoi, routes statiques, relais DHCPv6).
+- Ambiguïtés S09-1 à S09-5 signalées (sources contradictoires : l’étape écrite l’emporte). Étapes graphiques de Packet Tracer marquées « non couvert » avec explication.
+- Testé : test/cisco-s09.test.mjs (679), suites Node et navigateur existantes. NON EXÉCUTÉ dans Packet Tracer ni sur un routeur réel.
+
 ## KIOSQUE-01 (2026-11-02)
 - Trois fiches « mode kiosque », chacune avec l’option graphique en premier, les commandes, la vérification, la sortie du kiosque et le retrait :
   - Windows : « Configurer un kiosque Windows (une seule application) » — Paramètres › Comptes › Autres utilisateurs › Configurer un kiosque (Edge plein écran) ou PowerShell (New-LocalUser, Set-AssignedAccess, Get-/Clear-AssignedAccess, retrait d’un kiosque posé par XML/MDM). Rangée dans Aide-mémoire › Poste Windows › Comptes locaux.
