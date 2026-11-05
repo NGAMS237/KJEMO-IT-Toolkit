@@ -84,6 +84,16 @@ export const ANNULATIONS = {
   },
   'cours-nat-verifier|ios': null,
   'cours-show-cisco|ios': null,
+  'cours-tp-vlan-ssh-intervlan|ios': {
+    steps: [
+      ai('retirer les sous-interfaces du routeur', 'Supprime les trois sous-interfaces : les trois réseaux ne sont plus routés. L’interface physique reste allumée, sans adresse.', [ios('R1(config)#')('no interface gigabitEthernet 0/0.10'), ios('R1(config)#')('no interface gigabitEthernet 0/0.20'), ios('R1(config)#')('no interface gigabitEthernet 0/0.30')], '« show ip interface brief » ne liste plus Gi0/0.10, .20 et .30.'),
+      ai('retirer le trunk', 'Remet le port Gi0/1 en accès (VLAN 1) : le routeur ne reçoit plus aucun VLAN. Ta session SSH passe par Fa0/3, elle ne coupe pas.', [ios('SW1(config)#')('interface gigabitEthernet 0/1'), ios('SW1(config-if)#')('no switchport trunk allowed vlan'), ios('SW1(config-if)#')('switchport mode access')], '« show interfaces trunk » ne liste plus Gi0/1.'),
+      an('sortir les ports du TP des VLAN', 'Remet Fa0/1 et Fa0/2 dans le VLAN 1. Fa0/3 est traité à l’étape suivante : c’est le port de ta session SSH.', [ios('SW1(config)#')('interface range fastEthernet 0/1 - 2'), ios('SW1(config-if-range)#')('no switchport access vlan')], '« show vlan brief » montre Fa0/1 et Fa0/2 dans default.'),
+      ai('retirer l’adresse de gestion et le port de gestion', 'Coupe ta propre session SSH : fais cette étape par la CONSOLE. Retire la passerelle, l’interface VLAN 30 et remet Fa0/3 dans le VLAN 1.', [ios('SW1(config)#')('no ip default-gateway'), ios('SW1(config)#')('no interface vlan 30'), ios('SW1(config)#')('interface fastEthernet 0/3'), ios('SW1(config-if)#')('no switchport access vlan')], '« show ip interface brief » ne liste plus Vlan30.'),
+      ad('supprimer les trois VLAN', 'Supprime les VLAN 10, 20 et 30. Les ports qui y seraient encore affectés deviennent inactifs : fais les trois étapes précédentes d’abord.', [ios('SW1(config)#')('no vlan 10'), ios('SW1(config)#')('no vlan 20'), ios('SW1(config)#')('no vlan 30')], '« show vlan brief » ne liste plus VENTES, TECHNIQUE ni GESTION.'),
+      ai('retirer SSH', 'Remet les lignes à leur état d’origine, supprime le compte et la clé RSA. La suppression de la clé demande une confirmation. À faire par la console.', [ios('SW1(config)#')('line vty 0 15'), ios('SW1(config-line)#')('no transport input ssh'), ios('SW1(config-line)#')('no login local'), ios('SW1(config-line)#')('exit'), ios('SW1(config)#')('no username admin'), ios('SW1(config)#')('crypto key zeroize rsa'), ios('SW1(config)#')('no ip ssh version 2')], '« show ip ssh » indique « SSH Disabled ».'),
+    ],
+  },
   'cours-route-recap-statique|ios': {
     steps: [
       an('retirer la route récapitulative', 'Retire la route regroupée ; si tu avais supprimé les routes détaillées, remets-les avant, sinon les réseaux deviennent injoignables.', [rt('no ip route {{reseau}} {{masque}} {{saut}}')], '« show ip route static » ne montre plus le préfixe regroupé.'),

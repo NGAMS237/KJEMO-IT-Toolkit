@@ -130,8 +130,9 @@ function platChipsMarkup(plat) {
 
 /** Fiche épinglée en tête de page (ex. les commandes show Cisco), visible sauf si une autre plateforme est choisie. */
 function epingleMarkup(plat) {
-  return SECTIONS_MEMO.filter((x) => x.epingle && (!plat || plat === x.id)).map((x) => `<a class="epingle" data-epingle="${esc(x.epingle.fiche)}" href="#/tache/${esc(x.epingle.fiche)}">`
-    + `<span class="epingle-titre"><span aria-hidden="true">⭐</span> ${esc(x.epingle.titre)}</span><span class="epingle-texte">${esc(x.epingle.texte)}</span><span class="epingle-ouvrir">Ouvrir →</span></a>`).join('');
+  // `epingle` est une fiche ou une liste de fiches épinglées en haut de la section.
+  return SECTIONS_MEMO.filter((x) => x.epingle && (!plat || plat === x.id)).flatMap((x) => [].concat(x.epingle)).map((p) => `<a class="epingle" data-epingle="${esc(p.fiche)}" href="#/tache/${esc(p.fiche)}">`
+    + `<span class="epingle-titre"><span aria-hidden="true">⭐</span> ${esc(p.titre)}</span><span class="epingle-texte">${esc(p.texte)}</span><span class="epingle-ouvrir">Ouvrir →</span></a>`).join('');
 }
 
 function chipsFiltreMarkup(filtres, actif, compteParFiltre) {

@@ -54,8 +54,17 @@ export function coursListeMarkup(coursListe, progression, ctx, plat = null) {
   return filMarkup([{ nom: 'Accueil', route: '#/' }, { nom: titre }])
     + `<h1>${esc(titre)}</h1>`
     + `<p class="intro">Un parcours dit, pour chaque demande de ton travail, <b>quelle fiche et quelle étape</b> la traitent. Il ne contient aucune commande : corriger une fiche corrige tous les parcours.</p>`
+    + epingleCoursMarkup(plat)
     + cartes
     + gabaritMarkup();
+}
+
+/** Bandeau « à la une » : le TP complet 3 VLAN, SSH et routage inter-VLAN, vu sans le chercher (page Cisco ou sans filtre). */
+function epingleCoursMarkup(plat) {
+  if (plat && plat !== 'Cisco') return '';
+  return `<a class="epingle" data-epingle-cours="cisco-tp-vlan-ssh-intervlan" href="${esc(routeParcours('cisco-tp-vlan-ssh-intervlan'))}">`
+    + `<span class="epingle-titre"><span aria-hidden="true">⭐</span> TP complet : 3 VLAN, SSH et routage inter-VLAN</span>`
+    + `<span class="epingle-texte">Parcours en six parties et résumé pliable, de la création des VLAN au routage entre VLAN.</span><span class="epingle-ouvrir">Ouvrir →</span></a>`;
 }
 
 function filMarkup(maillons) {

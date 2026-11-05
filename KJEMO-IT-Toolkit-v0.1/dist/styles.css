@@ -950,4 +950,4 @@ details.schemas-fiche{margin:14px 0}
 
 /* KJEMO-UX-MEMO-WINDOWS-01 : groupes sans fiche regroupés sous un filtre de plateforme */
 .groupes-masques{margin:14px 0 0;padding:10px 12px;border:1px dashed var(--border,#cbd5e1);border-radius:10px;color:var(--muted,#64748b);font-size:13px;line-height:1.9}
-.groupe-masque{display:inline-block;margin:0 4px 0 0;padding:1px 8px;border:1px dashed var(--border,#cbd5e1);border-radius:999px;white-space:nowrap}
+.groupe-masque{display:inline-block;margin:0 4px 0 0;padding:1px 8px;border:1px dashed var(--border,#cbd5e1);border-radius:14px;white-space:normal;max-width:100%;overflow-wrap:anywhere}

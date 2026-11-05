@@ -141,6 +141,11 @@ export const MEMO_GROUPES = [
       { id: 'dns', titre: 'DNS', fiches: ['win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a'] },
       { id: 'partages', titre: 'Partages et droits', fiches: ['win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'] },
     ] },
+  { id: 'cisco-tp-vlan', titre: '⭐ TP complet : 3 VLAN → SSH → routage inter-VLAN', icone: '🧩', couleur: '#7c3aed', commandes: 'vlan, switchport access vlan, switchport mode trunk, encapsulation dot1Q, crypto key generate rsa',
+    resume: 'Une seule fiche, de la création de trois VLAN jusqu’au routage entre VLAN en passant par SSH : huit phases, de la console du commutateur aux tests de bout en bout.',
+    sous: [
+      { id: 'tp-vlan', titre: 'Le TP en une suite, phase par phase', fiches: ['cours-tp-vlan-ssh-intervlan'] },
+    ] },
   { id: 'cisco-show', titre: '⭐ Commandes show Cisco (toutes)', icone: '🔎', couleur: '#0369a1', commandes: 'show ip interface brief, show running-config, show ip route, show vlan brief, show cdp neighbors',
     resume: 'Une seule fiche qui range par groupe toutes les commandes « show » utiles : interfaces, VLAN, Spanning Tree, EtherChannel, routage, DHCP, NAT, sécurité, journaux.',
     sous: [
@@ -226,7 +231,7 @@ export const MEMO_GROUPES = [
 export const SECTIONS_MEMO = [
   { id: 'Linux', titre: 'Linux et serveurs', icone: '🐧', groupes: ['fichiers', 'texte', 'comptes', 'services', 'reseau', 'stockage', 'samba', 'bash'] },
   { id: 'Windows', titre: 'Windows', icone: '🪟', groupes: ['win-examen', 'win-poste', 'win-systeme', 'win-fichiers', 'win-reseau', 'win-ad', 'win-gpo', 'win-serveur'] },
-  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', epingle: { fiche: 'cours-show-cisco', titre: 'Commandes show Cisco', texte: 'Toutes les commandes « show » utiles, rangées par groupe, dans une seule fiche.' }, groupes: ['cisco-show', 'cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
+  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', epingle: [{ fiche: 'cours-tp-vlan-ssh-intervlan', titre: 'TP complet : 3 VLAN, SSH et routage inter-VLAN', texte: 'De la création des VLAN jusqu’au routage entre VLAN, en passant par SSH : une seule fiche en huit phases.' }, { fiche: 'cours-show-cisco', titre: 'Commandes show Cisco', texte: 'Toutes les commandes « show » utiles, rangées par groupe, dans une seule fiche.' }], groupes: ['cisco-tp-vlan', 'cisco-show', 'cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
   { id: 'Azure', titre: 'Azure', icone: '☁', groupes: ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'] },
 ];
 
@@ -263,7 +268,7 @@ export const AJOUTS = Object.fromEntries([
 ).concat(
   ['cours-dhcp4-serveur-routeur', 'cours-dhcp4-relais', 'cours-dhcp4-client-routeur', 'cours-dhcp4-depanner', 'cours-ipv6-adresser-interface', 'cours-ipv6-verifier', 'cours-ipv6-routes-statiques', 'cours-ipv6-defaut-flottante', 'cours-dhcp6-slaac', 'cours-dhcp6-sans-etat', 'cours-dhcp6-avec-etat', 'cours-dhcp6-relais', 'cours-dhcp6-verifier'].map((id) => [id, '2026-11-04']),
 ).concat(
-  ['cours-nat-statique', 'cours-nat-dynamique', 'cours-nat-pat', 'cours-nat-redirection-port', 'cours-nat-verifier', 'cours-route-recap-statique', 'cours-route-recap-rip', 'cours-show-cisco'].map((id) => [id, '2026-11-04']),
+  ['cours-nat-statique', 'cours-nat-dynamique', 'cours-nat-pat', 'cours-nat-redirection-port', 'cours-nat-verifier', 'cours-route-recap-statique', 'cours-route-recap-rip', 'cours-show-cisco', 'cours-tp-vlan-ssh-intervlan'].map((id) => [id, '2026-11-04']),
 ));
 
 const JOUR = 86400000;

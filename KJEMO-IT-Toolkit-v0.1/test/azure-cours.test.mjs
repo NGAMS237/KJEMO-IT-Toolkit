@@ -277,7 +277,7 @@ for (const [nom, r, schemas] of [['01', R.RESUME_AZ_01, ['az-modeles-service', '
 // ---------------------------------------------------------------------------
 console.log('7. Les 10 schémas originaux');
 {
-  assert(SCHEMAS_NEUFS.length === 10 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 50, '10 schémas ajoutés aux 40 existants (22 + 9 de la semaine 9 + 9 de NAT)', String(S.IDS_SCHEMAS.length));
+  assert(SCHEMAS_NEUFS.length === 10 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 52, '10 schémas ajoutés aux 42 existants (22 + 9 de la semaine 9 + 9 de NAT + 2 du TP 3 VLAN)', String(S.IDS_SCHEMAS.length));
   const tmp = mkdtempSync(resolve(tmpdir(), 'svg-'));
   for (const id of SCHEMAS_NEUFS) {
     const sc = S.SCHEMAS[id]; const svg = sc.svg();

@@ -183,7 +183,7 @@ const resolveur = {
 assert(COURS_CISCO_RESEAU_PARCOURS.map((c) => c.id).join() === COURS_IDS.join(), '5 cours dans l’ordre du semestre');
 {
   const ordre = K.COURS.filter((c) => c.plateformes.includes('Cisco')).map((c) => c.id);
-  assert(ordre.length === 8 && ordre.includes('cisco-tp2-routage-statique') && ordre.includes('cisco-s09-dhcp-ipv6') && ordre.at(-1) === 'cisco-nat-adressage-recap' && ordre.includes('cisco-s07-etherchannel'), '8 cours Cisco au total (5 nouveaux, la semaine 7, la semaine 9 et NAT)');
+  assert(ordre.length === 9 && ordre.includes('cisco-tp2-routage-statique') && ordre.includes('cisco-s09-dhcp-ipv6') && ordre.at(-1) === 'cisco-tp-vlan-ssh-intervlan' && ordre.includes('cisco-nat-adressage-recap') && ordre.includes('cisco-s07-etherchannel'), '9 cours Cisco au total (5 nouveaux, la semaine 7, la semaine 9, NAT et le TP 3 VLAN)');
 }
 for (const cid of COURS_IDS) {
   const c = K.COURS_PAR_ID.get(cid);
