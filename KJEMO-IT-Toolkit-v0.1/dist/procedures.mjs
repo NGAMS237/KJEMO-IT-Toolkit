@@ -349,6 +349,10 @@ export function coherencePlanVlan(lignes, valides = {}, param = {}) {
       if (vus.nom.has(nom)) erreurs.push({ ligne: i, col: 'nom', message: `Ligne ${n} : le nom « ${l.nom} » est déjà celui de la ligne ${vus.nom.get(nom) + 1}.` });
       else vus.nom.set(nom, i);
     }
+    // Un VLAN réservé à la gestion (ou à un autre usage) ne peut pas figurer dans le plan.
+    for (const id of param.exclureVlan ?? []) {
+      if (valides[id] !== undefined && String(valides[id]) === String(l.vlan)) erreurs.push({ ligne: i, col: 'vlan', message: `Ligne ${n} : le VLAN ${l.vlan} est déjà le VLAN de gestion (${id}) : choisis un autre numéro.` });
+    }
     const pf = Number(l.prefixe);
     const res = ipv4Entier(l.reseau); const gw = ipv4Entier(l.passerelle); const poste = ipv4Entier(l.poste);
     if (res !== null && Number.isInteger(pf)) {
@@ -366,10 +370,21 @@ export function coherencePlanVlan(lignes, valides = {}, param = {}) {
       if (vus.port.has(p)) erreurs.push({ ligne: i, col: 'ports', message: `Ligne ${n} : le port ${p} est déjà affecté à la ligne ${vus.port.get(p) + 1}.` });
       else vus.port.set(p, i);
       for (const id of param.exclure ?? []) {
-        if (valides[id] && valides[id] === p) erreurs.push({ ligne: i, col: 'ports', message: `Ligne ${n} : le port ${p} est aussi la liaison de ce plan (${id === 'trunkSw' ? 'trunk côté commutateur' : id}) : un port ne peut pas être à la fois d’accès et de liaison.` });
+        if (valides[id] && valides[id] === p) erreurs.push({ ligne: i, col: 'ports', message: `Ligne ${n} : le port ${p} est aussi la liaison de ce plan (${id === 'trunkSw' ? 'trunk côté commutateur' : id === 'portGestion' ? 'port du poste de gestion' : id}) : un port ne peut pas être à la fois d’accès et de liaison.` });
       }
     }
   });
+  // Le réseau du VLAN de gestion ne doit chevaucher aucun réseau du plan.
+  const g = param.reseauGestion;
+  if (g && valides[g.passerelle] && valides[g.prefixe]) {
+    const gw = ipv4Entier(valides[g.passerelle]); const gpf = Number(valides[g.prefixe]);
+    if (gw !== null && Number.isInteger(gpf)) {
+      const gm = masqueDepuisPrefixe(gpf); const gres = (gw & gm) >>> 0; const gdif = (gres | (~gm >>> 0)) >>> 0;
+      for (const x of sous) {
+        if (x.reseau <= gdif && gres <= x.diffusion) erreurs.push({ ligne: x.i, col: 'reseau', message: `Ligne ${x.i + 1} : ce réseau chevauche celui du VLAN de gestion (${entierIpv4(gres)}/${gpf}). Chaque VLAN a son propre réseau.` });
+      }
+    }
+  }
   for (let a = 0; a < sous.length; a++) {
     for (let b = a + 1; b < sous.length; b++) {
       if (sous[a].reseau <= sous[b].diffusion && sous[b].reseau <= sous[a].diffusion) {
@@ -906,7 +921,9 @@ export function incoherencesProcedure(p) {
     }
   }
   for (const prm of p.params ?? []) {
-    const utilise = (p.methodes ?? []).some((m) => (m.etapes ?? []).some((e) => (e.lignes ?? []).some((l) => parametresUtilises(l.cmd).includes(prm.id))
+    // Un préfixe est « utilisé » quand son masque pointé {{<id>Masque}} l'est.
+    const idsUtiles = prm.type === 'prefixe' ? [prm.id, `${prm.id}Masque`] : [prm.id];
+    const utilise = (p.methodes ?? []).some((m) => (m.etapes ?? []).some((e) => (e.lignes ?? []).some((l) => parametresUtilises(l.cmd).some((x) => idsUtiles.includes(x)))
       || (prm.type === 'table' && e.repeter?.table === prm.id)
       || (e.repeter && (e.lignes ?? []).some((l) => parametresUtilises(l.cmd).includes(prm.id)))));
     if (!utilise) pb.push(`paramètre ${prm.id} déclaré mais jamais utilisé`);

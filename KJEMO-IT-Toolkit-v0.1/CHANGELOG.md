@@ -1,3 +1,13 @@
+## CISCO-TP-VLAN-03 (2026-11-05)
+
+- Fiche « TP complet : VLAN, SSH et routage inter-VLAN » rendue REMPLISSABLE (même identifiant) : champs pour le VLAN de gestion (99 au départ), son adresse, sa passerelle, son préfixe, le poste et le port de gestion, le trunk, les noms du commutateur et du routeur, le domaine et le premier administrateur SSH.
+- TABLEAU de VLAN extensible (de 1 à 6 lignes : numéro, nom, réseau, préfixe, passerelle, ports, poste de test) : on démarre avec UN VLAN, on ajoute une ligne par besoin et les blocs de création, de ports, de trunk, de sous-interfaces, de tests et d’annulation suivent. Contrôles : VLAN en double, VLAN égal à celui de gestion, réseaux qui se recouvrent ou recouvrent le réseau de gestion, ports déjà pris (gestion, trunk, autre VLAN), passerelle hors réseau.
+- Neuf phases, 30 étapes : la phase 9 « Plus tard » ajoute un VLAN au trunk avec « allowed vlan add » et crée puis teste un deuxième administrateur SSH (champ dédié ; la ligne « username … secret » s’arrête avant le mot de passe).
+- Annulations réécrites avec les champs (9 étapes, ordre inverse), cours à sept parcours A–G (G : « Plus tard »), résumé et deux schémas mis à jour (VLAN de gestion 99, premier VLAN, emplacement « à ajouter »).
+- Moteur : le préfixe est « utilisé » par son masque pointé ; le contrôle du tableau accepte « exclureVlan » et « reseauGestion ».
+- Tests : cisco-tp-vlan réécrit (111 vérifications avec 1 puis 3 lignes), annulations (colonnes du tableau reconnues), browser-cisco-reseau (compteur de cours Cisco).
+- NON EXÉCUTÉ dans Packet Tracer ni sur du matériel réel : les commandes sont vérifiées pour leur ordre, leur cohérence et leur rendu seulement.
+
 ## CISCO-TP-VLAN-02 (2026-11-05)
 - Retour du terrain : « crypto key generate rsa » répondait « Please define a domain-name first ». La fiche TP posait bien le domaine, mais sur la même étape que le nom d’hôte et sans le faire contrôler. Corrigé : étape 2 plus explicite (les DEUX lignes sont obligatoires, avec « enable » en tête), étape 7 qui relit d’abord « show running-config | include ^hostname|^ip domain » avant de générer la clé, message de correction pour chacune des deux erreurs IOS, et entrée de dépannage dédiée. « enable » ajouté aussi avant la configuration du routeur.
 - Testé : test/cisco-tp-vlan.test.mjs (75) et suites cours, taches, trouver, coherence, annulations, cisco-reseau. NON EXÉCUTÉ dans Packet Tracer ni sur du matériel réel.

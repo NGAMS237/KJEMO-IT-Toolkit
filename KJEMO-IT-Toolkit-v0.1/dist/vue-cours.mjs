@@ -59,12 +59,12 @@ export function coursListeMarkup(coursListe, progression, ctx, plat = null) {
     + gabaritMarkup();
 }
 
-/** Bandeau « à la une » : le TP complet 3 VLAN, SSH et routage inter-VLAN, vu sans le chercher (page Cisco ou sans filtre). */
+/** Bandeau « à la une » : le TP complet VLAN, SSH et routage inter-VLAN, vu sans le chercher (page Cisco ou sans filtre). */
 function epingleCoursMarkup(plat) {
   if (plat && plat !== 'Cisco') return '';
   return `<a class="epingle" data-epingle-cours="cisco-tp-vlan-ssh-intervlan" href="${esc(routeParcours('cisco-tp-vlan-ssh-intervlan'))}">`
-    + `<span class="epingle-titre"><span aria-hidden="true">⭐</span> TP complet : 3 VLAN, SSH et routage inter-VLAN</span>`
-    + `<span class="epingle-texte">Parcours en six parties et résumé pliable, de la création des VLAN au routage entre VLAN.</span><span class="epingle-ouvrir">Ouvrir →</span></a>`;
+    + `<span class="epingle-titre"><span aria-hidden="true">⭐</span> TP complet : VLAN, SSH et routage inter-VLAN</span>`
+    + `<span class="epingle-texte">Parcours en sept parties et résumé pliable, du VLAN de gestion au routage entre VLAN, avec les ajouts à faire plus tard.</span><span class="epingle-ouvrir">Ouvrir →</span></a>`;
 }
 
 function filMarkup(maillons) {

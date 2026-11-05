@@ -141,8 +141,8 @@ export const MEMO_GROUPES = [
       { id: 'dns', titre: 'DNS', fiches: ['win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a'] },
       { id: 'partages', titre: 'Partages et droits', fiches: ['win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'] },
     ] },
-  { id: 'cisco-tp-vlan', titre: '⭐ TP complet : 3 VLAN → SSH → routage inter-VLAN', icone: '🧩', couleur: '#7c3aed', commandes: 'vlan, switchport access vlan, switchport mode trunk, encapsulation dot1Q, crypto key generate rsa',
-    resume: 'Une seule fiche, de la création de trois VLAN jusqu’au routage entre VLAN en passant par SSH : huit phases, de la console du commutateur aux tests de bout en bout.',
+  { id: 'cisco-tp-vlan', titre: '⭐ TP complet : VLAN → SSH → routage inter-VLAN', icone: '🧩', couleur: '#7c3aed', commandes: 'vlan, switchport access vlan, switchport mode trunk, encapsulation dot1Q, crypto key generate rsa',
+    resume: 'Une seule fiche à remplir (VLAN de gestion, tableau de VLAN, comptes), du premier VLAN jusqu’au routage entre VLAN en passant par SSH : neuf phases, avec l’ajout d’un VLAN ou d’un deuxième administrateur plus tard.',
     sous: [
       { id: 'tp-vlan', titre: 'Le TP en une suite, phase par phase', fiches: ['cours-tp-vlan-ssh-intervlan'] },
     ] },
@@ -231,7 +231,7 @@ export const MEMO_GROUPES = [
 export const SECTIONS_MEMO = [
   { id: 'Linux', titre: 'Linux et serveurs', icone: '🐧', groupes: ['fichiers', 'texte', 'comptes', 'services', 'reseau', 'stockage', 'samba', 'bash'] },
   { id: 'Windows', titre: 'Windows', icone: '🪟', groupes: ['win-examen', 'win-poste', 'win-systeme', 'win-fichiers', 'win-reseau', 'win-ad', 'win-gpo', 'win-serveur'] },
-  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', epingle: [{ fiche: 'cours-tp-vlan-ssh-intervlan', titre: 'TP complet : 3 VLAN, SSH et routage inter-VLAN', texte: 'De la création des VLAN jusqu’au routage entre VLAN, en passant par SSH : une seule fiche en huit phases.' }, { fiche: 'cours-show-cisco', titre: 'Commandes show Cisco', texte: 'Toutes les commandes « show » utiles, rangées par groupe, dans une seule fiche.' }], groupes: ['cisco-tp-vlan', 'cisco-show', 'cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
+  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', epingle: [{ fiche: 'cours-tp-vlan-ssh-intervlan', titre: 'TP complet : VLAN, SSH et routage inter-VLAN', texte: 'De la création des VLAN jusqu’au routage entre VLAN, en passant par SSH : une seule fiche à remplir, en neuf phases.' }, { fiche: 'cours-show-cisco', titre: 'Commandes show Cisco', texte: 'Toutes les commandes « show » utiles, rangées par groupe, dans une seule fiche.' }], groupes: ['cisco-tp-vlan', 'cisco-show', 'cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
   { id: 'Azure', titre: 'Azure', icone: '☁', groupes: ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'] },
 ];
 

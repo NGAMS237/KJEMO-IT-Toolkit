@@ -67,13 +67,14 @@ const clicPlat = async (page, p) => { await page.click(`#platFilters [data-plat=
 const NOUVEAUX = ['cisco-s01-revision-vlsm', 'cisco-s02-commutateur-securite', 'cisco-s02-s03-routage', 'cisco-s05-vlan-vtp-dtp', 'cisco-tp2-routage-statique'];
 const SCHEMAS = Object.fromEntries(NOUVEAUX.map((id) => [id, COURS.find((c) => c.id === id).rappelCours.sections.reduce((n, s) => n + (s.schemas ?? []).length, 0)]));
 
-// 1. Liste : six cours Cisco, un lien de résumé chacun
+// 1. Liste : tous les cours Cisco du catalogue, un lien de résumé pour chacun des cours des semaines 1 à 5 et du TP2
 {
   const { context, page, erreurs } = await nouvellePage({}, '/#/');
   await clicPlat(page, 'Cisco');
   await page.goto(`${BASE}/#/cours`);
   await page.waitForSelector('.cours-carte');
-  assert(await page.locator('.cours-carte').count() === 6, 'filtre Cisco : six cours');
+  const nCisco = COURS.filter((c) => c.plateformes.includes('Cisco')).length;
+  assert(await page.locator('.cours-carte').count() === nCisco, `filtre Cisco : ${nCisco} cours`);
   for (const id of NOUVEAUX) assert(await page.locator(`[data-resume="${id}"]`).count() === 1, `lien « Résumé du cours » : ${id}`);
   assert(erreurs.length === 0, 'aucune erreur de page', erreurs.join(' | '));
   await context.close();

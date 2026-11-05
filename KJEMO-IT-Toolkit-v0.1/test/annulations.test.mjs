@@ -36,7 +36,15 @@ for (const k of cles) {
   assert(an.length === A.ANNULATIONS[k].steps.length, `${k} : toutes les étapes sont appliquées`);
   const premiere = etapes.findIndex((e) => e.annulation);
   assert(etapes.slice(premiere).every((e) => e.annulation), `${k} : les annulations viennent en dernier`);
-  const paramsIds = new Set((proc(id).params ?? []).map((q) => q.id));
+  const paramsIds = new Set();
+  for (const q of proc(id).params ?? []) {
+    paramsIds.add(q.id);
+    if (q.type === 'prefixe') paramsIds.add(`${q.id}Masque`);
+    for (const c of q.colonnes ?? []) { paramsIds.add(c.id); paramsIds.add(`suivant_${c.id}`); }
+    for (const a of q.agregats ?? []) paramsIds.add(a.id);
+    if (q.type === 'table') paramsIds.add('masque');
+  }
+  for (const e0 of etapes) if (e0.repeter?.alias) paramsIds.add(e0.repeter.alias);
   const machines = etapes.some((e) => e.machine);
   for (const e of an) {
     assert(e.facultatif === true, `${k} « ${e.titre} » facultative`);
