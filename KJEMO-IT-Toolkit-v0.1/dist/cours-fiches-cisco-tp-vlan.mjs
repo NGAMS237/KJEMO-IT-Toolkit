@@ -34,6 +34,7 @@ const V_TP = `${V_COURS} Le plan d’adressage est un exemple de laboratoire ; l
 
 // Lignes : l'invite s'affiche à côté, elle n'est jamais copiée.
 const L = (invite) => (cmd, extra = {}) => ({ invite, cmd, ...extra });
+const swu = L('Switch>');
 const sw = L('Switch#');
 const swc = L('Switch(config)#');
 const swv = L('Switch(config-vlan)#');
@@ -44,6 +45,7 @@ const s1c = L('SW1(config)#');
 const s1i = L('SW1(config-if)#');
 const s1l = L('SW1(config-line)#');
 const s1r = L('SW1(config-if-range)#');
+const rtu = L('Router>');
 const rt = L('R1#');
 const rtc = L('R1(config)#');
 const rti = L('R1(config-if)#');
@@ -88,9 +90,9 @@ const ETAPES = [
     ] }),
   // 2 ------------------------------------------------------------------------
   mod(P1, 'Nommer le commutateur et son domaine',
-    'Le nom d’hôte et le domaine servent plus loin à générer la clé SSH : sans eux (ou avec le nom « Switch » par défaut), IOS refuse de créer la clé.',
-    [sw('configure terminal'), swc('hostname SW1'), s1c('ip domain-name tp.local')],
-    'L’invite devient « SW1(config)# » dès que le nom est accepté. Aucun autre message.',
+    'Deux réglages OBLIGATOIRES avant SSH : le nom d’hôte ET le domaine. Sans l’un des deux, IOS refuse de générer la clé (« Please define a hostname other than Switch » ou « Please define a domain-name first »). Tape bien LES DEUX lignes, dans l’ordre ; « enable » passe du mode utilisateur (>) au mode privilégié (#).',
+    [swu('enable'), sw('configure terminal'), swc('hostname SW1'), s1c('ip domain-name tp.local')],
+    'L’invite devient « SW1(config)# » dès que le nom est accepté. « ip domain-name » ne répond rien : vérifie-le avec l’étape suivante de contrôle avant de générer la clé.',
     { options: [
       opt('hostname SW1', 'Donne son nom au commutateur ; l’invite change tout de suite.'),
       opt('ip domain-name tp.local', 'Le domaine du laboratoire : il entre dans le nom de la clé SSH (SW1.tp.local).'),
@@ -133,13 +135,13 @@ const ETAPES = [
     { interactions: [{ secret: true, attend: 'La ligne copiée se termine par « secret » suivi d’une espace.', reponds: 'Tape le mot de passe demandé par ton énoncé sur la console, puis Entrée. Il s’affiche en clair pendant la frappe : vérifie que personne ne regarde.' }],
       options: [opt('username admin privilege 15 secret', 'Crée le compte « admin » avec tous les droits (niveau 15) ; « secret » stocke une empreinte du mot de passe, pas le mot de passe.')] }),
   // 7 ------------------------------------------------------------------------
-  mod(P2, 'Générer la clé RSA',
-    'La clé identifie le commutateur auprès des clients SSH. 2048 bits est le minimum raisonnable ; la génération prend quelques secondes.',
-    [s1c('crypto key generate rsa modulus 2048')],
-    '« The key modulus size is 2048 bits », puis « %SSH-5-ENABLED: SSH 1.99 has been enabled ».',
+  mod(P2, 'Contrôler le nom et le domaine, puis générer la clé RSA',
+    'La clé identifie le commutateur auprès des clients SSH. Premier réflexe : relire le nom d’hôte et le domaine (ils doivent apparaître, et le nom ne doit plus être « Switch »). 2048 bits est le minimum raisonnable ; la génération prend quelques secondes.',
+    [s1('show running-config | include ^hostname|^ip domain'), s1('configure terminal'), s1c('crypto key generate rsa modulus 2048')],
+    'Le contrôle affiche « hostname SW1 » et « ip domain-name tp.local ». Puis « The key modulus size is 2048 bits » et « %SSH-5-ENABLED: SSH 1.99 has been enabled ».',
     { interactions: [{ attend: 'Do you really want to replace them? [yes/no] (seulement si une clé existe déjà)', reponds: 'no — sauf si tu veux volontairement la remplacer : tous les clients devront accepter la nouvelle empreinte.' }],
-      important: 'Si le message dit qu’un nom d’hôte ou un domaine est nécessaire, reviens à l’étape « Nommer le commutateur et son domaine ».',
-      options: [opt('crypto key generate rsa modulus 2048', 'Génère la paire de clés RSA de l’hôte, de 2048 bits ; elle active SSH.')] }),
+      important: 'Si IOS répond « Please define a hostname other than Switch » : « hostname SW1 ». S’il répond « Please define a domain-name first » : « ip domain-name tp.local » en configuration globale, puis relance la génération. Si tu as tapé « crypto key generate rsa » sans « modulus », IOS te demande la taille : réponds 2048.',
+      options: [opt('show running-config | include ^hostname|^ip domain', 'Relit seulement la ligne du nom d’hôte et celle du domaine.'), opt('crypto key generate rsa modulus 2048', 'Génère la paire de clés RSA de l’hôte, de 2048 bits ; elle active SSH.')] }),
   // 8 ------------------------------------------------------------------------
   mod(P2, 'Activer SSH version 2 sur les lignes de connexion',
     'SSH version 2, puis les lignes vty (les connexions à distance) vérifient le compte local et n’acceptent plus que SSH.',
@@ -211,7 +213,7 @@ const ETAPES = [
   // 16 -----------------------------------------------------------------------
   mod(P5, 'Routeur : allumer l’interface physique',
     'Sur le routeur R1, l’interface physique GigabitEthernet0/0 n’aura PAS d’adresse : elle porte seulement les sous-interfaces. Il suffit de l’allumer.',
-    [rt('configure terminal'), rtc('hostname R1'), rtc('interface gigabitEthernet 0/0'), rti('no shutdown'), rti('exit')],
+    [rtu('enable'), rt('configure terminal'), rtc('hostname R1'), rtc('interface gigabitEthernet 0/0'), rti('no shutdown'), rti('exit')],
     'Aucun message d’erreur ; l’interface passe « up » quand le câble vers Gi0/1 du commutateur est branché.',
     { important: 'Ne donne pas d’adresse IP à l’interface physique : chaque passerelle est portée par sa sous-interface.',
       options: [opt('no shutdown', 'Allume l’interface (un routeur les livre éteintes).')] }),
@@ -310,6 +312,7 @@ export const COURS_CISCO_TP_VLAN = [{
       { symptome: 'La sous-interface refuse l’adresse IP (« overlaps » ou rien ne s’affiche)', cause: '« encapsulation dot1Q » oubliée ou posée après l’adresse, ou adresse qui chevauche un autre réseau.', action: 'Repose « encapsulation dot1Q N » AVANT « ip address » et relis « show running-config interface gigabitEthernet 0/0.N ».' },
       { symptome: 'SSH : « Connection refused » ou délai dépassé', cause: 'Clé RSA absente, lignes vty qui n’autorisent pas SSH, ou interface VLAN 30 éteinte.', action: '« show ip ssh » (SSH actif ?), « show running-config | section line vty », « show ip interface brief » (Vlan30 « up/up »).' },
       { symptome: 'Le ping du commutateur répond depuis le VLAN 30 mais pas depuis les autres', cause: 'La passerelle par défaut du commutateur manque ou est fausse.', action: '« show running-config | include default-gateway » ; sinon « ip default-gateway 192.168.30.1 ».' },
+      { symptome: '« Please define a hostname other than Switch » ou « Please define a domain-name first » à la génération de la clé', cause: 'Le nom d’hôte est resté « Switch » ou le domaine n’a pas été posé : les deux sont exigés avant « crypto key generate rsa ».', action: 'En configuration globale : « hostname SW1 » puis « ip domain-name tp.local », vérifie avec « show running-config | include ^hostname|^ip domain », puis relance « crypto key generate rsa modulus 2048 ».' },
       { symptome: '« Invalid input detected » sur « switchport mode trunk »', cause: 'Ce modèle négocie encore l’encapsulation et exige de la fixer d’abord.', action: 'Tape « switchport trunk encapsulation dot1q » juste avant « switchport mode trunk ».' },
     ],
   }],

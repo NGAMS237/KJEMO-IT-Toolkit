@@ -75,6 +75,17 @@ const tests = base.find((e) => e.titre.includes('joindre sa passerelle')).lignes
 assert(adressesPlan.every((a) => tests.includes(`ping ${a}`)), 'les tests joignent les trois passerelles du plan');
 assert(base.some((e) => e.titre.includes('depuis un autre VLAN') && e.lignes.some((l) => l.cmd === 'ssh -l admin 192.168.30.2')), 'SSH testé depuis un autre VLAN');
 assert(base.some((e) => e.titre.includes('Se connecter en SSH') && e.phase.startsWith('Phase 3')), 'première connexion SSH en phase 3');
+// SSH : prérequis IOS (nom d'hôte, domaine) posés ET contrôlés avant la clé ; modes privilégiés atteints
+{
+  const iCle = idx(/^crypto key generate rsa modulus 2048$/);
+  const iCtl = idx(/^show running-config \| include \^hostname\|\^ip domain$/);
+  assert(iCtl >= 0 && iCtl < iCle && idx(/^ip domain-name tp\.local$/) < iCtl && idx(/^hostname SW1$/) < iCtl, 'le nom d’hôte et le domaine sont posés puis contrôlés avant la clé RSA');
+  assert(idx(/^username admin privilege 15 secret$/) < iCle && iCle < idx(/^ip ssh version 2$/) && idx(/^ip ssh version 2$/) < idx(/^login local$/) && idx(/^login local$/) < idx(/^transport input ssh$/), 'ordre SSH complet : compte, clé, version 2, login local, transport');
+  const en = idxAll(/^enable$/);
+  assert(en.length === 2 && en[0] < idx(/^hostname SW1$/) && en[1] < idx(/^hostname R1$/) && en[1] > en[0], '« enable » avant la configuration du commutateur puis avant celle du routeur');
+  const dep = fiche.methodes[0].depannage.map((d) => d.symptome).join(' | ');
+  assert(/domain-name first/.test(dep) && /hostname other than Switch/.test(dep), 'le dépannage nomme les deux messages IOS de la clé RSA');
+}
 // Le port de gestion n'est jamais touché pendant la session SSH
 const s12 = base.find((e) => e.titre.startsWith('Affecter les ports d’accès'));
 assert(!s12.lignes.some((l) => /fastEthernet 0\/3/.test(l.cmd)), 'la phase par SSH ne touche pas à Fa0/3 (port de la session)');

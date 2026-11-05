@@ -1,3 +1,7 @@
+## CISCO-TP-VLAN-02 (2026-11-05)
+- Retour du terrain : « crypto key generate rsa » répondait « Please define a domain-name first ». La fiche TP posait bien le domaine, mais sur la même étape que le nom d’hôte et sans le faire contrôler. Corrigé : étape 2 plus explicite (les DEUX lignes sont obligatoires, avec « enable » en tête), étape 7 qui relit d’abord « show running-config | include ^hostname|^ip domain » avant de générer la clé, message de correction pour chacune des deux erreurs IOS, et entrée de dépannage dédiée. « enable » ajouté aussi avant la configuration du routeur.
+- Testé : test/cisco-tp-vlan.test.mjs (75) et suites cours, taches, trouver, coherence, annulations, cisco-reseau. NON EXÉCUTÉ dans Packet Tracer ni sur du matériel réel.
+
 ## CISCO-TP-VLAN-01 (2026-11-05)
 - Vérification d’abord : les morceaux existaient séparément (créer un VLAN, affecter un port, DTP/trunk, scénario SSH, scénario inter-VLAN générique) mais aucun TP complet en une seule suite.
 - Nouvelle fiche « TP complet : 3 VLAN, SSH et routage inter-VLAN (de A à Z) » : 24 étapes en 8 phases (console : état, nom, VLAN 10/20/30, adresse de gestion ; SSH ; première connexion depuis le poste de gestion ; par SSH : ports d’accès et trunk ; routeur sur un bâton ; autres postes ; tests dont SSH à travers le routeur ; enregistrement), 6 étapes « Annuler », dépannage et 2 schémas. Plan d’adressage fixe d’exemple (VLAN 10, 20, 30 ; Fa0/1 à Fa0/3 ; trunk Gi0/1 ; routeur Gi0/0 ; commutateur 192.168.30.2). Le mot de passe se tape sur l’équipement : jamais écrit.
