@@ -84,7 +84,7 @@ const fiche0 = G[0].sous[0].fiches[0];
   assert(!(await page.locator('#natureFilters').isVisible()), 'accueil : filtre « Contenu » masqué sans recherche');
   assert(await page.locator('#platFilters').isVisible(), 'accueil : le filtre de plateforme reste visible (un seul)');
   assert(await page.locator('#accueilBtn').isVisible(), 'bouton Accueil dans la barre du haut');
-  assert(await page.locator('#espacesNav a').count() === 5, 'barre latérale : Accueil, TP, Aide-mémoire, Catalogue pro, Laboratoire');
+  assert(await page.locator('#espacesNav a').count() === 6, 'barre latérale : Accueil, TP, Aide-mémoire, Catalogue pro, Laboratoire, Journal de labo');
   assert((await page.locator('.porte-tp .porte-desc').innerText()).includes('sur'), 'porte TP : progression chiffrée');
   assert(await page.locator('a.espace-carte[href="#/labo"]').count() === 1, 'lien « Mon laboratoire » conservé');
   await capture(page, 'portes-01-accueil');

@@ -1,0 +1,229 @@
+#!/usr/bin/env node
+/**
+ * browser-journal.test.mjs — JOURNAL-LABO-01 · KJEMO IT Toolkit
+ * Banc Playwright du Journal de labo : entrée de menu, création, refus d'un mot
+ * de passe écrit, enregistrement et relecture après rechargement, capture
+ * (fichier) gardée dans IndexedDB, export PDF téléchargé, nouvelle version,
+ * duplication, suppression confirmée dans la page, sauvegarde puis restauration
+ * dans un navigateur vierge, création depuis la fiche du TP VLAN, affichage à
+ * 390 px sans débordement, stockage bloqué, aucune erreur de page.
+ * NE PROUVE PAS l'affichage du PDF dans un lecteur précis (voir journal.test.mjs).
+ * Usage : node test/browser-journal.test.mjs   (exit 0 = tout OK)
+ */
+import { chromium } from '@playwright/test';
+import { createServer } from 'node:http';
+import { readFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve, extname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const CAPTURES = process.env.KJEMO_CAPTURES ? resolve(process.env.KJEMO_CAPTURES) : null;
+if (CAPTURES) mkdirSync(CAPTURES, { recursive: true });
+const TMP = mkdtempSync(join(tmpdir(), 'kjemo-bj-'));
+const JPEG = join(TMP, 'topologie.jpg');
+writeFileSync(JPEG, Buffer.from('/9j/4AAQSkZJRgABAQEAAgACAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAYABEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3V3uVlYIgK54JB9KRZbvjMS+/Bq3RTuIKKKKQxC6g4LAH60m9T0YfnRRQA6iiigD/2Q==', 'base64'));
+
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+const server = await new Promise((res) => {
+  const s = createServer((req, rep) => {
+    const p = req.url.split('?')[0];
+    try {
+      const f = resolve(ROOT, 'dist', '.' + (p === '/' ? '/index.html' : p));
+      rep.writeHead(200, { 'Content-Type': MIME[extname(f)] || 'application/octet-stream' });
+      rep.end(readFileSync(f));
+    } catch { rep.writeHead(404); rep.end('Not found'); }
+  });
+  s.listen(0, '127.0.0.1', () => res(s));
+});
+const BASE = `http://127.0.0.1:${server.address().port}`;
+const CH_ENV = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+const CH_FALLBACK = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CH = CH_ENV && CH_ENV.trim() ? CH_ENV.trim() : existsSync(CH_FALLBACK) ? CH_FALLBACK : null;
+const browser = await chromium.launch({ headless: true, ...(CH ? { executablePath: CH } : {}),
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] });
+
+let passed = 0; let failed = 0;
+function assert(cond, label, detail = '') {
+  if (cond) { passed++; if (process.env.KJEMO_VERBEUX) console.log(`  [OK]    ${label}`); }
+  else { failed++; console.error(`  [FAIL]  ${label}${detail ? ' — ' + detail : ''}`); }
+}
+async function nouvellePage(opts = {}, hash = '/', { stockageBloque = false } = {}) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true, ...opts });
+  if (stockageBloque) {
+    await context.addInitScript(() => {
+      const refus = () => { throw new DOMException('refusé', 'SecurityError'); };
+      Object.defineProperty(window, 'localStorage', { get: refus });
+    });
+  }
+  const page = await context.newPage();
+  const erreurs = [];
+  page.on('pageerror', (e) => erreurs.push(e.message));
+  await page.goto(BASE + hash);
+  await page.waitForSelector('h1', { state: 'attached' });
+  return { context, page, erreurs };
+}
+
+const lireDl = async (dl) => { const f = join(TMP, dl.suggestedFilename()); await dl.saveAs(f); return readFileSync(f); };
+const sansDebordement = (page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+
+// 1. Journal vide, menu
+{
+  const { context, page, erreurs } = await nouvellePage({}, '/#/journal');
+  assert(await page.locator('#journalView h1').innerText() === 'Journal de labo', 'page « Journal de labo »');
+  assert(await page.locator('#espacesNav a[data-espace="journal"]').getAttribute('aria-current') === 'page', 'entrée de menu active');
+  assert(await page.locator('.j-vide').count() === 1 && await page.locator('#jSauver').isDisabled(), 'journal vide : message d’accueil, sauvegarde désactivée');
+  assert(erreurs.length === 0, 'aucune erreur de page (liste vide)', erreurs.join(' | '));
+  await context.close();
+}
+
+// 2-10. Parcours complet dans un même navigateur
+const { context: ctx, page, erreurs } = await nouvellePage({}, '/#/journal');
+let idLabo;
+{
+  await page.selectOption('#jNouvelleCat', 'systeme');
+  await page.click('#jNouveauForm button[type="submit"]');
+  await page.waitForSelector('#jForm');
+  idLabo = (await page.evaluate(() => location.hash)).split('/').pop();
+  assert(/^#\/journal\/j[\w]+$/.test(await page.evaluate(() => location.hash)), 'nouveau labo : route #/journal/<id>');
+  assert(/^LAB-SYS-\d{4}-001$/.test((await page.locator('.j-controle dd').first().innerText()).trim()), 'référence LAB-SYS-AAAA-001');
+  await page.click('#jEnregistrer');
+  assert(await page.locator('#jf-titre').getAttribute('aria-invalid') === 'true' && await page.evaluate(() => document.activeElement?.id) === 'jf-titre', 'sans titre : refus, focus sur le titre');
+  await page.fill('#jf-titre', 'Jonction Ubuntu à Samba AD');
+  await page.fill('#jf-auteur', 'B. Nganbou');
+  await page.click('[data-jadd="adressage"]');
+  await page.fill('[data-jt="adressage"][data-row="0"][data-col="equipement"]', 'SRV-DC01');
+  await page.fill('[data-jt="adressage"][data-row="0"][data-col="adresse"]', '172.27.1.210/24');
+  await page.click('[data-jadd="configuration"]');
+  await page.fill('[data-jt="configuration"][data-row="0"][data-col="titre"]', 'Serveur');
+  await page.fill('[data-jt="configuration"][data-row="0"][data-col="code"]', 'sudo samba-tool domain info 127.0.0.1\nmot de passe : Abc123');
+  await page.click('#jEnregistrer');
+  const errCode = page.locator('#jerr-configuration-0-code');
+  assert(await errCode.count() === 1 && /ligne 2/.test(await errCode.innerText()), 'mot de passe écrit : refusé, avec la ligne');
+  assert(await page.locator('#jNote').innerText().then((t) => /corriger/.test(t)), 'la barre dit qu’il faut corriger');
+  await page.fill('[data-jt="configuration"][data-row="0"][data-col="code"]', 'sudo samba-tool domain info 127.0.0.1\nmot de passe : ***');
+  await page.click('#jEnregistrer');
+  assert(/Enregistré/.test(await page.locator('#jNote').innerText()), 'valeur masquée par *** : enregistré');
+  // Capture
+  await page.setInputFiles('#jCaptureFichier', JPEG);
+  await page.waitForSelector('.j-capture img');
+  await page.fill('#jc-0', 'Topologie du labo');
+  await page.click('#jEnregistrer');
+  assert(await page.locator('.j-capture').count() === 1, 'capture ajoutée et légendée');
+  // Rechargement : le labo et l'image sont relus
+  await page.reload(); await page.waitForSelector('#jForm');
+  assert(await page.inputValue('#jf-titre') === 'Jonction Ubuntu à Samba AD' && await page.inputValue('[data-jt="adressage"][data-row="0"][data-col="adresse"]') === '172.27.1.210/24', 'après rechargement : champs relus');
+  await page.waitForSelector('.j-capture img');
+  assert(await page.waitForFunction(() => { const i = document.querySelector('.j-capture img'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).then(() => true, () => false), 'après rechargement : la capture est relue (IndexedDB)');
+  // PDF
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#jPdf')]);
+  const pdf = await lireDl(dl);
+  assert(/^LAB-SYS-\d{4}-001_v1\.0\.pdf$/.test(dl.suggestedFilename()), 'PDF nommé référence_version', dl.suggestedFilename());
+  assert(pdf.subarray(0, 8).toString('latin1') === '%PDF-1.4' && pdf.toString('latin1').includes('/DCTDecode') && pdf.toString('latin1').trimEnd().endsWith('%%EOF'), 'PDF valide avec la capture');
+  assert(/PDF téléchargé/.test(await page.locator('#jNote').innerText()), 'la barre confirme le téléchargement');
+  // Nouvelle version
+  await page.click('#jVersion');
+  await page.click('#jVersionForm button[type="submit"]');
+  assert(/Écris en une phrase/.test(await page.locator('#jNote').innerText()), 'nouvelle version : résumé obligatoire');
+  if (await page.locator('#jVersionForm').count() === 0) await page.click('#jVersion');
+  await page.fill('#jVersionResume', 'Ajout du client Ubuntu');
+  await page.click('#jVersionForm button[type="submit"]');
+  assert(/1\.1/.test(await page.locator('.j-sous').innerText()) && await page.locator('.j-revisions tbody tr').count() === 2, 'version 1.1 publiée, historique à deux lignes');
+  if (CAPTURES) await page.screenshot({ path: join(CAPTURES, 'journal-fiche.png'), fullPage: true });
+  // Dupliquer puis supprimer la copie
+  await page.click('#jDupliquer');
+  await page.waitForFunction((id) => !location.hash.endsWith(id), idLabo);
+  assert(/\(copie\)/.test(await page.inputValue('#jf-titre')), 'duplication : copie ouverte');
+  await page.click('#jEnregistrer');
+  await page.click('#jSupprimer');
+  assert(await page.locator('.j-confirmer').count() === 1 && await page.evaluate(() => document.activeElement?.id) === 'jSupprimerNon', 'suppression : confirmation dans la page, focus sur « Non »');
+  await page.click('#jSupprimerOui');
+  await page.waitForSelector('.j-liste');
+  assert(await page.locator('.j-ligne').count() === 1, 'copie supprimée, l’original reste');
+  // Filtres et recherche
+  await page.fill('#jRecherche', 'samba');
+  assert(await page.locator('.j-ligne').count() === 1, 'recherche : trouvé');
+  await page.fill('#jRecherche', 'introuvable');
+  assert(await page.locator('.j-ligne').count() === 0, 'recherche : rien');
+  await page.fill('#jRecherche', '');
+  await page.click('[data-jcat="cisco"]');
+  assert(await page.locator('.j-ligne').count() === 0 && await page.locator('[data-jcat="cisco"]').getAttribute('aria-pressed') === 'true', 'onglet Cisco : vide');
+  await page.click('[data-jcat=""]');
+}
+
+// Sauvegarde puis restauration dans un navigateur vierge
+let fichierSauvegarde;
+{
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#jSauver')]);
+  const txt = (await lireDl(dl)).toString('utf8');
+  fichierSauvegarde = join(TMP, dl.suggestedFilename());
+  const d = JSON.parse(txt);
+  assert(d.format === 'kjemo-journal-de-labo' && d.entrees.length === 1 && Object.keys(d.captures).length === 1, 'sauvegarde : un labo et sa capture');
+  assert(!/Abc123/.test(txt), 'la sauvegarde ne contient aucun mot de passe');
+}
+// Depuis une fiche
+{
+  await page.goto(`${BASE}/#/tache/cours-tp-vlan-ssh-intervlan`);
+  await page.waitForSelector('#taskJournal');
+  await page.click('#exemplesBtn');
+  await page.click('#taskJournal');
+  await page.waitForSelector('#jForm');
+  assert(await page.locator('[data-jt="adressage"][data-col="adresse"]').count() === 3, 'depuis la fiche TP : trois lignes d’adressage');
+  const code = await page.locator('[data-jt="configuration"][data-col="code"]').evaluateAll((l) => l.map((x) => x.value).join('\n'));
+  assert(code.includes('switchport trunk allowed vlan 99,10') && !code.includes('{{'), 'depuis la fiche TP : commandes avec les valeurs');
+  assert(await page.inputValue('#jf-auteur') === 'B. Nganbou', 'l’auteur du dernier labo est repris');
+  await page.click('#jEnregistrer');
+  assert(/Enregistré/.test(await page.locator('#jNote').innerText()), 'labo créé depuis la fiche : enregistré');
+  if (CAPTURES) await page.screenshot({ path: join(CAPTURES, 'journal-depuis-fiche.png') });
+  await page.goto(`${BASE}/#/journal`); await page.waitForSelector('.j-liste');
+  assert(await page.locator('.j-ligne').count() === 2, 'la liste montre les deux labos');
+  if (CAPTURES) await page.screenshot({ path: join(CAPTURES, 'journal-liste.png') });
+}
+assert(erreurs.length === 0, 'aucune erreur de page (parcours complet)', erreurs.join(' | '));
+await ctx.close();
+
+{
+  const { context, page: p2, erreurs: e2 } = await nouvellePage({}, '/#/journal');
+  await p2.setInputFiles('#jRestaurer', fichierSauvegarde);
+  await p2.waitForSelector('.j-ligne');
+  assert(/1 labo\(s\) restauré/.test(await p2.locator('#jNote').innerText()), 'restauration : un labo');
+  await p2.click('.j-ligne-lien');
+  await p2.waitForSelector('.j-capture img');
+  assert(await p2.waitForFunction(() => { const i = document.querySelector('.j-capture img'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).then(() => true, () => false), 'restauration : la capture revient');
+  await p2.setInputFiles('#jCaptureFichier', { name: 'faux.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('pas une image') });
+  await p2.waitForFunction(() => /pas pu être lue/.test(document.querySelector('#jNote')?.textContent ?? ''));
+  assert(true, 'contre-épreuve : une fausse image est refusée');
+  await p2.goto(`${BASE}/#/journal`);
+  const faux = join(TMP, 'faux.json'); writeFileSync(faux, JSON.stringify({ format: 'autre' }));
+  await p2.setInputFiles('#jRestaurer', faux);
+  await p2.waitForFunction(() => /pas une sauvegarde/.test(document.querySelector('#jNote')?.textContent ?? ''));
+  assert(await p2.locator('.j-ligne').count() === 1, 'contre-épreuve : un fichier étranger ne change rien');
+  assert(e2.length === 0, 'aucune erreur de page (restauration)', e2.join(' | '));
+  await context.close();
+}
+
+// Téléphone : aucune barre de défilement horizontale
+{
+  const { context, page: p3, erreurs: e3 } = await nouvellePage({ viewport: { width: 390, height: 844 } }, '/#/journal');
+  await p3.selectOption('#jNouvelleCat', 'cisco'); await p3.click('#jNouveauForm button[type="submit"]'); await p3.waitForSelector('#jForm');
+  await p3.click('[data-jadd="adressage"]'); await p3.click('[data-jadd="configuration"]'); await p3.click('[data-jadd="validation"]');
+  assert(await sansDebordement(p3), '390 px : fiche sans débordement horizontal');
+  await p3.goto(`${BASE}/#/journal`); await p3.waitForSelector('#journalView h1');
+  assert(await sansDebordement(p3), '390 px : liste sans débordement horizontal');
+  assert(e3.length === 0, 'aucune erreur de page (téléphone)', e3.join(' | '));
+  await context.close();
+}
+
+// Stockage bloqué : l'écran fonctionne et le dit
+{
+  const { context, page: p4, erreurs: e4 } = await nouvellePage({}, '/#/journal', { stockageBloque: true });
+  assert(/stockage de ce navigateur est indisponible/.test(await p4.locator('#journalView .notice').innerText()), 'stockage bloqué : annoncé');
+  assert(e4.length === 0, 'aucune erreur de page (stockage bloqué)', e4.join(' | '));
+  await context.close();
+}
+
+await browser.close();
+server.close();
+console.log(`browser-journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);
+process.exit(failed ? 1 : 0);

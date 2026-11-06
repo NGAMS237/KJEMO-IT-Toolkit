@@ -87,6 +87,8 @@
     "test:cisco-s09": "node test/cisco-s09.test.mjs",
     "test:cisco-nat": "node test/cisco-nat.test.mjs",
     "test:cisco-show": "node test/cisco-show.test.mjs",
+    "test:journal": "node test/journal.test.mjs",
+    "test:browser:journal": "node test/browser-journal.test.mjs",
     "test:cisco-tp-vlan": "node test/cisco-tp-vlan.test.mjs",
     "test:azure-cours": "node test/azure-cours.test.mjs",
     "test:windows-simples": "node test/windows-simples.test.mjs",

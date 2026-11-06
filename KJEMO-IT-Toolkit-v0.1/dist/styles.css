@@ -951,3 +951,78 @@ details.schemas-fiche{margin:14px 0}
 /* KJEMO-UX-MEMO-WINDOWS-01 : groupes sans fiche regroupés sous un filtre de plateforme */
 .groupes-masques{margin:14px 0 0;padding:10px 12px;border:1px dashed var(--border,#cbd5e1);border-radius:10px;color:var(--muted,#64748b);font-size:13px;line-height:1.9}
 .groupe-masque{display:inline-block;margin:0 4px 0 0;padding:1px 8px;border:1px dashed var(--border,#cbd5e1);border-radius:14px;white-space:normal;max-width:100%;overflow-wrap:anywhere}
+
+/* ---- Journal de labo (JOURNAL-LABO-01) ---- */
+.journal-view{padding-bottom:56px}
+.journal-view h1{margin-bottom:6px}
+.j-btn{width:auto;margin:0;min-height:40px;padding:8px 16px}
+.j-mini{margin:0;min-height:32px;padding:4px 10px;font-size:13px}
+.j-danger{color:var(--danger-text)}
+.j-nouveau{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:18px 0 14px}
+.j-nouveau label{font-weight:650;font-size:14px}
+.j-nouveau select,.j-outils select,.j-outils input,.j-form select,.j-form input[type="text"],.j-form textarea,.j-version input[type="text"]{font:inherit;font-size:14px;color:var(--text);background:var(--input-bg);border:1px solid var(--border-strong);border-radius:8px;padding:8px 10px;min-height:40px;max-width:100%}
+.j-onglets{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.j-onglet{font:inherit;font-size:13.5px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:99px;padding:5px 12px;cursor:pointer;min-height:34px}
+.j-onglet[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text-strong);font-weight:650}
+.j-compte{color:var(--muted);font-size:12px;margin-left:2px}
+.j-outils{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.j-outils input{flex:1 1 240px;min-width:0}
+.j-liste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.j-ligne{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:10px 14px}
+.j-ligne:hover{background:var(--surface-hover)}
+.j-ligne-lien{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;color:var(--text);text-decoration:none}
+.j-ligne-lien:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+.j-ligne-titre{font-weight:650;color:var(--text-strong);overflow-wrap:anywhere}
+.j-ligne-meta{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.j-revoir{font-size:12.5px;color:var(--warn-text)}
+.j-etat{flex:none;font-size:12.5px;font-weight:650;border-radius:5px;padding:3px 9px;white-space:nowrap;border:1px solid var(--border)}
+.j-etat-service{background:var(--ok-bg);color:var(--ok-text);border-color:var(--ok-border)}
+.j-etat-brouillon{background:var(--warn-bg);color:var(--warn-text);border-color:var(--warn-border)}
+.j-etat-archive{background:var(--surface-2);color:var(--muted)}
+.j-vide{color:var(--muted);margin:10px 0}
+.j-vide p{max-width:680px}
+.j-sauvegarde{margin-top:28px;border-top:1px solid var(--border);padding-top:12px}
+.j-sauvegarde h2{font-size:17px;margin:0 0 6px}
+.j-fichier{display:inline-flex;align-items:center;cursor:pointer;margin:0;min-height:40px}
+.j-fichier.is-disabled{opacity:.55;cursor:not-allowed}
+.j-sous{margin:0 0 12px;color:var(--muted);font-size:13.5px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.j-barre{display:flex;flex-wrap:wrap;align-items:center;gap:8px;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:14px}
+.j-barre .secondary-button{margin:0;min-height:40px}
+.j-version,.j-confirmer{border:1px solid var(--border-strong);background:var(--surface);border-radius:10px;padding:12px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px;max-width:720px}
+.j-version label{font-weight:650;font-size:14px}
+.j-case{font-weight:400!important;display:flex;align-items:center;gap:8px}
+.j-confirmer{border-color:var(--danger)}
+.j-confirmer p{margin:0}
+.j-section{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 14px;min-width:0}
+.j-section h2{font-size:17px;margin:0 0 8px}
+.j-aide{margin:0 0 10px;font-size:13px;color:var(--muted);max-width:760px}
+.j-champ{display:flex;flex-direction:column;gap:5px;min-width:0;margin-bottom:10px}
+.j-champ label{font-size:14px;font-weight:650}
+.j-champ textarea{resize:vertical;min-height:72px;width:100%}
+.j-champ input{width:100%}
+.j-large{grid-column:1/-1}
+.j-form .is-invalid{border-color:var(--danger)!important}
+.j-controle{display:flex;flex-wrap:wrap;gap:6px 22px;margin:4px 0 0;font-size:13px}
+.j-controle div{display:flex;gap:6px}
+.j-controle dt{color:var(--muted)}
+.j-controle dd{margin:0;font-weight:650}
+.j-tableau{overflow-x:auto;margin-bottom:8px}
+.j-tableau table.plan td{min-width:7rem}
+.j-tableau textarea.cell{resize:vertical;min-height:38px;font:inherit;font-size:13.5px}
+.j-tableau textarea.j-code{font-family:ui-monospace,Consolas,monospace;font-size:13px;min-width:20rem;min-height:150px}
+.j-retrait{width:1%;white-space:nowrap}
+.j-ajout{margin:4px 0 0}
+.j-captures{list-style:none;margin:0 0 10px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
+.j-capture{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column}
+.j-capture img{display:block;width:100%;height:150px;object-fit:contain;background:#fff}
+.j-capture-absente{display:flex;align-items:center;justify-content:center;height:150px;color:var(--muted);font-size:13px;padding:8px;text-align:center}
+.j-capture-texte{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.j-capture-nom{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.j-capture-texte input{width:100%}
+.j-refs{margin:0 0 10px;padding-left:20px}
+.j-revisions{border-collapse:collapse;width:100%;font-size:13.5px}
+.j-revisions th,.j-revisions td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.j-revisions th{font-size:12px;color:var(--muted)}
+.j-documenter{margin:0}
+@media(max-width:700px){.j-ligne{flex-direction:column;align-items:flex-start}.j-barre{position:static}.j-tableau textarea.j-code{min-width:0}}
+.j-onglet[aria-pressed="true"] .j-compte{color:inherit;opacity:.85}

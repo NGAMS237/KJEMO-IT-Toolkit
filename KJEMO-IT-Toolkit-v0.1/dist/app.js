@@ -7,6 +7,11 @@ import { plateformeDe, sortieDe, estBash, estIOS, estDocumentationSeule, estLect
          extensionDe, nomFichierDe, etiquetteSortie, commandesExecution } from './plateforme.mjs';
 import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
+import { plateformesDeProcedure } from './taches.mjs';
+import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, entreeVide, publierVersion, prochaineReference,
+         filtrerJournal, entreeDepuisFiche, valeursPourJournal, sauvegardeJournal, lireSauvegarde, jour } from './journal.mjs';
+import { pdfJournal, nomFichierPdf } from './journal-pdf.mjs';
+import { ROUTE_JOURNAL, routeEntreeJournal, lireRouteJournal, journalListeMarkup, journalEditeurMarkup } from './vue-journal.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
          compteParCategorie, couverture, liensDeAssistant } from './taches.mjs';
 import { METHODES_PLATEFORME, ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
@@ -437,6 +442,8 @@ function revenirAccueil({ pousserHash = true } = {}) {
 /** Applique l'URL courante à l'état de l'application. */
 function espaceDepuisHash() {
   if (location.hash === ROUTE_LABO) return { type: 'labo' };
+  const rj = lireRouteJournal(location.hash);
+  if (rj) return { type: 'journal', id: rj.id };
   const pm = lireRouteMemo(location.hash);
   if (pm) return pm.type === 'catalogue' ? { type: 'catalogue' } : { type: 'memo', groupeId: pm.groupeId };
   const c = lireRouteCours(location.hash);
@@ -1627,6 +1634,8 @@ function renderTache() {
   barreModale(view);
 
   const fav = view.querySelector('#taskFav');
+  fav.insertAdjacentHTML('afterend', ' <button type="button" class="secondary-button j-documenter" id="taskJournal" title="Crée un labo dans le Journal avec le titre, l’adressage et les commandes de cette fiche">Documenter dans le journal</button>');
+  view.querySelector('#taskJournal').addEventListener('click', () => documenterFiche(entree));
   fav.addEventListener('click', () => {
     const actif = basculerFavori(entree.id);
     fav.textContent = actif ? '★' : '☆';
@@ -1830,6 +1839,371 @@ function telechargerDossier(btn, view) {
   document.body.appendChild(lien); lien.click(); lien.remove();
   setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
   if (hint) hint.textContent = 'Dossier téléchargé.';
+}
+
+// ---------------------------------------------------------------------------
+// Journal de labo (JOURNAL-LABO-01)
+// Les labos vivent dans le stockage du navigateur ; les captures (JPEG) dans
+// IndexedDB, car elles sont trop lourdes pour localStorage. Aucun envoi : le PDF
+// et la sauvegarde sont fabriqués ici et téléchargés. Sans stockage, l'écran
+// fonctionne et dit que rien n'est conservé.
+// ---------------------------------------------------------------------------
+const imagesMemoire = new Map();   // id → Uint8Array (copie de travail, et seule copie si IndexedDB est refusé)
+let imagesOk = typeof indexedDB !== 'undefined';
+let baseImages = null;
+function ouvrirBaseImages() {
+  if (!imagesOk) return Promise.resolve(null);
+  if (!baseImages) {
+    baseImages = new Promise((ok) => {
+      try {
+        const req = indexedDB.open('kjemo-journal', 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('captures');
+        req.onsuccess = () => ok(req.result);
+        req.onerror = () => { imagesOk = false; ok(null); };
+        req.onblocked = () => { imagesOk = false; ok(null); };
+      } catch { imagesOk = false; ok(null); }
+    });
+  }
+  return baseImages;
+}
+async function operationImages(mode, action) {
+  const db = await ouvrirBaseImages();
+  if (!db) return null;
+  return new Promise((ok) => {
+    try {
+      const tx = db.transaction('captures', mode); const st = tx.objectStore('captures');
+      const req = action(st);
+      tx.oncomplete = () => ok(req ? req.result : true);
+      tx.onerror = () => ok(null); tx.onabort = () => ok(null);
+    } catch { ok(null); }
+  });
+}
+async function lireImage(id) {
+  if (imagesMemoire.has(id)) return imagesMemoire.get(id);
+  const v = await operationImages('readonly', (st) => st.get(id));
+  if (v) { const u = v instanceof Uint8Array ? v : new Uint8Array(v); imagesMemoire.set(id, u); return u; }
+  return null;
+}
+async function ecrireImage(id, octets) {
+  imagesMemoire.set(id, octets);
+  const r = await operationImages('readwrite', (st) => st.put(octets, id));
+  if (r === null) imagesOk = false;
+}
+async function nettoyerImages(gardees) {
+  const cles = await operationImages('readonly', (st) => st.getAllKeys());
+  if (!Array.isArray(cles)) return;
+  const inutiles = cles.filter((k) => !gardees.has(k));
+  if (inutiles.length) await operationImages('readwrite', (st) => { inutiles.forEach((k) => st.delete(k)); return null; });
+}
+
+let journalMemoire = null;
+/** L'auteur du dernier labo modifié : on ne retape pas son nom à chaque document. */
+function auteurParDefaut() {
+  return [...lireEntreesJournal()].sort((a, b) => String(b.modifieLe).localeCompare(String(a.modifieLe))).find((e) => e.auteur)?.auteur ?? '';
+}
+function lireEntreesJournal() {
+  if (!journalMemoire) journalMemoire = lireJournal(lireObjet(CLE_JOURNAL)).entrees;
+  return journalMemoire;
+}
+function ecrireEntreesJournal(entrees) {
+  journalMemoire = entrees;
+  return ecrireStockage(CLE_JOURNAL, { entrees });
+}
+
+let etatJournal = { categorieId: null, filtre: 'tous', requete: '', note: '', nouvelleCategorie: 'cisco',
+  brouillonId: null, brouillon: null, erreurs: {}, noteFiche: '', modifie: false, versionOuverte: false, confirmerSuppression: false };
+const urlsImages = new Map();      // id → URL d'objet pour l'aperçu (libérées quand l'image disparaît)
+function urlImage(id) {
+  if (urlsImages.has(id)) return urlsImages.get(id);
+  const o = imagesMemoire.get(id);
+  if (!o) return null;
+  const u = URL.createObjectURL(new Blob([o], { type: 'image/jpeg' }));
+  urlsImages.set(id, u);
+  return u;
+}
+
+function titresDesFiches(ids) {
+  return Object.fromEntries(ids.map((f) => [f, entreeParId(f)?.procedure?.titre ?? entreeParId(f)?.titre ?? f]));
+}
+
+function telechargerOctets(nom, octets, type) {
+  const blob = new Blob([octets], { type });
+  const lien = document.createElement('a');
+  lien.href = URL.createObjectURL(blob);
+  lien.download = nom;
+  document.body.appendChild(lien); lien.click(); lien.remove();
+  setTimeout(() => URL.revokeObjectURL(lien.href), 4000);
+}
+
+function renderJournal() {
+  if (espace.id) renderJournalFiche(); else renderJournalListe();
+}
+
+function renderJournalListe() {
+  const view = document.querySelector('#journalView');
+  const toutes = lireEntreesJournal();
+  const ej = etatJournal;
+  const entrees = filtrerJournal(toutes, { categorieId: ej.categorieId, filtre: ej.filtre, requete: ej.requete });
+  const compte = (cat) => filtrerJournal(toutes, { categorieId: cat, filtre: ej.filtre, requete: ej.requete }).length;
+  view.innerHTML = journalListeMarkup({ entrees, total: toutes.length, compte, categorieId: ej.categorieId, filtre: ej.filtre, requete: ej.requete,
+    note: ej.note, stockageOk: stockageDisponible(), imagesOk, nouvelleCategorie: ej.nouvelleCategorie });
+  document.title = 'Journal de labo — KJEMO IT Toolkit';
+  view.querySelectorAll('[data-jcat]').forEach((b) => b.addEventListener('click', () => {
+    etatJournal.categorieId = b.dataset.jcat || null; etatJournal.note = '';
+    renderJournalListe(); document.querySelector(`[data-jcat="${b.dataset.jcat}"]`)?.focus();
+  }));
+  view.querySelector('#jFiltre').addEventListener('change', (ev) => { etatJournal.filtre = ev.target.value; renderJournalListe(); document.querySelector('#jFiltre')?.focus(); });
+  view.querySelector('#jRecherche').addEventListener('input', (ev) => {
+    etatJournal.requete = ev.target.value;
+    const pos = ev.target.selectionStart;
+    renderJournalListe();
+    const champ = document.querySelector('#jRecherche'); champ?.focus(); champ?.setSelectionRange?.(pos, pos);
+  });
+  view.querySelector('#jNouvelleCat').addEventListener('change', (ev) => { etatJournal.nouvelleCategorie = ev.target.value; });
+  view.querySelector('#jNouveauForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const e = entreeVide({ categorieId: etatJournal.nouvelleCategorie, auteur: auteurParDefaut(), existantes: lireEntreesJournal().map((x) => x.reference) });
+    ouvrirBrouillon({ ...e, titre: '' }, { nouveau: true });
+  });
+  view.querySelector('#jSauver').addEventListener('click', async () => {
+    const entrees2 = lireEntreesJournal();
+    const captures = {};
+    for (const e of entrees2) for (const c of e.captures) {
+      const o = await lireImage(c.id);
+      if (o) { let bin = ''; for (let i = 0; i < o.length; i += 0x8000) bin += String.fromCharCode(...o.subarray(i, i + 0x8000)); captures[c.id] = btoa(bin); }
+    }
+    telechargerTexte(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures)}\n`, 'application/json;charset=utf-8');
+    etatJournal.note = `Sauvegarde téléchargée : ${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s).`;
+    renderJournalListe(); document.querySelector('#jSauver')?.focus();
+  });
+  view.querySelector('#jRestaurer').addEventListener('change', async (ev) => {
+    const f = ev.target.files?.[0];
+    if (!f) return;
+    const r = lireSauvegarde(await f.text(), lireEntreesJournal());
+    if (r.erreur) { etatJournal.note = r.erreur; renderJournalListe(); return; }
+    for (const [id, b64] of Object.entries(r.captures)) {
+      const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      await ecrireImage(id, u);
+    }
+    const ids = new Set(r.entrees.map((e) => e.id));
+    const fusion = [...lireEntreesJournal().filter((e) => !ids.has(e.id)), ...r.entrees];
+    const ok = ecrireEntreesJournal(fusion);
+    etatJournal.note = `${r.entrees.length} labo(s) restauré(s)${r.doublons.length ? ` (${r.doublons.length} remplacé(s) : ${r.doublons.join(', ')})` : ''}${r.ecartees ? `, ${r.ecartees} écarté(s) car invalides` : ''}.${ok ? '' : ' Attention : le stockage est indisponible, rien ne sera conservé.'}`;
+    renderJournalListe(); document.querySelector('#jNote')?.focus?.();
+  });
+  // Ménage : les images qu'aucun labo n'utilise plus.
+  nettoyerImages(new Set(lireEntreesJournal().flatMap((e) => e.captures.map((c) => c.id)))).catch(() => {});
+}
+
+/** Ouvre un brouillon (nouveau ou existant) dans la fiche d'un labo. */
+function ouvrirBrouillon(entree, { nouveau = false, note = '' } = {}) {
+  etatJournal = { ...etatJournal, brouillonId: entree.id, brouillon: structuredClone(entree), erreurs: {}, noteFiche: note,
+    modifie: nouveau, versionOuverte: false, confirmerSuppression: false, nouveau };
+  const cible = routeEntreeJournal(entree.id);
+  if (location.hash !== cible) location.hash = cible; else render();
+}
+
+async function renderJournalFiche() {
+  const view = document.querySelector('#journalView');
+  const ej = etatJournal;
+  if (ej.brouillonId !== espace.id || !ej.brouillon) {
+    const e = lireEntreesJournal().find((x) => x.id === espace.id);
+    if (!e) {
+      view.innerHTML = `<h1>Labo introuvable</h1><p>Ce labo n’existe pas (ou plus) dans ce navigateur. Il a peut-être été créé dans un autre navigateur : restaure ta sauvegarde depuis la liste.</p><p><a href="${ROUTE_JOURNAL}">Retour au Journal de labo</a></p>`;
+      document.title = 'Labo introuvable — KJEMO IT Toolkit';
+      return;
+    }
+    etatJournal = { ...ej, brouillonId: e.id, brouillon: structuredClone(e), erreurs: {}, noteFiche: '', modifie: false, versionOuverte: false, confirmerSuppression: false, nouveau: false };
+  }
+  // Charge les images avant le dessin (sinon l'aperçu clignote).
+  for (const c of etatJournal.brouillon.captures) await lireImage(c.id);
+  dessinerJournalFiche(view);
+}
+
+function dessinerJournalFiche(view = document.querySelector('#journalView')) {
+  const ej = etatJournal; const e = ej.brouillon;
+  const imagesUrl = Object.fromEntries(e.captures.map((c) => [c.id, urlImage(c.id)]).filter(([, u]) => u));
+  const defil = window.scrollY;
+  view.innerHTML = journalEditeurMarkup({ entree: e, erreurs: ej.erreurs, note: ej.noteFiche, modifie: ej.modifie, versionOuverte: ej.versionOuverte,
+    confirmerSuppression: ej.confirmerSuppression, imagesUrl, titresFiches: titresDesFiches(e.fiches), routeFiche: (id) => `#/tache/${id}`, imagesOk });
+  window.scrollTo(0, defil);
+  document.title = `${e.titre || 'Nouveau labo'} — Journal de labo — KJEMO IT Toolkit`;
+  brancherJournalFiche(view);
+}
+
+/** Relit le formulaire dans le brouillon (sans valider). */
+function lireFormulaireJournal(view) {
+  const e = etatJournal.brouillon;
+  view.querySelectorAll('[data-j]').forEach((i) => { e[i.dataset.j] = i.value; });
+  view.querySelectorAll('[data-jt]').forEach((i) => {
+    const t = e[i.dataset.jt]; const r = Number(i.dataset.row);
+    if (t?.[r]) t[r][i.dataset.col] = i.value;
+  });
+  view.querySelectorAll('[data-jcap]').forEach((i) => { const c = e.captures[Number(i.dataset.jcap)]; if (c) c.legende = i.value; });
+}
+
+/** Valide et enregistre le brouillon. Renvoie l'entrée enregistrée, ou null (erreurs affichées). */
+function enregistrerJournal(view, { note = 'Enregistré dans ce navigateur.' } = {}) {
+  lireFormulaireJournal(view);
+  const { entree, erreurs } = normaliserEntree({ ...etatJournal.brouillon, modifieLe: jour() });
+  if (Object.keys(erreurs).length) {
+    etatJournal = { ...etatJournal, erreurs, noteFiche: '' };
+    dessinerJournalFiche(view);
+    const premier = Object.keys(erreurs)[0];
+    document.querySelector(`[aria-describedby="jerr-${premier.replace(/\./g, '-')}"]`)?.focus();
+    return null;
+  }
+  const autres = lireEntreesJournal().filter((x) => x.id !== entree.id);
+  // Deux labos ne partagent jamais une référence (sauvegarde fusionnée, duplication…).
+  if (autres.some((x) => x.reference === entree.reference)) entree.reference = prochaineReference(entree.categorie, entree.creeLe.slice(0, 4), autres.map((x) => x.reference));
+  const ok = ecrireEntreesJournal([...autres, entree]);
+  etatJournal = { ...etatJournal, brouillon: structuredClone(entree), erreurs: {}, modifie: false, nouveau: false,
+    noteFiche: ok ? note : 'Le stockage de ce navigateur est indisponible : ce labo ne sera pas conservé après fermeture.' };
+  return entree;
+}
+
+async function ajouterCapture(view, fichier) {
+  const e = etatJournal.brouillon;
+  if (e.captures.length >= MAX_CAPTURES) { etatJournal.noteFiche = `Six captures au maximum par labo : retires-en une avant d’en ajouter.`; dessinerJournalFiche(view); return; }
+  if (!/^image\/(png|jpeg)$/.test(fichier.type)) { etatJournal.noteFiche = 'Seules les images PNG et JPEG sont acceptées.'; dessinerJournalFiche(view); return; }
+  try {
+    lireFormulaireJournal(view);
+    const octets = await versJpeg(fichier);
+    const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+    await ecrireImage(id, octets);
+    e.captures.push({ id, nom: (fichier.name || `capture-${e.captures.length + 1}.png`).slice(0, 120), legende: '' });
+    etatJournal.modifie = true;
+    etatJournal.noteFiche = `Capture ajoutée (${Math.round(octets.length / 1024)} Ko). Écris sa légende, puis enregistre.`;
+    dessinerJournalFiche(view);
+    document.querySelector(`#jc-${e.captures.length - 1}`)?.focus();
+  } catch {
+    etatJournal.noteFiche = 'Cette image n’a pas pu être lue.'; dessinerJournalFiche(view);
+  }
+}
+
+/** Image → JPEG (fond blanc, 1600 px au plus) : un format que le PDF sait intégrer, et un poids raisonnable. */
+async function versJpeg(fichier) {
+  const url = URL.createObjectURL(fichier);
+  try {
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * k)); const h = Math.max(1, Math.round(img.naturalHeight * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.86));
+    return new Uint8Array(await blob.arrayBuffer());
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function brancherJournalFiche(view) {
+  const ej = () => etatJournal;
+  const marquer = () => { if (!etatJournal.modifie) { etatJournal.modifie = true; const n = view.querySelector('#jNote'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; } };
+  view.querySelector('#jForm').addEventListener('input', marquer);
+  view.querySelector('#jForm').addEventListener('change', (ev) => {
+    marquer();
+    if (ev.target.matches('[data-j="etat"],[data-j="categorie"]')) { lireFormulaireJournal(view); dessinerJournalFiche(view); document.querySelector(`#${ev.target.id}`)?.focus(); }
+  });
+  view.querySelector('#jForm').addEventListener('submit', (ev) => ev.preventDefault());
+  view.querySelector('#jForm').addEventListener('click', (ev) => {
+    const ajout = ev.target.closest('[data-jadd]'); const retrait = ev.target.closest('[data-jdel]'); const capdel = ev.target.closest('[data-jcapdel]');
+    if (!ajout && !retrait && !capdel) return;
+    lireFormulaireJournal(view);
+    const e = ej().brouillon;
+    if (ajout) {
+      const nom = ajout.dataset.jadd;
+      e[nom].push(Object.fromEntries(TABLEAUX[nom].map((c) => [c.id, c.id === 'resultat' ? 'a-tester' : ''])));
+      etatJournal.modifie = true; dessinerJournalFiche(view);
+      document.querySelector(`[data-jt="${nom}"][data-row="${e[nom].length - 1}"]`)?.focus();
+    } else if (retrait) {
+      e[retrait.dataset.jdel].splice(Number(retrait.dataset.row), 1);
+      etatJournal.erreurs = {}; etatJournal.modifie = true; dessinerJournalFiche(view);
+      document.querySelector(`[data-jadd="${retrait.dataset.jdel}"]`)?.focus();
+    } else {
+      e.captures.splice(Number(capdel.dataset.jcapdel), 1);
+      etatJournal.erreurs = {}; etatJournal.modifie = true; dessinerJournalFiche(view);
+      document.querySelector('#jCaptureFichier')?.focus();
+    }
+  });
+  view.querySelector('#jCaptureFichier')?.addEventListener('change', (ev) => { const f = ev.target.files?.[0]; if (f) ajouterCapture(view, f); });
+  view.querySelector('#jEnregistrer').addEventListener('click', () => {
+    if (enregistrerJournal(view)) { dessinerJournalFiche(view); document.querySelector('#jEnregistrer')?.focus(); }
+  });
+  view.querySelector('#jPdf').addEventListener('click', async () => {
+    const e = enregistrerJournal(view, { note: '' });
+    if (!e) return;
+    const captures = {};
+    for (const c of e.captures) { const o = await lireImage(c.id); if (o) captures[c.id] = o; }
+    try {
+      const r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches) });
+      telechargerOctets(nomFichierPdf(e), r.octets, 'application/pdf');
+      etatJournal.noteFiche = `PDF téléchargé : ${nomFichierPdf(e)} (${r.pages} pages). Range-le avec tes documents.`;
+    } catch {
+      etatJournal.noteFiche = 'Le PDF n’a pas pu être fabriqué. Enregistre, recharge la page et réessaie.';
+    }
+    dessinerJournalFiche(view); document.querySelector('#jPdf')?.focus();
+  });
+  view.querySelector('#jVersion').addEventListener('click', () => {
+    lireFormulaireJournal(view);
+    etatJournal.versionOuverte = !etatJournal.versionOuverte; dessinerJournalFiche(view);
+    document.querySelector(etatJournal.versionOuverte ? '#jVersionResume' : '#jVersion')?.focus();
+  });
+  view.querySelector('#jVersionAnnuler')?.addEventListener('click', () => { etatJournal.versionOuverte = false; dessinerJournalFiche(view); document.querySelector('#jVersion')?.focus(); });
+  view.querySelector('#jVersionForm')?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const resume = view.querySelector('#jVersionResume').value; const majeure = view.querySelector('#jVersionMajeure').checked;
+    lireFormulaireJournal(view);
+    const v = normaliserEntree(etatJournal.brouillon);
+    if (Object.keys(v.erreurs).length) { etatJournal = { ...etatJournal, erreurs: v.erreurs, versionOuverte: false }; dessinerJournalFiche(view); return; }
+    const r = publierVersion(v.entree, { resume, majeure });
+    if (r.erreur) { etatJournal.noteFiche = r.erreur; dessinerJournalFiche(view); document.querySelector('#jVersionResume')?.focus(); return; }
+    etatJournal.brouillon = r.entree; etatJournal.versionOuverte = false;
+    enregistrerJournal(view, { note: `Version ${r.entree.version} publiée et enregistrée.` });
+    dessinerJournalFiche(view); document.querySelector('#jVersion')?.focus();
+  });
+  view.querySelector('#jDupliquer').addEventListener('click', () => {
+    lireFormulaireJournal(view);
+    const v = normaliserEntree(etatJournal.brouillon);
+    if (Object.keys(v.erreurs).length) { etatJournal = { ...etatJournal, erreurs: v.erreurs }; dessinerJournalFiche(view); return; }
+    const copie = entreeVide({ categorieId: v.entree.categorie, existantes: lireEntreesJournal().map((x) => x.reference) });
+    const nouvelle = { ...v.entree, id: copie.id, reference: copie.reference, titre: `${v.entree.titre} (copie)`.slice(0, 120), version: '1.0', etat: 'brouillon',
+      creeLe: copie.creeLe, modifieLe: copie.modifieLe, revisions: [{ version: '1.0', date: copie.creeLe, resume: `Copie de ${v.entree.reference}` }],
+      captures: v.entree.captures.map((c) => ({ ...c })) };
+    // Les images sont partagées par référence : on les copie sous de nouveaux identifiants.
+    Promise.all(nouvelle.captures.map(async (c) => { const o = await lireImage(c.id); const id = `${c.id}d${Date.now().toString(36)}`.slice(0, 80); if (o) await ecrireImage(id, o); c.id = id; }))
+      .then(() => ouvrirBrouillon(nouvelle, { nouveau: true, note: `Copie de ${v.entree.reference} : enregistre-la pour la garder.` }));
+  });
+  view.querySelector('#jSupprimer').addEventListener('click', () => { lireFormulaireJournal(view); etatJournal.confirmerSuppression = true; dessinerJournalFiche(view); document.querySelector('#jSupprimerNon')?.focus(); });
+  view.querySelector('#jSupprimerNon')?.addEventListener('click', () => { etatJournal.confirmerSuppression = false; dessinerJournalFiche(view); document.querySelector('#jSupprimer')?.focus(); });
+  view.querySelector('#jSupprimerOui')?.addEventListener('click', () => {
+    const id = etatJournal.brouillonId;
+    ecrireEntreesJournal(lireEntreesJournal().filter((x) => x.id !== id));
+    etatJournal = { ...etatJournal, brouillonId: null, brouillon: null, note: 'Labo supprimé.' };
+    location.hash = ROUTE_JOURNAL;
+  });
+}
+
+// Ctrl+V d'une capture d'écran sur la fiche d'un labo.
+document.addEventListener('paste', (ev) => {
+  if (espace?.type !== 'journal' || !espace.id || !etatJournal.brouillon) return;
+  const item = [...(ev.clipboardData?.items ?? [])].find((i) => i.kind === 'file' && /^image\/(png|jpeg)$/.test(i.type));
+  if (!item) return;
+  ev.preventDefault();
+  const f = item.getAsFile();
+  if (f) ajouterCapture(document.querySelector('#journalView'), f);
+});
+
+/** « Documenter dans le journal » depuis une fiche : crée le labo prérempli et l'ouvre. */
+function documenterFiche(entree) {
+  const p = entree.procedure; const m = methodeActive();
+  const rendu = renduCourant();
+  const valeurs = valeursPourJournal(evaluerValeurs(p.params ?? [], saisiesTache));
+  const { entree: e, erreurs } = entreeDepuisFiche(p, { methode: m, rendu, valeurs, plateformes: plateformesDeProcedure(p), auteur: auteurParDefaut(),
+    existantes: lireEntreesJournal().map((x) => x.reference) });
+  const manquants = rendu.etapes.filter((x) => x.rendu?.bloque).length;
+  const note = Object.keys(erreurs).length ? 'Certaines valeurs ont été refusées : vérifie les champs signalés.'
+    : `Labo créé depuis la fiche${manquants ? ` (${manquants} étape(s) sans valeurs non reprises : remplis les champs de la fiche pour les avoir)` : ''}. Complète-le, puis enregistre.`;
+  ouvrirBrouillon(e, { nouveau: true, note });
+  if (Object.keys(erreurs).length) etatJournal.erreurs = erreurs;
 }
 
 // ---------------------------------------------------------------------------
@@ -2067,6 +2441,7 @@ function renderPortes() {
 function routeParent() {
   if (espace?.type === 'memo') return espace.groupeId && MEMO_PAR_ID.has(espace.groupeId) ? ROUTE_MEMO : '#/';
   if (espace?.type === 'catalogue' || espace?.type === 'labo') return '#/';
+  if (espace?.type === 'journal') return espace.id ? ROUTE_JOURNAL : '#/';
   if (espace?.type === 'cours') return espace.coursId ? ROUTE_COURS : '#/';
   if (currentTache) {
     if (contexteParcours) return routeParcours(contexteParcours.coursId, contexteParcours.lettre);
@@ -2113,6 +2488,7 @@ function render() {
   document.querySelector('#portesView').hidden = !estPortes;
   document.querySelector('#coursView').hidden = vu?.type !== 'cours';
   document.querySelector('#laboView').hidden = vu?.type !== 'labo';
+  document.querySelector('#journalView').hidden = vu?.type !== 'journal';
   for (const id of ['#toolView', '#taskView']) {
     const el = document.querySelector(id);
     const ici = modale && !el.hidden;
@@ -2130,6 +2506,7 @@ function render() {
   if (modale) { if (currentTool) renderTool(); else renderTache(); }   // la page de fond reste telle quelle
   else if (espace?.type === 'cours') renderCours();
   else if (espace?.type === 'labo') renderLabo();
+  else if (espace?.type === 'journal') renderJournal();
   else if (estPortes) renderPortes();
   else if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
   if (modale) {

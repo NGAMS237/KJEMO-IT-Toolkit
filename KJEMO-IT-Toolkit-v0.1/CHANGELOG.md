@@ -1,3 +1,14 @@
+## JOURNAL-LABO-01 (2026-11-05)
+
+- Nouvel espace « Journal de labo » (menu latéral, routes `#/journal` et `#/journal/<id>`) : documenter ses labos et projets (Réseau Cisco, Système, Azure, Autre) au format d’un dossier d’entreprise. Référence automatique (LAB-RES-2026-001…), version, état (brouillon, en service, archivé), classification, auteur, historique des révisions.
+- Saisie guidée en neuf sections : objet et environnement, architecture, plan d’adressage, configuration (blocs de commandes), validation (À tester / Conforme / Non conforme), exploitation (accès, où sont rangés les identifiants, sauvegarde, retour arrière), incidents et solutions, références, captures (6 au plus, fichier ou Ctrl+V, converties en JPEG et gardées dans IndexedDB).
+- « Documenter dans le journal » sur chaque fiche : crée le labo avec le titre, l’adressage (VLAN de gestion et tableau de VLAN pour le TP), les commandes rendues avec tes valeurs (phase par phase, sans étapes facultatives ni d’annulation), la vérification finale et le renvoi aux étapes « Annuler ».
+- Export PDF A4 fabriqué dans le navigateur (moteur maison `pdf-a4.mjs`, sans dépendance ni réseau) : page de garde avec contrôle du document, historique et sommaire paginé, sections numérotées, tableaux coupés entre les pages avec en-tête répété, code en Courier, captures légendées, « Page X / N ». Fichier nommé `<référence>_v<version>.pdf`.
+- Aucun mot de passe : tout texte qui en contient un (« secret Cisco123 », « mot de passe : … », « --admin-password … », clé privée…) est refusé avec la ligne fautive ; `***` est accepté.
+- Nouvelle version (résumé obligatoire), duplication, suppression confirmée dans la page, labos « à revoir » après 60 jours, filtres et recherche, sauvegarde et restauration du journal (fichier JSON avec les captures).
+- Tests : journal.test.mjs (99 vérifications, dont toutes les fiches du catalogue converties en labo, PDF vérifié par xref, qpdf et pdftotext) et browser-journal.test.mjs (42). browser-portes : la barre latérale compte six entrées.
+- Rien n’est envoyé : stockage du navigateur et téléchargement local. L’affichage du PDF est vérifié avec qpdf, pdftotext et pdftoppm, pas dans chaque lecteur PDF.
+
 ## CISCO-TP-VLAN-03 (2026-11-05)
 
 - Fiche « TP complet : VLAN, SSH et routage inter-VLAN » rendue REMPLISSABLE (même identifiant) : champs pour le VLAN de gestion (99 au départ), son adresse, sa passerelle, son préfixe, le poste et le port de gestion, le trunk, les noms du commutateur et du routeur, le domaine et le premier administrateur SSH.
