@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------
  * Journal de labo : modèle (journal.mjs), moteur PDF (pdf-a4.mjs) et dossier
  * PDF (journal-pdf.mjs).
+ * JOURNAL-LABO-05 : schéma d'architecture (modèle, dessin SVG et PDF, éditeur).
  * JOURNAL-LABO-02/03 : exemples d'aide au remplissage, labos d'exemple,
  * inventaire des équipements (fiche par système, table de routage),
  * équipements proposés par le TP VLAN, annexe du PDF et PDF de l'inventaire.
@@ -28,6 +29,7 @@ const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
 const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
+const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs');
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const JPEG = Uint8Array.from(Buffer.from('/9j/4AAQSkZJRgABAQEAAgACAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAYABEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3V3uVlYIgK54JB9KRZbvjMS+/Bq3RTuIKKKKQxC6g4LAH60m9T0YfnRRQA6iiigD/2Q==', 'base64'));
@@ -293,6 +295,60 @@ console.log('10. Inventaire');
   assert(VI.lireRouteInventaire('#/inventaire').id === null && VI.lireRouteInventaire('#/inventaire/eabc123').id === 'eabc123' && VI.lireRouteInventaire('#/inventaire/../x') === null, 'routes de l’inventaire');
   const piege = VI.inventaireListeMarkup({ equipements: [{ ...sw, nom: '<script>x</script>' }], total: 1 });
   assert(!piege.includes('<script>x'), 'nom échappé dans l’inventaire');
+}
+
+console.log('11. Schéma d’architecture');
+{
+  const brut = { noeuds: [{ id: 'na1', type: 'routeur', nom: 'R1', x: 5000, y: -10 }, { id: 'na2', type: 'inconnu', nom: 'X', x: 300, y: 300 }, { id: 'na1', type: 'poste' },
+    { id: 'na3', type: 'perso', typePerso: 'tcam1', nom: '', note: '10.0.0.5', x: 200, y: 200 }, { id: '../x', type: 'routeur' }],
+    liens: [{ id: 'la1', de: 'na1', a: 'na2', style: 'trunk', etiquetteDe: 'Gi0/0' }, { id: 'la2', de: 'na1', a: 'absent' }, { id: 'la3', de: 'na2', a: 'na2' }],
+    zones: [{ id: 'za1', nom: 'VLAN 10', couleur: 'rose', x: 990, y: 10, l: 500, h: 5 }], textes: [{ id: 'ta1', texte: '' }, { id: 'ta2', texte: 'Note', x: 10, y: 0 }] };
+  const { schema: s, erreurs } = SC.normaliserSchema(brut);
+  assert(!Object.keys(erreurs).length && s.noeuds.length === 3 && s.noeuds[1].type === 'autre' && s.noeuds[2].type === 'perso', 'nœuds : doublon et identifiant piégé écartés, type inconnu → Autre, type personnel gardé');
+  assert(s.noeuds[0].x === 960 && s.noeuds[0].y === 30, 'coordonnées bornées à la feuille');
+  assert(s.liens.length === 1 && s.liens[0].style === 'trunk', 'liens vers un nœud absent ou vers soi-même écartés');
+  assert(s.zones[0].couleur === 'bleu' && s.zones[0].x + s.zones[0].l <= 1000 && s.zones[0].h >= 40, 'zone : couleur inconnue → bleu, taille bornée');
+  assert(s.textes.length === 1 && s.textes[0].y >= 14, 'texte vide écarté');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'nb1', type: 'routeur', nom: 'mot de passe : abc' }] }).erreurs['schema.nb1.nom'], 'mot de passe refusé dans le schéma');
+  assert(SC.normaliserSchema({ noeuds: Array.from({ length: 120 }, (_, i) => ({ id: `nc${i}`, type: 'poste', x: 100, y: 100 })) }).schema.noeuds.length === 80, '80 équipements au plus');
+  assert(SC.normaliserTypesPerso([{ id: 'tcam1', nom: 'Caméra IP', code: 'cam' }, { id: 'tcam1', nom: 'x', code: 'y' }, { id: 'tx', nom: '', code: 'A' }]).map((t) => `${t.nom}:${t.code}`).join() === 'Caméra IP:CAM', 'types personnels : code en majuscules, doublons et vides écartés');
+  const ops = SC.dessinerSchema(s, { typesPerso: [{ id: 'tcam1', nom: 'Caméra IP', code: 'CAM' }], selection: 'na1' });
+  assert(ops.some((o) => o.k === 'texte' && o.t === 'CAM') && ops.some((o) => o.k === 'texte' && o.t === 'Caméra IP') && ops.some((o) => o.selection), 'dessin : code et nom du type personnel, sélection marquée');
+  const svg = SC.versSvg(ops, { interactif: true, grille: true });
+  assert(svg.startsWith('<svg') && svg.includes('<title') && svg.includes('data-el="na1"') && !svg.includes('<script'), 'SVG interactif : titre, cibles, pas de script');
+  assert(!SC.versSvg(SC.dessinerSchema({ ...s, noeuds: [{ ...s.noeuds[0], nom: '<b>&"' }] })).includes('<b>&'), 'SVG : textes échappés');
+  // Avec l'inventaire : nom et adresse viennent de la fiche
+  const q = I.normaliserEquipement({ id: 'eq0001', nom: 'R1-EDGE', adresse: '192.168.99.1', systeme: 'cisco', type: 'routeur' }).equipement;
+  const sq = { ...SC.schemaVide(), noeuds: [{ id: 'nd1', type: 'routeur', nom: 'ancien', note: '', equipementId: q.id, typePerso: null, x: 300, y: 200 }] };
+  assert(SC.versSvg(SC.dessinerSchema(sq, { resoudre: (id) => (id === q.id ? q : null) })).includes('R1-EDGE') && SC.decrireSchema(sq, { resoudre: () => q }).includes('R1-EDGE'), 'équipement lié : nom de l’inventaire');
+  // TP VLAN
+  const trois = exemple(fiche); trois.plan = [...trois.plan, { vlan: '20', nom: 'TECHNIQUE', reseau: '192.168.20.0', prefixe: '24', passerelle: '192.168.20.1', ports: 'Fa0/2', poste: '192.168.20.10' }];
+  const v = J.valeursPourJournal(P.evaluerValeurs(fiche.params, trois));
+  const st = SC.schemaDepuisFiche(v, { commutateur: 'eswxxx1', routeur: 'ertxxx1' });
+  assert(st.noeuds.length === 5 && st.zones.length === 3 && st.liens.length === 4, 'TP VLAN (3 VLAN) : R1, SW1, trois postes, trois zones, quatre liens');
+  assert(st.liens[0].style === 'trunk' && st.liens[0].etiquetteDe === 'GigabitEthernet0/0' && st.liens[0].etiquetteA === 'GigabitEthernet0/1', 'trunk R1–SW1 avec les interfaces de la fiche');
+  assert(st.noeuds.find((n) => n.type === 'routeur').equipementId === 'ertxxx1' && st.zones.map((z) => z.nom).join('|') === 'VLAN 99 · GESTION|VLAN 10 · VENTES|VLAN 20 · TECHNIQUE', 'équipements liés à l’inventaire, une zone par VLAN');
+  assert(st.zones.every((z, i) => i === 0 || z.x >= st.zones[i - 1].x + st.zones[i - 1].l) && st.zones.every((z) => z.x >= 0 && z.x + z.l <= 1000), 'zones côte à côte, dans la feuille');
+  assert(SC.schemaEstVide(SC.schemaDepuisFiche({}, {})), 'fiche sans équipements : schéma vide');
+  // Le schéma voyage avec le labo
+  const lab = J.normaliserEntree({ titre: 'TP', schema: st }).entree;
+  assert(lab.schema.noeuds.length === 5 && J.normaliserEntree({ titre: 'TP' }).entree.schema.noeuds.length === 0, 'le labo garde son schéma (vide par défaut)');
+  const r = JP.pdfJournal(lab, {});
+  assert(xrefValide(r.octets) && r.sections[0].titre === 'Architecture', 'PDF : section Architecture créée par le schéma seul');
+  const sv = Buffer.from(r.octets).toString('latin1');
+  assert(/ c\n|\d c /.test(sv) && sv.includes(' re') && sv.includes(' d '), 'PDF : schéma vectoriel (courbes, tirets)');
+  if (PDFTOTEXT) {
+    const t = texteDu(r.octets);
+    for (const x of ['Figure : schéma d’architecture', 'VLAN 99 · GESTION', 'PC TECHNIQUE', '192.168.20.10', '802.1Q']) assert(t.includes(x), `PDF du schéma : « ${x} »`);
+  }
+  if (QPDF) assert(qpdfOk(r.octets), 'qpdf --check : PDF avec schéma');
+  const doc = new PDF.DocumentPdf({}); const pg = doc.nouvellePage();
+  doc.cercle(pg, 100, 100, 20, { fond: '#ffffff', trait: '#000000' }); doc.rectArrondi(pg, 10, 10, 80, 40, 8, { trait: '#000000', tirets: [4, 2] });
+  assert(xrefValide(doc.octets()), 'moteur PDF : cercle et rectangle arrondi');
+  // Éditeur
+  const h = VS.editeurSchemaMarkup(st, { inventaire: [q], etat: { selection: st.liens[0].id } });
+  assert(h.includes('data-sadd="routeur"') && h.includes('id="schFeuille"') && h.includes('Interface côté') && h.includes('id="schSvg"'), 'éditeur : palette, feuille, propriétés du lien, export SVG');
+  assert(VS.editeurSchemaMarkup(SC.schemaVide(), { etat: { typeOuvert: true } }).includes('id="schTypeCode"'), 'éditeur : création d’un type personnel');
 }
 
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

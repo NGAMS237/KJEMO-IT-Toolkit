@@ -115,7 +115,7 @@ function section(id, titre, contenu, aide = '') {
 
 /** Fiche d'un labo : saisie, captures, versions, export. */
 export function journalEditeurMarkup({ entree: e, erreurs = {}, note = '', modifie = false, versionOuverte = false, confirmerSuppression = false,
-  imagesUrl = {}, titresFiches = {}, routeFiche = (id) => `#/tache/${id}`, imagesOk = true, equipementsHtml = '' } = {}) {
+  imagesUrl = {}, titresFiches = {}, routeFiche = (id) => `#/tache/${id}`, imagesOk = true, equipementsHtml = '', schemaHtml = '' } = {}) {
   const nbErr = Object.keys(erreurs).length;
   const opt = (liste, val) => liste.map((x) => `<option value="${esc(x.id ?? x)}"${(x.id ?? x) === val ? ' selected' : ''}>${esc(x.label ?? x)}</option>`).join('');
   const ident = `<div class="params-grid">`
@@ -165,7 +165,9 @@ export function journalEditeurMarkup({ entree: e, erreurs = {}, note = '', modif
     + `<form id="jForm" class="j-form" novalidate aria-label="Document du labo">`
     + section('identification', 'Identification', ident)
     + section('objet', '1. Objet et environnement', champTexte(champ('objet'), e, erreurs) + champTexte(champ('environnement'), e, erreurs))
-    + section('architecture', '2. Architecture', champTexte(champ('architecture'), e, erreurs), 'Décris le montage en quelques phrases. L’éditeur de schéma viendra dans une prochaine étape ; en attendant, ajoute la capture de ta topologie dans « Captures ».')
+    + section('architecture', '2. Architecture', champTexte(champ('architecture'), e, erreurs)
+      + `<h3 class="sch-titre">Schéma</h3><div id="schBloc" class="sch-bloc">${schemaHtml}</div>`,
+      'Décris le montage en quelques phrases, puis compose le schéma : pose les équipements, relie-les, regroupe-les en zones. Il sera dessiné dans le PDF.')
     + section('equipements', `3. Équipements (${e.equipements.length})`, equipementsHtml, 'Coche les équipements de l’inventaire utilisés dans ce labo et écris leur rôle ici. Leurs interfaces, VLAN et tables de routage seront en annexe du PDF.')
     + section('adressage', '4. Plan d’adressage', tableauEditable('adressage', e, erreurs, { titreAjout: '+ Ajouter une ligne' }))
     + section('configuration', '5. Configuration', tableauEditable('configuration', e, erreurs, { titreAjout: '+ Ajouter un bloc de commandes' }), 'Colle les commandes appliquées, un bloc par équipement ou par phase. Une ligne « secret » se termine avant le mot de passe.')

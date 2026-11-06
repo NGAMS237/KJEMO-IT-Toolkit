@@ -170,6 +170,37 @@ export class DocumentPdf {
   trait(page, x1, y1, x2, y2, { couleur = '#cfd6de', epaisseur = 0.6 } = {}) {
     this.pages[page].ops.push(`${rgb(couleur)} RG ${n2(epaisseur)} w ${n2(x1)} ${n2(this.#y(y1))} m ${n2(x2)} ${n2(this.#y(y2))} l S`);
   }
+  /**
+   * Tracé libre : liste de points [x, y] (lignes droites), ou de segments
+   * { c: [x1, y1, x2, y2, x, y] } (courbes de Bézier). Fermé, rempli et/ou
+   * tracé, en tirets si demandé. Sert aux schémas d'architecture.
+   */
+  chemin(page, points, { fond = null, trait = null, epaisseur = 1, ferme = false, tirets = null, arrondi = false } = {}) {
+    if (!points.length) return;
+    const pt = (x, y) => `${n2(x)} ${n2(this.#y(y))}`;
+    let d = '';
+    points.forEach((p, i) => {
+      if (Array.isArray(p)) d += `${pt(p[0], p[1])} ${i === 0 ? 'm' : 'l'} `;
+      else d += `${pt(p.c[0], p.c[1])} ${pt(p.c[2], p.c[3])} ${pt(p.c[4], p.c[5])} c `;
+    });
+    if (ferme) d += 'h ';
+    const style = `${fond ? `${rgb(fond)} rg ` : ''}${trait ? `${rgb(trait)} RG ${n2(epaisseur)} w ` : ''}${tirets ? `[${tirets.map(n2).join(' ')}] 0 d ` : '[] 0 d '}${arrondi ? '1 J 1 j ' : '0 J 0 j '}`;
+    const op = fond && trait ? 'B' : fond ? 'f' : 'S';
+    this.pages[page].ops.push(`q ${style}${d}${op} Q`);
+  }
+  /** Cercle (quatre courbes de Bézier). */
+  cercle(page, cx, cy, r, opts = {}) {
+    const k = 0.5523 * r;
+    this.chemin(page, [[cx + r, cy], { c: [cx + r, cy + k, cx + k, cy + r, cx, cy + r] }, { c: [cx - k, cy + r, cx - r, cy + k, cx - r, cy] },
+      { c: [cx - r, cy - k, cx - k, cy - r, cx, cy - r] }, { c: [cx + k, cy - r, cx + r, cy - k, cx + r, cy] }], { ...opts, ferme: true });
+  }
+  /** Rectangle aux coins arrondis. */
+  rectArrondi(page, x, y, w, h, r, opts = {}) {
+    const k = 0.5523 * r;
+    this.chemin(page, [[x + r, y], [x + w - r, y], { c: [x + w - r + k, y, x + w, y + r - k, x + w, y + r] }, [x + w, y + h - r],
+      { c: [x + w, y + h - r + k, x + w - r + k, y + h, x + w - r, y + h] }, [x + r, y + h], { c: [x + r - k, y + h, x, y + h - r + k, x, y + h - r] },
+      [x, y + r], { c: [x, y + r - k, x + r - k, y, x + r, y] }], { ...opts, ferme: true });
+  }
   /** Ajoute une image JPEG (octets) ; renvoie son index ou -1 si illisible. */
   ajouterJpeg(octets) {
     const d = dimensionsJpeg(octets);
@@ -320,6 +351,17 @@ export class Flux {
       dessiner(cellules, { styles: ligne.styles ?? [] });
     }
     this.y += 10;
+  }
+  /**
+   * Zone de dessin vectoriel de largeur utile et de hauteur `h`, légendée :
+   * `dessiner(doc, page, x, y, largeur, hauteur)` y trace ce qu'il veut.
+   */
+  dessin(h, dessiner, legende = '') {
+    this.place(h + 24);
+    dessiner(this.doc, this.page, STYLE.marge, this.y, this.largeurUtile, h);
+    this.y += h + 4;
+    if (legende) for (const l of couper(legende, 'normal', 8.5, this.largeurUtile)) { this.doc.texte(this.page, STYLE.marge + (this.largeurUtile - largeur(l, 'normal', 8.5)) / 2, this.y + 8.5, l, { taille: 8.5, couleur: STYLE.pale }); this.y += 11.5; }
+    this.y += 8;
   }
   /** Image JPEG légendée, ajustée à la largeur et à une hauteur maximale. */
   image(octets, legende, { hauteurMax = 330 } = {}) {

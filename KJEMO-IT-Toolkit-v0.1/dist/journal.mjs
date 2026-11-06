@@ -19,6 +19,8 @@
  * Module PUR : le stockage, le DOM et le téléchargement vivent dans app.js.
  */
 
+import { normaliserSchema, schemaVide } from './schema.mjs';
+
 export const CLE_JOURNAL = 'kjemo.journal.v1';
 export const FORMAT_SAUVEGARDE = 'kjemo-journal-de-labo';
 export const MAX_CAPTURES = 6;
@@ -226,7 +228,7 @@ export function entreeVide({ categorieId = 'cisco', auteur = '', date = new Date
     creeLe: j, modifieLe: j,
     objet: '', environnement: '', architecture: '', acces: '', rangement: '', sauvegarde: '', retourArriere: '', referencesTexte: '',
     adressage: [], configuration: [], validation: [], incidents: [],
-    fiches: [], captures: [], equipements: [],
+    fiches: [], captures: [], equipements: [], schema: schemaVide(),
     revisions: [{ version: '1.0', date: j, resume: 'Création du document' }],
   };
 }
@@ -279,6 +281,9 @@ export function normaliserEntree(brut = {}) {
     e[nom] = lignes;
   }
 
+  // Schéma d'architecture (voir schema.mjs) : éléments mal formés écartés, mots de passe refusés.
+  const sch = normaliserSchema(b.schema);
+  e.schema = sch.schema; Object.assign(erreurs, sch.erreurs);
   // Équipements de l'inventaire utilisés dans ce labo, avec leur rôle ICI.
   const vus = new Set();
   e.equipements = (Array.isArray(b.equipements) ? b.equipements : [])
@@ -423,8 +428,8 @@ export function lireJournal(brut) {
 }
 
 /** Fichier de sauvegarde : les entrées, les captures (JPEG en base64) et l'inventaire des équipements. */
-export function sauvegardeJournal(entrees, captures = {}, date = new Date(), equipements = []) {
-  return JSON.stringify({ format: FORMAT_SAUVEGARDE, version: 2, date: jour(date), entrees, captures, equipements }, null, 1);
+export function sauvegardeJournal(entrees, captures = {}, date = new Date(), equipements = [], typesPerso = []) {
+  return JSON.stringify({ format: FORMAT_SAUVEGARDE, version: 2, date: jour(date), entrees, captures, equipements, typesPerso }, null, 1);
 }
 
 /**
@@ -444,7 +449,8 @@ export function lireSauvegarde(texteFichier, existantes = []) {
   const refs = new Set(existantes.map((e) => e.id));
   // L'inventaire (version 2) est rendu brut : inventaire.mjs le valide.
   const equipements = Array.isArray(d.equipements) ? d.equipements : [];
-  return { entrees, captures, ecartees, equipements, doublons: entrees.filter((e) => refs.has(e.id)).map((e) => e.reference), erreur: null };
+  const typesPerso = Array.isArray(d.typesPerso) ? d.typesPerso : [];
+  return { entrees, captures, ecartees, equipements, typesPerso, doublons: entrees.filter((e) => refs.has(e.id)).map((e) => e.reference), erreur: null };
 }
 
 /**

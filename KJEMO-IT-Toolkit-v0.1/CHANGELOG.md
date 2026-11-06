@@ -1,3 +1,12 @@
+## JOURNAL-LABO-05 (2026-11-05)
+
+- Éditeur de schéma d’architecture dans chaque labo (section Architecture), « façon Packet Tracer » pour documenter (rien ne s’exécute) : palette (routeur, commutateur, pare-feu, point d’accès, serveur, poste, VM, réseau virtuel, service cloud, Internet, autre), équipements de l’inventaire (nom et adresse repris en direct), zones colorées (VLAN, site, réseau Azure), textes, et types personnels (nom + code, ex. Caméra IP « CAM ») pour les projets futurs.
+- Glisser-déposer aimanté à la grille, agrandissement des zones par le coin, « Relier à… » pour créer un lien (câble, trunk épais, tirets pour VPN ou sans-fil) avec étiquette et interfaces de chaque côté, clavier (flèches, Suppr, Échap), liste des éléments pour choisir sans souris.
+- Depuis la fiche du TP VLAN, le schéma est prérempli : R1, SW1 et le trunk 802.1Q avec les interfaces saisies, une zone par VLAN avec son poste et son port.
+- PDF : le schéma est dessiné en vectoriel dans la section Architecture (net à toute taille), avec une description textuelle ; export du schéma seul en SVG. Le moteur PDF sait maintenant tracer courbes, cercles, rectangles arrondis et tirets.
+- Supprimer un équipement de l’inventaire garde son nom sur les schémas. Les types personnels sont dans la sauvegarde du journal.
+- Tests : journal.test.mjs (186) et browser-journal.test.mjs (86). Rien n’est simulé : le schéma documente, il ne vérifie pas la configuration ; les fichiers .pkt ne sont pas lus.
+
 ## JOURNAL-LABO-04 (2026-11-05)
 
 - Correctif « le PDF ne marche pas » : dans l’aperçu claude.ai, la page est isolée et un lien de téléchargement n’y fait rien. L’export PDF, le PDF de l’inventaire et la sauvegarde passent maintenant par la fonction d’enregistrement de l’aperçu (une confirmation s’affiche) ; ailleurs (GitHub Pages, serveur local), c’est un téléchargement ordinaire. Un refus ou une impossibilité est dit dans la barre au lieu d’un faux « téléchargé ».

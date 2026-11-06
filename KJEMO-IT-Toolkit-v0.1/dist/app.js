@@ -13,6 +13,8 @@ import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, ent
 import { pdfJournal, nomFichierPdf, pdfInventaire } from './journal-pdf.mjs';
 import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, normaliserEquipement, equipementVide, labosDe, filtrerInventaire,
          equipementsDepuisFiche } from './inventaire.mjs';
+import { FEUILLE, schemaVide, idSchema, aimanter, normaliserTypesPerso, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
+import { editeurSchemaMarkup, feuilleSvg } from './vue-schema.mjs';
 import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
 import { ROUTE_JOURNAL, routeEntreeJournal, lireRouteJournal, journalListeMarkup, journalEditeurMarkup } from './vue-journal.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
@@ -2018,7 +2020,7 @@ function renderJournalListe() {
       const o = await lireImage(c.id);
       if (o) { let bin = ''; for (let i = 0; i < o.length; i += 0x8000) bin += String.fromCharCode(...o.subarray(i, i + 0x8000)); captures[c.id] = btoa(bin); }
     }
-    const res = await enregistrerFichier(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures, new Date(), lireEquipements())}\n`, 'application/json;charset=utf-8');
+    const res = await enregistrerFichier(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures, new Date(), lireEquipements(), lireTypesPerso())}\n`, 'application/json;charset=utf-8');
     etatJournal.note = res.ok ? `Sauvegarde ${res.message} (${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s), ${lireEquipements().length} équipement(s)).` : res.message;
     renderJournalListe(); document.querySelector('#jSauver')?.focus();
   });
@@ -2036,6 +2038,8 @@ function renderJournalListe() {
     const ok = ecrireEntreesJournal(fusion);
     const eqs = lireInventaire({ equipements: r.equipements }).equipements;
     if (eqs.length) { const idsEq = new Set(eqs.map((q) => q.id)); ecrireEquipements([...lireEquipements().filter((q) => !idsEq.has(q.id)), ...eqs]); }
+    const tps = normaliserTypesPerso(r.typesPerso);
+    if (tps.length) { const idsT = new Set(tps.map((x) => x.id)); ecrireTypesPerso(normaliserTypesPerso([...lireTypesPerso().filter((x) => !idsT.has(x.id)), ...tps])); }
     etatJournal.note = `${r.entrees.length} labo(s)${eqs.length ? ` et ${eqs.length} équipement(s)` : ''} restauré(s)${r.doublons.length ? ` (${r.doublons.length} remplacé(s) : ${r.doublons.join(', ')})` : ''}${r.ecartees ? `, ${r.ecartees} écarté(s) car invalides` : ''}.${ok ? '' : ' Attention : le stockage est indisponible, rien ne sera conservé.'}`;
     renderJournalListe(); document.querySelector('#jNote')?.focus?.();
   });
@@ -2045,6 +2049,7 @@ function renderJournalListe() {
 
 /** Ouvre un brouillon (nouveau ou existant) dans la fiche d'un labo. */
 function ouvrirBrouillon(entree, { nouveau = false, note = '' } = {}) {
+  etatSchema = { selection: null, relierDepuis: null, typeOuvert: false, viderConfirme: false };
   etatJournal = { ...etatJournal, brouillonId: entree.id, brouillon: structuredClone(entree), erreurs: {}, noteFiche: note,
     modifie: nouveau, versionOuverte: false, confirmerSuppression: false, nouveau };
   const cible = routeEntreeJournal(entree.id);
@@ -2062,6 +2067,7 @@ async function renderJournalFiche() {
       return;
     }
     etatJournal = { ...ej, brouillonId: e.id, brouillon: structuredClone(e), erreurs: {}, noteFiche: '', modifie: false, versionOuverte: false, confirmerSuppression: false, nouveau: false };
+    etatSchema = { selection: null, relierDepuis: null, typeOuvert: false, viderConfirme: false };
   }
   // Charge les images avant le dessin (sinon l'aperçu clignote).
   for (const c of etatJournal.brouillon.captures) await lireImage(c.id);
@@ -2074,7 +2080,8 @@ function dessinerJournalFiche(view = document.querySelector('#journalView')) {
   const defil = window.scrollY;
   view.innerHTML = journalEditeurMarkup({ entree: e, erreurs: ej.erreurs, note: ej.noteFiche, modifie: ej.modifie, versionOuverte: ej.versionOuverte,
     confirmerSuppression: ej.confirmerSuppression, imagesUrl, titresFiches: titresDesFiches(e.fiches), routeFiche: (id) => `#/tache/${id}`, imagesOk,
-    equipementsHtml: equipementsLaboMarkup({ liens: e.equipements, inventaire: lireEquipements(), erreurs: ej.erreurs, systemePrefere: e.categorie }) });
+    equipementsHtml: equipementsLaboMarkup({ liens: e.equipements, inventaire: lireEquipements(), erreurs: ej.erreurs, systemePrefere: e.categorie }),
+    schemaHtml: editeurSchemaMarkup(e.schema, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: ej.erreurs }) });
   window.scrollTo(0, defil);
   document.title = `${e.titre || 'Nouveau labo'} — Journal de labo — KJEMO IT Toolkit`;
   brancherJournalFiche(view);
@@ -2152,6 +2159,7 @@ async function versJpeg(fichier) {
 }
 
 function brancherJournalFiche(view) {
+  brancherSchema(view);
   const ej = () => etatJournal;
   const marquer = () => { if (!etatJournal.modifie) { etatJournal.modifie = true; const n = view.querySelector('#jNote'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; } };
   view.querySelector('#jForm').addEventListener('input', marquer);
@@ -2209,7 +2217,7 @@ function brancherJournalFiche(view) {
     const captures = {};
     for (const c of e.captures) { const o = await lireImage(c.id); if (o) captures[c.id] = o; }
     let r = null;
-    try { r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches), equipements: equipementsDuLabo(e) }); } catch { r = null; }
+    try { r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches), equipements: equipementsDuLabo(e), inventaire: lireEquipements(), typesPerso: lireTypesPerso() }); } catch { r = null; }
     if (r) {
       const res = await enregistrerFichier(nomFichierPdf(e), r.octets, 'application/pdf');
       etatJournal.noteFiche = res.ok ? `PDF ${res.message} (${r.pages} pages). Range-le avec tes documents.` : res.message;
@@ -2289,9 +2297,207 @@ function documenterFiche(entree) {
       e.equipements.push({ id: q.id, role });
     }
     if (crees) ecrireEquipements(inv);
+    const idDe = (type) => { const nom = proposes.find((x) => x.equipement.type === type)?.equipement.nom; return inv.find((x) => x.nom === nom)?.id ?? null; };
+    e.schema = schemaDepuisFiche(valeurs, { commutateur: idDe('commutateur'), routeur: idDe('routeur') });
   }
   ouvrirBrouillon(e, { nouveau: true, note: proposes.length ? `${note} ${crees ? `${crees} équipement(s) ajouté(s) à l’inventaire` : 'Équipements déjà présents dans l’inventaire'} : ${proposes.map((x) => x.equipement.nom).join(', ')}.` : note });
   if (Object.keys(erreurs).length) etatJournal.erreurs = erreurs;
+}
+
+// ---------------------------------------------------------------------------
+// Schéma d'architecture d'un labo (JOURNAL-LABO-05)
+// Le schéma vit dans le brouillon du labo ; il est enregistré avec lui.
+// Pendant un glisser, seule la feuille SVG est redessinée ; le panneau des
+// propriétés l'est au relâchement.
+// ---------------------------------------------------------------------------
+const CLE_TYPES_SCHEMA = 'kjemo.schema.types.v1';
+let typesPersoMemoire = null;
+function lireTypesPerso() {
+  if (!typesPersoMemoire) { try { typesPersoMemoire = normaliserTypesPerso(JSON.parse(localStorage.getItem(CLE_TYPES_SCHEMA) ?? '[]')); } catch { typesPersoMemoire = []; } }
+  return typesPersoMemoire;
+}
+function ecrireTypesPerso(liste) { typesPersoMemoire = liste; return ecrireStockage(CLE_TYPES_SCHEMA, liste); }
+let etatSchema = { selection: null, relierDepuis: null, typeOuvert: false, viderConfirme: false };
+const resoudreEquipement = (id) => lireEquipements().find((q) => q.id === id) ?? null;
+const schemaCourant = () => etatJournal.brouillon.schema;
+
+function majFeuilleSchema() {
+  const f = document.querySelector('#schFeuille');
+  if (f) f.innerHTML = feuilleSvg(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), selection: etatSchema.selection });
+  if (f) { if (etatSchema.relierDepuis) f.dataset.relier = '1'; else delete f.dataset.relier; }
+}
+function majBlocSchema(focus = null) {
+  const bloc = document.querySelector('#schBloc');
+  if (!bloc) return;
+  bloc.innerHTML = editeurSchemaMarkup(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: etatJournal.erreurs });
+  const v = document.querySelector('#schVider'); if (v && etatSchema.viderConfirme) v.textContent = 'Confirmer : vider le schéma';
+  if (focus) document.querySelector(focus)?.focus({ preventScroll: true });
+}
+function schemaModifie() {
+  if (!etatJournal.modifie) { etatJournal.modifie = true; const n = document.querySelector('#jNote'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; }
+}
+/** Une place libre sur la feuille (aucun équipement à moins de 80 unités). */
+function placeLibre(s) {
+  for (let y = 90; y <= 510; y += 105) for (let x = 110; x <= 890; x += 130) {
+    if (!s.noeuds.some((n) => Math.hypot(n.x - x, n.y - y) < 80)) return { x, y };
+  }
+  return { x: 500, y: 300 };
+}
+function ajouterNoeud(attrs) {
+  const s = schemaCourant();
+  if (s.noeuds.length >= 80) return null;
+  const p = placeLibre(s);
+  const n = { id: idSchema('n'), type: 'autre', typePerso: null, nom: '', note: '', equipementId: null, ...p, ...attrs };
+  s.noeuds.push(n);
+  return n;
+}
+function ajouterEquipementAuSchema(q) {
+  const n = ajouterNoeud({ type: typeDepuisEquipement(q.type), equipementId: q.id });
+  const e = etatJournal.brouillon;
+  if (n && !e.equipements.some((l) => l.id === q.id)) e.equipements.push({ id: q.id, role: '' });
+  return n;
+}
+function retirerElement(id) {
+  const s = schemaCourant();
+  s.noeuds = s.noeuds.filter((x) => x.id !== id);
+  s.liens = s.liens.filter((x) => x.id !== id && x.de !== id && x.a !== id);
+  s.zones = s.zones.filter((x) => x.id !== id);
+  s.textes = s.textes.filter((x) => x.id !== id);
+}
+const trouverElement = (id) => {
+  const s = schemaCourant();
+  return s.noeuds.find((x) => x.id === id) ?? s.zones.find((x) => x.id === id) ?? s.textes.find((x) => x.id === id) ?? s.liens.find((x) => x.id === id) ?? null;
+};
+/** Coordonnées de feuille d'un événement pointeur. */
+function pointFeuille(ev, svg) {
+  const r = svg.getBoundingClientRect();
+  return { x: ((ev.clientX - r.left) / r.width) * FEUILLE.largeur, y: ((ev.clientY - r.top) / r.height) * FEUILLE.hauteur };
+}
+
+function brancherSchema(view) {
+  const bloc = view.querySelector('#schBloc');
+  if (!bloc) return;
+  let glisse = null;   // { id, mode: 'deplacer'|'taille', dx, dy, bouge }
+  bloc.addEventListener('pointerdown', (ev) => {
+    const svg = ev.target.closest('svg.schema-svg'); if (!svg) return;
+    const cible = ev.target.closest('[data-el]'); const p = pointFeuille(ev, svg); const s = schemaCourant();
+    if (!cible) {   // fond : désélection
+      if (etatSchema.selection || etatSchema.relierDepuis) { etatSchema = { ...etatSchema, selection: null, relierDepuis: null }; majBlocSchema(); }
+      return;
+    }
+    const id = cible.dataset.el;
+    // Mode « Relier » : le deuxième équipement crée le lien.
+    if (etatSchema.relierDepuis && s.noeuds.some((n) => n.id === id)) {
+      if (id !== etatSchema.relierDepuis && !s.liens.some((l) => (l.de === etatSchema.relierDepuis && l.a === id) || (l.a === etatSchema.relierDepuis && l.de === id))) {
+        const l = { id: idSchema('l'), de: etatSchema.relierDepuis, a: id, style: 'plein', etiquette: '', etiquetteDe: '', etiquetteA: '' };
+        s.liens.push(l); etatSchema = { ...etatSchema, selection: l.id, relierDepuis: null }; schemaModifie(); majBlocSchema('#schEtiquetteDe');
+      } else { etatSchema = { ...etatSchema, relierDepuis: null }; majBlocSchema(); }
+      ev.preventDefault(); return;
+    }
+    const el = trouverElement(id); if (!el) return;
+    etatSchema = { ...etatSchema, selection: id, viderConfirme: false };
+    if ('de' in el) { majBlocSchema(); return; }   // un lien se choisit, il ne se déplace pas
+    const zoneTaille = 'l' in el && p.x > el.x + el.l - 18 && p.y > el.y + el.h - 18;
+    glisse = { id, mode: zoneTaille ? 'taille' : 'deplacer', dx: p.x - el.x, dy: p.y - el.y, bouge: false };
+    svg.setPointerCapture?.(ev.pointerId);
+    majFeuilleSchema(); ev.preventDefault();
+  });
+  bloc.addEventListener('pointermove', (ev) => {
+    if (!glisse) return;
+    const svg = bloc.querySelector('svg.schema-svg'); if (!svg) return;
+    const p = pointFeuille(ev, svg); const el = trouverElement(glisse.id); if (!el) return;
+    if (glisse.mode === 'taille') { el.l = Math.max(60, Math.min(FEUILLE.largeur - el.x, aimanter(p.x - el.x))); el.h = Math.max(40, Math.min(FEUILLE.hauteur - el.y, aimanter(p.y - el.y))); }
+    else {
+      const borneX = 'l' in el ? [0, FEUILLE.largeur - el.l] : [40, FEUILLE.largeur - 40]; const borneY = 'l' in el ? [0, FEUILLE.hauteur - el.h] : ['texte' in el ? 14 : 30, FEUILLE.hauteur - ('texte' in el ? 4 : 60)];
+      el.x = Math.max(borneX[0], Math.min(borneX[1], aimanter(p.x - glisse.dx))); el.y = Math.max(borneY[0], Math.min(borneY[1], aimanter(p.y - glisse.dy)));
+    }
+    glisse.bouge = true; majFeuilleSchema();
+  });
+  const fin = () => { if (!glisse) return; const bouge = glisse.bouge; glisse = null; if (bouge) schemaModifie(); majBlocSchema(); };
+  bloc.addEventListener('pointerup', fin); bloc.addEventListener('pointercancel', fin);
+  bloc.addEventListener('keydown', (ev) => {
+    if (ev.target.id !== 'schFeuille') return;
+    const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+    if (ev.key === 'Escape') { ev.preventDefault(); etatSchema = { ...etatSchema, selection: null, relierDepuis: null }; majBlocSchema('#schFeuille'); return; }
+    if (!el) return;
+    if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); retirerElement(el.id); etatSchema.selection = null; schemaModifie(); majBlocSchema('#schFeuille'); return; }
+    const pas = ev.shiftKey ? 50 : 10; const d = { ArrowLeft: [-pas, 0], ArrowRight: [pas, 0], ArrowUp: [0, -pas], ArrowDown: [0, pas] }[ev.key];
+    if (!d || 'de' in el) return;
+    ev.preventDefault();
+    const lw = 'l' in el ? el.l : 0; const lh = 'h' in el ? el.h : 0;
+    el.x = Math.max(0, Math.min(FEUILLE.largeur - (lw || 40), el.x + d[0])); el.y = Math.max(14, Math.min(FEUILLE.hauteur - (lh || 60), el.y + d[1]));
+    schemaModifie(); majFeuilleSchema();
+  });
+  bloc.addEventListener('input', (ev) => {
+    const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null; if (!el) return;
+    const champ = { schNom: 'nom', schNote: 'note', schEtiquette: 'etiquette', schEtiquetteDe: 'etiquetteDe', schEtiquetteA: 'etiquetteA', schZoneNom: 'nom', schTexte: 'texte' }[ev.target.id];
+    if (!champ) return;
+    el[champ] = ev.target.value; schemaModifie(); majFeuilleSchema();
+  });
+  bloc.addEventListener('change', (ev) => {
+    const id = ev.target.id; const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+    if (id === 'schElement') { etatSchema = { ...etatSchema, selection: ev.target.value || null, relierDepuis: null }; majBlocSchema('#schElement'); return; }
+    if (!el) return;
+    if (id === 'schType') { const v = ev.target.value; if (v.startsWith('perso:')) { el.type = 'perso'; el.typePerso = v.slice(6); } else { el.type = v; el.typePerso = null; } }
+    else if (id === 'schStyle') el.style = ev.target.value;
+    else if (id === 'schZoneCouleur') el.couleur = ev.target.value;
+    else if (id === 'schZoneL') el.l = Math.max(60, Math.min(FEUILLE.largeur - el.x, aimanter(Number(ev.target.value) || 60)));
+    else if (id === 'schZoneH') el.h = Math.max(40, Math.min(FEUILLE.hauteur - el.y, aimanter(Number(ev.target.value) || 40)));
+    else return;
+    schemaModifie(); majBlocSchema(`#${id}`);
+  });
+  bloc.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button, a[data-jeqouvrir]'); if (!b) return;
+    const s = schemaCourant(); const e = etatJournal.brouillon;
+    if (b.matches('a[data-jeqouvrir]')) {   // vers la fiche de l'équipement : le labo est enregistré d'abord
+      ev.preventDefault();
+      if (etatJournal.modifie && !enregistrerJournal(view)) return;
+      etatInventaire.retour = { id: e.id, reference: e.reference };
+      location.hash = b.getAttribute('href'); return;
+    }
+    if (b.dataset.sadd) {
+      const v = b.dataset.sadd; let nouvel = null;
+      if (v === 'zone') { nouvel = { id: idSchema('z'), nom: 'Nouvelle zone', couleur: 'bleu', x: 40, y: 360, l: 300, h: 200 }; s.zones.push(nouvel); }
+      else if (v === 'texte') { nouvel = { id: idSchema('t'), texte: 'Texte', x: 30, y: 34 }; s.textes.push(nouvel); }
+      else if (v.startsWith('perso:')) nouvel = ajouterNoeud({ type: 'perso', typePerso: v.slice(6) });
+      else nouvel = ajouterNoeud({ type: v });
+      if (nouvel) { etatSchema = { ...etatSchema, selection: nouvel.id, relierDepuis: null }; schemaModifie(); majBlocSchema(v === 'zone' ? '#schZoneNom' : v === 'texte' ? '#schTexte' : '#schNom'); }
+      return;
+    }
+    switch (b.id) {
+      case 'schTypeOuvrir': etatSchema.typeOuvert = !etatSchema.typeOuvert; majBlocSchema(etatSchema.typeOuvert ? '#schTypeNom' : '#schTypeOuvrir'); break;
+      case 'schTypeAjouter': {
+        const nom = document.querySelector('#schTypeNom')?.value ?? ''; const code = document.querySelector('#schTypeCode')?.value ?? '';
+        const liste = normaliserTypesPerso([...lireTypesPerso(), { id: `t${Date.now().toString(36)}`, nom, code }]);
+        if (liste.length === lireTypesPerso().length) { const c = document.querySelector('#schTypeNom'); c?.setAttribute('aria-invalid', 'true'); c?.focus(); break; }
+        ecrireTypesPerso(liste); etatSchema.typeOuvert = false; majBlocSchema(`[data-sadd="perso:${liste.at(-1).id}"]`); break;
+      }
+      case 'schEqAjouter': { const q = resoudreEquipement(document.querySelector('#schEq')?.value); if (q) { const n = ajouterEquipementAuSchema(q); if (n) { etatSchema.selection = n.id; schemaModifie(); dessinerJournalFiche(view); document.querySelector('#schNote')?.focus({ preventScroll: true }); } } break; }
+      case 'schLabo': {
+        let k = 0; for (const l of e.equipements) { const q = resoudreEquipement(l.id); if (q && !s.noeuds.some((n) => n.equipementId === q.id) && ajouterEquipementAuSchema(q)) k++; }
+        if (k) schemaModifie(); majBlocSchema('#schLabo');
+        const n = document.querySelector('#jNote'); if (n) n.textContent = k ? `${k} équipement(s) placé(s) sur le schéma.` : 'Tous les équipements du labo sont déjà sur le schéma.';
+        break;
+      }
+      case 'schRelier':
+        etatSchema.relierDepuis = etatSchema.relierDepuis ? null : etatSchema.selection; majBlocSchema('#schFeuille');
+        document.querySelector('#schFeuille')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+        break;
+      case 'schInverser': { const l = trouverElement(etatSchema.selection); if (l && 'de' in l) { [l.de, l.a] = [l.a, l.de]; [l.etiquetteDe, l.etiquetteA] = [l.etiquetteA, l.etiquetteDe]; schemaModifie(); majBlocSchema('#schInverser'); } break; }
+      case 'schSupprimer': if (etatSchema.selection) { retirerElement(etatSchema.selection); etatSchema.selection = null; schemaModifie(); majBlocSchema('#schFeuille'); } break;
+      case 'schVider':
+        if (!etatSchema.viderConfirme) { etatSchema.viderConfirme = true; majBlocSchema('#schVider'); break; }
+        e.schema = schemaVide(); etatSchema = { ...etatSchema, selection: null, relierDepuis: null, viderConfirme: false }; schemaModifie(); majBlocSchema('#schFeuille'); break;
+      case 'schSvg': {
+        const ops = dessinerSchema(s, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso() });
+        const svg = versSvg(ops, { titre: `${e.titre || e.reference} : schéma d’architecture`, description: decrireSchema(s, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso() }) });
+        const res = await enregistrerFichier(`${e.reference}_schema.svg`, `<?xml version="1.0" encoding="UTF-8"?>\n${svg}\n`, 'image/svg+xml');
+        const n = document.querySelector('#jNote'); if (n) n.textContent = res.ok ? `Schéma ${res.message}.` : res.message;
+        break;
+      }
+      default: break;
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -2429,8 +2635,11 @@ function brancherEquipement(view) {
     const id = etatInventaire.brouillonId; const retour = etatInventaire.retour;
     ecrireEquipements(lireEquipements().filter((x) => x.id !== id));
     const entrees = lireEntreesJournal();
-    if (entrees.some((x) => x.equipements.some((l) => l.id === id))) ecrireEntreesJournal(entrees.map((x) => ({ ...x, equipements: x.equipements.filter((l) => l.id !== id) })));
-    if (etatJournal.brouillon) etatJournal.brouillon.equipements = etatJournal.brouillon.equipements.filter((l) => l.id !== id);
+    const nomSupprime = lireEquipements().find((x) => x.id === id)?.nom ?? etatInventaire.brouillon?.nom ?? '';
+    const detacher = (sch) => ({ ...sch, noeuds: sch.noeuds.map((n) => (n.equipementId === id ? { ...n, equipementId: null, nom: n.nom || nomSupprime } : n)) });
+    const touche = (x) => x.equipements.some((l) => l.id === id) || x.schema.noeuds.some((n) => n.equipementId === id);
+    if (entrees.some(touche)) ecrireEntreesJournal(entrees.map((x) => (touche(x) ? { ...x, equipements: x.equipements.filter((l) => l.id !== id), schema: detacher(x.schema) } : x)));
+    if (etatJournal.brouillon) { etatJournal.brouillon.equipements = etatJournal.brouillon.equipements.filter((l) => l.id !== id); etatJournal.brouillon.schema = detacher(etatJournal.brouillon.schema); }
     etatInventaire = { ...etatInventaire, brouillonId: null, brouillon: null, note: 'Équipement supprimé.', retour: null };
     location.hash = retour ? routeEntreeJournal(retour.id) : ROUTE_INVENTAIRE;
   });

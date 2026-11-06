@@ -7,7 +7,9 @@
  * duplication, suppression confirmée dans la page, sauvegarde puis restauration
  * dans un navigateur vierge, création depuis la fiche du TP VLAN, exemples
  * d'aide au remplissage et labo d'exemple, inventaire des équipements (SW1 et R1
- * créés depuis le TP, route ajoutée, annexe du PDF, suppression), affichage à
+ * créés depuis le TP, route ajoutée, annexe du PDF, suppression), éditeur de
+ * schéma (schéma du TP, glisser, palette, relier, clavier, type personnel,
+ * relecture, PDF et SVG), affichage à
  * 390 px sans débordement, stockage bloqué, aucune erreur de page.
  * NE PROUVE PAS l'affichage du PDF dans un lecteur précis (voir journal.test.mjs).
  * Usage : node test/browser-journal.test.mjs   (exit 0 = tout OK)
@@ -307,6 +309,64 @@ await ctx.close();
   await context.close();
 }
 
+
+// Éditeur de schéma
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+  const p7 = await context.newPage(); const e7 = []; p7.on('pageerror', (e) => e7.push(e.message));
+  await p7.goto(`${BASE}/#/tache/cours-tp-vlan-ssh-intervlan`); await p7.waitForSelector('#taskJournal');
+  await p7.click('#exemplesBtn'); await p7.click('#taskJournal'); await p7.waitForSelector('#schFeuille');
+  assert(await p7.locator('#schFeuille .sch-cible').count() === 4 && await p7.locator('#schFeuille').innerText().then((t) => t.includes('VLAN 99')), 'TP VLAN : schéma prérempli (R1, SW1, deux postes, zones VLAN)');
+  await p7.locator('#schFeuille').scrollIntoViewIfNeeded();
+  const coord = async (x, y) => { await p7.locator('#schFeuille').scrollIntoViewIfNeeded(); const b = await p7.locator('#schFeuille svg').boundingBox(); return [b.x + (x * b.width) / 1000, b.y + (y * b.height) / 600]; };
+  const glisser = async (x1, y1, x2, y2) => { const [a, b] = await coord(x1, y1); const [c, d] = await coord(x2, y2); await p7.mouse.move(a, b); await p7.mouse.down(); await p7.mouse.move(c, d, { steps: 6 }); await p7.mouse.up(); };
+  const position = (nom) => p7.evaluate((n) => { const t = [...document.querySelectorAll('#schFeuille text')].find((x) => x.textContent === n); return t ? [Number(t.getAttribute('x')), Number(t.getAttribute('y'))] : null; }, nom);
+  await glisser(500, 60, 300, 100);
+  assert(JSON.stringify(await position('R1')) === JSON.stringify([300, 140]), 'glisser : R1 déplacé et aimanté à la grille', JSON.stringify(await position('R1')));
+  assert((await p7.locator('#schElement option:checked').innerText()).includes('R1'), 'l’équipement glissé est choisi');
+  // Palette : un serveur, renommé
+  await p7.click('[data-sadd="serveur"]');
+  await p7.fill('#schNom', 'SRV-WEB'); await p7.fill('#schNote', '192.168.10.20');
+  assert(await position('SRV-WEB') !== null, 'palette : serveur ajouté et renommé');
+  // Relier le serveur à SW1
+  await p7.click('#schRelier');
+  assert(await p7.locator('#schRelier').getAttribute('aria-pressed') === 'true', 'mode « Relier » actif');
+  const sw = await position('SW1'); await (async () => { const [a, b] = await coord(sw[0], sw[1] - 40); await p7.mouse.click(a, b); })();
+  assert(await p7.locator('#schEtiquetteDe').count() === 1, 'lien créé, ses propriétés ouvertes');
+  await p7.fill('#schEtiquetteA', 'Fa0/5'); await p7.selectOption('#schStyle', 'tirets');
+  assert(await p7.locator('#schFeuille').innerText().then((t) => t.includes('Fa0/5')), 'étiquette d’interface affichée sur le lien');
+  // Clavier : choisir le serveur, flèche, puis Suppr sur un texte ajouté
+  await p7.click('[data-sadd="texte"]'); await p7.fill('#schTexte', 'Labo B-204');
+  await p7.locator('#schFeuille').focus(); await p7.keyboard.press('ArrowRight');
+  const avant = await position('Labo B-204');
+  assert(avant && avant[0] === 40, 'flèche : le texte avance de 10', JSON.stringify(avant));
+  await p7.keyboard.press('Delete');
+  assert(await position('Labo B-204') === null, 'Suppr : le texte est retiré');
+  // Type personnel
+  await p7.click('#schTypeOuvrir'); await p7.fill('#schTypeNom', 'Caméra IP'); await p7.fill('#schTypeCode', 'cam'); await p7.click('#schTypeAjouter');
+  await p7.click('[data-sadd^="perso:"]');
+  assert(await p7.locator('#schFeuille').innerText().then((t) => t.includes('CAM') && t.includes('Caméra IP')), 'type personnel créé et posé (code CAM)');
+  // Mot de passe refusé
+  await p7.click('[data-sadd="poste"]'); await p7.fill('#schNom', 'mot de passe : abc');
+  await p7.click('#jEnregistrer');
+  assert(/corriger/.test(await p7.locator('#jNote').innerText()), 'schéma avec mot de passe : enregistrement refusé');
+  await p7.fill('#schNom', 'PC-ADMIN'); await p7.click('#jEnregistrer');
+  assert(/Enregistré/.test(await p7.locator('#jNote').innerText()), 'schéma enregistré');
+  await p7.reload(); await p7.waitForSelector('#schFeuille');
+  assert(JSON.stringify(await position('R1')) === JSON.stringify([300, 140]) && await position('SRV-WEB') !== null && await position('PC-ADMIN') !== null, 'après rechargement : le schéma est relu');
+  const [dl] = await Promise.all([p7.waitForEvent('download'), p7.click('#jPdf')]);
+  const pdf = (await lireDl(dl)).toString('latin1');
+  assert(pdf.includes('SRV-WEB') && pdf.includes('Fa0/5') && pdf.includes('CAM'), 'PDF : le schéma est dessiné avec les éléments ajoutés');
+  const [dls] = await Promise.all([p7.waitForEvent('download'), p7.click('#schSvg')]);
+  const svg = (await lireDl(dls)).toString('utf8');
+  assert(/_schema\.svg$/.test(dls.suggestedFilename()) && svg.includes('<svg') && svg.includes('SRV-WEB') && !svg.includes('data-el'), 'export SVG du schéma (sans attributs d’édition)');
+  await p7.click('#schVider'); assert(/Confirmer/.test(await p7.locator('#schVider').innerText()), 'vider : confirmation demandée');
+  await p7.click('#schVider'); assert(await p7.locator('#schFeuille .sch-cible').count() === 0, 'schéma vidé');
+  if (CAPTURES) await p7.screenshot({ path: join(CAPTURES, 'journal-schema.png') });
+  assert(e7.length === 0, 'aucune erreur de page (schéma)', e7.join(' | '));
+  await context.close();
+}
+
 // Téléphone : aucune barre de défilement horizontale
 {
   const { context, page: p3, erreurs: e3 } = await nouvellePage({ viewport: { width: 390, height: 844 } }, '/#/journal');
@@ -318,7 +378,10 @@ await ctx.close();
   await p3.goto(`${BASE}/#/inventaire`); await p3.waitForSelector('#journalView h1');
   await p3.click('#iNouveauForm button[type="submit"]'); await p3.waitForSelector('#iForm');
   await p3.click('[data-iadd="routes"]'); await p3.click('[data-iadd="vlans"]');
-  assert(await sansDebordement(p3), '390 px : fiche d’équipement sans débordement horizontal');
+  assert(await sansDebordement(p3), '390 px : fiche d’équipement sans débordement horizontal (avant le schéma)');
+  await p3.goto(`${BASE}/#/journal`); await p3.waitForSelector('#jExemple'); await p3.click('#jNouveauForm button[type="submit"]'); await p3.waitForSelector('#schFeuille');
+  await p3.click('[data-sadd="routeur"]'); await p3.click('[data-sadd="zone"]');
+  assert(await sansDebordement(p3), '390 px : éditeur de schéma sans débordement horizontal');
   assert(e3.length === 0, 'aucune erreur de page (téléphone)', e3.join(' | '));
   await context.close();
 }

@@ -10,6 +10,7 @@
  */
 import { A4, DocumentPdf, Flux, STYLE, couper, largeur } from './pdf-a4.mjs';
 import { categorie, etat, resultat } from './journal.mjs';
+import { dessinerSchema, versPdf, schemaEstVide, decrireSchema } from './schema.mjs';
 import { TABLEAUX_EQUIPEMENT, CHAMPS_EQUIPEMENT, SYSTEMES, systeme, typeEquipement } from './inventaire.mjs';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -31,7 +32,7 @@ export function sectionsPresentes(e, { captures = {}, equipements = [] } = {}) {
   const s = [];
   if (plein(e.objet)) s.push('objet');
   if (plein(e.environnement)) s.push('environnement');
-  if (plein(e.architecture)) s.push('architecture');
+  if (plein(e.architecture) || !schemaEstVide(e.schema)) s.push('architecture');
   if (equipements.length) s.push('equipements');
   if (e.adressage.length) s.push('adressage');
   if (e.configuration.length) s.push('configuration');
@@ -52,7 +53,7 @@ export const TITRES_SECTIONS = {
  * Fabrique le PDF. `captures` : id → Uint8Array (JPEG). `titresFiches` : id → titre.
  * Renvoie { octets, pages, sections } (sections : numéro, titre, page).
  */
-export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = [], date = new Date() } = {}) {
+export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = [], inventaire = [], typesPerso = [], date = new Date() } = {}) {
   const doc = new DocumentPdf({ titre: `${e.titre} (${e.reference} v${e.version})`, auteur: e.auteur, sujet: `Dossier de labo · ${categorie(e.categorie).label}` });
   const ref = `${e.reference} · v${e.version}`;
 
@@ -71,7 +72,15 @@ export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = 
     const n = section(id);
     if (id === 'objet') flux.paragraphe(e.objet);
     if (id === 'environnement') flux.paragraphe(e.environnement);
-    if (id === 'architecture') flux.paragraphe(e.architecture);
+    if (id === 'architecture') {
+      if (plein(e.architecture)) flux.paragraphe(e.architecture);
+      if (!schemaEstVide(e.schema)) {
+        const resoudre = (eid) => inventaire.find((q) => q.id === eid) ?? null;
+        const ops = dessinerSchema(e.schema, { resoudre, typesPerso });
+        flux.dessin(flux.largeurUtile * 0.6, (doc, page, x, y, w, h) => versPdf(doc, page, x, y, w, h, ops), 'Figure : schéma d’architecture');
+        flux.paragraphe(decrireSchema(e.schema, { resoudre, typesPerso }), { taille: 8.5, couleur: STYLE.pale });
+      }
+    }
     if (id === 'equipements') {
       flux.tableau([{ titre: 'Équipement', part: 1.1 }, { titre: 'Type', part: 1.2 }, { titre: 'Adresse', part: 1.2, mono: true }, { titre: 'Rôle dans ce projet', part: 2.4 }],
         equipements.map(({ equipement: q, role }) => ({ cellules: [q.nom, `${typeEquipement(q.type).label} (${systeme(q.systeme).label})`, q.adresse, role || q.role], styles: [{ gras: true }] })));
