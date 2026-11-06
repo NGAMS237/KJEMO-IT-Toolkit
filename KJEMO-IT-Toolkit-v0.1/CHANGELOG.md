@@ -1,3 +1,10 @@
+## JOURNAL-LABO-08 (2026-11-06)
+
+- Palette du schéma rangée par groupes comme Packet Tracer (Réseau, Terminaux, Serveurs, Azure et cloud, WAN, Autre) avec un filtre par système (Tous, Cisco, Système, Azure). Nouveaux équipements : téléphone IP, commutateur de cœur (niveau 3), portable, imprimante, smartphone, caméra IP, NAS, sous-réseau et passerelle VPN Azure, nuage de l’opérateur.
+- Modèles avec leurs vrais ports (`modeles.mjs`) : Catalyst 2960-24TT/48TT/24TC-L pour l’accès, 3650-24PS / 3560-24PS / 9300-24T pour le cœur, ISR 4321 / 2911 / 1941, ASA 5506-X, point d’accès et WLC 3504, téléphone IP 7960, PC, postes Windows et Ubuntu, serveurs Linux et Windows, NAS, VM Azure… et un modèle personnalisé (plages « Gi0/1-24, Console »).
+- Câblage par menu de ports : on choisit un câble, on clique un équipement, le menu de ses ports s’ouvre sur la feuille (ports pris grisés avec leur destination, adresse connue affichée, port libre à écrire) ; puis le deuxième équipement et son port. Câble « Automatique » (droit, croisé, console, série, sans fil, fibre selon les équipements et les ports). Plusieurs câbles entre deux mêmes équipements (EtherChannel) sont tracés côte à côte. Chaque port câblé entre dans la fiche de l’inventaire avec sa destination en description ; « GigabitEthernet0/1 » et « Gi0/1 » sont reconnus comme le même port.
+- Tests : journal.test.mjs (220) et browser-journal.test.mjs (105).
+
 ## JOURNAL-LABO-07 (2026-11-05)
 
 - « Remplir le document et l’inventaire depuis le schéma » (bouton sous la feuille, sur demande) : les équipements dessinés hors inventaire y sont ajoutés (nom, type, système déduit du symbole ; Internet exclu ; un nom déjà pris est réutilisé) et reliés au labo ; les interfaces et adresses des câbles vont dans leurs fiches ; le plan d’adressage reçoit une ligne par interface adressée, avec la zone (VLAN) de l’équipement et, pour un poste, un serveur ou une VM, la passerelle trouvée par calcul du réseau (adresses du schéma et interfaces des routeurs, sous-interfaces comprises) ; la description de l’architecture est rédigée si elle est vide.

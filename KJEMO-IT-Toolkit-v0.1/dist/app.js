@@ -13,9 +13,10 @@ import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, ent
 import { pdfJournal, nomFichierPdf, pdfInventaire } from './journal-pdf.mjs';
 import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, normaliserEquipement, equipementVide, labosDe, filtrerInventaire,
          equipementsDepuisFiche } from './inventaire.mjs';
-import { FEUILLE, schemaVide, idSchema, aimanter, normaliserTypesPerso, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
-import { editeurSchemaMarkup, feuilleSvg } from './vue-schema.mjs';
-import { remplirDepuisSchema, phraseBilan } from './schema-remplir.mjs';
+import { FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
+import { editeurSchemaMarkup, feuilleSvg, menuPortsMarkup } from './vue-schema.mjs';
+import { remplirDepuisSchema, phraseBilan, SYSTEME_DU_TYPE } from './schema-remplir.mjs';
+import { MODELES, MODELE_PERSO, modele, modelesDuType, portsDuNoeud, portsOccupes, cableAutomatique, clePort } from './modeles.mjs';
 import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
 import { ROUTE_JOURNAL, routeEntreeJournal, lireRouteJournal, journalListeMarkup, journalEditeurMarkup } from './vue-journal.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
@@ -2324,7 +2325,8 @@ const schemaCourant = () => etatJournal.brouillon.schema;
 
 function majFeuilleSchema() {
   const f = document.querySelector('#schFeuille');
-  if (f) f.innerHTML = feuilleSvg(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), selection: etatSchema.selection });
+  if (f) f.innerHTML = feuilleSvg(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), selection: etatSchema.selection })
+    + (etatSchema.cablage?.enAttente ? menuPortsMarkup(schemaCourant(), etatSchema.cablage.enAttente, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso() }) : '');
   if (f) { if (etatSchema.relierDepuis || etatSchema.cablage) f.dataset.relier = '1'; else delete f.dataset.relier; }
 }
 function majBlocSchema(focus = null) {
@@ -2348,12 +2350,16 @@ function ajouterNoeud(attrs) {
   const s = schemaCourant();
   if (s.noeuds.length >= 80) return null;
   const p = placeLibre(s);
-  const n = { id: idSchema('n'), type: 'autre', typePerso: null, nom: '', note: '', equipementId: null, ...p, ...attrs };
+  const n = { id: idSchema('n'), type: 'autre', typePerso: null, nom: '', note: '', equipementId: null, ports: '', ...p, ...attrs };
+  if (n.modele === undefined) n.modele = n.type === 'perso' || n.type === 'autre' ? MODELE_PERSO : (MODELES.find((m) => m.type === n.type && m.defaut)?.id ?? MODELE_PERSO);
   s.noeuds.push(n);
   return n;
 }
 function ajouterEquipementAuSchema(q) {
-  const n = ajouterNoeud({ type: typeDepuisEquipement(q.type), equipementId: q.id });
+  // Le modèle noté dans la fiche (« Catalyst 2960-24TT (accès) ») donne les ports, sinon celui du type.
+  const type = typeDepuisEquipement(q.type);
+  const mod = MODELES.find((m) => m.type === type && q.modele && (m.label === q.modele || q.modele.includes(m.id)))?.id;
+  const n = ajouterNoeud({ type, equipementId: q.id, ...(mod ? { modele: mod } : {}) });
   const e = etatJournal.brouillon;
   if (n && !e.equipements.some((l) => l.id === q.id)) e.equipements.push({ id: q.id, role: '' });
   return n;
@@ -2373,15 +2379,19 @@ const trouverElement = (id) => {
  * Reporte l'interface (et son adresse) saisie sur un câble dans la fiche de
  * l'équipement de l'inventaire relié au nœud. Renvoie un message, ou ''.
  */
-function reporterInterface(noeudId, itf, adresse) {
+function reporterInterface(noeudId, itf, adresse, description = '') {
   const n = schemaCourant().noeuds.find((x) => x.id === noeudId);
   const q = n?.equipementId ? resoudreEquipement(n.equipementId) : null;
   const nomItf = String(itf ?? '').trim(); const adr = String(adresse ?? '').trim();
   if (!q || !nomItf) return '';
   const copie = structuredClone(q);
-  const existante = copie.interfaces.find((i) => i.nom.toLowerCase() === nomItf.toLowerCase());
-  if (existante) { if (!adr || existante.adresse === adr) return ''; existante.adresse = adr; }
-  else copie.interfaces.push({ nom: nomItf, adresse: adr, vlan: '', etat: '', description: '' });
+  const existante = copie.interfaces.find((i) => clePort(i.nom) === clePort(nomItf));
+  if (existante) {
+    const avant = JSON.stringify(existante);
+    if (adr) existante.adresse = adr;
+    if (description && !existante.description) existante.description = description;
+    if (JSON.stringify(existante) === avant) return '';
+  } else copie.interfaces.push({ nom: nomItf, adresse: adr, vlan: '', etat: '', description });
   const { equipement, erreurs } = normaliserEquipement({ ...copie, modifieLe: jour() });
   if (Object.keys(erreurs).length) return '';
   ecrireEquipements(lireEquipements().map((x) => (x.id === q.id ? equipement : x)));
@@ -2391,14 +2401,35 @@ function reporterInterface(noeudId, itf, adresse) {
 function adresseConnue(noeudId, itf) {
   const n = schemaCourant().noeuds.find((x) => x.id === noeudId);
   const q = n?.equipementId ? resoudreEquipement(n.equipementId) : null;
-  return q?.interfaces.find((i) => i.nom.toLowerCase() === String(itf ?? '').trim().toLowerCase())?.adresse ?? '';
+  return q?.interfaces.find((i) => clePort(i.nom) === clePort(itf))?.adresse ?? '';
 }
-const SYSTEME_DU_TYPE = { routeur: 'cisco', commutateur: 'cisco', 'pare-feu': 'cisco', 'point-acces': 'cisco', serveur: 'systeme', poste: 'systeme', vm: 'azure', 'reseau-virtuel': 'azure', 'service-cloud': 'azure' };
 
 /** Coordonnées de feuille d'un événement pointeur. */
 function pointFeuille(ev, svg) {
   const r = svg.getBoundingClientRect();
   return { x: ((ev.clientX - r.left) / r.width) * FEUILLE.largeur, y: ((ev.clientY - r.top) / r.height) * FEUILLE.hauteur };
+}
+
+/** Port choisi dans le menu : premier bout du câble, ou création du câble au deuxième. */
+function choisirPort(port) {
+  const s = schemaCourant(); const c = etatSchema.cablage; const nom = String(port ?? '').trim().slice(0, 30);
+  if (!c?.enAttente || !nom) return;
+  const n = s.noeuds.find((x) => x.id === c.enAttente);
+  const note = document.querySelector('#jNote');
+  if (portsOccupes(n, s.liens).has(clePort(nom))) { if (note) note.textContent = `Le port ${nom} est déjà câblé : choisis-en un autre.`; return; }
+  if (!c.depuis) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: { noeud: n.id, port: nom }, enAttente: null }, selection: n.id }; majBlocSchema('#schFeuille'); return; }
+  const a = s.noeuds.find((x) => x.id === c.depuis.noeud);
+  const style = c.style === 'auto' ? cableAutomatique(a.type, c.depuis.port, n.type, nom) : c.style;
+  const l = { id: idSchema('l'), de: a.id, a: n.id, style, etiquette: style === 'trunk' ? '802.1Q' : '', etiquetteDe: c.depuis.port, etiquetteA: nom,
+    adresseDe: adresseConnue(a.id, c.depuis.port), adresseA: adresseConnue(n.id, nom) };
+  s.liens.push(l);
+  // Chaque port câblé entre dans la fiche de son équipement, avec sa destination en description.
+  const nomDe = (x) => resoudreEquipement(x.equipementId)?.nom || x.nom || typeNoeud(x.type).label;
+  const m1 = reporterInterface(a.id, l.etiquetteDe, '', `Vers ${nomDe(n)} ${l.etiquetteA}`);
+  const m2 = reporterInterface(n.id, l.etiquetteA, '', `Vers ${nomDe(a)} ${l.etiquetteDe}`);
+  etatSchema = { ...etatSchema, cablage: { ...c, depuis: null, enAttente: null }, selection: l.id };
+  schemaModifie(); majBlocSchema('#schAdrDe');
+  if (note) note.textContent = `${styleLien(style).label} : ${nomDe(a)} ${l.etiquetteDe} ↔ ${nomDe(n)} ${l.etiquetteA}.${m1 || m2 ? ' Ports ajoutés aux fiches de l’inventaire.' : ''} Saisis les adresses si besoin.`;
 }
 
 function brancherSchema(view) {
@@ -2418,14 +2449,10 @@ function brancherSchema(view) {
       ev.preventDefault();
       if (!s.noeuds.some((n) => n.id === id)) return;
       const c = etatSchema.cablage;
-      if (!c.depuis || c.depuis === id) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: c.depuis === id ? null : id }, selection: c.depuis === id ? null : id }; majBlocSchema(); return; }
-      if (s.liens.some((l) => (l.de === c.depuis && l.a === id) || (l.a === c.depuis && l.de === id))) {
-        etatSchema = { ...etatSchema, cablage: { ...c, depuis: null }, selection: null }; majBlocSchema();
-        const note = document.querySelector('#jNote'); if (note) note.textContent = 'Ces deux équipements sont déjà reliés : clique le câble pour le modifier.';
-        return;
-      }
-      const l = { id: idSchema('l'), de: c.depuis, a: id, style: c.style, etiquette: c.style === 'trunk' ? '802.1Q' : '', etiquetteDe: '', etiquetteA: '', adresseDe: '', adresseA: '' };
-      s.liens.push(l); etatSchema = { ...etatSchema, cablage: { ...c, depuis: null }, selection: l.id }; schemaModifie(); majBlocSchema('#schItfDe');
+      if (c.depuis?.noeud === id) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: null, enAttente: null }, selection: null }; majBlocSchema(); return; }
+      // Le menu des ports de cet équipement s'ouvre sur la feuille.
+      etatSchema = { ...etatSchema, cablage: { ...c, enAttente: id }, selection: c.depuis ? c.depuis.noeud : id };
+      majBlocSchema('#schPortChoix');
       return;
     }
     // Mode « Relier » : le deuxième équipement crée le lien.
@@ -2458,6 +2485,11 @@ function brancherSchema(view) {
   const fin = () => { if (!glisse) return; const bouge = glisse.bouge; glisse = null; if (bouge) schemaModifie(); majBlocSchema(); };
   bloc.addEventListener('pointerup', fin); bloc.addEventListener('pointercancel', fin);
   bloc.addEventListener('keydown', (ev) => {
+    if (ev.target.closest?.('.sch-menu-ports')) {
+      if (ev.key === 'Escape') { ev.preventDefault(); etatSchema = { ...etatSchema, cablage: { ...etatSchema.cablage, enAttente: null } }; majBlocSchema('#schFeuille'); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); choisirPort(ev.target.id === 'schPortLibre' ? ev.target.value : ev.target.value); }
+      return;
+    }
     if (ev.target.id !== 'schFeuille') return;
     const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
     if (ev.key === 'Escape') { ev.preventDefault(); etatSchema = { ...etatSchema, selection: null, relierDepuis: null, cablage: null }; majBlocSchema('#schFeuille'); return; }
@@ -2472,6 +2504,7 @@ function brancherSchema(view) {
   });
   bloc.addEventListener('input', (ev) => {
     const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null; if (!el) return;
+    if (ev.target.id === 'schPorts') { el.ports = ev.target.value; schemaModifie(); return; }
     const champ = { schNom: 'nom', schNote: 'note', schEtiquette: 'etiquette', schItfDe: 'etiquetteDe', schItfA: 'etiquetteA', schAdrDe: 'adresseDe', schAdrA: 'adresseA', schZoneNom: 'nom', schTexte: 'texte' }[ev.target.id];
     if (!champ) return;
     el[champ] = ev.target.value; schemaModifie(); majFeuilleSchema();
@@ -2492,7 +2525,16 @@ function brancherSchema(view) {
       const note = document.querySelector('#jNote'); if (msg && note) note.textContent = msg;
       return;
     }
-    if (id === 'schType') { const v = ev.target.value; if (v.startsWith('perso:')) { el.type = 'perso'; el.typePerso = v.slice(6); } else { el.type = v; el.typePerso = null; } }
+    if (id === 'schModele') {
+      const mod = ev.target.value;
+      if (mod === MODELE_PERSO && !el.ports) el.ports = modele(el.modele)?.ports ?? '';
+      el.modele = mod;
+    } else if (id === 'schPorts') { el.ports = ev.target.value; }
+    else if (id === 'schType') {
+      const v = ev.target.value;
+      if (v.startsWith('perso:')) { el.type = 'perso'; el.typePerso = v.slice(6); el.modele = MODELE_PERSO; }
+      else { el.type = v; el.typePerso = null; el.modele = MODELES.find((m) => m.type === v && m.defaut)?.id ?? MODELE_PERSO; }
+    }
     else if (id === 'schStyle') el.style = ev.target.value;
     else if (id === 'schZoneCouleur') el.couleur = ev.target.value;
     else if (id === 'schZoneL') el.l = Math.max(60, Math.min(FEUILLE.largeur - el.x, aimanter(Number(ev.target.value) || 60)));
@@ -2501,7 +2543,13 @@ function brancherSchema(view) {
     schemaModifie(); majBlocSchema(`#${id}`);
   });
   bloc.addEventListener('click', async (ev) => {
+    // Menu des ports : un clic sur un port libre le choisit.
+    const liste = ev.target.closest?.('#schPortChoix');
+    if (liste) { if (liste.value) choisirPort(liste.value); return; }
     const b = ev.target.closest('button, a[data-jeqouvrir]'); if (!b) return;
+    if (b.id === 'schPortOk') { choisirPort(document.querySelector('#schPortLibre')?.value || document.querySelector('#schPortChoix')?.value); return; }
+    if (b.id === 'schPortAnnuler') { etatSchema = { ...etatSchema, cablage: { ...etatSchema.cablage, enAttente: null } }; majBlocSchema('#schFeuille'); return; }
+    if (b.dataset.sfiltre) { etatSchema = { ...etatSchema, filtreSysteme: b.dataset.sfiltre }; majBlocSchema(`[data-sfiltre="${b.dataset.sfiltre}"]`); return; }
     const s = schemaCourant(); const e = etatJournal.brouillon;
     if (b.matches('a[data-jeqouvrir]')) {   // vers la fiche de l'équipement : le labo est enregistré d'abord
       ev.preventDefault();
@@ -2511,7 +2559,7 @@ function brancherSchema(view) {
     }
     if (b.dataset.scable) {
       const st = b.dataset.scable;
-      etatSchema = { ...etatSchema, cablage: etatSchema.cablage?.style === st ? null : { style: st, depuis: null }, relierDepuis: null, selection: null };
+      etatSchema = { ...etatSchema, cablage: etatSchema.cablage?.style === st ? null : { style: st, depuis: null, enAttente: null }, relierDepuis: null, selection: null };
       majBlocSchema(`[data-scable="${st}"]`);
       document.querySelector('#schFeuille')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
       return;

@@ -15,23 +15,43 @@
  */
 import { secretDans, nouvelId } from './journal.mjs';
 import { largeur, versWinAnsi } from './pdf-a4.mjs';
+import { modele, modeleDefaut, MODELE_PERSO } from './modeles.mjs';
 
 export const FEUILLE = { largeur: 1000, hauteur: 600, pas: 10 };
 export const LIMITES = { noeuds: 80, liens: 150, zones: 30, textes: 40, typesPerso: 30 };
 
 const BLEU = '#1f5f99'; const VERT = '#1d7a4a'; const CYAN = '#0a6c8f'; const GRIS = '#5d6a79';
+/** Groupes de la palette, comme les catégories de Packet Tracer. */
+export const GROUPES_NOEUD = [
+  { id: 'reseau', label: 'Réseau' }, { id: 'terminaux', label: 'Terminaux' }, { id: 'serveurs', label: 'Serveurs' },
+  { id: 'cloud', label: 'Azure et cloud' }, { id: 'wan', label: 'WAN' }, { id: 'autre', label: 'Autre' },
+];
+/** Filtre « système » de la palette. */
+export const SYSTEMES_PALETTE = [
+  { id: 'tous', label: 'Tous' }, { id: 'cisco', label: 'Cisco' }, { id: 'systeme', label: 'Système' }, { id: 'azure', label: 'Azure' },
+];
 export const TYPES_NOEUD = [
-  { id: 'routeur', label: 'Routeur', couleur: BLEU },
-  { id: 'commutateur', label: 'Commutateur', couleur: BLEU },
-  { id: 'pare-feu', label: 'Pare-feu', couleur: '#a1440f' },
-  { id: 'point-acces', label: 'Point d’accès', couleur: BLEU },
-  { id: 'serveur', label: 'Serveur', couleur: VERT },
-  { id: 'poste', label: 'Poste client', couleur: VERT },
-  { id: 'vm', label: 'Machine virtuelle', couleur: CYAN },
-  { id: 'reseau-virtuel', label: 'Réseau virtuel', couleur: CYAN },
-  { id: 'service-cloud', label: 'Service cloud', couleur: CYAN },
-  { id: 'internet', label: 'Internet', couleur: GRIS },
-  { id: 'autre', label: 'Autre', couleur: GRIS },
+  { id: 'routeur', label: 'Routeur', couleur: BLEU, groupe: 'reseau', systemes: ['cisco'] },
+  { id: 'commutateur', label: 'Commutateur d’accès', couleur: BLEU, groupe: 'reseau', systemes: ['cisco'] },
+  { id: 'commutateur-l3', label: 'Commutateur de cœur (niveau 3)', couleur: BLEU, groupe: 'reseau', systemes: ['cisco'] },
+  { id: 'pare-feu', label: 'Pare-feu', couleur: '#a1440f', groupe: 'reseau', systemes: ['cisco', 'systeme'] },
+  { id: 'point-acces', label: 'Point d’accès', couleur: BLEU, groupe: 'reseau', systemes: ['cisco'] },
+  { id: 'poste', label: 'Poste', couleur: VERT, groupe: 'terminaux', systemes: ['systeme', 'cisco'] },
+  { id: 'portable', label: 'Portable', couleur: VERT, groupe: 'terminaux', systemes: ['systeme'] },
+  { id: 'telephone-ip', label: 'Téléphone IP', couleur: VERT, groupe: 'terminaux', systemes: ['cisco', 'systeme'] },
+  { id: 'imprimante', label: 'Imprimante', couleur: VERT, groupe: 'terminaux', systemes: ['systeme'] },
+  { id: 'smartphone', label: 'Smartphone', couleur: VERT, groupe: 'terminaux', systemes: ['systeme'] },
+  { id: 'camera-ip', label: 'Caméra IP', couleur: VERT, groupe: 'terminaux', systemes: ['systeme'] },
+  { id: 'serveur', label: 'Serveur', couleur: VERT, groupe: 'serveurs', systemes: ['systeme'] },
+  { id: 'nas', label: 'NAS', couleur: VERT, groupe: 'serveurs', systemes: ['systeme'] },
+  { id: 'vm', label: 'Machine virtuelle', couleur: CYAN, groupe: 'cloud', systemes: ['azure', 'systeme'] },
+  { id: 'reseau-virtuel', label: 'Réseau virtuel', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
+  { id: 'sous-reseau', label: 'Sous-réseau', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
+  { id: 'passerelle-vpn', label: 'Passerelle VPN', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
+  { id: 'service-cloud', label: 'Service cloud', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
+  { id: 'internet', label: 'Internet', couleur: GRIS, groupe: 'wan', systemes: ['cisco', 'systeme', 'azure'] },
+  { id: 'nuage-operateur', label: 'Nuage de l’opérateur', couleur: GRIS, groupe: 'wan', systemes: ['cisco'] },
+  { id: 'autre', label: 'Autre', couleur: GRIS, groupe: 'autre', systemes: ['cisco', 'systeme', 'azure'] },
 ];
 /**
  * Types de câbles et de liaisons, comme la palette « Connexions » de Packet
@@ -84,7 +104,10 @@ export function normaliserSchema(brut) {
   for (const n of (Array.isArray(b.noeuds) ? b.noeuds : []).filter(unique).slice(0, LIMITES.noeuds)) {
     // Un type personnel garde sa référence même si sa définition manque (il s'affiche alors « ? »).
     const type = n.type === 'perso' && /^t[\w]{3,40}$/.test(String(n.typePerso ?? '')) ? 'perso' : typeNoeud(n.type).id;
+    // Modèle (ports) : un modèle du catalogue de ce type, « personnalisé » (liste écrite), ou celui proposé par défaut.
+    const mod = n.modele === MODELE_PERSO ? MODELE_PERSO : (modele(n.modele)?.type === type ? n.modele : modeleDefaut(type));
     s.noeuds.push({ id: n.id, type, typePerso: type === 'perso' ? n.typePerso : null, nom: texte(n.nom, 60), note: texte(n.note, 80),
+      modele: mod, ports: mod === MODELE_PERSO ? texte(n.ports, 300) : '',
       equipementId: /^e[\w]{3,40}$/.test(String(n.equipementId ?? '')) ? n.equipementId : null,
       x: borne(n.x, 40, FEUILLE.largeur - 40), y: borne(n.y, 30, FEUILLE.hauteur - 60) });
   }
@@ -152,9 +175,16 @@ export function dessinerSchema(schema, { resoudre = () => null, typesPerso = [],
   }
   const noeuds = new Map(schema.noeuds.map((n) => [n.id, n]));
   // Liens ensuite (sous les équipements).
+  // Plusieurs câbles entre les deux mêmes équipements (EtherChannel, redondance) : tracés côte à côte.
+  const paires = new Map();
+  for (const l of schema.liens) { const k = [l.de, l.a].sort().join('|'); paires.set(k, [...(paires.get(k) ?? []), l.id]); }
   for (const l of schema.liens) {
-    const a = noeuds.get(l.de); const b = noeuds.get(l.a);
-    if (!a || !b) continue;
+    const a0 = noeuds.get(l.de); const b0 = noeuds.get(l.a);
+    if (!a0 || !b0) continue;
+    const groupe = paires.get([l.de, l.a].sort().join('|')); const rang = groupe.indexOf(l.id) - (groupe.length - 1) / 2;
+    const lg0 = Math.hypot(b0.x - a0.x, b0.y - a0.y) || 1; const sens = l.de < l.a ? 1 : -1;
+    const dx = rang ? (-(b0.y - a0.y) / lg0) * rang * 12 * sens : 0; const dy = rang ? ((b0.x - a0.x) / lg0) * rang * 12 * sens : 0;
+    const a = { x: a0.x + dx, y: a0.y + dy }; const b = { x: b0.x + dx, y: b0.y + dy };
     const sel = selection === l.id;
     const st = styleLien(l.style);
     ops.push({ k: 'ligne', id: l.id, x1: a.x, y1: a.y, x2: b.x, y2: b.y, trait: sel ? '#d4462e' : st.trait, ep: st.ep, tirets: st.tirets });
@@ -206,6 +236,45 @@ function icone(ops, type, x, y, c, code) {
       R(-30, -16, 60, 32, 5);
       L(-18, -5, 16, -5); F([[18, -5], [12, -9], [12, -1]]); L(18, 5, -16, 5); F([[-18, 5], [-12, 1], [-12, 9]]);
       break;
+    case 'commutateur-l3':
+      R(-32, -18, 64, 36, 5);
+      L(-20, -7, 10, -7); F([[12, -7], [6, -11], [6, -3]]); L(10, 3, -20, 3); F([[-22, 3], [-16, -1], [-16, 7]]);
+      ops.push({ k: 'texte', x: x + 21, y: y + 13, t: 'L3', taille: 9, gras: true, ancre: 'middle', couleur: c });
+      break;
+    case 'portable':
+      R(-18, -20, 36, 24, 3); F([[-26, 8], [26, 8], [22, 14], [-22, 14]], { fond: '#ffffff', trait: c, ep: 2 });
+      break;
+    case 'telephone-ip':
+      R(-20, -10, 40, 30, 4); R(-24, -20, 48, 10, 5);
+      for (const [dx, dy] of [[-10, 0], [0, 0], [10, 0], [-10, 9], [0, 9], [10, 9]]) ops.push({ k: 'cercle', x: x + dx, y: y + dy, r: 2, fond: c, trait: null });
+      break;
+    case 'imprimante':
+      R(-14, -20, 28, 10, 2); R(-24, -10, 48, 20, 4); R(-14, 6, 28, 12, 2);
+      L(-9, 12, 9, 12, 1.4);
+      break;
+    case 'smartphone':
+      R(-11, -22, 22, 40, 5); ops.push({ k: 'cercle', x, y: y + 12, r: 2.2, fond: c, trait: null }); L(-6, -17, 6, -17, 1.4);
+      break;
+    case 'camera-ip':
+      R(-22, -12, 34, 20, 4); ops.push({ k: 'cercle', x: x + 4, y: y - 2, r: 6, fond: '#ffffff', trait: c, ep: 2 });
+      F([[12, -8], [24, -14], [24, 10], [12, 4]], { fond: '#ffffff', trait: c, ep: 2 }); L(-8, 8, -8, 18); L(-16, 18, 0, 18);
+      break;
+    case 'nas':
+      R(-20, -20, 40, 40, 4); L(-12, -8, 12, -8); L(-12, 2, 12, 2);
+      ops.push({ k: 'cercle', x: x + 10, y: y + 13, r: 2, fond: c, trait: null }); ops.push({ k: 'cercle', x: x + 3, y: y + 13, r: 2, fond: c, trait: null });
+      break;
+    case 'sous-reseau':
+      R(-28, -14, 56, 28, 6, { tirets: [4, 3] }); T('/24', 12);
+      break;
+    case 'passerelle-vpn':
+      R(-24, -16, 48, 32, 6); T('VPN', 11);
+      break;
+    case 'nuage-operateur': {
+      const nuage = [[-24, 8], { c: [-34, 8, -34, -8, -22, -8] }, { c: [-22, -20, -4, -24, 2, -14] }, { c: [8, -24, 26, -20, 24, -6] }, { c: [36, -4, 34, 10, 22, 10] }];
+      ops.push({ k: 'chemin', pts: nuage.map((p) => (Array.isArray(p) ? [x + p[0], y + p[1]] : { c: p.c.map((v, i) => (i % 2 ? y + v : x + v)) })), fond, trait: c, ep: 2, ferme: true, tirets: [5, 3] });
+      T('WAN', 10);
+      break;
+    }
     case 'pare-feu':
       R(-26, -18, 52, 36, 2);
       L(-26, -6, 26, -6, 1.4); L(-26, 6, 26, 6, 1.4); L(-8, -18, -8, -6, 1.4); L(10, -18, 10, -6, 1.4); L(0, -6, 0, 6, 1.4); L(-16, 6, -16, 18, 1.4); L(16, 6, 16, 18, 1.4);
@@ -354,8 +423,10 @@ export function schemaDepuisFiche(valeurs = {}, ids = {}) {
   if (!v.hoteSw && !v.hoteRouteur) return s;
   const plan = Array.isArray(v.plan) ? v.plan : [];
   const rt = idSchema('n'); const sw = idSchema('n');
-  if (v.hoteRouteur) s.noeuds.push({ id: rt, type: 'routeur', nom: v.hoteRouteur, note: '', equipementId: ids.routeur ?? null, typePerso: null, x: 500, y: 40 });
-  if (v.hoteSw) s.noeuds.push({ id: sw, type: 'commutateur', nom: v.hoteSw, note: '', equipementId: ids.commutateur ?? null, typePerso: null, x: 500, y: 300 });
+  // Modèle du routeur deviné d'après le nom de son interface (Gi0/0 : 2911, Gi0/0/0 : 4321).
+  const modeleRouteur = /\d+\/\d+\/\d+$/.test(String(v.routeurItf ?? '')) ? '4321' : '2911';
+  if (v.hoteRouteur) s.noeuds.push({ id: rt, type: 'routeur', modele: modeleRouteur, nom: v.hoteRouteur, note: '', equipementId: ids.routeur ?? null, typePerso: null, x: 500, y: 40 });
+  if (v.hoteSw) s.noeuds.push({ id: sw, type: 'commutateur', modele: '2960-24tt', nom: v.hoteSw, note: '', equipementId: ids.commutateur ?? null, typePerso: null, x: 500, y: 300 });
   if (v.hoteRouteur && v.hoteSw) s.liens.push({ id: idSchema('l'), de: rt, a: sw, style: 'trunk', etiquette: '802.1Q', etiquetteDe: v.routeurItf ?? '', etiquetteA: v.trunkSw ?? '', adresseDe: '', adresseA: '' });
   const vlans = [];
   if (v.vlanGestion) vlans.push({ vlan: v.vlanGestion, nom: 'GESTION', ports: v.portGestion ?? '', poste: v.gestionPoste ?? '', prefixe: v.gestionPrefixe ?? '', posteNom: 'Poste de gestion' });
@@ -366,7 +437,7 @@ export function schemaDepuisFiche(valeurs = {}, ids = {}) {
   vlans.slice(0, 8).forEach((z, i) => {
     s.zones.push({ id: idSchema('z'), nom: `VLAN ${z.vlan} · ${z.nom}`.slice(0, 60), couleur: i === 0 && v.vlanGestion ? 'vert' : couleurs[(i % 4) + 1], x, y: 375, l: largeurZone, h: 215 });
     const pc = idSchema('n');
-    s.noeuds.push({ id: pc, type: 'poste', nom: z.posteNom.slice(0, 60), note: '', equipementId: null, typePerso: null, x: x + Math.round(largeurZone / 2), y: 480 });
+    s.noeuds.push({ id: pc, type: 'poste', modele: 'pc', nom: z.posteNom.slice(0, 60), note: '', equipementId: null, typePerso: null, x: x + Math.round(largeurZone / 2), y: 480 });
     // Le port du commutateur côté commutateur, l'adresse du poste côté poste.
     if (v.hoteSw) s.liens.push({ id: idSchema('l'), de: sw, a: pc, style: 'droit', etiquette: '', etiquetteDe: String(z.ports).split(/[,\s]+/)[0] ?? '', etiquetteA: '', adresseDe: '', adresseA: z.poste ? `${z.poste}${z.prefixe ? `/${z.prefixe}` : ''}` : '' });
     x += largeurZone + marge;

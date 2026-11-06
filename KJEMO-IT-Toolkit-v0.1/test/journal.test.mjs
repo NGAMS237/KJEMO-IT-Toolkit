@@ -29,7 +29,7 @@ const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
 const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
-const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs'); const SR = await imp('schema-remplir.mjs');
+const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs'); const SR = await imp('schema-remplir.mjs'); const MO = await imp('modeles.mjs');
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const JPEG = Uint8Array.from(Buffer.from('/9j/4AAQSkZJRgABAQEAAgACAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAYABEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3V3uVlYIgK54JB9KRZbvjMS+/Bq3RTuIKKKKQxC6g4LAH60m9T0YfnRRQA6iiigD/2Q==', 'base64'));
@@ -396,6 +396,33 @@ console.log('12. Remplir le document et l’inventaire depuis le schéma');
   const vide = SR.remplirDepuisSchema(J.normaliserEntree({ titre: 'x' }).entree, {});
   assert(!vide.bilan.equipementsCrees.length && !vide.entree.adressage.length && !vide.bilan.architecture, 'schéma vide : rien n’est rempli');
   assert(VS.editeurSchemaMarkup(lab.schema, {}).includes('id="schRemplir"'), 'bouton « Remplir le document et l’inventaire depuis le schéma »');
+}
+
+console.log('13. Modèles, ports et câble automatique');
+{
+  assert(MO.developperPorts('Fa0/1-3, Gi0/1, Gi1/0/1-2, Console').join() === 'Fa0/1,Fa0/2,Fa0/3,Gi0/1,Gi1/0/1,Gi1/0/2,Console', 'plages de ports développées (le dernier nombre varie)');
+  assert(MO.developperPorts('Gi0/1-500').length === 1 && MO.developperPorts('a, a, b').length === 2, 'plage démesurée refusée, doublons retirés');
+  assert(MO.developperPorts(MO.modele('2960-24tt').ports).length === 28 && MO.developperPorts(MO.modele('3650-24ps').ports).includes('Gi1/1/4'), '2960-24TT : 28 ports ; 3650 : ports de liaison Gi1/1/x');
+  assert(MO.modeleDefaut('commutateur') === '2960-24tt' && MO.modeleDefaut('commutateur-l3') === '3650-24ps' && MO.modeleDefaut('telephone-ip') === '7960' && MO.modeleDefaut('autre') === null, 'modèles proposés : 2960 en accès, 3650 en cœur, 7960 pour le téléphone IP');
+  assert(SC.TYPES_NOEUD.every((t) => t.id === 'autre' || MO.modeleDefaut(t.id)), 'chaque type d’équipement a un modèle par défaut');
+  assert(MO.clePort('GigabitEthernet0/1') === MO.clePort('Gi0/1') && MO.clePort('FastEthernet0/24') === 'fa0/24' && MO.clePort('Serial0/0/0') === 'se0/0/0' && MO.clePort('Ethernet0') === 'ethernet0', 'noms longs et abrégés reconnus comme le même port');
+  const n = { id: 'nm1', type: 'commutateur', modele: '2960-24tt' };
+  const liens = [{ id: 'lm1', de: 'nm1', a: 'nm2', etiquetteDe: 'GigabitEthernet0/1', etiquetteA: 'Gi0/0/0' }];
+  const ports = MO.portsDuNoeud(n, { equipement: { interfaces: [{ nom: 'Vlan99' }, { nom: 'Gi0/2' }] }, liens });
+  assert(ports.length === 29 && ports.includes('Vlan99') && !ports.includes('GigabitEthernet0/1'), 'ports du nœud : modèle + interfaces de la fiche, sans doublon de nom long');
+  assert(MO.portsOccupes(n, liens).get('gi0/1')?.vers === 'nm2', 'port occupé retrouvé quelle que soit l’écriture');
+  assert(MO.portsDuNoeud({ id: 'x', type: 'autre', modele: 'perso', ports: 'eth0-1' }, {}).join() === 'eth0,eth1', 'modèle personnalisé : ports écrits à la main');
+  const A = MO.cableAutomatique;
+  assert(A('commutateur', 'Fa0/1', 'poste', 'FastEthernet0') === 'droit' && A('commutateur', 'Gi0/1', 'commutateur-l3', 'Gi1/0/1') === 'croise' && A('routeur', 'Gi0/0', 'routeur', 'Gi0/0') === 'croise'
+    && A('routeur', 'Se0/0/0', 'routeur', 'Se0/0/0') === 'serie' && A('poste', 'RS232', 'routeur', 'Console') === 'console' && A('point-acces', 'Sans fil', 'portable', 'Wireless0') === 'sansfil' && A('routeur', 'Gi0/0', 'poste', 'FastEthernet0') === 'croise',
+    'câble automatique : droit, croisé, série, console, sans fil selon les équipements et les ports');
+  const ns = SC.normaliserSchema({ noeuds: [{ id: 'np1', type: 'commutateur', modele: '4321' }, { id: 'np2', type: 'routeur' }, { id: 'np3', type: 'autre', modele: 'perso', ports: 'p1-2' }] }).schema.noeuds;
+  assert(ns[0].modele === '2960-24tt' && ns[1].modele === '4321' && ns[2].modele === 'perso' && ns[2].ports === 'p1-2', 'modèle incompatible avec le type → modèle par défaut ; personnalisé gardé');
+  const deux = { ...SC.schemaVide(), noeuds: [{ id: 'nk1', type: 'commutateur', x: 200, y: 200 }, { id: 'nk2', type: 'commutateur', x: 600, y: 200 }],
+    liens: [{ id: 'lk1', de: 'nk1', a: 'nk2', style: 'croise' }, { id: 'lk2', de: 'nk1', a: 'nk2', style: 'croise' }] };
+  const lignes = SC.dessinerSchema(SC.normaliserSchema(deux).schema).filter((o) => o.k === 'ligne' && o.id);
+  assert(lignes.length === 2 && lignes[0].y1 !== lignes[1].y1, 'deux câbles entre les mêmes équipements : tracés côte à côte');
+  assert(SC.dessinerSchema({ ...SC.schemaVide(), noeuds: ['telephone-ip', 'commutateur-l3', 'camera-ip', 'nas', 'passerelle-vpn'].map((t, i) => ({ id: `nt${i}x`, type: t, nom: '', x: 100 + i * 150, y: 200 })) }).filter((o) => o.k !== 'clic').length > 30, 'nouveaux symboles dessinés (téléphone IP, cœur, caméra, NAS, VPN)');
 }
 
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

@@ -1092,3 +1092,15 @@ details.schemas-fiche{margin:14px 0}
 .sch-remplir{display:flex;flex-direction:column;gap:4px;border:1px dashed var(--accent);border-radius:10px;padding:10px 12px}
 .sch-remplir .j-btn{align-self:flex-start}
 .sch-remplir small{font-size:12.5px;color:var(--muted)}
+/* ---- Palette par groupes, modèles et menu des ports (JOURNAL-LABO-08) ---- */
+.sch-onglets{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px}
+.sch-palette-familles{flex-direction:column;align-items:stretch;gap:6px}
+.sch-famille{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sch-famille-titre{font-size:12px;font-weight:650;color:var(--muted);min-width:9.5rem}
+.sch-feuille{position:relative}
+.sch-menu-ports{position:absolute;z-index:3;width:min(300px,70%);background:var(--surface);color:var(--text);border:2px solid var(--accent);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.sch-menu-ports select{width:100%;font:13px ui-monospace,Consolas,monospace;color:var(--text);background:var(--input-bg);border:1px solid var(--border-strong);border-radius:6px}
+.sch-menu-ports option:disabled{color:var(--muted)}
+.sch-menu-autre{display:flex;gap:6px}
+.sch-menu-autre input{flex:1;min-width:0;font:13px ui-monospace,Consolas,monospace;color:var(--text);background:var(--input-bg);border:1px solid var(--border-strong);border-radius:6px;padding:4px 6px}
+@media(max-width:700px){.sch-famille-titre{min-width:100%}}

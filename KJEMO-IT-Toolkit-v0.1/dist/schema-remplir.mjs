@@ -19,12 +19,18 @@
  */
 import { normaliserEquipement, equipementVide, TYPES_EQUIPEMENT } from './inventaire.mjs';
 import { typeNoeud, decrireSchema, normaliserSchema } from './schema.mjs';
+import { modele } from './modeles.mjs';
 
-const SYSTEME_DU_TYPE = { routeur: 'cisco', commutateur: 'cisco', 'pare-feu': 'cisco', 'point-acces': 'cisco', serveur: 'systeme', poste: 'systeme', vm: 'azure', 'reseau-virtuel': 'azure', 'service-cloud': 'azure' };
+/** Système de l'inventaire déduit du symbole. */
+export const SYSTEME_DU_TYPE = {
+  routeur: 'cisco', commutateur: 'cisco', 'commutateur-l3': 'cisco', 'pare-feu': 'cisco', 'point-acces': 'cisco', 'telephone-ip': 'cisco',
+  serveur: 'systeme', poste: 'systeme', portable: 'systeme', imprimante: 'systeme', smartphone: 'systeme', 'camera-ip': 'systeme', nas: 'systeme',
+  vm: 'azure', 'reseau-virtuel': 'azure', 'sous-reseau': 'azure', 'passerelle-vpn': 'azure', 'service-cloud': 'azure',
+};
 /** Symboles qui jouent le rôle d'hôte : on leur cherche une passerelle. */
-const HOTES = new Set(['poste', 'serveur', 'vm']);
+const HOTES = new Set(['poste', 'portable', 'telephone-ip', 'imprimante', 'smartphone', 'camera-ip', 'serveur', 'nas', 'vm']);
 /** Symboles qui peuvent servir de passerelle. */
-const PASSERELLES = new Set(['routeur', 'pare-feu', 'commutateur', 'point-acces']);
+const PASSERELLES = new Set(['routeur', 'pare-feu', 'commutateur', 'commutateur-l3', 'point-acces']);
 
 /** « 192.168.10.1/24 » → { ip (entier), prefixe } ; null si ce n'est pas une adresse IPv4 (préfixe facultatif). */
 export function lireAdresse(texte) {
@@ -73,7 +79,7 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
       else {
         while (nomsPris.has(nom.toLowerCase())) nom = `${base} ${k++}`;
         const typeEq = TYPES_EQUIPEMENT.some((t) => t.id === n.type) ? n.type : 'autre';
-        const r = normaliserEquipement({ ...equipementVide({ systemeId: SYSTEME_DU_TYPE[n.type] ?? 'autre', typeId: typeEq, date }), nom, adresse: lireAdresse(n.note) ? n.note : '' });
+        const r = normaliserEquipement({ ...equipementVide({ systemeId: SYSTEME_DU_TYPE[n.type] ?? 'autre', typeId: typeEq, date }), nom, adresse: lireAdresse(n.note) ? n.note : '', modele: modele(n.modele)?.label ?? '' });
         if (Object.keys(r.erreurs).length) continue;
         q = r.equipement; inv.push(q); parId.set(q.id, q); nomsPris.add(nom.toLowerCase());
         bilan.equipementsCrees.push(nom);
@@ -81,6 +87,7 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
       }
       n.equipementId = q.id;
     }
+    if (!q.modele && modele(n.modele)) q.modele = modele(n.modele).label;
     if (!e.equipements.some((l) => l.id === q.id)) { e.equipements.push({ id: q.id, role: '' }); bilan.equipementsLies += 1; }
   }
 

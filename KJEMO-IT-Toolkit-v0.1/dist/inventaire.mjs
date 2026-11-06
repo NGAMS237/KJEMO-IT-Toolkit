@@ -33,6 +33,16 @@ export const TYPES_EQUIPEMENT = [
   { id: 'vm', label: 'Machine virtuelle', systemes: ['azure', 'systeme'] },
   { id: 'reseau-virtuel', label: 'Réseau virtuel', systemes: ['azure'] },
   { id: 'service-cloud', label: 'Service cloud', systemes: ['azure', 'autre'] },
+  { id: 'commutateur-l3', label: 'Commutateur de cœur (niveau 3)', systemes: ['cisco', 'autre'] },
+  { id: 'portable', label: 'Portable', systemes: ['systeme', 'autre'] },
+  { id: 'telephone-ip', label: 'Téléphone IP', systemes: ['cisco', 'systeme', 'autre'] },
+  { id: 'imprimante', label: 'Imprimante', systemes: ['systeme', 'autre'] },
+  { id: 'smartphone', label: 'Smartphone', systemes: ['systeme', 'autre'] },
+  { id: 'camera-ip', label: 'Caméra IP', systemes: ['systeme', 'autre'] },
+  { id: 'nas', label: 'NAS', systemes: ['systeme', 'autre'] },
+  { id: 'sous-reseau', label: 'Sous-réseau', systemes: ['azure'] },
+  { id: 'passerelle-vpn', label: 'Passerelle VPN', systemes: ['azure'] },
+  { id: 'nuage-operateur', label: 'Nuage de l’opérateur', systemes: ['autre'] },
   { id: 'autre', label: 'Autre équipement', systemes: ['cisco', 'systeme', 'azure', 'autre'] },
 ];
 export const systeme = (id) => SYSTEMES.find((s) => s.id === id) ?? SYSTEMES[3];
@@ -73,12 +83,12 @@ export const TABLEAUX_EQUIPEMENT = {
     },
   },
   vlans: {
-    label: 'VLAN', ajout: '+ Ajouter un VLAN', pour: (s, t) => s === 'cisco' && ['commutateur', 'routeur', 'point-acces', 'autre'].includes(t),
+    label: 'VLAN', ajout: '+ Ajouter un VLAN', pour: (s, t) => s === 'cisco' && ['commutateur', 'commutateur-l3', 'routeur', 'point-acces', 'autre'].includes(t),
     colonnes: [{ id: 'numero', label: 'Numéro' }, { id: 'nom', label: 'Nom' }, { id: 'ports', label: 'Ports' }, { id: 'reseau', label: 'Réseau' }],
     exemples: { cisco: { numero: '10', nom: 'VENTES', ports: 'Fa0/1-12', reseau: '192.168.10.0/24' } },
   },
   services: {
-    label: 'Services', ajout: '+ Ajouter un service', pour: (s, t) => s === 'systeme' || ['serveur', 'poste', 'vm'].includes(t),
+    label: 'Services', ajout: '+ Ajouter un service', pour: (s, t) => s === 'systeme' || ['serveur', 'poste', 'vm', 'nas'].includes(t),
     colonnes: [{ id: 'nom', label: 'Service' }, { id: 'port', label: 'Port' }, { id: 'etat', label: 'État' }, { id: 'note', label: 'Note' }],
     exemples: { systeme: { nom: 'ssh', port: '22/tcp', etat: 'actif', note: 'Accès des administrateurs' }, azure: { nom: 'nginx', port: '443/tcp', etat: 'actif', note: 'Site de test' } },
   },

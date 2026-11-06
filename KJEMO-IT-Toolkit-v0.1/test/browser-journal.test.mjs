@@ -324,22 +324,48 @@ await ctx.close();
   await glisser(500, 40, 300, 100);
   assert(JSON.stringify(await position('R1')) === JSON.stringify([300, 140]), 'glisser : R1 déplacé et aimanté à la grille', JSON.stringify(await position('R1')));
   assert((await p7.locator('#schElement option:checked').innerText()).includes('R1'), 'l’équipement glissé est choisi');
+  // Palette par groupes et filtre par système
+  assert(await p7.locator('.sch-famille-titre', { hasText: 'Terminaux' }).count() === 1 && await p7.locator('[data-sadd="telephone-ip"]').count() === 1, 'palette par groupes, avec le téléphone IP');
+  await p7.click('[data-sfiltre="azure"]');
+  assert(await p7.locator('[data-sadd="telephone-ip"]').count() === 0 && await p7.locator('[data-sadd="passerelle-vpn"]').count() === 1, 'filtre Azure : seulement les équipements Azure');
+  await p7.click('[data-sfiltre="tous"]');
+  await p7.click('[data-sadd="telephone-ip"]');
+  assert(await p7.locator('#schModele').inputValue() === '7960', 'téléphone IP posé avec son modèle (ports Switch et PC)');
+  await p7.click('#schSupprimer');
   // Palette : un serveur, renommé
   await p7.click('[data-sadd="serveur"]');
   await p7.fill('#schNom', 'SRV-WEB'); await p7.fill('#schNote', '192.168.10.20');
   assert(await position('SRV-WEB') !== null, 'palette : serveur ajouté et renommé');
-  // Câbler le serveur à SW1 depuis la palette « Câbles »
+  // Câbler le serveur à SW1 depuis la palette « Câbles » : menu des ports
   await p7.click('[data-scable="croise"]');
   assert(await p7.locator('[data-scable="croise"]').getAttribute('aria-pressed') === 'true' && /premier/.test(await p7.locator('.sch-bandeau').innerText()), 'palette Câbles : mode câble croisé, consigne affichée');
   const clicNoeud = async (nom) => { const pos = await position(nom); const [a, b] = await coord(pos[0], pos[1] - 40); await p7.mouse.click(a, b); };
   await clicNoeud('SW1');
-  assert(/deuxième/.test(await p7.locator('.sch-bandeau').innerText()), 'premier équipement choisi : consigne du deuxième');
+  assert(await p7.locator('.sch-menu-ports').count() === 1 && await p7.locator('#schPortChoix option').count() >= 26, 'clic sur SW1 : menu de ses ports (2960 : 24 Fa, 2 Gi, Vlan1, console)');
+  assert(await p7.locator('#schPortChoix option[value="Fa0/24"]').isDisabled() && /pris/.test(await p7.locator('#schPortChoix option[value="Fa0/24"]').innerText()), 'port déjà câblé grisé avec sa destination');
+  await p7.selectOption('#schPortChoix', 'Fa0/5'); await p7.locator('#schPortChoix').press('Enter');
+  assert(/deuxième/.test(await p7.locator('.sch-bandeau').innerText()) && /Fa0\/5/.test(await p7.locator('.sch-bandeau').innerText()), 'premier port choisi au clavier : consigne du deuxième');
   await clicNoeud('SRV-WEB');
-  assert(await p7.locator('#schItfDe').count() === 1 && await p7.locator('#schStyle').inputValue() === 'croise', 'câble créé (croisé), interfaces et adresses à saisir');
-  await p7.fill('#schItfDe', 'Fa0/5'); await p7.fill('#schItfA', 'ens18'); await p7.fill('#schAdrA', '192.168.10.20/24');
+  await p7.locator('#schPortChoix option[value="ens18"]').click();
+  assert(await p7.inputValue('#schItfDe') === 'Fa0/5' && await p7.inputValue('#schItfA') === 'ens18' && await p7.locator('#schStyle').inputValue() === 'croise', 'câble créé avec les deux ports, sans rien taper');
+  await p7.fill('#schAdrA', '192.168.10.20/24');
   assert(await p7.locator('#schFeuille').innerText().then((t) => t.includes('Fa0/5') && t.includes('ens18') && t.includes('192.168.10.20/24')), 'interfaces et adresse affichées sur le câble');
   await p7.click('#schCablageFin');
   assert(await p7.locator('.sch-bandeau').count() === 0, 'mode câble terminé');
+  // Câble automatique et EtherChannel : deux commutateurs, deux câbles entre eux
+  await p7.click('[data-sadd="commutateur"]'); await p7.fill('#schNom', 'SW2');
+  await p7.click('[data-scable="auto"]');
+  await clicNoeud('SW1');
+  assert(await p7.locator('#schPortChoix option[value="Gi0/1"]').isDisabled(), 'Gi0/1 de SW1 grisé : déjà câblé en GigabitEthernet0/1 (même port)');
+  await p7.locator('#schPortAnnuler').click();
+  for (const [p1, p2] of [['Fa0/20', 'Fa0/1'], ['Fa0/21', 'Fa0/2']]) {
+    await clicNoeud('SW1'); await p7.locator(`#schPortChoix option[value="${p1}"]`).click();
+    await clicNoeud('SW2'); await p7.locator(`#schPortChoix option[value="${p2}"]`).click();
+  }
+  assert(await p7.locator('#schStyle').inputValue() === 'croise', 'câble automatique : croisé entre deux commutateurs');
+  const liensSw = await p7.evaluate(() => [...document.querySelectorAll('#schFeuille line[data-el]')].length);
+  assert(liensSw >= 5, 'deux câbles parallèles SW1–SW2 (EtherChannel possible)');
+  await p7.click('#schCablageFin');
   // Adresse sur le trunk côté R1 : reportée dans la fiche de R1
   await p7.selectOption('#schElement', { label: await p7.locator('#schElement option', { hasText: 'Trunk' }).first().innerText() });
   await p7.fill('#schAdrDe', '192.168.99.1/24'); await p7.locator('#schAdrDe').dispatchEvent('change');
