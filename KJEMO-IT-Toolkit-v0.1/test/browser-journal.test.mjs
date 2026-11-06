@@ -421,6 +421,68 @@ await ctx.close();
   await context.close();
 }
 
+// Configuration des équipements depuis le schéma (JOURNAL-LABO-09)
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+  const p8 = await context.newPage(); const e8 = []; p8.on('pageerror', (e) => e8.push(e.message));
+  await p8.goto(`${BASE}/#/tache/cours-tp-vlan-ssh-intervlan`); await p8.waitForSelector('#taskJournal');
+  await p8.click('#exemplesBtn'); await p8.click('#taskJournal'); await p8.waitForSelector('#schFeuille');
+  assert(await p8.locator('#schFeuille').innerText().then((t) => /VLAN 10 · VENTES · 192\.168\.10\.0\/24/.test(t)), 'TP : les zones portent le réseau de chaque VLAN');
+  await p8.selectOption('#schElement', { label: 'Équipement · R1' });
+  assert(await p8.locator('#cfgCorps').count() === 1 && await p8.locator('input[name="cfgNiveau"]:checked').getAttribute('value') === 'simple', 'R1 choisi : panneau Configuration, niveau simple');
+  await p8.click('[data-cfgaction="proposer"]');
+  assert(/Proposé : .*sous-interface/.test(await p8.locator('.cfg-note').innerText()), 'Proposer : sous-interfaces déduites du trunk et des zones', await p8.locator('.cfg-note').innerText());
+  const codeR1 = await p8.locator('#cfgCode').innerText();
+  assert(/encapsulation dot1Q 10/.test(codeR1) && /ip address 192\.168\.10\.1 255\.255\.255\.0/.test(codeR1) && /hostname R1/.test(codeR1), 'commandes de R1 générées (dot1Q, masque calculé)');
+  // SW1 au niveau complet
+  await p8.selectOption('#schElement', { label: 'Équipement · SW1' });
+  assert(await p8.locator('legend', { hasText: 'Spanning Tree' }).count() === 0, 'SW1 simple : pas de section Spanning Tree');
+  await p8.locator('input[name="cfgNiveau"][value="complet"]').check();
+  assert(await p8.locator('legend', { hasText: 'Spanning Tree' }).count() === 1 && await p8.locator('legend', { hasText: 'EtherChannel' }).count() === 1 && await p8.locator('input[name="cfgNiveau"]:checked').getAttribute('value') === 'complet', 'SW1 complet : Spanning Tree et EtherChannel apparaissent');
+  await p8.click('[data-cfgaction="proposer"]');
+  const codeSw = await p8.locator('#cfgCode').innerText();
+  assert(/switchport mode trunk/.test(codeSw) && /switchport access vlan 10/.test(codeSw) && /spanning-tree mode rapid-pvst/.test(codeSw) && /spanning-tree portfast/.test(codeSw), 'SW1 : trunk, accès, Rapid-PVST et PortFast proposés');
+  await p8.fill('#cfg-domaine', 'cegeplimoilou.lan');
+  assert(/ip domain-name cegeplimoilou\.lan/.test(await p8.locator('#cfgCode').innerText()), 'saisie : l’aperçu des commandes suit la frappe');
+  await p8.locator('#cfg-ssh_actif').check();
+  const avecSsh = await p8.locator('#cfgCode').innerText();
+  assert(/username admin privilege 15 secret\n/.test(`${avecSsh}\n`) && /transport input ssh/.test(avecSsh), 'SSH : ligne « secret » sans mot de passe');
+  const [dl] = await Promise.all([p8.waitForEvent('download'), p8.click('[data-cfgaction="telecharger"]')]);
+  const txt = (await lireDl(dl)).toString('utf8');
+  assert(/_SW1_config\.txt$/.test(dl.suggestedFilename()) && txt.startsWith('! --- Base ---') && txt.includes('hostname SW1'), 'téléchargement des commandes de SW1 (.txt)', dl.suggestedFilename());
+  await p8.click('[data-cfgaction="tousPorts"]');
+  assert(await p8.locator('.cfg-port').count() >= 26, 'tous les ports du 2960 affichés sur demande');
+  await p8.selectOption('#cfg-ports_Fa0_10_mode', 'access');
+  assert(await p8.locator('#cfg-ports_Fa0_10_vlan').count() === 1 && await p8.locator('#cfg-ports_Fa0_10_mode').evaluate((x) => x === document.activeElement), 'mode accès : champ VLAN affiché, focus gardé');
+  // Remplir : un bloc de configuration par équipement, des tests
+  await p8.click('#schRemplir');
+  const titres = await p8.locator('[data-jt="configuration"][data-col="titre"]').evaluateAll((l) => l.map((x) => x.value));
+  assert(titres.includes('Configuration de R1') && titres.includes('Configuration de SW1'), 'remplir : blocs « Configuration de R1 / SW1 » ajoutés', titres.join(','));
+  const tests = await p8.locator('[data-jt="validation"][data-col="test"]').evaluateAll((l) => l.map((x) => x.value));
+  assert(tests.some((t) => /SW1 : show interfaces trunk/.test(t)) && tests.some((t) => /show ip ssh/.test(t)), 'remplir : tests de vérification proposés', tests.join(' | '));
+  await p8.click('#jEnregistrer');
+  assert(/Enregistré/.test(await p8.locator('#jNote').innerText()), 'labo avec configurations enregistré (aucun secret)');
+  await p8.reload(); await p8.waitForSelector('#schFeuille');
+  await p8.selectOption('#schElement', { label: 'Équipement · SW1' });
+  assert(await p8.locator('input[name="cfgNiveau"]:checked').getAttribute('value') === 'complet' && /cegeplimoilou/.test(await p8.locator('#cfgCode').innerText()), 'après rechargement : la configuration est relue');
+  const [dp] = await Promise.all([p8.waitForEvent('download'), p8.click('#jPdf')]);
+  const pdf = (await lireDl(dp)).toString('latin1');
+  assert(pdf.includes('Configuration de SW1') && pdf.includes('blage'), 'PDF : configurations et tableau de câblage');
+  // Nouveau labo : aucun équipement du labo précédent
+  await p8.goto(`${BASE}/#/journal`); await p8.waitForSelector('#jNouveauForm');
+  await p8.selectOption('#jNouvelleCat', 'cisco'); await p8.click('#jNouveauForm button[type="submit"]'); await p8.waitForSelector('#jForm');
+  assert(await p8.locator('[data-jeq]').count() === 0 && /Aucun équipement dans ce labo/.test(await p8.locator('#jForm').innerText()), 'nouveau labo : les équipements du labo précédent n’y sont pas');
+  const choix = await p8.locator('#jEqAjout option').evaluateAll((l) => l.map((o) => o.textContent));
+  assert(choix.some((c) => c.startsWith('R1')) && choix.some((c) => c.startsWith('SW1')), 'les équipements existants se reprennent depuis « Ajouter depuis l’inventaire »');
+  await p8.selectOption('#jEqAjout', { label: choix.find((c) => c.startsWith('R1')) }); await p8.click('#jEqAjouter');
+  assert(await p8.locator('[data-jeq]:checked').count() === 1 && await p8.locator('[data-jeqrole]').evaluate((x) => x === document.activeElement), 'R1 ajouté au nouveau labo, focus sur son rôle');
+  await p8.locator('[data-jeq]').click();
+  assert(await p8.locator('[data-jeq]').count() === 0, 'décocher : retiré du labo (reste dans l’inventaire)');
+  if (CAPTURES) await p8.screenshot({ path: join(CAPTURES, 'journal-config.png'), fullPage: false });
+  assert(e8.length === 0, 'aucune erreur de page (configuration)', e8.join(' | '));
+  await context.close();
+}
+
 // Téléphone : aucune barre de défilement horizontale
 {
   const { context, page: p3, erreurs: e3 } = await nouvellePage({ viewport: { width: 390, height: 844 } }, '/#/journal');
@@ -436,6 +498,9 @@ await ctx.close();
   await p3.goto(`${BASE}/#/journal`); await p3.waitForSelector('#jExemple'); await p3.click('#jNouveauForm button[type="submit"]'); await p3.waitForSelector('#schFeuille');
   await p3.click('[data-sadd="routeur"]'); await p3.click('[data-sadd="zone"]');
   assert(await sansDebordement(p3), '390 px : éditeur de schéma sans débordement horizontal');
+  await p3.click('[data-sadd="commutateur-l3"]'); await p3.locator('input[name="cfgNiveau"][value="complet"]').check();
+  await p3.click('[data-cfgadd="canaux"]'); await p3.click('[data-cfgaction="tousPorts"]');
+  assert(await sansDebordement(p3), '390 px : panneau Configuration (complet) sans débordement horizontal');
   assert(e3.length === 0, 'aucune erreur de page (téléphone)', e3.join(' | '));
   await context.close();
 }

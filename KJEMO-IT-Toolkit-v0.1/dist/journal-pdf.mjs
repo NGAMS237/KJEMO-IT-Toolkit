@@ -10,7 +10,7 @@
  */
 import { A4, DocumentPdf, Flux, STYLE, couper, largeur } from './pdf-a4.mjs';
 import { categorie, etat, resultat } from './journal.mjs';
-import { dessinerSchema, versPdf, schemaEstVide, decrireSchema, cablesUtilises } from './schema.mjs';
+import { dessinerSchema, versPdf, schemaEstVide, decrireSchema, cablesUtilises, typeNoeud, styleLien } from './schema.mjs';
 import { TABLEAUX_EQUIPEMENT, CHAMPS_EQUIPEMENT, SYSTEMES, systeme, typeEquipement } from './inventaire.mjs';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -43,6 +43,17 @@ export function sectionsPresentes(e, { captures = {}, equipements = [] } = {}) {
   if (e.captures.some((c) => captures[c.id])) s.push('captures');
   if (equipements.length) s.push('annexe');
   return s;
+}
+/** Lignes du tableau de câblage : [A, port A, B, port B, câble, adresses]. */
+export function tableauCablage(schema, { resoudre = () => null, typesPerso = [] } = {}) {
+  const persos = new Map(typesPerso.map((t) => [t.id, t]));
+  const nom = (n) => (n.equipementId && resoudre(n.equipementId)?.nom) || n.nom || (n.type === 'perso' ? persos.get(n.typePerso)?.nom : typeNoeud(n.type).label) || 'équipement';
+  const parId = new Map(schema.noeuds.map((n) => [n.id, n]));
+  return schema.liens.map((l) => {
+    const a = parId.get(l.de); const b = parId.get(l.a);
+    const adr = [l.adresseDe, l.adresseA].filter(Boolean).join(' / ');
+    return [nom(a), l.etiquetteDe || '-', nom(b), l.etiquetteA || '-', `${styleLien(l.style).label}${l.etiquette ? ` (${l.etiquette})` : ''}`, adr || '-'];
+  });
 }
 export const TITRES_SECTIONS = {
   objet: 'Objet', environnement: 'Environnement', architecture: 'Architecture', equipements: 'Équipements', annexe: 'Fiches des équipements', adressage: 'Plan d’adressage', configuration: 'Configuration',
@@ -89,6 +100,12 @@ export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = 
           }));
         }
         flux.paragraphe(decrireSchema(e.schema, { resoudre, typesPerso }), { taille: 8.5, couleur: STYLE.pale });
+        const cablage = tableauCablage(e.schema, { resoudre, typesPerso });
+        if (cablage.length) {
+          flux.sousTitre('Câblage');
+          flux.tableau([{ titre: 'Équipement A', part: 1.1 }, { titre: 'Port A', part: 0.9, mono: true }, { titre: 'Équipement B', part: 1.1 }, { titre: 'Port B', part: 0.9, mono: true },
+            { titre: 'Câble', part: 1 }, { titre: 'Adresses', part: 1.5, mono: true }], cablage.map((l) => ({ cellules: l, styles: [{ gras: true }, {}, { gras: true }] })));
+        }
       }
     }
     if (id === 'equipements') {

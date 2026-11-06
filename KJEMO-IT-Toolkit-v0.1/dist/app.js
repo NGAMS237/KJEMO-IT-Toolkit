@@ -15,6 +15,8 @@ import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, 
          equipementsDepuisFiche } from './inventaire.mjs';
 import { FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
 import { editeurSchemaMarkup, feuilleSvg, menuPortsMarkup } from './vue-schema.mjs';
+import { apercuConfigMarkup, nouvelleLigne, poolsParVlan, ospfDepuisInterfaces } from './vue-config.mjs';
+import { normaliserConfig, proposerConfig, commandesNoeud, texteAvecTitres } from './config-ios.mjs';
 import { remplirDepuisSchema, phraseBilan, SYSTEME_DU_TYPE } from './schema-remplir.mjs';
 import { MODELES, MODELE_PERSO, modele, modelesDuType, portsDuNoeud, portsOccupes, cableAutomatique, clePort } from './modeles.mjs';
 import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
@@ -2192,9 +2194,17 @@ function brancherJournalFiche(view) {
   });
   view.querySelectorAll('[data-jeq]').forEach((c) => c.addEventListener('change', () => {
     lireFormulaireJournal(view); etatJournal.modifie = true; dessinerJournalFiche(view);
-    const suite = c.checked ? `#jeq-role-${c.dataset.jeq}` : `[data-jeq="${c.dataset.jeq}"]`;
-    document.querySelector(suite)?.focus();
+    const suite = c.checked ? `#jeq-role-${c.dataset.jeq}` : '#jEqAjout';
+    (document.querySelector(suite) ?? document.querySelector('#jEqNouveau'))?.focus();
   }));
+  view.querySelector('#jEqAjouter')?.addEventListener('click', () => {
+    const sel = view.querySelector('#jEqAjout'); const id = sel?.value;
+    if (!id) { sel?.focus(); return; }
+    lireFormulaireJournal(view);
+    if (!etatJournal.brouillon.equipements.some((l) => l.id === id)) etatJournal.brouillon.equipements.push({ id, role: '' });
+    etatJournal.modifie = true; dessinerJournalFiche(view);
+    document.querySelector(`#jeq-role-${id}`)?.focus();
+  });
   // Quitter vers l'inventaire : le labo est enregistré d'abord (sinon on reste, erreurs affichées).
   const partir = (cible) => { if (etatJournal.modifie && !enregistrerJournal(view)) return; location.hash = cible; };
   view.querySelector('#jEqNouveau')?.addEventListener('click', () => {
@@ -2404,6 +2414,101 @@ function adresseConnue(noeudId, itf) {
   return q?.interfaces.find((i) => clePort(i.nom) === clePort(itf))?.adresse ?? '';
 }
 
+
+// ---------------------------------------------------------------------------
+// Configuration d'un équipement du schéma (JOURNAL-LABO-09) : n.config
+// ---------------------------------------------------------------------------
+const nomNoeudApp = (n) => resoudreEquipement(n.equipementId)?.nom || n.nom || typeNoeud(n.type).label;
+/** Pose une valeur dans la configuration du nœud par son chemin « a|b|c » (crée ce qui manque). */
+function poserConfig(n, chemin, valeur) {
+  if (!n.config) n.config = normaliserConfig(null);
+  const parts = chemin.split('|');
+  if (parts[0] === 'ports') {
+    const nom = parts[1];
+    if (!n.config.ports[nom]) n.config.ports[nom] = normaliserConfig({ ports: { [nom]: {} } }).ports[nom];
+    n.config.ports[nom][parts[2]] = valeur; return;
+  }
+  let o = n.config;
+  for (const k of parts.slice(0, -1)) { const cle = /^\d+$/.test(k) ? Number(k) : k; if (o[cle] == null) o[cle] = {}; o = o[cle]; }
+  o[parts.at(-1)] = valeur;
+}
+/** Liste de la configuration désignée par « a|b ». */
+function listeConfig(n, chemin) {
+  if (!n.config) n.config = normaliserConfig(null);
+  return chemin.split('|').reduce((o, k) => o?.[k], n.config);
+}
+function majApercuConfig(n) {
+  const a = document.querySelector('#cfgApercu');
+  if (a) a.innerHTML = apercuConfigMarkup(n, n.config, { nom: nomNoeudApp(n) });
+}
+/** L'adresse d'un port configuré passe sur le câble branché à ce port et dans la fiche de l'équipement. */
+function synchroniserAdressePort(n, port, adresse) {
+  for (const l of schemaCourant().liens) {
+    if (l.de === n.id && clePort(l.etiquetteDe) === clePort(port)) l.adresseDe = adresse;
+    if (l.a === n.id && clePort(l.etiquetteA) === clePort(port)) l.adresseA = adresse;
+  }
+  return reporterInterface(n.id, port, adresse);
+}
+function texteConfigNoeud(n) {
+  const c = normaliserConfig(n.config);
+  return texteAvecTitres(n, commandesNoeud(n, c, { nom: nomNoeudApp(n) }));
+}
+
+
+/** Boutons du panneau « Configuration ». */
+async function actionConfig(b, view) {
+  const n = etatSchema.selection ? schemaCourant().noeuds.find((x) => x.id === etatSchema.selection) : null;
+  if (!n) return;
+  const montrer = (note, focus) => { etatSchema.cfgNote = note; majBlocSchema(focus); etatSchema.cfgNote = ''; };
+  if (b.id === 'cfgBascule') { etatSchema.cfgOuvert = etatSchema.cfgOuvert === false; majBlocSchema('#cfgBascule'); return; }
+  if (b.dataset.cfgadd) {
+    const liste = listeConfig(n, b.dataset.cfgadd); const ligne = nouvelleLigne(b.dataset.cfgadd, normaliserConfig(n.config));
+    if (!Array.isArray(liste) || !ligne) return;
+    if (liste.length >= 64) { montrer('Limite atteinte pour cette liste.', `[data-cfgadd="${b.dataset.cfgadd}"]`); return; }
+    liste.push(ligne); schemaModifie();
+    const i = liste.length - 1; const premier = Object.keys(ligne)[0];
+    majBlocSchema(`#cfg-${`${b.dataset.cfgadd}|${i}|${premier}`.replace(/[^\w-]/g, '_')}`); return;
+  }
+  if (b.dataset.cfgdel) {
+    const parts = b.dataset.cfgdel.split('|'); const i = Number(parts.pop());
+    const liste = listeConfig(n, parts.join('|'));
+    if (Array.isArray(liste)) { liste.splice(i, 1); schemaModifie(); }
+    majBlocSchema(`[data-cfgadd="${parts.join('|')}"]`); return;
+  }
+  const a = b.dataset.cfgaction; const sel = `[data-cfgaction="${a}"]`;
+  if (a === 'proposer') {
+    const niveau = normaliserConfig(n.config).niveau;
+    const r = proposerConfig(schemaCourant(), n.id, n.config, { niveau });
+    n.config = r.config; schemaModifie();
+    // Les adresses proposées sur les ports passent aussi sur les câbles et dans la fiche.
+    for (const [p, cp] of Object.entries(n.config.ports)) if (cp.adresse) synchroniserAdressePort(n, p, cp.adresse);
+    montrer(r.ajouts.length ? `Proposé : ${r.ajouts.join(' · ')}. Vérifie et complète.` : 'Rien de nouveau à proposer : câble les équipements, nomme les zones « VLAN 10 · NOM · 192.168.10.0/24 », ou monte le niveau.', sel);
+    return;
+  }
+  if (a === 'copier') {
+    let ok = false; try { await navigator.clipboard.writeText(texteConfigNoeud(n)); ok = true; } catch { ok = false; }
+    montrer(ok ? 'Commandes copiées.' : 'La copie est bloquée ici : sélectionne le texte des commandes et copie-le (Ctrl+C).', sel); return;
+  }
+  if (a === 'telecharger') {
+    const nom = nomNoeudApp(n).replace(/[^\w.-]+/g, '_');
+    const res = await enregistrerFichier(`${etatJournal.brouillon.reference}_${nom}_config.txt`, `${texteConfigNoeud(n)}\n`, 'text/plain');
+    montrer(res.ok ? `Configuration ${res.message}.` : res.message, sel); return;
+  }
+  if (a === 'effacer') {
+    if (!etatSchema.cfgEffacer) { etatSchema.cfgEffacer = true; majBlocSchema(sel); const x = document.querySelector(sel); if (x) x.textContent = 'Confirmer : effacer la configuration'; return; }
+    etatSchema.cfgEffacer = false; n.config = null; schemaModifie(); montrer('Configuration effacée.', '[data-cfgaction="proposer"]'); return;
+  }
+  if (a === 'tousPorts') { etatSchema.cfgTousPorts = !etatSchema.cfgTousPorts; majBlocSchema(sel); return; }
+  if (a === 'dhcpParVlan') {
+    n.config = normaliserConfig(n.config); const k = poolsParVlan(n.config); if (k) schemaModifie();
+    montrer(k ? `${k} pool(s) DHCP ajouté(s).` : 'Aucune sous-interface ou SVI adressée sans pool.', sel); return;
+  }
+  if (a === 'ospfReseaux') {
+    n.config = normaliserConfig(n.config); const k = ospfDepuisInterfaces(n.config); if (k) schemaModifie();
+    montrer(k ? `${k} réseau(x) annoncé(s) en OSPF.` : 'Aucun nouveau réseau adressé à annoncer.', sel);
+  }
+}
+
 /** Coordonnées de feuille d'un événement pointeur. */
 function pointFeuille(ev, svg) {
   const r = svg.getBoundingClientRect();
@@ -2504,6 +2609,9 @@ function brancherSchema(view) {
   });
   bloc.addEventListener('input', (ev) => {
     const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null; if (!el) return;
+    if (ev.target.dataset?.cfg && ev.target.type === 'text') {
+      poserConfig(el, ev.target.dataset.cfg, ev.target.value); schemaModifie(); majApercuConfig(el); return;
+    }
     if (ev.target.id === 'schPorts') { el.ports = ev.target.value; schemaModifie(); return; }
     const champ = { schNom: 'nom', schNote: 'note', schEtiquette: 'etiquette', schItfDe: 'etiquetteDe', schItfA: 'etiquetteA', schAdrDe: 'adresseDe', schAdrA: 'adresseA', schZoneNom: 'nom', schTexte: 'texte' }[ev.target.id];
     if (!champ) return;
@@ -2511,8 +2619,22 @@ function brancherSchema(view) {
   });
   bloc.addEventListener('change', (ev) => {
     const id = ev.target.id; const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
-    if (id === 'schElement') { etatSchema = { ...etatSchema, selection: ev.target.value || null, relierDepuis: null }; majBlocSchema('#schElement'); return; }
+    if (id === 'schElement') { etatSchema = { ...etatSchema, selection: ev.target.value || null, relierDepuis: null, cfgEffacer: false }; majBlocSchema('#schElement'); return; }
     if (!el) return;
+    const chemin = ev.target.dataset?.cfg;
+    if (chemin) {
+      const t = ev.target;
+      const v = t.type === 'checkbox' ? t.checked : t.value;
+      poserConfig(el, chemin, v); schemaModifie();
+      if (/^ports\|[^|]+\|adresse$/.test(chemin)) {
+        const msg = synchroniserAdressePort(el, chemin.split('|')[1], String(v).trim()); majFeuilleSchema();
+        const note = document.querySelector('#jNote'); if (msg && note) note.textContent = msg;
+      }
+      if (t.type === 'text') { majApercuConfig(el); return; }
+      // Les choix (niveau, mode d'un port, protocole…) changent les champs montrés.
+      majBlocSchema(t.type === 'radio' ? 'input[name="cfgNiveau"]:checked' : `#${t.id}`);
+      return;
+    }
     // Interface ou adresse d'un côté de câble : complète l'adresse connue, puis reporte dans l'inventaire.
     const cote = { schItfDe: 'De', schAdrDe: 'De', schItfA: 'A', schAdrA: 'A' }[id];
     if (cote && 'de' in el) {
@@ -2521,6 +2643,9 @@ function brancherSchema(view) {
         const connue = adresseConnue(noeud, el[`etiquette${cote}`]);
         if (connue) { el[`adresse${cote}`] = connue; const champAdr = document.querySelector(`#schAdr${cote}`); if (champAdr) champAdr.value = connue; majFeuilleSchema(); }
       }
+      const nd = schemaCourant().noeuds.find((x) => x.id === noeud);
+      const cleCfg = nd?.config ? Object.keys(nd.config.ports ?? {}).find((k) => clePort(k) === clePort(el[`etiquette${cote}`])) : null;
+      if (cleCfg && id.startsWith('schAdr')) nd.config.ports[cleCfg].adresse = el[`adresse${cote}`];
       const msg = reporterInterface(noeud, el[`etiquette${cote}`], el[`adresse${cote}`]);
       const note = document.querySelector('#jNote'); if (msg && note) note.textContent = msg;
       return;
@@ -2547,6 +2672,7 @@ function brancherSchema(view) {
     const liste = ev.target.closest?.('#schPortChoix');
     if (liste) { if (liste.value) choisirPort(liste.value); return; }
     const b = ev.target.closest('button, a[data-jeqouvrir]'); if (!b) return;
+    if (b.id === 'cfgBascule' || b.dataset.cfgadd || b.dataset.cfgdel || b.dataset.cfgaction) { await actionConfig(b, view); return; }
     if (b.id === 'schPortOk') { choisirPort(document.querySelector('#schPortLibre')?.value || document.querySelector('#schPortChoix')?.value); return; }
     if (b.id === 'schPortAnnuler') { etatSchema = { ...etatSchema, cablage: { ...etatSchema.cablage, enAttente: null } }; majBlocSchema('#schFeuille'); return; }
     if (b.dataset.sfiltre) { etatSchema = { ...etatSchema, filtreSysteme: b.dataset.sfiltre }; majBlocSchema(`[data-sfiltre="${b.dataset.sfiltre}"]`); return; }

@@ -1,3 +1,13 @@
+## JOURNAL-LABO-09 (2026-11-06)
+
+- Correction : un nouveau labo ne montre plus les équipements des autres labos. La section « Équipements » liste seulement ceux du labo ; les autres se reprennent par « Ajouter depuis l’inventaire » ; décocher retire du labo (pas de l’inventaire).
+- Configuration de chaque équipement du schéma (`config-ios.mjs`, `vue-config.mjs`), en trois niveaux : Simple (VLAN, accès, trunks, gestion, sous-interfaces, adresse d’un poste), Intermédiaire (VLAN natif et autorisés, VLAN voix, port-security, SSH sans mot de passe écrit, VTP, DHCP, routes statiques), Complet (Rapid-PVST et racine, PortFast, BPDU Guard, EtherChannel LACP/PAgP, SVI et ip routing, OSPF, HSRP, NAT PAT). 2960 en accès, 3650 en cœur ; le 3560 reçoit l’encapsulation dot1q.
+- « Proposer depuis le schéma » : VLAN des zones « VLAN 10 · NOM · réseau », accès vers les postes, trunks entre équipements réseau, EtherChannel pour les câbles parallèles, sous-interfaces d’un routeur relié en trunk, SVI du cœur, racine STP, route par défaut et NAT vers Internet, passerelle des postes et de la gestion trouvée dans le même réseau. Aides « Un pool DHCP par VLAN » et « Annoncer mes réseaux » (OSPF).
+- Commandes IOS générées dans l’ordre (base, VTP, VLAN, STP, ports, EtherChannel, sous-interfaces, gestion, SVI, HSRP, DHCP, routes, OSPF, NAT, SSH, sauvegarde), ASCII seulement, avec avertissements ; copie et téléchargement .txt. Configuration IP des postes pour Packet Tracer, Windows et Linux. Vérifiées dans leur forme et leur ordre, pas exécutées sur un équipement.
+- « Remplir depuis le schéma » utilise les configurations : interfaces, VLAN et table de routage des fiches, plan d’adressage (sous-interfaces, SVI, gestion, postes avec passerelle), un bloc « Configuration de X » par équipement, tests de validation proposés, environnement (modèles). Rien n’est dupliqué si on remplit deux fois.
+- Les zones du TP VLAN portent le réseau de chaque VLAN. PDF : tableau « Câblage » dans la section Architecture.
+- Tests : journal 270 vérifications, navigateur 129.
+
 ## JOURNAL-LABO-08 (2026-11-06)
 
 - Palette du schéma rangée par groupes comme Packet Tracer (Réseau, Terminaux, Serveurs, Azure et cloud, WAN, Autre) avec un filtre par système (Tous, Cisco, Système, Azure). Nouveaux équipements : téléphone IP, commutateur de cœur (niveau 3), portable, imprimante, smartphone, caméra IP, NAS, sous-réseau et passerelle VPN Azure, nuage de l’opérateur.

@@ -16,6 +16,7 @@
 import { secretDans, nouvelId } from './journal.mjs';
 import { largeur, versWinAnsi } from './pdf-a4.mjs';
 import { modele, modeleDefaut, MODELE_PERSO } from './modeles.mjs';
+import { normaliserConfig, secretConfig, famille, cidr } from './config-ios.mjs';
 
 export const FEUILLE = { largeur: 1000, hauteur: 600, pas: 10 };
 export const LIMITES = { noeuds: 80, liens: 150, zones: 30, textes: 40, typesPerso: 30 };
@@ -109,6 +110,8 @@ export function normaliserSchema(brut) {
     s.noeuds.push({ id: n.id, type, typePerso: type === 'perso' ? n.typePerso : null, nom: texte(n.nom, 60), note: texte(n.note, 80),
       modele: mod, ports: mod === MODELE_PERSO ? texte(n.ports, 300) : '',
       equipementId: /^e[\w]{3,40}$/.test(String(n.equipementId ?? '')) ? n.equipementId : null,
+      // Configuration (config-ios.mjs) : seulement pour les équipements qui en ont une.
+      config: n.config && typeof n.config === 'object' && famille(type) ? normaliserConfig(n.config) : null,
       x: borne(n.x, 40, FEUILLE.largeur - 40), y: borne(n.y, 30, FEUILLE.hauteur - 60) });
   }
   const ids = new Set(s.noeuds.map((n) => n.id));
@@ -130,7 +133,11 @@ export function normaliserSchema(brut) {
     s.textes.push({ id: t.id, texte: v, x: borne(t.x, 0, FEUILLE.largeur - 20), y: borne(t.y, 14, FEUILLE.hauteur - 4) });
   }
   const verifier = (cle, v) => { const x = secretDans(v); if (x) erreurs[cle] = `Le schéma contient ${x.quoi} : remplace la valeur par ***.`; };
-  s.noeuds.forEach((n) => { verifier(`schema.${n.id}.nom`, n.nom); verifier(`schema.${n.id}.note`, n.note); });
+  s.noeuds.forEach((n) => {
+    verifier(`schema.${n.id}.nom`, n.nom); verifier(`schema.${n.id}.note`, n.note);
+    const x = n.config ? secretConfig(n.config) : null;
+    if (x) erreurs[`schema.${n.id}.config`] = `La configuration de ${n.nom || 'cet équipement'} contient ${x.quoi} : remplace la valeur par ***.`;
+  });
   s.liens.forEach((l) => { verifier(`schema.${l.id}`, [l.etiquette, l.etiquetteDe, l.etiquetteA, l.adresseDe, l.adresseA].join('\n')); });
   s.zones.forEach((z) => verifier(`schema.${z.id}`, z.nom));
   s.textes.forEach((t) => verifier(`schema.${t.id}`, t.texte));
@@ -435,7 +442,8 @@ export function schemaDepuisFiche(valeurs = {}, ids = {}) {
   const total = n * largeurZone + (n - 1) * marge; let x = Math.round((FEUILLE.largeur - total) / 2);
   const couleurs = ['vert', 'bleu', 'orange', 'violet', 'gris'];
   vlans.slice(0, 8).forEach((z, i) => {
-    s.zones.push({ id: idSchema('z'), nom: `VLAN ${z.vlan} · ${z.nom}`.slice(0, 60), couleur: i === 0 && v.vlanGestion ? 'vert' : couleurs[(i % 4) + 1], x, y: 375, l: largeurZone, h: 215 });
+    const net = cidr(`${z.poste}/${z.prefixe}`);
+    s.zones.push({ id: idSchema('z'), nom: `VLAN ${z.vlan} · ${z.nom}${net ? ` · ${net.reseau}/${net.prefixe}` : ''}`.slice(0, 60), couleur: i === 0 && v.vlanGestion ? 'vert' : couleurs[(i % 4) + 1], x, y: 375, l: largeurZone, h: 215 });
     const pc = idSchema('n');
     s.noeuds.push({ id: pc, type: 'poste', modele: 'pc', nom: z.posteNom.slice(0, 60), note: '', equipementId: null, typePerso: null, x: x + Math.round(largeurZone / 2), y: 480 });
     // Le port du commutateur côté commutateur, l'adresse du poste côté poste.

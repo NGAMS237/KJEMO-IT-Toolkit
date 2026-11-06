@@ -29,6 +29,7 @@ const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
 const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
+const CI = await imp('config-ios.mjs'); const VC = await imp('vue-config.mjs');
 const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs'); const SR = await imp('schema-remplir.mjs'); const MO = await imp('modeles.mjs');
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
@@ -327,7 +328,7 @@ console.log('11. Schéma d’architecture');
   const st = SC.schemaDepuisFiche(v, { commutateur: 'eswxxx1', routeur: 'ertxxx1' });
   assert(st.noeuds.length === 5 && st.zones.length === 3 && st.liens.length === 4, 'TP VLAN (3 VLAN) : R1, SW1, trois postes, trois zones, quatre liens');
   assert(st.liens[0].style === 'trunk' && st.liens[0].etiquetteDe === 'GigabitEthernet0/0' && st.liens[0].etiquetteA === 'GigabitEthernet0/1', 'trunk R1–SW1 avec les interfaces de la fiche');
-  assert(st.noeuds.find((n) => n.type === 'routeur').equipementId === 'ertxxx1' && st.zones.map((z) => z.nom).join('|') === 'VLAN 99 · GESTION|VLAN 10 · VENTES|VLAN 20 · TECHNIQUE', 'équipements liés à l’inventaire, une zone par VLAN');
+  assert(st.noeuds.find((n) => n.type === 'routeur').equipementId === 'ertxxx1' && /^VLAN 99 · GESTION( · [\d.]+\/\d+)?\|VLAN 10 · VENTES · 192\.168\.10\.0\/24\|VLAN 20 · TECHNIQUE · 192\.168\.20\.0\/24$/.test(st.zones.map((z) => z.nom).join('|')), 'équipements liés à l’inventaire, une zone par VLAN (avec son réseau)', st.zones.map((z) => z.nom).join('|'));
   assert(st.zones.every((z, i) => i === 0 || z.x >= st.zones[i - 1].x + st.zones[i - 1].l) && st.zones.every((z) => z.x >= 0 && z.x + z.l <= 1000), 'zones côte à côte, dans la feuille');
   assert(SC.schemaEstVide(SC.schemaDepuisFiche({}, {})), 'fiche sans équipements : schéma vide');
   // Le schéma voyage avec le labo
@@ -378,7 +379,7 @@ console.log('12. Remplir le document et l’inventaire depuis le schéma');
   assert(srv.systeme === 'systeme' && srv.type === 'serveur' && srv.interfaces[0].nom === 'ens18' && srv.adresse === '192.168.10.20', 'SRV-WEB : système, type, interface et adresse de gestion');
   assert(inv2.find((q) => q.nom === 'SW1').interfaces.some((i) => i.nom === 'Fa0/5'), 'SW1 : le port du câble ajouté à ses interfaces');
   const ligne = (nom) => e.adressage.find((l) => l.equipement === nom);
-  assert(ligne('PC VENTES')?.adresse === '192.168.10.10/24' && ligne('PC VENTES').vlan === 'VLAN 10 · VENTES' && ligne('PC VENTES').passerelle === '192.168.10.1', 'plan d’adressage : poste avec sa zone et sa passerelle (sous-interface de R1)');
+  assert(ligne('PC VENTES')?.adresse === '192.168.10.10/24' && ligne('PC VENTES').vlan.startsWith('VLAN 10 · VENTES') && ligne('PC VENTES').passerelle === '192.168.10.1', 'plan d’adressage : poste avec sa zone et sa passerelle (sous-interface de R1)');
   assert(ligne('Poste de gestion')?.passerelle === '192.168.99.1' && ligne('SRV-WEB')?.interface === 'ens18' && ligne('SRV-WEB').passerelle === '192.168.10.1', 'passerelles trouvées par le calcul du réseau');
   assert(bilan.architecture && e.architecture.includes('SRV-WEB'), 'description de l’architecture rédigée (champ vide)');
   assert(!Object.keys(J.normaliserEntree(e).erreurs).length && inv2.every((q) => !Object.keys(I.normaliserEquipement(q).erreurs).length), 'résultat valide (labo et fiches)');
@@ -423,6 +424,118 @@ console.log('13. Modèles, ports et câble automatique');
   const lignes = SC.dessinerSchema(SC.normaliserSchema(deux).schema).filter((o) => o.k === 'ligne' && o.id);
   assert(lignes.length === 2 && lignes[0].y1 !== lignes[1].y1, 'deux câbles entre les mêmes équipements : tracés côte à côte');
   assert(SC.dessinerSchema({ ...SC.schemaVide(), noeuds: ['telephone-ip', 'commutateur-l3', 'camera-ip', 'nas', 'passerelle-vpn'].map((t, i) => ({ id: `nt${i}x`, type: t, nom: '', x: 100 + i * 150, y: 200 })) }).filter((o) => o.k !== 'clic').length > 30, 'nouveaux symboles dessinés (téléphone IP, cœur, caméra, NAS, VPN)');
+}
+
+console.log('14. Configuration des équipements (simple → complet) et commandes IOS');
+{
+  // Adresses
+  const a = CI.cidr('192.168.10.1/24');
+  assert(a.masque === '255.255.255.0' && a.reseau === '192.168.10.0' && a.wildcard === '0.0.0.255' && CI.cidr('10.0.0.5/30').reseau === '10.0.0.4' && CI.cidr('0.0.0.0/0').masque === '0.0.0.0', 'masque, réseau et wildcard calculés depuis le préfixe');
+  assert(CI.cidr('192.168.10.1') === null && CI.cidr('300.1.1.1/24') === null && CI.cidr('1.1.1.1/33') === null, 'adresse sans préfixe ou invalide refusée');
+  assert(CI.listeVlans('10,20,30-35') && !CI.listeVlans('10,,20') && !CI.listeVlans('5000'), 'liste de VLAN autorisés validée');
+  const brut = CI.normaliserConfig({ niveau: 'expert', ports: { 'Gi0/1': { mode: 'hack', vlan: '10' } }, canaux: [{ groupe: '1', protocole: 'xx', mode: 'zz', ports: 'Gi0/1, Gi0/2' }], inconnu: 1 });
+  assert(brut.niveau === 'simple' && brut.ports['Gi0/1'].mode === '' && brut.canaux[0].protocole === 'lacp' && brut.canaux[0].mode === 'active' && brut.canaux[0].ports.length === 2 && !('inconnu' in brut), 'configuration brute bornée (niveau, mode, protocole inconnus → défauts)');
+  // Schéma : R1 (routeur sur un bâton + Internet), SW1 (2960), PC1, Internet
+  const zones = [{ id: 'zcv10', nom: 'VLAN 10 · VENTES · 192.168.10.0/24', couleur: 'bleu', x: 0, y: 360, l: 400, h: 220 },
+    { id: 'zcv99', nom: 'VLAN 99 · GESTION · 192.168.99.0/24', couleur: 'vert', x: 600, y: 360, l: 390, h: 220 }];
+  const sch = SC.normaliserSchema({ noeuds: [
+    { id: 'ncr1', type: 'routeur', modele: '4321', nom: 'R1', x: 500, y: 60 }, { id: 'ncsw', type: 'commutateur', modele: '2960-24tt', nom: 'SW1', note: '192.168.99.2/24', x: 500, y: 300 },
+    { id: 'ncpc', type: 'poste', modele: 'pc', nom: 'PC1', x: 200, y: 480 }, { id: 'ncin', type: 'internet', nom: 'Internet', x: 850, y: 60 }],
+  liens: [{ id: 'lcr1', de: 'ncr1', a: 'ncsw', style: 'trunk', etiquetteDe: 'Gi0/0/0', etiquetteA: 'Gi0/1' },
+    { id: 'lcpc', de: 'ncsw', a: 'ncpc', style: 'droit', etiquetteDe: 'Fa0/1', etiquetteA: 'FastEthernet0', adresseA: '192.168.10.10/24' },
+    { id: 'lcin', de: 'ncr1', a: 'ncin', style: 'droit', etiquetteDe: 'Gi0/0/1', etiquetteA: '', adresseDe: '203.0.113.2/30', adresseA: '203.0.113.1/30' }], zones }).schema;
+  const R = sch.noeuds[0]; const S = sch.noeuds[1]; const PC = sch.noeuds[2];
+  const pr = CI.proposerConfig(sch, R.id, null, { niveau: 'complet' }); R.config = pr.config;
+  const rc = pr.config;
+  assert(rc.sousInterfaces.map((x) => `${x.port}.${x.vlan}=${x.adresse}`).join() === 'Gi0/0/0.10=192.168.10.1/24,Gi0/0/0.99=192.168.99.1/24', 'R1 : une sous-interface par zone VLAN, passerelle = première adresse', rc.sousInterfaces.map((x) => `${x.port}.${x.vlan}=${x.adresse}`).join());
+  assert(rc.ports['Gi0/0/1'].adresse === '203.0.113.2/30' && rc.statiques[0].reseau === '0.0.0.0/0' && rc.statiques[0].saut === '203.0.113.1', 'R1 : adresse du câble Internet reprise, route par défaut vers l’opérateur');
+  assert(rc.nat.sortie === 'Gi0/0/1' && rc.ports['Gi0/0/1'].nat === 'outside' && rc.sousInterfaces.every((x) => x.nat === 'inside'), 'R1 (complet) : NAT PAT, inside sur les sous-interfaces, outside vers Internet');
+  const simple = CI.proposerConfig(sch, R.id, CI.configVide(), { niveau: 'simple' }).config;
+  assert(!simple.statiques.length && !simple.nat.sortie && simple.sousInterfaces.length === 2, 'niveau simple : sous-interfaces seulement (ni route ni NAT)');
+  const cmdR = CI.commandesIos(R, rc, { nom: 'R1' });
+  const tR = CI.texteCommandes(cmdR);
+  const ordre = cmdR.blocs.map((b) => b.titre);
+  assert(ordre[0] === 'Base' && ordre.at(-1) === 'Fin' && ordre.indexOf('Ports') < ordre.indexOf('Sous-interfaces (routeur sur un bâton)') && ordre.indexOf('Routes statiques') < ordre.indexOf('NAT (PAT)'), 'R1 : blocs dans l’ordre (base, ports, sous-interfaces, routes, NAT, fin)', ordre.join(' > '));
+  assert(tR.includes('hostname R1') && tR.includes('interface GigabitEthernet0/0/0.10\n encapsulation dot1Q 10\n ip address 192.168.10.1 255.255.255.0') && tR.includes('interface GigabitEthernet0/0/0\n') && tR.includes('ip route 0.0.0.0 0.0.0.0 203.0.113.1'), 'R1 : sous-interfaces dot1Q, parent allumé, route par défaut');
+  assert(tR.includes('access-list 1 permit 192.168.10.0 0.0.0.255') && tR.includes('ip nat inside source list 1 interface GigabitEthernet0/0/1 overload') && tR.includes(' ip nat outside'), 'R1 : NAT PAT avec wildcard calculé');
+  assert(!/switchport/.test(tR) && /^[\x20-\x7e\n]*$/.test(tR) && tR.endsWith('copy running-config startup-config'), 'R1 : aucune commande de commutateur, ASCII seulement, sauvegarde à la fin');
+  // SW1 au niveau intermédiaire : la passerelle de gestion vient de la sous-interface de R1.
+  const ps = CI.proposerConfig(sch, S.id, null, { niveau: 'intermediaire' }); S.config = ps.config; const sc = ps.config;
+  assert(sc.vlans.map((v) => `${v.id}:${v.nom}`).join() === '10:VENTES,99:GESTION' && sc.ports['Gi0/1'].mode === 'trunk' && sc.ports['Gi0/1'].autorises === '10,99' && sc.ports['Fa0/1'].mode === 'access' && sc.ports['Fa0/1'].vlan === '10', 'SW1 : VLAN des zones, trunk vers R1 (VLAN autorisés), accès VLAN 10 vers PC1');
+  assert(sc.gestion.vlan === '99' && sc.gestion.adresse === '192.168.99.2/24' && sc.gestion.passerelle === '192.168.99.1', 'SW1 : gestion VLAN 99, adresse de sa note, passerelle = sous-interface .99 de R1');
+  sc.ssh = { actif: true, utilisateur: 'admin' }; sc.domaine = 'cegeplimoilou.lan'; sc.banniere = 'Accès réservé';
+  const tS = CI.texteCommandes(CI.commandesIos(S, sc, { nom: 'SW1' }));
+  assert(tS.indexOf('vlan 10\n name VENTES') < tS.indexOf('interface GigabitEthernet0/1') && tS.includes(' switchport mode trunk\n switchport trunk allowed vlan 10,99') && tS.includes('interface FastEthernet0/1\n description Vers PC1 FastEthernet0\n switchport mode access\n switchport access vlan 10'), 'SW1 : VLAN créés avant les ports, trunk et accès');
+  assert(tS.includes('interface vlan 99\n ip address 192.168.99.2 255.255.255.0\n no shutdown') && tS.includes('ip default-gateway 192.168.99.1'), 'SW1 : SVI de gestion et ip default-gateway');
+  assert(/username admin privilege 15 secret\n/.test(tS) && tS.includes('ip ssh version 2') && tS.includes(' transport input ssh') && J.secretDans(tS) === null, 'SSH : la ligne « secret » s’arrête avant le mot de passe (aucun secret écrit)');
+  assert(tS.includes('banner motd # Acces reserve #') && !/[^\x00-\x7e]/.test(tS), 'bannière en ASCII (accents retirés pour IOS)');
+  assert(!tS.includes('switchport trunk encapsulation'), '2960 : pas d’encapsulation à écrire (dot1Q seulement)');
+  const pc = CI.proposerConfig(sch, PC.id).config; PC.config = pc;
+  assert(pc.hote.adresse === '192.168.10.10/24' && pc.hote.passerelle === '192.168.10.1', 'PC1 : adresse du câble, passerelle trouvée (sous-interface .10 de R1)');
+  const h = CI.commandesHote(PC, pc, { nom: 'PC1' });
+  assert(h.blocs.length === 3 && h.blocs[0].lignes.includes('Subnet Mask : 255.255.255.0') && h.blocs[1].lignes[0].includes('-PrefixLength 24 -DefaultGateway 192.168.10.1'), 'PC1 : configuration IP pour Packet Tracer, Windows et Linux');
+  // Vérifications
+  const w = CI.verifierConfig(S, CI.normaliserConfig({ ports: { 'Gi0/1': { mode: 'routed', adresse: '10.0.0.1/30' }, 'Gi9/9': { mode: 'access', vlan: '50' } }, ssh: { actif: true } }));
+  assert(w.some((x) => /n’a pas de port routé/.test(x)) && w.some((x) => /Gi9\/9.*n’existe pas/.test(x)) && w.some((x) => /VLAN 50 n’est pas créé/.test(x)) && w.some((x) => /nom de domaine/.test(x)), 'avertissements : port routé sur 2960, port inconnu, VLAN non créé, SSH sans domaine');
+  // Cœur + accès au niveau complet : EtherChannel, STP, SVI.
+  const z2 = [{ id: 'zcc10', nom: 'VLAN 10 · VENTES · 192.168.10.0/24', couleur: 'bleu', x: 0, y: 360, l: 500, h: 220 }, { id: 'zcc20', nom: 'VLAN 20 · TECH · 192.168.20.0/24', couleur: 'jaune', x: 500, y: 360, l: 490, h: 220 }];
+  const sch2 = SC.normaliserSchema({ noeuds: [{ id: 'nccor', type: 'commutateur-l3', modele: '3650-24ps', nom: 'CORE', x: 500, y: 80 }, { id: 'ncacc', type: 'commutateur', modele: '2960-24tt', nom: 'ACC1', x: 500, y: 300 }, { id: 'ncpcb', type: 'poste', nom: 'PC2', x: 700, y: 480 }],
+    liens: [{ id: 'lcec1', de: 'nccor', a: 'ncacc', style: 'croise', etiquetteDe: 'Gi1/0/1', etiquetteA: 'Gi0/1' }, { id: 'lcec2', de: 'nccor', a: 'ncacc', style: 'croise', etiquetteDe: 'Gi1/0/2', etiquetteA: 'Gi0/2' },
+      { id: 'lcpcb', de: 'ncacc', a: 'ncpcb', style: 'droit', etiquetteDe: 'Fa0/5', etiquetteA: 'FastEthernet0', adresseA: '192.168.20.10/24' }], zones: z2 }).schema;
+  const [CO, AC, P2] = sch2.noeuds;
+  CO.config = CI.proposerConfig(sch2, CO.id, null, { niveau: 'complet' }).config; AC.config = CI.proposerConfig(sch2, AC.id, null, { niveau: 'complet' }).config;
+  assert(CO.config.canaux[0]?.ports.join() === 'Gi1/0/1,Gi1/0/2' && AC.config.canaux[0]?.ports.join() === 'Gi0/1,Gi0/2' && AC.config.canaux[0].protocole === 'lacp', 'câbles parallèles : EtherChannel LACP des deux côtés');
+  assert(CO.config.ipRouting && CO.config.svis.map((x) => x.adresse).join() === '192.168.10.1/24,192.168.20.1/24' && CO.config.stp.primaire === '10,20' && AC.config.stp.mode === 'rapid-pvst' && !AC.config.stp.primaire, 'cœur : SVI + ip routing + racine STP ; accès : Rapid-PVST sans racine');
+  assert(AC.config.ports['Fa0/5'].portfast && AC.config.ports['Fa0/5'].bpduguard && AC.config.ports['Fa0/5'].vlan === '20', 'accès (complet) : PortFast et BPDU Guard vers le poste');
+  const tC = CI.texteCommandes(CI.commandesIos(CO, CO.config, { nom: 'CORE' }));
+  assert(tC.includes('interface range GigabitEthernet1/0/1 , GigabitEthernet1/0/2\n switchport mode trunk\n channel-group 1 mode active') && tC.includes('interface Port-channel1\n switchport mode trunk') && tC.includes('spanning-tree vlan 10,20 root primary') && tC.includes('ip routing\ninterface vlan 10\n ip address 192.168.10.1 255.255.255.0'), 'CORE : EtherChannel, racine STP, routage par SVI');
+  const c3560 = { ...CO, modele: '3560-24ps' };
+  assert(CI.texteCommandes(CI.commandesIos(c3560, CO.config, { nom: 'CORE' })).includes(' switchport trunk encapsulation dot1q\n switchport mode trunk'), '3560 : encapsulation dot1q avant le mode trunk');
+  P2.config = CI.proposerConfig(sch2, P2.id).config;
+  assert(P2.config.hote.passerelle === '192.168.20.1', 'PC2 : passerelle = SVI 20 du cœur');
+  const tests = CI.testsProposes(CO, CO.config, 'CORE').map((x) => x.test);
+  assert(tests.includes('CORE : show etherchannel summary') && tests.includes('CORE : show spanning-tree summary') && tests.includes('CORE : show ip route'), 'tests de vérification proposés selon la configuration');
+  // Aides DHCP et OSPF
+  const cd = CI.normaliserConfig(rc); const k = VC.poolsParVlan(cd);
+  assert(k === 2 && cd.dhcp.pools[0].reseau === '192.168.10.0/24' && cd.dhcp.pools[0].passerelle === '192.168.10.1' && cd.dhcp.exclusions[0].debut === '192.168.10.1' && cd.dhcp.exclusions[0].fin === '192.168.10.10', 'un pool DHCP par VLAN (10 premières adresses exclues)');
+  const ko = VC.ospfDepuisInterfaces(cd);
+  assert(ko === 3 && cd.ospf.processus === '1' && CI.texteCommandes(CI.commandesIos(R, CI.normaliserConfig({ ...cd, niveau: 'complet' }), { nom: 'R1' })).includes(' network 192.168.10.0 0.0.0.255 area 0'), 'OSPF : réseaux des interfaces annoncés avec leur wildcard');
+  // Secret et schéma
+  const bad = SC.normaliserSchema({ noeuds: [{ id: 'ncbad', type: 'routeur', config: { banniere: 'enable secret Cisco123' } }] });
+  assert(Object.keys(bad.erreurs).some((x) => x.endsWith('.config')), 'un mot de passe dans une configuration est refusé');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'ncnon', type: 'internet', config: { domaine: 'x' } }] }).schema.noeuds[0].config === null && SC.normaliserSchema(sch).schema.noeuds[0].config.sousInterfaces.length === 2, 'configuration gardée par le schéma (pas pour Internet)');
+  // Panneau
+  const pSimple = VC.configMarkup(sch, S, { ...sc, niveau: 'simple' }, { nom: 'SW1' }); const pComplet = VC.configMarkup(sch, S, { ...sc, niveau: 'complet' }, { nom: 'SW1' });
+  assert(!pSimple.includes('<legend>Spanning Tree') && !pSimple.includes('<legend>SSH') && pComplet.includes('<legend>Spanning Tree') && pComplet.includes('<legend>EtherChannel') && pComplet.includes('<legend>SSH'), 'panneau : sections selon le niveau');
+  assert(VC.configMarkup(sch, R, rc, { nom: 'R1' }).includes('Sous-interfaces') && !VC.configMarkup(sch, R, rc, { nom: 'R1' }).includes('<legend>Spanning Tree') && VC.configMarkup(sch, PC, pc, { nom: 'PC1' }).includes('Adresse IP du poste'), 'panneau : sections selon le type (routeur, poste)');
+  assert(VC.configMarkup(sch, S, { ...sc, banniere: '<script>' }, { nom: 'SW1' }).includes('&lt;script&gt;') && !VC.configMarkup(sch, S, { ...sc, banniere: '<script>' }, { nom: 'SW1' }).includes('<script>'), 'panneau : textes échappés');
+  // Remplir depuis le schéma avec les configurations
+  const lab = { ...J.entreeVide({ categorieId: 'cisco', date: new Date('2026-11-05T10:00:00'), existantes: [] }), titre: 'Config', schema: sch };
+  const { entree: e, inventaire: inv, bilan } = SR.remplirDepuisSchema(lab, { inventaire: [], date: new Date('2026-11-05T10:00:00') });
+  const qR = inv.find((q) => q.nom === 'R1'); const qS = inv.find((q) => q.nom === 'SW1');
+  assert(qR.interfaces.some((i) => i.nom === 'Gi0/0/0.10' && i.adresse === '192.168.10.1/24') && qR.routes.some((r) => r.type === 'S*' && r.via === '203.0.113.1') && qR.routes.some((r) => r.type === 'C' && r.destination === '192.168.99.0/24'), 'fiche R1 : sous-interfaces, routes connectées et route par défaut');
+  assert(qS.vlans.map((v) => `${v.numero}:${v.ports}:${v.reseau}`).join() === '10:Fa0/1:192.168.10.0/24,99::192.168.99.0/24' && qS.adresse.startsWith('192.168.99.2'), 'fiche SW1 : VLAN avec ports et réseau, adresse de gestion', qS.vlans.map((v) => `${v.numero}:${v.ports}:${v.reseau}`).join());
+  const lg = (eq, itf) => e.adressage.find((l) => l.equipement === eq && l.interface === itf);
+  assert(lg('R1', 'Gi0/0/0.10')?.adresse === '192.168.10.1/24' && lg('SW1', 'Vlan99')?.passerelle === '192.168.99.1' && e.adressage.find((l) => l.equipement === 'PC1')?.passerelle === '192.168.10.1', 'plan d’adressage : sous-interfaces, gestion du commutateur, poste avec passerelle');
+  assert(e.adressage.filter((l) => l.equipement === 'PC1').length === 1 && e.adressage.filter((l) => l.equipement === 'R1' && l.interface === 'Gi0/0/1').length === 1, 'plan d’adressage : pas de doublon entre câble et configuration');
+  assert(e.configuration.map((b) => b.titre).join() === 'Configuration de R1,Configuration de SW1,Configuration IP de PC1' && e.configuration[0].code.startsWith('! --- Base ---'), 'un bloc « Configuration de X » par équipement configuré');
+  assert(e.validation.some((v) => v.test === 'SW1 : show interfaces trunk') && e.validation.some((v) => v.test === 'PC1 : ping 192.168.10.1') && bilan.tests === e.validation.length, 'tests de vérification ajoutés à la Validation');
+  assert(/R1 : ISR 4321/.test(e.environnement) && /SW1 : Catalyst 2960/.test(e.environnement) && bilan.environnement, 'environnement rempli avec les modèles', e.environnement);
+  const deuxieme = SR.remplirDepuisSchema(e, { inventaire: inv, date: new Date('2026-11-05T10:00:00') });
+  assert(deuxieme.entree.configuration.length === 3 && deuxieme.entree.validation.length === e.validation.length && deuxieme.bilan.configurations === 0 && deuxieme.entree.adressage.length === e.adressage.length, 'remplir deux fois : rien n’est dupliqué');
+  assert(J.normaliserEntree(e).erreurs && !Object.keys(J.normaliserEntree(e).erreurs).length, 'le labo rempli est valide (aucun secret)');
+  // PDF : tableau de câblage
+  assert(JP.tableauCablage(sch).some((l) => l.join('|') === 'R1|Gi0/0/0|SW1|Gi0/1|Trunk 802.1Q|-' || (l[0] === 'R1' && l[1] === 'Gi0/0/0' && l[3] === 'Gi0/1')), 'câblage : une ligne par câble avec les ports');
+  if (PDFTOTEXT) {
+    const r = JP.pdfJournal(J.normaliserEntree(e).entree, { inventaire: inv, equipements: e.equipements.map((l) => ({ equipement: inv.find((q) => q.id === l.id), role: l.role })) });
+    const txt = texteDu(r.octets);
+    assert(/Câblage/.test(txt) && /Configuration de R1/.test(txt) && /encapsulation dot1Q 10/.test(txt), 'PDF : tableau de câblage et commandes de R1');
+    if (QPDF) assert(qpdfOk(r.octets), 'PDF avec configurations valide (qpdf)');
+  }
+  // Section Équipements du labo : seulement les équipements reliés
+  const m = VI.equipementsLaboMarkup({ liens: [{ id: qR.id, role: '' }], inventaire: inv });
+  assert((m.match(/data-jeq="/g) ?? []).length === 1 && m.includes('id="jEqAjout"') && m.includes(`value="${qS.id}"`), 'labo : seuls ses équipements sont listés ; les autres s’ajoutent depuis l’inventaire');
+  assert(VI.equipementsLaboMarkup({ liens: [], inventaire: inv }).includes('Aucun équipement dans ce labo') && !VI.equipementsLaboMarkup({ liens: [], inventaire: inv }).includes('data-jeq="'), 'nouveau labo : aucun équipement d’un autre labo n’apparaît');
 }
 
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

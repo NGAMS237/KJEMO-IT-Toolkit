@@ -9,6 +9,8 @@
 import { MODELE_PERSO, modele, modelesDuType, portsDuNoeud, portsOccupes, resumePorts, clePort } from './modeles.mjs';
 import { GROUPES_NOEUD, SYSTEMES_PALETTE, TYPES_NOEUD, STYLES_LIEN, COULEURS_ZONE, LIMITES, typeNoeud, styleLien, cablesUtilises, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
 import { systeme, typeEquipement } from './inventaire.mjs';
+import { configMarkup } from './vue-config.mjs';
+import { famille } from './config-ios.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -123,6 +125,7 @@ export function editeurSchemaMarkup(schema, { resoudre = () => null, typesPerso 
         ? `<div class="sch-itf"><b>Interfaces de ${esc(eq.nom)}</b><table><thead><tr><th scope="col">Interface</th><th scope="col">Adresse</th><th scope="col">VLAN</th></tr></thead><tbody>${eq.interfaces.map((i) => `<tr><td>${esc(i.nom)}</td><td>${esc(i.adresse)}</td><td>${esc(i.vlan)}</td></tr>`).join('')}</tbody></table><small>Elles se modifient dans la fiche de l’équipement, ou en choisissant un câble : l’adresse saisie de chaque côté y est enregistrée.</small></div>`
         : `<p class="sch-info">${esc(eq.nom)} n’a pas encore d’interface : choisis un câble relié à lui et saisis l’interface et son adresse, elles seront ajoutées à sa fiche.</p>`)
         : `<p class="sch-info">Pour garder ses interfaces et ses adresses, ajoute cet équipement à l’inventaire.</p>`)
+      + (famille(n.type) ? `<div class="sch-config">${configMarkup(schema, n, n.config, { nom: nomNoeud(n, resoudre, persos), equipement: eq, tousPorts: Boolean(etat.cfgTousPorts), ouvert: etat.cfgOuvert !== false, note: etat.cfgNote ?? '' })}</div>` : '')
       + `<div class="params-actions"><button type="button" class="secondary-button j-mini" id="schRelier" aria-pressed="${etat.relierDepuis === n.id}">${etat.relierDepuis === n.id ? 'Clique l’autre équipement…' : 'Relier à… (câble droit)'}</button>`
       + (eq ? '' : `<button type="button" class="secondary-button j-mini" id="schVersInventaire">Ajouter à l’inventaire</button>`)
       + `<button type="button" class="secondary-button j-mini j-danger" id="schSupprimer">Retirer du schéma</button></div>`;

@@ -102,16 +102,28 @@ export function equipementMarkup({ equipement: e, erreurs = {}, note = '', modif
     + `</section>`;
 }
 
-/** Section « Équipements » de la fiche d'un labo : cases de l'inventaire et rôle dans ce projet. */
+/**
+ * Section « Équipements » de la fiche d'un labo : SEULEMENT les équipements reliés à ce labo
+ * (case cochée = relié ; décocher le retire du labo, pas de l'inventaire), avec leur rôle.
+ * Les autres équipements de l'inventaire se relient par la liste « Ajouter depuis l'inventaire ».
+ */
 export function equipementsLaboMarkup({ liens = [], inventaire = [], erreurs = {}, systemePrefere = null } = {}) {
-  const choisis = new Map(liens.map((l) => [l.id, l]));
-  const ordre = [...inventaire].sort((a, b) => (choisis.has(b.id) - choisis.has(a.id)) || ((b.systeme === systemePrefere) - (a.systeme === systemePrefere)) || a.nom.localeCompare(b.nom, 'fr', { numeric: true }));
-  const lignes = ordre.map((e) => {
-    const l = choisis.get(e.id); const i = liens.findIndex((x) => x.id === e.id);
-    return `<li class="i-choix${l ? ' is-choisi' : ''}"><label class="j-case"><input type="checkbox" data-jeq="${esc(e.id)}"${l ? ' checked' : ''}> <b>${esc(e.nom)}</b> <span class="i-meta">${esc(systeme(e.systeme).label)} · ${esc(typeEquipement(e.type).label)}${e.adresse ? ` · ${esc(e.adresse)}` : ''}</span></label>`
-      + (l ? `<label class="sr-only" for="jeq-role-${esc(e.id)}">Rôle de ${esc(e.nom)} dans ce labo</label><input id="jeq-role-${esc(e.id)}" type="text" maxlength="200" data-jeqrole="${esc(e.id)}" placeholder="Rôle ici (ex. : passerelle des VLAN)" value="${esc(l.role)}"${i >= 0 ? inv(erreurs, `equipements.${i}.role`).replace(/ierr-/g, 'jerr-') : ''}>${i >= 0 && erreurs[`equipements.${i}.role`] ? `<p class="param-err" id="jerr-equipements-${i}-role" role="alert">${esc(erreurs[`equipements.${i}.role`])}</p>` : ''}` : '')
+  const parId = new Map(inventaire.map((e) => [e.id, e]));
+  const relies = liens.filter((l) => parId.has(l.id));
+  const lignes = relies.map((l) => {
+    const e = parId.get(l.id); const i = liens.findIndex((x) => x.id === e.id);
+    return `<li class="i-choix is-choisi"><label class="j-case"><input type="checkbox" data-jeq="${esc(e.id)}" checked aria-label="${esc(e.nom)} fait partie de ce labo (décocher pour le retirer du labo)"> <b>${esc(e.nom)}</b> <span class="i-meta">${esc(systeme(e.systeme).label)} · ${esc(typeEquipement(e.type).label)}${e.modele ? ` · ${esc(e.modele)}` : ''}${e.adresse ? ` · ${esc(e.adresse)}` : ''}</span></label>`
+      + `<label class="sr-only" for="jeq-role-${esc(e.id)}">Rôle de ${esc(e.nom)} dans ce labo</label><input id="jeq-role-${esc(e.id)}" type="text" maxlength="200" data-jeqrole="${esc(e.id)}" placeholder="Rôle ici (ex. : passerelle des VLAN)" value="${esc(l.role)}"${i >= 0 ? inv(erreurs, `equipements.${i}.role`).replace(/ierr-/g, 'jerr-') : ''}>${i >= 0 && erreurs[`equipements.${i}.role`] ? `<p class="param-err" id="jerr-equipements-${i}-role" role="alert">${esc(erreurs[`equipements.${i}.role`])}</p>` : ''}`
       + ` <a class="i-ouvrir" href="${esc(routeEquipement(e.id))}" data-jeqouvrir="${esc(e.id)}">Fiche</a></li>`;
   }).join('');
-  return (inventaire.length ? `<ul class="i-choix-liste">${lignes}</ul>` : '<p class="param-aide">L’inventaire est vide : crée le premier équipement.</p>')
+  const choisis = new Set(relies.map((l) => l.id));
+  const autres = inventaire.filter((e) => !choisis.has(e.id))
+    .sort((a, b) => ((b.systeme === systemePrefere) - (a.systeme === systemePrefere)) || a.nom.localeCompare(b.nom, 'fr', { numeric: true }));
+  const ajout = autres.length
+    ? `<div class="j-eq-ajout"><label for="jEqAjout">Ajouter depuis l’inventaire</label><select id="jEqAjout"><option value="">— choisir un équipement existant —</option>${autres.map((e) => `<option value="${esc(e.id)}">${esc(e.nom)} · ${esc(typeEquipement(e.type).label)}${e.adresse ? ` · ${esc(e.adresse)}` : ''}</option>`).join('')}</select><button type="button" class="secondary-button" id="jEqAjouter">Ajouter au labo</button></div>`
+    : '';
+  return (relies.length ? `<ul class="i-choix-liste">${lignes}</ul>`
+    : `<p class="param-aide">Aucun équipement dans ce labo pour l’instant. Dessine-les dans le schéma (section Architecture) puis « Remplir depuis le schéma », crée-en un nouveau, ou reprends-en un de l’inventaire${inventaire.length ? ` (${inventaire.length} disponible(s))` : ''}.</p>`)
+    + ajout
     + `<div class="params-actions"><button type="button" class="secondary-button" id="jEqNouveau">+ Nouvel équipement</button><a class="secondary-button j-lien-btn" href="${ROUTE_INVENTAIRE}" id="jEqInventaire">Ouvrir l’inventaire</a></div>`;
 }

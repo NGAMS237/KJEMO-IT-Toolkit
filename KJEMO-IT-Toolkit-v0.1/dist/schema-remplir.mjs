@@ -13,13 +13,18 @@
  *      jour si elle existe), avec la zone où se trouve l'équipement et, pour
  *      un poste ou un serveur, la passerelle trouvée dans le même réseau ;
  *   4. la description de l'architecture, si elle est vide, reprend la
- *      description du schéma.
+ *      description du schéma ;
+ *   5. (JOURNAL-LABO-09) la configuration de chaque équipement (config-ios)
+ *      ajoute ses interfaces, VLAN et routes à sa fiche, ses adresses au plan,
+ *      un bloc « Configuration de X » et des tests dans la Validation ;
+ *      l'environnement, s'il est vide, liste les équipements et leur modèle.
  * Rien n'est effacé : les lignes et fiches existantes restent, seules les
  * valeurs vides ou différentes venant du schéma sont posées. Module PUR.
  */
 import { normaliserEquipement, equipementVide, TYPES_EQUIPEMENT } from './inventaire.mjs';
 import { typeNoeud, decrireSchema, normaliserSchema } from './schema.mjs';
-import { modele } from './modeles.mjs';
+import { modele, clePort } from './modeles.mjs';
+import { normaliserConfig, famille, estIos, commandesNoeud, texteAvecTitres, interfacesDepuisConfig, adressesDepuisConfig, routesDepuisConfig, vlansDepuisConfig, testsProposes, cidr } from './config-ios.mjs';
 
 /** Système de l'inventaire déduit du symbole. */
 export const SYSTEME_DU_TYPE = {
@@ -61,7 +66,8 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
   const e = structuredClone(entree);
   const inv = inventaire.map((q) => structuredClone(q));
   const persos = new Map(typesPerso.map((t) => [t.id, t]));
-  const bilan = { equipementsCrees: [], equipementsLies: 0, interfaces: 0, lignesAjoutees: 0, lignesMisesAJour: 0, architecture: false };
+  const bilan = { equipementsCrees: [], equipementsLies: 0, interfaces: 0, lignesAjoutees: 0, lignesMisesAJour: 0, architecture: false,
+    configurations: 0, routes: 0, vlans: 0, tests: 0, environnement: false };
   const s = e.schema;
   const parId = new Map(inv.map((q) => [q.id, q]));
   const nomsPris = new Set(inv.map((q) => q.nom.toLowerCase()));
@@ -113,9 +119,32 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
     }
   }
 
+  // 2 bis. Configurations (config-ios.mjs) → interfaces, VLAN et table de routage des fiches.
+  const configs = s.noeuds.filter((n) => n.config && famille(n.type)).map((n) => ({ n, c: normaliserConfig(n.config), q: n.equipementId ? parId.get(n.equipementId) : null }));
+  const fusionner = (table, ligne, cle) => {
+    const ex = table.find((x) => cle(x) === cle(ligne));
+    if (!ex) { table.push(ligne); return true; }
+    let ch = false;
+    for (const [k, v] of Object.entries(ligne)) if (v && !ex[k]) { ex[k] = v; ch = true; }
+    if (ligne.adresse && ex.adresse !== ligne.adresse) { ex.adresse = ligne.adresse; ch = true; }
+    return ch;
+  };
+  for (const { n, c, q } of configs) {
+    if (!q) continue;
+    for (const i of interfacesDepuisConfig(n, c)) if (fusionner(q.interfaces, i, (x) => clePort(x.nom))) bilan.interfaces += 1;
+    for (const r of routesDepuisConfig(n, c)) if (fusionner(q.routes, r, (x) => `${x.type}|${x.destination}`)) bilan.routes += 1;
+    if (famille(n.type) !== 'routeur' && famille(n.type) !== 'hote') for (const v of vlansDepuisConfig(n, c, s.zones)) if (fusionner(q.vlans, v, (x) => String(x.numero))) bilan.vlans += 1;
+    if (famille(n.type) === 'hote' && !q.adresse && cidr(c.hote.adresse)) q.adresse = cidr(c.hote.adresse).ip;
+    if (famille(n.type) === 'commutateur' && !q.adresse && cidr(c.gestion.adresse)) q.adresse = cidr(c.gestion.adresse).ip;
+  }
+
   // 3. Plan d'adressage : une ligne par interface adressée (ou nœud adressé par sa note).
   const candidats = [];
-  for (const b of bouts) if (b.adresse) candidats.push({ n: b.noeud, nom: b.equipement?.nom || b.noeud.nom, interface: b.interface, adresse: b.adresse });
+  for (const { n, c, q } of configs) {
+    for (const a of adressesDepuisConfig(n, c)) candidats.push({ n, nom: q?.nom || n.nom, interface: a.interface, adresse: a.adresse, vlan: a.vlan, passerelle: a.passerelle });
+  }
+  const dejaCandidat = (n, itf, adr) => candidats.some((c) => c.n.id === n.id && (clePort(c.interface) === clePort(itf) || (adr && cidr(c.adresse)?.ip === (cidr(adr)?.ip ?? lireAdresse(adr)?.texte))));
+  for (const b of bouts) if (b.adresse && !dejaCandidat(b.noeud, b.interface, b.adresse)) candidats.push({ n: b.noeud, nom: b.equipement?.nom || b.noeud.nom, interface: b.interface, adresse: b.adresse });
   for (const n of s.noeuds) {
     if (lireAdresse(n.note) && !candidats.some((c) => c.n.id === n.id)) candidats.push({ n, nom: (n.equipementId && parId.get(n.equipementId)?.nom) || n.nom, interface: '', adresse: n.note });
   }
@@ -124,17 +153,18 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
     ...candidats.filter((c) => PASSERELLES.has(c.n.type)).map((c) => ({ n: c.n, a: lireAdresse(c.adresse) })),
     ...s.noeuds.filter((n) => PASSERELLES.has(n.type) && n.equipementId && parId.get(n.equipementId))
       .flatMap((n) => parId.get(n.equipementId).interfaces.map((i) => ({ n, a: lireAdresse(i.adresse) }))),
-  ].filter((c) => c.a);
+  ].filter((c) => c.a)
+    .sort((x, y) => (x.n.type === 'commutateur') - (y.n.type === 'commutateur'));   // un 2960 ne route pas : en dernier recours
   for (const c of candidats) {
     const zone = zoneDe(c.n, s.zones);
-    let passerelle = '';
+    let passerelle = c.passerelle ?? '';
     const a = lireAdresse(c.adresse);
-    if (a && HOTES.has(c.n.type)) {
+    if (!passerelle && a && HOTES.has(c.n.type)) {
       const gw = passerellesConnues.find((g) => g.n.id !== c.n.id && memeReseau(a.ip, g.a.ip, a.prefixe ?? g.a.prefixe ?? 24));
       if (gw) passerelle = gw.a.texte;
     }
     const cle = (l) => `${l.equipement.toLowerCase()}|${l.interface.toLowerCase()}`;
-    const ligne = { equipement: c.nom, interface: c.interface, adresse: c.adresse, vlan: zone?.nom ?? '', passerelle, note: '' };
+    const ligne = { equipement: c.nom, interface: c.interface, adresse: c.adresse, vlan: c.vlan || (zone?.nom ?? ''), passerelle, note: '' };
     const existante = e.adressage.find((l) => cle(l) === cle(ligne)) ?? e.adressage.find((l) => l.equipement.toLowerCase() === ligne.equipement.toLowerCase() && l.adresse === ligne.adresse);
     if (!existante) { e.adressage.push(ligne); bilan.lignesAjoutees += 1; continue; }
     let change = false;
@@ -143,6 +173,33 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
     }
     if (ligne.adresse && existante.adresse !== ligne.adresse) { existante.adresse = ligne.adresse; change = true; }
     if (change) bilan.lignesMisesAJour += 1;
+  }
+
+  // 3 bis. Configuration : un bloc « Configuration de X » par équipement configuré (remplacé s'il existe),
+  // et les tests de vérification proposés dans la Validation (sans doublon).
+  for (const { n, c, q } of configs) {
+    const nom = q?.nom || n.nom || typeNoeud(n.type).label;
+    const r = commandesNoeud(n, c, { nom });
+    if (r.blocs.length) {
+      const titre = `${estIos(n.type) ? 'Configuration' : 'Configuration IP'} de ${nom}`.slice(0, 120);
+      const code = texteAvecTitres(n, r);
+      const ex = e.configuration.find((b) => b.titre === titre);
+      if (!ex) { e.configuration.push({ titre, code }); bilan.configurations += 1; }
+      else if (ex.code !== code) { ex.code = code; bilan.configurations += 1; }
+    }
+    for (const t of testsProposes(n, c, nom)) {
+      if (e.validation.some((v) => v.test === t.test)) continue;
+      e.validation.push(t); bilan.tests += 1;
+    }
+  }
+  // Environnement : la liste des équipements et de leur modèle, si le champ est vide.
+  if (!String(e.environnement ?? '').trim() && s.noeuds.some((n) => n.type !== 'internet')) {
+    const lignes = s.noeuds.filter((n) => n.type !== 'internet').map((n) => {
+      const nom = (n.equipementId && parId.get(n.equipementId)?.nom) || n.nom || typeNoeud(n.type).label;
+      return `${nom} : ${modele(n.modele)?.label ?? typeNoeud(n.type).label}`;
+    });
+    e.environnement = `Équipements du schéma : ${lignes.join(' ; ')}.`.slice(0, 2000);
+    bilan.environnement = true;
   }
 
   // 4. Architecture : description du schéma si le champ est vide.
@@ -164,5 +221,10 @@ export function phraseBilan(b) {
   if (b.lignesAjoutees) p.push(`${b.lignesAjoutees} ligne(s) ajoutée(s) au plan d’adressage`);
   if (b.lignesMisesAJour) p.push(`${b.lignesMisesAJour} ligne(s) complétée(s)`);
   if (b.architecture) p.push('description de l’architecture rédigée');
+  if (b.routes) p.push(`${b.routes} route(s) dans les tables de routage`);
+  if (b.vlans) p.push(`${b.vlans} VLAN dans les fiches`);
+  if (b.configurations) p.push(`${b.configurations} bloc(s) de configuration`);
+  if (b.tests) p.push(`${b.tests} test(s) de validation proposé(s)`);
+  if (b.environnement) p.push('environnement rempli');
   return p.length ? `Depuis le schéma : ${p.join(', ')}. Vérifie, puis enregistre.` : 'Le document et l’inventaire sont déjà à jour avec le schéma.';
 }
