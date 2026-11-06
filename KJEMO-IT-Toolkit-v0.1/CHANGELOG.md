@@ -1,3 +1,11 @@
+## JOURNAL-LABO-06 (2026-11-05)
+
+- Retour : « je ne vois pas les câbles ». L’éditeur de schéma a maintenant une palette « Câbles », comme les Connexions de Packet Tracer : câble droit, croisé, trunk 802.1Q, console, série (WAN), fibre, sans fil, VPN/logique. On choisit un câble, un bandeau dit quoi faire, puis on clique le premier et le deuxième équipement ; le mode reste actif pour enchaîner les câbles (« Terminer » ou Échap pour sortir).
+- Interfaces et adresses : chaque câble a, de chaque côté, l’interface (suggestions tirées de la fiche de l’équipement) et son adresse IP ; elles s’affichent sur le schéma, dans le PDF et sa description. Une interface d’un équipement de l’inventaire y est enregistrée (ajoutée ou mise à jour) ; une interface déjà connue remplit son adresse.
+- Un équipement posé depuis la palette peut être « ajouté à l’inventaire » (avec les interfaces déjà saisies sur ses câbles) ; la fiche d’un équipement lié montre ses interfaces et adresses dans le panneau.
+- Légende des câbles utilisés sous la feuille et dans le PDF. Schéma du TP VLAN : câbles droits vers les postes avec l’adresse de chaque poste, trunk plus long pour des étiquettes lisibles. Les anciens styles « plein » et « tirets » deviennent « câble droit » et « VPN ».
+- Tests : journal.test.mjs (193) et browser-journal.test.mjs (93).
+
 ## JOURNAL-LABO-05 (2026-11-05)
 
 - Éditeur de schéma d’architecture dans chaque labo (section Architecture), « façon Packet Tracer » pour documenter (rien ne s’exécute) : palette (routeur, commutateur, pare-feu, point d’accès, serveur, poste, VM, réseau virtuel, service cloud, Internet, autre), équipements de l’inventaire (nom et adresse repris en direct), zones colorées (VLAN, site, réseau Azure), textes, et types personnels (nom + code, ex. Caméra IP « CAM ») pour les projets futurs.

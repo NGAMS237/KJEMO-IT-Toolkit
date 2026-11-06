@@ -321,20 +321,38 @@ await ctx.close();
   const coord = async (x, y) => { await p7.locator('#schFeuille').scrollIntoViewIfNeeded(); const b = await p7.locator('#schFeuille svg').boundingBox(); return [b.x + (x * b.width) / 1000, b.y + (y * b.height) / 600]; };
   const glisser = async (x1, y1, x2, y2) => { const [a, b] = await coord(x1, y1); const [c, d] = await coord(x2, y2); await p7.mouse.move(a, b); await p7.mouse.down(); await p7.mouse.move(c, d, { steps: 6 }); await p7.mouse.up(); };
   const position = (nom) => p7.evaluate((n) => { const t = [...document.querySelectorAll('#schFeuille text')].find((x) => x.textContent === n); return t ? [Number(t.getAttribute('x')), Number(t.getAttribute('y'))] : null; }, nom);
-  await glisser(500, 60, 300, 100);
+  await glisser(500, 40, 300, 100);
   assert(JSON.stringify(await position('R1')) === JSON.stringify([300, 140]), 'glisser : R1 déplacé et aimanté à la grille', JSON.stringify(await position('R1')));
   assert((await p7.locator('#schElement option:checked').innerText()).includes('R1'), 'l’équipement glissé est choisi');
   // Palette : un serveur, renommé
   await p7.click('[data-sadd="serveur"]');
   await p7.fill('#schNom', 'SRV-WEB'); await p7.fill('#schNote', '192.168.10.20');
   assert(await position('SRV-WEB') !== null, 'palette : serveur ajouté et renommé');
-  // Relier le serveur à SW1
-  await p7.click('#schRelier');
-  assert(await p7.locator('#schRelier').getAttribute('aria-pressed') === 'true', 'mode « Relier » actif');
-  const sw = await position('SW1'); await (async () => { const [a, b] = await coord(sw[0], sw[1] - 40); await p7.mouse.click(a, b); })();
-  assert(await p7.locator('#schEtiquetteDe').count() === 1, 'lien créé, ses propriétés ouvertes');
-  await p7.fill('#schEtiquetteA', 'Fa0/5'); await p7.selectOption('#schStyle', 'tirets');
-  assert(await p7.locator('#schFeuille').innerText().then((t) => t.includes('Fa0/5')), 'étiquette d’interface affichée sur le lien');
+  // Câbler le serveur à SW1 depuis la palette « Câbles »
+  await p7.click('[data-scable="croise"]');
+  assert(await p7.locator('[data-scable="croise"]').getAttribute('aria-pressed') === 'true' && /premier/.test(await p7.locator('.sch-bandeau').innerText()), 'palette Câbles : mode câble croisé, consigne affichée');
+  const clicNoeud = async (nom) => { const pos = await position(nom); const [a, b] = await coord(pos[0], pos[1] - 40); await p7.mouse.click(a, b); };
+  await clicNoeud('SW1');
+  assert(/deuxième/.test(await p7.locator('.sch-bandeau').innerText()), 'premier équipement choisi : consigne du deuxième');
+  await clicNoeud('SRV-WEB');
+  assert(await p7.locator('#schItfDe').count() === 1 && await p7.locator('#schStyle').inputValue() === 'croise', 'câble créé (croisé), interfaces et adresses à saisir');
+  await p7.fill('#schItfDe', 'Fa0/5'); await p7.fill('#schItfA', 'ens18'); await p7.fill('#schAdrA', '192.168.10.20/24');
+  assert(await p7.locator('#schFeuille').innerText().then((t) => t.includes('Fa0/5') && t.includes('ens18') && t.includes('192.168.10.20/24')), 'interfaces et adresse affichées sur le câble');
+  await p7.click('#schCablageFin');
+  assert(await p7.locator('.sch-bandeau').count() === 0, 'mode câble terminé');
+  // Adresse sur le trunk côté R1 : reportée dans la fiche de R1
+  await p7.selectOption('#schElement', { label: await p7.locator('#schElement option', { hasText: 'Trunk' }).first().innerText() });
+  await p7.fill('#schAdrDe', '192.168.99.1/24'); await p7.locator('#schAdrDe').dispatchEvent('change');
+  assert(/enregistrée dans la fiche de R1/.test(await p7.locator('#jNote').innerText()), 'adresse du trunk reportée dans la fiche de R1');
+  assert(await p7.locator('.sch-legende').innerText().then((t) => t.includes('Trunk 802.1Q') && t.includes('Câble croisé')), 'légende des câbles utilisés');
+  // Le serveur hors inventaire peut y être ajouté, avec ses interfaces
+  await p7.selectOption('#schElement', { label: 'Équipement · SRV-WEB' });
+  await p7.click('#schVersInventaire');
+  assert(/SRV-WEB ajouté à l’inventaire/.test(await p7.locator('#jNote').innerText()), 'équipement du schéma ajouté à l’inventaire');
+  const fiches = await p7.evaluate(() => JSON.parse(localStorage.getItem('kjemo.inventaire.v1')).equipements);
+  const srv = fiches.find((q) => q.nom === 'SRV-WEB'); const r1 = fiches.find((q) => q.nom === 'R1');
+  assert(srv?.interfaces.some((i) => i.nom === 'ens18' && i.adresse === '192.168.10.20/24') && srv.systeme === 'systeme', 'SRV-WEB : son interface et son adresse sont dans sa fiche');
+  assert(r1?.interfaces.some((i) => i.nom === 'GigabitEthernet0/0' && i.adresse === '192.168.99.1/24'), 'R1 : l’interface du trunk a son adresse dans la fiche');
   // Clavier : choisir le serveur, flèche, puis Suppr sur un texte ajouté
   await p7.click('[data-sadd="texte"]'); await p7.fill('#schTexte', 'Labo B-204');
   await p7.locator('#schFeuille').focus(); await p7.keyboard.press('ArrowRight');
@@ -356,7 +374,7 @@ await ctx.close();
   assert(JSON.stringify(await position('R1')) === JSON.stringify([300, 140]) && await position('SRV-WEB') !== null && await position('PC-ADMIN') !== null, 'après rechargement : le schéma est relu');
   const [dl] = await Promise.all([p7.waitForEvent('download'), p7.click('#jPdf')]);
   const pdf = (await lireDl(dl)).toString('latin1');
-  assert(pdf.includes('SRV-WEB') && pdf.includes('Fa0/5') && pdf.includes('CAM'), 'PDF : le schéma est dessiné avec les éléments ajoutés');
+  assert(pdf.includes('SRV-WEB') && pdf.includes('Fa0/5') && pdf.includes('192.168.10.20/24') && pdf.includes('CAM') && pdf.includes('ble crois'), 'PDF : le schéma est dessiné avec câbles, adresses et légende');
   const [dls] = await Promise.all([p7.waitForEvent('download'), p7.click('#schSvg')]);
   const svg = (await lireDl(dls)).toString('utf8');
   assert(/_schema\.svg$/.test(dls.suggestedFilename()) && svg.includes('<svg') && svg.includes('SRV-WEB') && !svg.includes('data-el'), 'export SVG du schéma (sans attributs d’édition)');

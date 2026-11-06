@@ -10,7 +10,7 @@
  */
 import { A4, DocumentPdf, Flux, STYLE, couper, largeur } from './pdf-a4.mjs';
 import { categorie, etat, resultat } from './journal.mjs';
-import { dessinerSchema, versPdf, schemaEstVide, decrireSchema } from './schema.mjs';
+import { dessinerSchema, versPdf, schemaEstVide, decrireSchema, cablesUtilises } from './schema.mjs';
 import { TABLEAUX_EQUIPEMENT, CHAMPS_EQUIPEMENT, SYSTEMES, systeme, typeEquipement } from './inventaire.mjs';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -78,6 +78,16 @@ export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = 
         const resoudre = (eid) => inventaire.find((q) => q.id === eid) ?? null;
         const ops = dessinerSchema(e.schema, { resoudre, typesPerso });
         flux.dessin(flux.largeurUtile * 0.6, (doc, page, x, y, w, h) => versPdf(doc, page, x, y, w, h, ops), 'Figure : schéma d’architecture');
+        const cables = cablesUtilises(e.schema);
+        if (cables.length) {
+          // Légende dessinée : un échantillon de trait par type de câble utilisé.
+          const lignes = Math.ceil(cables.length / 3);
+          flux.dessin(lignes * 16, (doc, page, x, y, w) => cables.forEach((st, i) => {
+            const cx = x + (i % 3) * (w / 3); const cy = y + Math.floor(i / 3) * 16 + 8;
+            doc.chemin(page, [[cx, cy], [cx + 28, cy]], { trait: st.trait, epaisseur: Math.min(st.ep, 4) * 0.6, tirets: st.tirets ? st.tirets.map((t) => t * 0.6) : null, arrondi: true });
+            doc.texte(page, cx + 34, cy + 3, st.label, { taille: 8.5, couleur: STYLE.pale });
+          }));
+        }
         flux.paragraphe(decrireSchema(e.schema, { resoudre, typesPerso }), { taille: 8.5, couleur: STYLE.pale });
       }
     }

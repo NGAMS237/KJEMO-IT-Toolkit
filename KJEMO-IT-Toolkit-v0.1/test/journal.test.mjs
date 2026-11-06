@@ -347,7 +347,15 @@ console.log('11. Schéma d’architecture');
   assert(xrefValide(doc.octets()), 'moteur PDF : cercle et rectangle arrondi');
   // Éditeur
   const h = VS.editeurSchemaMarkup(st, { inventaire: [q], etat: { selection: st.liens[0].id } });
-  assert(h.includes('data-sadd="routeur"') && h.includes('id="schFeuille"') && h.includes('Interface côté') && h.includes('id="schSvg"'), 'éditeur : palette, feuille, propriétés du lien, export SVG');
+  assert(h.includes('data-sadd="routeur"') && h.includes('id="schFeuille"') && h.includes('Côté') && h.includes('id="schAdrDe"') && h.includes('id="schSvg"'), 'éditeur : palette, feuille, propriétés du câble (interface et adresse de chaque côté), export SVG');
+  assert(SC.STYLES_LIEN.length === 8 && SC.STYLES_LIEN.every((x) => h.includes(`data-scable="${x.id}"`)), 'palette « Câbles » : huit types (droit, croisé, trunk, console, série, fibre, sans fil, VPN)');
+  assert(VS.editeurSchemaMarkup(st, { etat: { cablage: { style: 'serie', depuis: null } } }).includes('clique le <b>premier</b>'), 'mode câble : consigne du premier clic');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'nq1', type: 'routeur' }, { id: 'nq2', type: 'routeur' }], liens: [{ id: 'lq1', de: 'nq1', a: 'nq2', style: 'plein' }, { id: 'lq2', de: 'nq2', a: 'nq1', style: 'tirets' }] }).schema.liens.map((l) => l.style).join() === 'droit,vpn', 'anciens styles : plein → droit, tirets → VPN');
+  const avecAdr = { ...st, liens: st.liens.map((l, i) => (i === 0 ? { ...l, adresseDe: '192.168.99.1/24' } : l)) };
+  assert(SC.versSvg(SC.dessinerSchema(avecAdr)).includes('192.168.99.1/24') && SC.decrireSchema(avecAdr).includes('GigabitEthernet0/0 192.168.99.1/24'), 'adresse d’interface affichée sur le câble et décrite');
+  assert(SC.normaliserSchema({ ...avecAdr, liens: [{ ...avecAdr.liens[0], adresseA: 'mot de passe : x' }] }).erreurs[`schema.${avecAdr.liens[0].id}`], 'mot de passe refusé dans une adresse de câble');
+  assert(st.liens.slice(1).every((l) => l.style === 'droit' && /^192\.168\.\d+\.10\/24$/.test(l.adresseA)), 'TP VLAN : câbles droits vers les postes, adresse du poste côté poste');
+  if (PDFTOTEXT) { const tl = texteDu(JP.pdfJournal(J.normaliserEntree({ titre: 'TP', schema: avecAdr }).entree, {}).octets); assert(tl.includes('Trunk 802.1Q') && tl.includes('Câble droit') && tl.includes('192.168.99.1/24'), 'PDF : légende des câbles et adresse d’interface'); }
   assert(VS.editeurSchemaMarkup(SC.schemaVide(), { etat: { typeOuvert: true } }).includes('id="schTypeCode"'), 'éditeur : création d’un type personnel');
 }
 

@@ -33,9 +33,24 @@ export const TYPES_NOEUD = [
   { id: 'internet', label: 'Internet', couleur: GRIS },
   { id: 'autre', label: 'Autre', couleur: GRIS },
 ];
+/**
+ * Types de câbles et de liaisons, comme la palette « Connexions » de Packet
+ * Tracer. `aide` dit quand l'utiliser ; le trait (couleur, épaisseur,
+ * tirets) permet de les distinguer à l'écran, dans le PDF et sa légende.
+ */
 export const STYLES_LIEN = [
-  { id: 'plein', label: 'Câble' }, { id: 'trunk', label: 'Trunk (épais)' }, { id: 'tirets', label: 'Tirets (VPN, sans fil, logique)' },
+  { id: 'droit', label: 'Câble droit', court: 'Droit', aide: 'Ethernet entre équipements différents (poste–commutateur, commutateur–routeur).', trait: '#5d6a79', ep: 2.2, tirets: null },
+  { id: 'croise', label: 'Câble croisé', court: 'Croisé', aide: 'Ethernet entre équipements semblables (commutateur–commutateur, poste–poste).', trait: '#5d6a79', ep: 2.2, tirets: [4, 4] },
+  { id: 'trunk', label: 'Trunk 802.1Q', court: 'Trunk', aide: 'Lien qui transporte plusieurs VLAN (commutateur–routeur ou commutateur–commutateur).', trait: '#2a3b4c', ep: 5, tirets: null },
+  { id: 'console', label: 'Câble console', court: 'Console', aide: 'Du poste d’administration au port console de l’équipement.', trait: '#2b8fd6', ep: 2, tirets: [2, 4] },
+  { id: 'serie', label: 'Série (WAN)', court: 'Série', aide: 'Liaison série entre deux routeurs (Se0/0/0).', trait: '#c0392b', ep: 2.4, tirets: null },
+  { id: 'fibre', label: 'Fibre optique', court: 'Fibre', aide: 'Liaison fibre (ports SFP, Gi ou Te).', trait: '#d98a00', ep: 2.6, tirets: null },
+  { id: 'sansfil', label: 'Sans fil', court: 'Wi-Fi', aide: 'Poste ou téléphone relié à un point d’accès.', trait: '#7d8a99', ep: 2, tirets: [1.5, 5] },
+  { id: 'vpn', label: 'VPN / logique', court: 'VPN', aide: 'Tunnel ou lien logique (site à site, Azure VPN Gateway).', trait: '#5b3fa8', ep: 2.2, tirets: [10, 6] },
 ];
+export const styleLien = (id) => STYLES_LIEN.find((x) => x.id === id) ?? STYLES_LIEN[0];
+/** Anciens noms (avant JOURNAL-LABO-06) : « plein » et « tirets ». */
+const ANCIENS_STYLES = { plein: 'droit', tirets: 'vpn' };
 export const COULEURS_ZONE = [
   { id: 'bleu', label: 'Bleu', trait: '#1f5f99', fond: '#eaf2fa' }, { id: 'vert', label: 'Vert', trait: '#1d7a4a', fond: '#e8f5ee' },
   { id: 'orange', label: 'Orange', trait: '#a1440f', fond: '#fbefe6' }, { id: 'violet', label: 'Violet', trait: '#5b3fa8', fond: '#f0ecfa' },
@@ -76,8 +91,10 @@ export function normaliserSchema(brut) {
   const ids = new Set(s.noeuds.map((n) => n.id));
   for (const l of (Array.isArray(b.liens) ? b.liens : []).filter(unique).slice(0, LIMITES.liens)) {
     if (!ids.has(l.de) || !ids.has(l.a) || l.de === l.a) continue;
-    s.liens.push({ id: l.id, de: l.de, a: l.a, style: STYLES_LIEN.some((x) => x.id === l.style) ? l.style : 'plein',
-      etiquette: texte(l.etiquette, 40), etiquetteDe: texte(l.etiquetteDe, 30), etiquetteA: texte(l.etiquetteA, 30) });
+    const style = ANCIENS_STYLES[l.style] ?? (STYLES_LIEN.some((x) => x.id === l.style) ? l.style : 'droit');
+    s.liens.push({ id: l.id, de: l.de, a: l.a, style,
+      etiquette: texte(l.etiquette, 40), etiquetteDe: texte(l.etiquetteDe, 30), etiquetteA: texte(l.etiquetteA, 30),
+      adresseDe: texte(l.adresseDe, 50), adresseA: texte(l.adresseA, 50) });
   }
   for (const z of (Array.isArray(b.zones) ? b.zones : []).filter(unique).slice(0, LIMITES.zones)) {
     const x = borne(z.x, 0, FEUILLE.largeur - 60); const y = borne(z.y, 0, FEUILLE.hauteur - 40);
@@ -91,7 +108,7 @@ export function normaliserSchema(brut) {
   }
   const verifier = (cle, v) => { const x = secretDans(v); if (x) erreurs[cle] = `Le schéma contient ${x.quoi} : remplace la valeur par ***.`; };
   s.noeuds.forEach((n) => { verifier(`schema.${n.id}.nom`, n.nom); verifier(`schema.${n.id}.note`, n.note); });
-  s.liens.forEach((l) => { verifier(`schema.${l.id}`, `${l.etiquette} ${l.etiquetteDe} ${l.etiquetteA}`); });
+  s.liens.forEach((l) => { verifier(`schema.${l.id}`, [l.etiquette, l.etiquetteDe, l.etiquetteA, l.adresseDe, l.adresseA].join('\n')); });
   s.zones.forEach((z) => verifier(`schema.${z.id}`, z.nom));
   s.textes.forEach((t) => verifier(`schema.${t.id}`, t.texte));
   return { schema: s, erreurs };
@@ -139,14 +156,18 @@ export function dessinerSchema(schema, { resoudre = () => null, typesPerso = [],
     const a = noeuds.get(l.de); const b = noeuds.get(l.a);
     if (!a || !b) continue;
     const sel = selection === l.id;
-    ops.push({ k: 'ligne', id: l.id, x1: a.x, y1: a.y, x2: b.x, y2: b.y, trait: sel ? '#d4462e' : (l.style === 'trunk' ? '#2a3b4c' : '#6b7785'),
-      ep: l.style === 'trunk' ? 5 : 2.2, tirets: l.style === 'tirets' ? [9, 6] : null });
+    const st = styleLien(l.style);
+    ops.push({ k: 'ligne', id: l.id, x1: a.x, y1: a.y, x2: b.x, y2: b.y, trait: sel ? '#d4462e' : st.trait, ep: st.ep, tirets: st.tirets });
     const at = (t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
     // Les étiquettes d'interface se placent à distance fixe de l'équipement (au-delà de son nom), sans dépasser le milieu du lien.
     const lg = Math.hypot(b.x - a.x, b.y - a.y) || 1; const bout = Math.min(0.4, 92 / lg);
     if (l.etiquette) { const m = at(0.5); ops.push({ k: 'etiquette', x: m.x, y: m.y, t: l.etiquette, taille: 11, gras: true }); }
-    if (l.etiquetteDe) { const m = at(bout); ops.push({ k: 'etiquette', x: m.x, y: m.y, t: l.etiquetteDe, taille: 10, mono: true }); }
-    if (l.etiquetteA) { const m = at(1 - bout); ops.push({ k: 'etiquette', x: m.x, y: m.y, t: l.etiquetteA, taille: 10, mono: true }); }
+    // Interface et adresse de chaque côté : deux lignes l'une sous l'autre.
+    const bouts = [[l.etiquetteDe, l.adresseDe, at(bout)], [l.etiquetteA, l.adresseA, at(1 - bout)]];
+    for (const [itf, adr, m] of bouts) {
+      if (itf && adr) { ops.push({ k: 'etiquette', x: m.x, y: m.y - 7, t: itf, taille: 10, mono: true }); ops.push({ k: 'etiquette', x: m.x, y: m.y + 7, t: adr, taille: 9.5, mono: true, couleur: '#0b4f58' }); }
+      else if (itf || adr) ops.push({ k: 'etiquette', x: m.x, y: m.y, t: itf || adr, taille: 10, mono: true, couleur: itf ? undefined : '#0b4f58' });
+    }
   }
   for (const n of schema.noeuds) {
     const eq = n.equipementId ? resoudre(n.equipementId) : null;
@@ -304,6 +325,12 @@ export function versPdf(doc, page, x0, y0, w, h, ops) {
   }
 }
 
+/** Types de câbles utilisés dans le schéma (légende de l'écran et du PDF). */
+export function cablesUtilises(schema) {
+  const ids = new Set(schema.liens.map((l) => l.style));
+  return STYLES_LIEN.filter((x) => ids.has(x.id));
+}
+
 /** Description textuelle (texte alternatif, lecteurs d'écran, sommaire du PDF). */
 export function decrireSchema(schema, { resoudre = () => null, typesPerso = [] } = {}) {
   const persos = new Map(typesPerso.map((t) => [t.id, t]));
@@ -311,7 +338,8 @@ export function decrireSchema(schema, { resoudre = () => null, typesPerso = [] }
   const parId = new Map(schema.noeuds.map((n) => [n.id, n]));
   const morceaux = [];
   if (schema.noeuds.length) morceaux.push(`${schema.noeuds.length} équipement(s) : ${schema.noeuds.map(nom).join(', ')}.`);
-  if (schema.liens.length) morceaux.push(`Liens : ${schema.liens.map((l) => `${nom(parId.get(l.de))} – ${nom(parId.get(l.a))}${l.etiquette ? ` (${l.etiquette})` : ''}`).join(' ; ')}.`);
+  const cote = (n, itf, adr) => `${nom(n)}${itf ? ` ${itf}` : ''}${adr ? ` ${adr}` : ''}`;
+  if (schema.liens.length) morceaux.push(`Liens : ${schema.liens.map((l) => `${cote(parId.get(l.de), l.etiquetteDe, l.adresseDe)} – ${cote(parId.get(l.a), l.etiquetteA, l.adresseA)} (${styleLien(l.style).label}${l.etiquette ? `, ${l.etiquette}` : ''})`).join(' ; ')}.`);
   if (schema.zones.length) morceaux.push(`Zones : ${schema.zones.map((z) => z.nom || 'sans nom').join(', ')}.`);
   return morceaux.join(' ') || 'Schéma vide.';
 }
@@ -326,20 +354,21 @@ export function schemaDepuisFiche(valeurs = {}, ids = {}) {
   if (!v.hoteSw && !v.hoteRouteur) return s;
   const plan = Array.isArray(v.plan) ? v.plan : [];
   const rt = idSchema('n'); const sw = idSchema('n');
-  if (v.hoteRouteur) s.noeuds.push({ id: rt, type: 'routeur', nom: v.hoteRouteur, note: '', equipementId: ids.routeur ?? null, typePerso: null, x: 500, y: 60 });
-  if (v.hoteSw) s.noeuds.push({ id: sw, type: 'commutateur', nom: v.hoteSw, note: '', equipementId: ids.commutateur ?? null, typePerso: null, x: 500, y: 280 });
-  if (v.hoteRouteur && v.hoteSw) s.liens.push({ id: idSchema('l'), de: rt, a: sw, style: 'trunk', etiquette: '802.1Q', etiquetteDe: v.routeurItf ?? '', etiquetteA: v.trunkSw ?? '' });
+  if (v.hoteRouteur) s.noeuds.push({ id: rt, type: 'routeur', nom: v.hoteRouteur, note: '', equipementId: ids.routeur ?? null, typePerso: null, x: 500, y: 40 });
+  if (v.hoteSw) s.noeuds.push({ id: sw, type: 'commutateur', nom: v.hoteSw, note: '', equipementId: ids.commutateur ?? null, typePerso: null, x: 500, y: 300 });
+  if (v.hoteRouteur && v.hoteSw) s.liens.push({ id: idSchema('l'), de: rt, a: sw, style: 'trunk', etiquette: '802.1Q', etiquetteDe: v.routeurItf ?? '', etiquetteA: v.trunkSw ?? '', adresseDe: '', adresseA: '' });
   const vlans = [];
-  if (v.vlanGestion) vlans.push({ vlan: v.vlanGestion, nom: 'GESTION', reseau: v.gestionPasserelle ? '' : '', ports: v.portGestion ?? '', poste: v.gestionPoste ?? '', couleur: 'vert', posteNom: 'Poste de gestion' });
-  for (const l of plan) vlans.push({ vlan: l.vlan, nom: l.nom ?? '', reseau: l.reseau ? `${l.reseau}/${l.prefixe ?? ''}` : '', ports: l.ports ?? '', poste: l.poste ?? '', couleur: 'bleu', posteNom: `PC ${l.nom ?? l.vlan}` });
+  if (v.vlanGestion) vlans.push({ vlan: v.vlanGestion, nom: 'GESTION', ports: v.portGestion ?? '', poste: v.gestionPoste ?? '', prefixe: v.gestionPrefixe ?? '', posteNom: 'Poste de gestion' });
+  for (const l of plan) vlans.push({ vlan: l.vlan, nom: l.nom ?? '', ports: l.ports ?? '', poste: l.poste ?? '', prefixe: l.prefixe ?? '', posteNom: `PC ${l.nom ?? l.vlan}` });
   const n = Math.max(1, vlans.length); const marge = 20; const largeurZone = Math.min(300, Math.floor((FEUILLE.largeur - marge * (n + 1)) / n));
   const total = n * largeurZone + (n - 1) * marge; let x = Math.round((FEUILLE.largeur - total) / 2);
   const couleurs = ['vert', 'bleu', 'orange', 'violet', 'gris'];
   vlans.slice(0, 8).forEach((z, i) => {
     s.zones.push({ id: idSchema('z'), nom: `VLAN ${z.vlan} · ${z.nom}`.slice(0, 60), couleur: i === 0 && v.vlanGestion ? 'vert' : couleurs[(i % 4) + 1], x, y: 375, l: largeurZone, h: 215 });
     const pc = idSchema('n');
-    s.noeuds.push({ id: pc, type: 'poste', nom: z.posteNom.slice(0, 60), note: z.poste, equipementId: null, typePerso: null, x: x + Math.round(largeurZone / 2), y: 480 });
-    if (v.hoteSw) s.liens.push({ id: idSchema('l'), de: sw, a: pc, style: 'plein', etiquette: '', etiquetteDe: '', etiquetteA: String(z.ports).split(/[,\s]+/)[0] ?? '' });
+    s.noeuds.push({ id: pc, type: 'poste', nom: z.posteNom.slice(0, 60), note: '', equipementId: null, typePerso: null, x: x + Math.round(largeurZone / 2), y: 480 });
+    // Le port du commutateur côté commutateur, l'adresse du poste côté poste.
+    if (v.hoteSw) s.liens.push({ id: idSchema('l'), de: sw, a: pc, style: 'droit', etiquette: '', etiquetteDe: String(z.ports).split(/[,\s]+/)[0] ?? '', etiquetteA: '', adresseDe: '', adresseA: z.poste ? `${z.poste}${z.prefixe ? `/${z.prefixe}` : ''}` : '' });
     x += largeurZone + marge;
   });
   return normaliserSchema(s).schema;

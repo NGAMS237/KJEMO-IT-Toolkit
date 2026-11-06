@@ -1072,3 +1072,20 @@ details.schemas-fiche{margin:14px 0}
 .sch-champ input,.sch-champ select{font:inherit;font-size:13.5px;color:var(--text);background:var(--input-bg);border:1px solid var(--border-strong);border-radius:7px;padding:6px 8px;min-height:36px;width:100%}
 .sch-champ small{font-size:12px;color:var(--muted)}
 .sch-info{margin:0;font-size:13px;color:var(--muted)}
+/* ---- Câbles et interfaces (JOURNAL-LABO-06) ---- */
+.sch-groupe{display:flex;flex-direction:column;gap:5px}
+.sch-groupe-titre{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sch-ech{width:34px;height:10px;vertical-align:middle;background:#fff;border-radius:2px}
+.sch-cable[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--text-strong);font-weight:650}
+.sch-bandeau{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;border:2px solid var(--accent);background:var(--accent-soft);color:var(--text-strong);border-radius:9px;padding:8px 12px;font-size:14px}
+.sch-legende{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);align-items:center}
+.sch-legende span{display:inline-flex;align-items:center;gap:5px}
+.sch-cotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}
+.sch-cote{border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sch-cote legend{font-weight:700;font-size:13.5px;padding:0 4px}
+.sch-cote small{font-size:12px;color:var(--muted)}
+.sch-itf{font-size:13px;overflow-x:auto}
+.sch-itf table{border-collapse:collapse;margin:6px 0;min-width:100%}
+.sch-itf th,.sch-itf td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--border);font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.sch-itf th{font-family:inherit;color:var(--muted);font-size:12px}
+.sch-itf small{color:var(--muted)}
