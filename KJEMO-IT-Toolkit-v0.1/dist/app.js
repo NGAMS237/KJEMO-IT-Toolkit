@@ -1945,13 +1945,36 @@ function titresDesFiches(ids) {
   return Object.fromEntries(ids.map((f) => [f, entreeParId(f)?.procedure?.titre ?? entreeParId(f)?.titre ?? f]));
 }
 
-function telechargerOctets(nom, octets, type) {
-  const blob = new Blob([octets], { type });
+/**
+ * Donne un fichier fabriqué ici (PDF, sauvegarde) à la personne.
+ * Dans l'aperçu claude.ai, la page est isolée : un lien de téléchargement n'y
+ * fait rien, on passe donc par la fonction d'enregistrement de l'aperçu, qui
+ * demande confirmation. Partout ailleurs (GitHub Pages, serveur local), c'est
+ * un téléchargement ordinaire. Renvoie { ok, message }.
+ */
+async function enregistrerFichier(nom, contenu, type) {
+  const blob = new Blob([contenu], { type });
+  if (typeof window.claude?.use === 'function') {
+    let dl = null;
+    try { dl = await window.claude.use('downloads'); } catch { dl = null; }
+    if (dl) {
+      try {
+        await dl.save({ filename: nom, data: blob });
+        return { ok: true, message: `enregistré : ${nom}` };
+      } catch (err) {
+        const code = err?.code ?? 'unavailable';
+        if (code === 'declined') return { ok: false, message: 'Enregistrement annulé : rien n’a été enregistré.' };
+        if (code === 'rate_limited') return { ok: false, message: 'Une demande d’enregistrement est déjà ouverte : réponds-y, puis réessaie.' };
+        return { ok: false, message: 'Cet aperçu ne permet pas d’enregistrer de fichier. Ouvre le Toolkit depuis son adresse habituelle (GitHub Pages ou ton ordinateur).' };
+      }
+    }
+  }
   const lien = document.createElement('a');
   lien.href = URL.createObjectURL(blob);
   lien.download = nom;
   document.body.appendChild(lien); lien.click(); lien.remove();
-  setTimeout(() => URL.revokeObjectURL(lien.href), 4000);
+  setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
+  return { ok: true, message: `téléchargé : ${nom}` };
 }
 
 function renderJournal() {
@@ -1995,8 +2018,8 @@ function renderJournalListe() {
       const o = await lireImage(c.id);
       if (o) { let bin = ''; for (let i = 0; i < o.length; i += 0x8000) bin += String.fromCharCode(...o.subarray(i, i + 0x8000)); captures[c.id] = btoa(bin); }
     }
-    telechargerTexte(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures, new Date(), lireEquipements())}\n`, 'application/json;charset=utf-8');
-    etatJournal.note = `Sauvegarde téléchargée : ${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s), ${lireEquipements().length} équipement(s).`;
+    const res = await enregistrerFichier(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures, new Date(), lireEquipements())}\n`, 'application/json;charset=utf-8');
+    etatJournal.note = res.ok ? `Sauvegarde ${res.message} (${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s), ${lireEquipements().length} équipement(s)).` : res.message;
     renderJournalListe(); document.querySelector('#jSauver')?.focus();
   });
   view.querySelector('#jRestaurer').addEventListener('change', async (ev) => {
@@ -2185,11 +2208,12 @@ function brancherJournalFiche(view) {
     if (!e) return;
     const captures = {};
     for (const c of e.captures) { const o = await lireImage(c.id); if (o) captures[c.id] = o; }
-    try {
-      const r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches), equipements: equipementsDuLabo(e) });
-      telechargerOctets(nomFichierPdf(e), r.octets, 'application/pdf');
-      etatJournal.noteFiche = `PDF téléchargé : ${nomFichierPdf(e)} (${r.pages} pages). Range-le avec tes documents.`;
-    } catch {
+    let r = null;
+    try { r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches), equipements: equipementsDuLabo(e) }); } catch { r = null; }
+    if (r) {
+      const res = await enregistrerFichier(nomFichierPdf(e), r.octets, 'application/pdf');
+      etatJournal.noteFiche = res.ok ? `PDF ${res.message} (${r.pages} pages). Range-le avec tes documents.` : res.message;
+    } else {
       etatJournal.noteFiche = 'Le PDF n’a pas pu être fabriqué. Enregistre, recharge la page et réessaie.';
     }
     dessinerJournalFiche(view); document.querySelector('#jPdf')?.focus();
@@ -2293,13 +2317,13 @@ function renderInventaireListe() {
   });
   view.querySelector('#iNouveauSys').addEventListener('change', (ev) => { etatInventaire.nouveauSysteme = ev.target.value; });
   view.querySelector('#iNouveauForm').addEventListener('submit', (ev) => { ev.preventDefault(); ouvrirEquipement(equipementVide({ systemeId: etatInventaire.nouveauSysteme }), { nouveau: true }); });
-  view.querySelector('#iPdf').addEventListener('click', () => {
-    try {
-      const r = pdfInventaire(filtrerInventaire(lireEquipements(), {}), { projets: (id) => projets(id).map((p) => p.reference), auteur: auteurParDefaut() });
-      const nom = `inventaire-equipements_${jour()}.pdf`;
-      telechargerOctets(nom, r.octets, 'application/pdf');
-      etatInventaire.note = `PDF téléchargé : ${nom} (${r.pages} pages).`;
-    } catch { etatInventaire.note = 'Le PDF n’a pas pu être fabriqué.'; }
+  view.querySelector('#iPdf').addEventListener('click', async () => {
+    let r = null;
+    try { r = pdfInventaire(filtrerInventaire(lireEquipements(), {}), { projets: (id) => projets(id).map((p) => p.reference), auteur: auteurParDefaut() }); } catch { r = null; }
+    if (r) {
+      const res = await enregistrerFichier(`inventaire-equipements_${jour()}.pdf`, r.octets, 'application/pdf');
+      etatInventaire.note = res.ok ? `PDF ${res.message} (${r.pages} pages).` : res.message;
+    } else etatInventaire.note = 'Le PDF n’a pas pu être fabriqué.';
     renderInventaireListe(); document.querySelector('#iPdf')?.focus();
   });
 }
@@ -2438,12 +2462,7 @@ function lireProgression() {
 }
 
 function telechargerTexte(nom, texte, type) {
-  const blob = new Blob([texte], { type });
-  const lien = document.createElement('a');
-  lien.href = URL.createObjectURL(blob);
-  lien.download = nom;
-  document.body.appendChild(lien); lien.click(); lien.remove();
-  setTimeout(() => URL.revokeObjectURL(lien.href), 1000);
+  enregistrerFichier(nom, texte, type).catch(() => {});
 }
 
 function renderCours() {

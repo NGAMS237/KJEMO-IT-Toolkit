@@ -1,3 +1,8 @@
+## JOURNAL-LABO-04 (2026-11-05)
+
+- Correctif « le PDF ne marche pas » : dans l’aperçu claude.ai, la page est isolée et un lien de téléchargement n’y fait rien. L’export PDF, le PDF de l’inventaire et la sauvegarde passent maintenant par la fonction d’enregistrement de l’aperçu (une confirmation s’affiche) ; ailleurs (GitHub Pages, serveur local), c’est un téléchargement ordinaire. Un refus ou une impossibilité est dit dans la barre au lieu d’un faux « téléchargé ».
+- Test : browser-journal.test.mjs simule l’aperçu (enregistrement accepté puis refusé) : 67 vérifications.
+
 ## JOURNAL-LABO-02 et 03 (2026-11-05)
 
 - Exemples d’aide au remplissage : chaque champ vide du Journal de labo montre un exemple adapté à la catégorie (Cisco, Système, Azure, Autre) ; chaque tableau vide montre une ligne d’exemple ; les cellules vides affichent « ex. … ».

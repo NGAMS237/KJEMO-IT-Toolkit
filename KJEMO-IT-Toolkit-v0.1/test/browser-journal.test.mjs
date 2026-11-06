@@ -275,6 +275,38 @@ await ctx.close();
   await context.close();
 }
 
+
+// Aperçu claude.ai simulé : le téléchargement passe par la fonction d'enregistrement de l'aperçu
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await context.addInitScript(() => {
+    window.__saves = []; window.__refuser = false;
+    window.claude = { use: async (nom) => (nom !== 'downloads' ? null : {
+      save: async ({ filename, data }) => {
+        if (window.__refuser) { const e = new Error('non'); e.code = 'declined'; throw e; }
+        const octets = new Uint8Array(await data.arrayBuffer());
+        window.__saves.push({ filename, taille: octets.length, debut: String.fromCharCode(...octets.subarray(0, 8)) });
+        return { status: 'saved' };
+      },
+    }) };
+  });
+  const p6 = await context.newPage(); const e6 = []; p6.on('pageerror', (e) => e6.push(e.message));
+  await p6.goto(`${BASE}/#/journal`); await p6.waitForSelector('#jExemple');
+  await p6.click('#jExemple'); await p6.waitForSelector('#jForm');
+  let telechargements = 0; p6.on('download', () => { telechargements += 1; });
+  await p6.click('#jPdf');
+  await p6.waitForFunction(() => window.__saves.length === 1);
+  const sv = await p6.evaluate(() => window.__saves[0]);
+  assert(/\.pdf$/.test(sv.filename) && sv.debut === '%PDF-1.4' && sv.taille > 2000, 'aperçu : le PDF passe par l’enregistrement de l’aperçu', JSON.stringify(sv));
+  assert(/PDF enregistré/.test(await p6.locator('#jNote').innerText()) && telechargements === 0, 'aperçu : message « enregistré », aucun lien de téléchargement utilisé');
+  await p6.evaluate(() => { window.__refuser = true; });
+  await p6.click('#jPdf');
+  await p6.waitForFunction(() => /annulé/.test(document.querySelector('#jNote')?.textContent ?? ''));
+  assert(true, 'aperçu : un enregistrement refusé est annoncé');
+  assert(e6.length === 0, 'aucune erreur de page (aperçu simulé)', e6.join(' | '));
+  await context.close();
+}
+
 // Téléphone : aucune barre de défilement horizontale
 {
   const { context, page: p3, erreurs: e3 } = await nouvellePage({ viewport: { width: 390, height: 844 } }, '/#/journal');
