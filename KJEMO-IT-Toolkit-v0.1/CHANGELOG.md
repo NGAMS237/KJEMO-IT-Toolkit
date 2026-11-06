@@ -1,3 +1,9 @@
+## JOURNAL-LABO-07 (2026-11-05)
+
+- « Remplir le document et l’inventaire depuis le schéma » (bouton sous la feuille, sur demande) : les équipements dessinés hors inventaire y sont ajoutés (nom, type, système déduit du symbole ; Internet exclu ; un nom déjà pris est réutilisé) et reliés au labo ; les interfaces et adresses des câbles vont dans leurs fiches ; le plan d’adressage reçoit une ligne par interface adressée, avec la zone (VLAN) de l’équipement et, pour un poste, un serveur ou une VM, la passerelle trouvée par calcul du réseau (adresses du schéma et interfaces des routeurs, sous-interfaces comprises) ; la description de l’architecture est rédigée si elle est vide.
+- Rien n’est effacé ; un deuxième passage ne crée aucun doublon ; une adresse changée sur le schéma est reportée dans le plan et la fiche. L’inventaire est enregistré tout de suite, le labo attend « Enregistrer ».
+- Tests : journal.test.mjs (207) et browser-journal.test.mjs (97).
+
 ## JOURNAL-LABO-06 (2026-11-05)
 
 - Retour : « je ne vois pas les câbles ». L’éditeur de schéma a maintenant une palette « Câbles », comme les Connexions de Packet Tracer : câble droit, croisé, trunk 802.1Q, console, série (WAN), fibre, sans fil, VPN/logique. On choisit un câble, un bandeau dit quoi faire, puis on clique le premier et le deuxième équipement ; le mode reste actif pour enchaîner les câbles (« Terminer » ou Échap pour sortir).

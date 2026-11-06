@@ -29,7 +29,7 @@ const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
 const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
-const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs');
+const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs'); const SR = await imp('schema-remplir.mjs');
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const JPEG = Uint8Array.from(Buffer.from('/9j/4AAQSkZJRgABAQEAAgACAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAYABEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3V3uVlYIgK54JB9KRZbvjMS+/Bq3RTuIKKKKQxC6g4LAH60m9T0YfnRRQA6iiigD/2Q==', 'base64'));
@@ -357,6 +357,45 @@ console.log('11. Schéma d’architecture');
   assert(st.liens.slice(1).every((l) => l.style === 'droit' && /^192\.168\.\d+\.10\/24$/.test(l.adresseA)), 'TP VLAN : câbles droits vers les postes, adresse du poste côté poste');
   if (PDFTOTEXT) { const tl = texteDu(JP.pdfJournal(J.normaliserEntree({ titre: 'TP', schema: avecAdr }).entree, {}).octets); assert(tl.includes('Trunk 802.1Q') && tl.includes('Câble droit') && tl.includes('192.168.99.1/24'), 'PDF : légende des câbles et adresse d’interface'); }
   assert(VS.editeurSchemaMarkup(SC.schemaVide(), { etat: { typeOuvert: true } }).includes('id="schTypeCode"'), 'éditeur : création d’un type personnel');
+}
+
+console.log('12. Remplir le document et l’inventaire depuis le schéma');
+{
+  const v = J.valeursPourJournal(P.evaluerValeurs(fiche.params, exemple(fiche)));
+  const prop = I.equipementsDepuisFiche(v);
+  const inv = prop.map((x) => x.equipement);
+  const idDe = (t) => inv.find((q) => q.type === t).id;
+  const lab = J.normaliserEntree({ titre: 'TP', schema: SC.schemaDepuisFiche(v, { commutateur: idDe('commutateur'), routeur: idDe('routeur') }) }).entree;
+  // Ajouts « dessinés » : un serveur hors inventaire câblé à SW1 avec interface et adresse.
+  const sw = lab.schema.noeuds.find((n) => n.type === 'commutateur');
+  lab.schema.noeuds.push({ id: 'nsrv01', type: 'serveur', nom: 'SRV-WEB', note: '', equipementId: null, typePerso: null, x: 850, y: 300 });
+  lab.schema.noeuds.push({ id: 'nnet01', type: 'internet', nom: 'Internet', note: '', equipementId: null, typePerso: null, x: 850, y: 60 });
+  lab.schema.liens.push({ id: 'lsrv01', de: sw.id, a: 'nsrv01', style: 'droit', etiquette: '', etiquetteDe: 'Fa0/5', etiquetteA: 'ens18', adresseDe: '', adresseA: '192.168.10.20/24' });
+  const { entree: e, inventaire: inv2, bilan } = SR.remplirDepuisSchema(lab, { inventaire: inv, date: new Date('2026-11-05T10:00:00') });
+  assert(bilan.equipementsCrees.join() === 'Poste de gestion,PC VENTES,SRV-WEB', 'équipements dessinés ajoutés à l’inventaire (Internet exclu)', bilan.equipementsCrees.join());
+  assert(e.schema.noeuds.filter((n) => n.type !== 'internet').every((n) => n.equipementId) && e.equipements.length === 5, 'chaque nœud pointe sur sa fiche ; cinq équipements reliés au labo');
+  const srv = inv2.find((q) => q.nom === 'SRV-WEB');
+  assert(srv.systeme === 'systeme' && srv.type === 'serveur' && srv.interfaces[0].nom === 'ens18' && srv.adresse === '192.168.10.20', 'SRV-WEB : système, type, interface et adresse de gestion');
+  assert(inv2.find((q) => q.nom === 'SW1').interfaces.some((i) => i.nom === 'Fa0/5'), 'SW1 : le port du câble ajouté à ses interfaces');
+  const ligne = (nom) => e.adressage.find((l) => l.equipement === nom);
+  assert(ligne('PC VENTES')?.adresse === '192.168.10.10/24' && ligne('PC VENTES').vlan === 'VLAN 10 · VENTES' && ligne('PC VENTES').passerelle === '192.168.10.1', 'plan d’adressage : poste avec sa zone et sa passerelle (sous-interface de R1)');
+  assert(ligne('Poste de gestion')?.passerelle === '192.168.99.1' && ligne('SRV-WEB')?.interface === 'ens18' && ligne('SRV-WEB').passerelle === '192.168.10.1', 'passerelles trouvées par le calcul du réseau');
+  assert(bilan.architecture && e.architecture.includes('SRV-WEB'), 'description de l’architecture rédigée (champ vide)');
+  assert(!Object.keys(J.normaliserEntree(e).erreurs).length && inv2.every((q) => !Object.keys(I.normaliserEquipement(q).erreurs).length), 'résultat valide (labo et fiches)');
+  // Deuxième passage : rien en double
+  const r2 = SR.remplirDepuisSchema(e, { inventaire: inv2 });
+  assert(!r2.bilan.equipementsCrees.length && !r2.bilan.lignesAjoutees && !r2.bilan.interfaces && r2.inventaire.length === inv2.length && r2.entree.adressage.length === e.adressage.length, 'deuxième passage : aucun doublon');
+  assert(/déjà à jour/.test(SR.phraseBilan(r2.bilan)) && /ajouté\(s\) à l’inventaire/.test(SR.phraseBilan(bilan)), 'bilan lisible');
+  // Rien n'est effacé ; une adresse changée sur le schéma met la ligne à jour
+  const e3 = structuredClone(e); e3.architecture = 'Ma description'; e3.adressage.push({ equipement: 'Imprimante', interface: '', adresse: '192.168.10.50', vlan: '', passerelle: '', note: 'à la main' });
+  e3.schema.liens.find((l) => l.id === 'lsrv01').adresseA = '192.168.10.21/24';
+  const r3 = SR.remplirDepuisSchema(e3, { inventaire: inv2 });
+  assert(r3.entree.architecture === 'Ma description' && r3.entree.adressage.some((l) => l.equipement === 'Imprimante') && r3.entree.adressage.find((l) => l.equipement === 'SRV-WEB').adresse === '192.168.10.21/24' && r3.inventaire.find((q) => q.nom === 'SRV-WEB').interfaces[0].adresse === '192.168.10.21/24', 'rien n’est effacé ; une adresse changée est reportée partout');
+  // Contre-épreuves
+  assert(SR.lireAdresse('192.168.1.300') === null && SR.lireAdresse('10.0.0.1/33') === null && SR.lireAdresse('10.0.0.1/8').prefixe === 8, 'adresses invalides refusées');
+  const vide = SR.remplirDepuisSchema(J.normaliserEntree({ titre: 'x' }).entree, {});
+  assert(!vide.bilan.equipementsCrees.length && !vide.entree.adressage.length && !vide.bilan.architecture, 'schéma vide : rien n’est rempli');
+  assert(VS.editeurSchemaMarkup(lab.schema, {}).includes('id="schRemplir"'), 'bouton « Remplir le document et l’inventaire depuis le schéma »');
 }
 
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

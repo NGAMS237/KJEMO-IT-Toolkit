@@ -15,6 +15,7 @@ import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, 
          equipementsDepuisFiche } from './inventaire.mjs';
 import { FEUILLE, schemaVide, idSchema, aimanter, normaliserTypesPerso, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
 import { editeurSchemaMarkup, feuilleSvg } from './vue-schema.mjs';
+import { remplirDepuisSchema, phraseBilan } from './schema-remplir.mjs';
 import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
 import { ROUTE_JOURNAL, routeEntreeJournal, lireRouteJournal, journalListeMarkup, journalEditeurMarkup } from './vue-journal.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
@@ -2537,6 +2538,16 @@ function brancherSchema(view) {
         let k = 0; for (const l of e.equipements) { const q = resoudreEquipement(l.id); if (q && !s.noeuds.some((n) => n.equipementId === q.id) && ajouterEquipementAuSchema(q)) k++; }
         if (k) schemaModifie(); majBlocSchema('#schLabo');
         const n = document.querySelector('#jNote'); if (n) n.textContent = k ? `${k} équipement(s) placé(s) sur le schéma.` : 'Tous les équipements du labo sont déjà sur le schéma.';
+        break;
+      }
+      case 'schRemplir': {
+        lireFormulaireJournal(view);
+        const r = remplirDepuisSchema(etatJournal.brouillon, { inventaire: lireEquipements(), typesPerso: lireTypesPerso() });
+        // L'inventaire est enregistré tout de suite (les fiches existent) ; le labo, lui, attend « Enregistrer ».
+        ecrireEquipements(r.inventaire);
+        etatJournal = { ...etatJournal, brouillon: r.entree, noteFiche: phraseBilan(r.bilan), modifie: true };
+        dessinerJournalFiche(view);
+        document.querySelector('#schRemplir')?.focus({ preventScroll: true });
         break;
       }
       case 'schCablageFin': etatSchema = { ...etatSchema, cablage: null }; majBlocSchema('#schFeuille'); break;

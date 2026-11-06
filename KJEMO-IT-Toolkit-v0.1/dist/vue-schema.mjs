@@ -122,6 +122,8 @@ export function editeurSchemaMarkup(schema, { resoudre = () => null, typesPerso 
     + `<p class="sch-aide">Pour câbler : choisis un câble dans « Câbles », puis clique les deux équipements ; saisis ensuite l’interface et l’adresse de chaque côté. Glisse pour déplacer (aimanté à la grille) · clique un câble pour le modifier · Suppr retire l’élément choisi · flèches pour ajuster.</p>`
     + errs
     + `<div class="sch-proprietes" aria-live="polite">${liste}${props}</div>`
+    + `<div class="sch-remplir"><button type="button" class="primary-button j-btn" id="schRemplir"${schema.noeuds.length ? '' : ' disabled'}>Remplir le document et l’inventaire depuis le schéma</button>`
+    + `<small>Ajoute à l’inventaire les équipements dessinés, y enregistre interfaces et adresses, complète le plan d’adressage (zone et passerelle comprises) et la description. Rien n’est effacé.</small></div>`
     + `<div class="params-actions"><button type="button" class="secondary-button j-mini" id="schSvg"${schema.noeuds.length || schema.zones.length ? '' : ' disabled'}>Exporter le schéma (SVG)</button>`
     + `<button type="button" class="secondary-button j-mini j-danger" id="schVider"${schema.noeuds.length || schema.zones.length || schema.textes.length ? '' : ' disabled'}>Vider le schéma</button></div>`;
 }

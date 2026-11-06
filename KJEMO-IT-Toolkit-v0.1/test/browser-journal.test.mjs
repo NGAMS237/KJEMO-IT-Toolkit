@@ -378,6 +378,16 @@ await ctx.close();
   const [dls] = await Promise.all([p7.waitForEvent('download'), p7.click('#schSvg')]);
   const svg = (await lireDl(dls)).toString('utf8');
   assert(/_schema\.svg$/.test(dls.suggestedFilename()) && svg.includes('<svg') && svg.includes('SRV-WEB') && !svg.includes('data-el'), 'export SVG du schéma (sans attributs d’édition)');
+  // Remplir le document et l'inventaire depuis le schéma
+  const lignesAvant = await p7.locator('[data-jt="adressage"][data-col="equipement"]').count();
+  await p7.click('#schRemplir');
+  assert(/Depuis le schéma/.test(await p7.locator('#jNote').innerText()), 'remplir depuis le schéma : bilan affiché');
+  const eqs = await p7.locator('[data-jt="adressage"][data-col="equipement"]').evaluateAll((l) => l.map((x) => x.value));
+  assert(eqs.length > lignesAvant && eqs.includes('PC-ADMIN') === false && eqs.includes('PC VENTES'), 'plan d’adressage complété depuis les câbles', eqs.join(','));
+  assert(await p7.locator('[data-jeq]:checked').count() >= 5, 'équipements du schéma cochés dans la section Équipements');
+  const inv7 = await p7.evaluate(() => JSON.parse(localStorage.getItem('kjemo.inventaire.v1')).equipements.map((q) => q.nom));
+  assert(inv7.includes('PC VENTES') && inv7.includes('Poste de gestion'), 'inventaire : postes dessinés ajoutés', inv7.join(','));
+  await p7.click('#jEnregistrer');
   await p7.click('#schVider'); assert(/Confirmer/.test(await p7.locator('#schVider').innerText()), 'vider : confirmation demandée');
   await p7.click('#schVider'); assert(await p7.locator('#schFeuille .sch-cible').count() === 0, 'schéma vidé');
   if (CAPTURES) await p7.screenshot({ path: join(CAPTURES, 'journal-schema.png') });
