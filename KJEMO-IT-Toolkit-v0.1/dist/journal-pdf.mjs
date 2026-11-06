@@ -10,6 +10,7 @@
  */
 import { A4, DocumentPdf, Flux, STYLE, couper, largeur } from './pdf-a4.mjs';
 import { categorie, etat, resultat } from './journal.mjs';
+import { TABLEAUX_EQUIPEMENT, CHAMPS_EQUIPEMENT, SYSTEMES, systeme, typeEquipement } from './inventaire.mjs';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 /** « 2026-11-05 » → « 5 novembre 2026 ». */
@@ -26,11 +27,12 @@ export function nomFichierPdf(entree) {
 const plein = (s) => String(s ?? '').trim().length > 0;
 
 /** Les sections présentes, dans l'ordre du plan (sert aussi au sommaire de l'écran). */
-export function sectionsPresentes(e, { captures = {} } = {}) {
+export function sectionsPresentes(e, { captures = {}, equipements = [] } = {}) {
   const s = [];
   if (plein(e.objet)) s.push('objet');
   if (plein(e.environnement)) s.push('environnement');
   if (plein(e.architecture)) s.push('architecture');
+  if (equipements.length) s.push('equipements');
   if (e.adressage.length) s.push('adressage');
   if (e.configuration.length) s.push('configuration');
   if (e.validation.length) s.push('validation');
@@ -38,10 +40,11 @@ export function sectionsPresentes(e, { captures = {} } = {}) {
   if (e.incidents.length) s.push('incidents');
   if (e.fiches.length || plein(e.referencesTexte)) s.push('references');
   if (e.captures.some((c) => captures[c.id])) s.push('captures');
+  if (equipements.length) s.push('annexe');
   return s;
 }
 export const TITRES_SECTIONS = {
-  objet: 'Objet', environnement: 'Environnement', architecture: 'Architecture', adressage: 'Plan d’adressage', configuration: 'Configuration',
+  objet: 'Objet', environnement: 'Environnement', architecture: 'Architecture', equipements: 'Équipements', annexe: 'Fiches des équipements', adressage: 'Plan d’adressage', configuration: 'Configuration',
   validation: 'Validation', exploitation: 'Exploitation', incidents: 'Incidents et solutions', references: 'Références', captures: 'Captures',
 };
 
@@ -49,23 +52,32 @@ export const TITRES_SECTIONS = {
  * Fabrique le PDF. `captures` : id → Uint8Array (JPEG). `titresFiches` : id → titre.
  * Renvoie { octets, pages, sections } (sections : numéro, titre, page).
  */
-export function pdfJournal(e, { captures = {}, titresFiches = {}, date = new Date() } = {}) {
+export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = [], date = new Date() } = {}) {
   const doc = new DocumentPdf({ titre: `${e.titre} (${e.reference} v${e.version})`, auteur: e.auteur, sujet: `Dossier de labo · ${categorie(e.categorie).label}` });
   const ref = `${e.reference} · v${e.version}`;
 
   // Page 1 : réservée à la page de garde, dessinée à la fin (le sommaire a besoin des numéros de page).
   doc.nouvellePage();
   const flux = new Flux(doc, { titreCourt: e.titre, reference: ref, classification: e.classification });
-  const sections = sectionsPresentes(e, { captures });
+  const sections = sectionsPresentes(e, { captures, equipements });
   let num = 0;
   // Une section d'images garde son titre avec la première image (pas de titre seul en bas de page).
-  const section = (id) => { num += 1; if (id === 'captures') flux.place(400); flux.titreSection(num, TITRES_SECTIONS[id]); return num; };
+  const section = (id) => {
+    if (id === 'annexe') { flux.nouvellePage(); flux.titreSection('Annexe A', TITRES_SECTIONS[id]); return 'A'; }
+    num += 1; if (id === 'captures') flux.place(400); flux.titreSection(num, TITRES_SECTIONS[id]); return num;
+  };
 
   for (const id of sections) {
     const n = section(id);
     if (id === 'objet') flux.paragraphe(e.objet);
     if (id === 'environnement') flux.paragraphe(e.environnement);
     if (id === 'architecture') flux.paragraphe(e.architecture);
+    if (id === 'equipements') {
+      flux.tableau([{ titre: 'Équipement', part: 1.1 }, { titre: 'Type', part: 1.2 }, { titre: 'Adresse', part: 1.2, mono: true }, { titre: 'Rôle dans ce projet', part: 2.4 }],
+        equipements.map(({ equipement: q, role }) => ({ cellules: [q.nom, `${typeEquipement(q.type).label} (${systeme(q.systeme).label})`, q.adresse, role || q.role], styles: [{ gras: true }] })));
+      flux.paragraphe('Le détail de chaque équipement (interfaces, table de routage, VLAN, services, règles) est en annexe A.', { taille: 8.8, couleur: STYLE.pale });
+    }
+    if (id === 'annexe') ficheEquipementsPdf(flux, equipements.map((x) => x.equipement), 'A');
     if (id === 'adressage') {
       const cols = [
         { id: 'equipement', titre: 'Équipement', part: 1.25 }, { id: 'interface', titre: 'Interface', part: 1, mono: true },
@@ -110,6 +122,56 @@ export function pdfJournal(e, { captures = {}, titresFiches = {}, date = new Dat
   pageDeGarde(doc, e, flux.debutsSections);
   flux.finaliser();
   return { octets: doc.octets({ date }), pages: doc.pages.length, sections: flux.debutsSections.map((s) => ({ ...s, page: s.page + 1 })) };
+}
+
+/** Colonnes PDF des tableaux d'un équipement (parts de largeur, police à chasse fixe pour les adresses). */
+const COLONNES_PDF = {
+  interfaces: { nom: [1.1, true], adresse: [1.5, true], vlan: [1, false], etat: [0.6, false], description: [2, false] },
+  routes: { type: [0.6, false], destination: [1.4, true], via: [1.3, true], interface: [1, true], pourquoi: [2, false] },
+  vlans: { numero: [0.7, false], nom: [1.2, false], ports: [1.6, true], reseau: [1.5, true] },
+  services: { nom: [1.2, false], port: [0.9, true], etat: [0.8, false], note: [2.4, false] },
+  regles: { priorite: [0.7, false], nom: [1.4, false], port: [0.8, true], source: [1.6, true], action: [0.9, false] },
+};
+
+/** Fiches détaillées d'équipements, numérotées `<prefixe>.1`, `<prefixe>.2`… */
+export function ficheEquipementsPdf(flux, liste, prefixe) {
+  liste.forEach((q, k) => {
+    flux.place(140);
+    flux.sousTitre(`${prefixe}.${k + 1}  ${q.nom} · ${typeEquipement(q.type).label} (${systeme(q.systeme).label})`);
+    const kv = CHAMPS_EQUIPEMENT.filter((c) => c.id !== 'nom' && plein(q[c.id])).map((c) => ({ cellules: [c.label.replace(/ \(sans mot de passe\)$/, ''), q[c.id]], styles: [{ gras: true }] }));
+    if (kv.length) flux.tableau([{ titre: 'Rubrique', part: 1 }, { titre: 'Valeur', part: 3.4 }], kv, { enteteVisible: false });
+    for (const [nom, d] of Object.entries(TABLEAUX_EQUIPEMENT)) {
+      if (!q[nom]?.length) continue;
+      flux.paragraphe(d.label, { police: 'gras', taille: 9.5 });
+      const cols = d.colonnes.map((c) => ({ titre: c.label, part: COLONNES_PDF[nom]?.[c.id]?.[0] ?? 1, mono: COLONNES_PDF[nom]?.[c.id]?.[1] ?? false }));
+      flux.tableau(cols, q[nom].map((l) => d.colonnes.map((c) => l[c.id] ?? '')));
+    }
+    flux.espace(6);
+  });
+}
+
+/**
+ * PDF de l'inventaire complet : synthèse, puis une fiche par équipement,
+ * regroupées par système. `projets(id)` : références des labos qui l'utilisent.
+ */
+export function pdfInventaire(equipements, { projets = () => [], auteur = '', date = new Date() } = {}) {
+  const j = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const doc = new DocumentPdf({ titre: `Inventaire des équipements (${j})`, auteur, sujet: 'Journal de labo · inventaire' });
+  const flux = new Flux(doc, { titreCourt: 'Inventaire des équipements', reference: `Inventaire · ${j}`, classification: 'Interne' });
+  flux.paragraphe('Inventaire des équipements', { police: 'gras', taille: 22, couleur: STYLE.accent, interligne: 1.2 });
+  flux.paragraphe(`État au ${dateLongue(j)}${auteur ? ` · ${auteur}` : ''} · ${equipements.length} équipement(s)`, { couleur: STYLE.pale });
+  flux.tableau([{ titre: 'Nom', part: 1.1 }, { titre: 'Système', part: 0.8 }, { titre: 'Type', part: 1.1 }, { titre: 'Adresse', part: 1.2, mono: true }, { titre: 'Rôle', part: 2 }, { titre: 'Projets', part: 1.4 }],
+    equipements.map((q) => ({ cellules: [q.nom, systeme(q.systeme).label, typeEquipement(q.type).label, q.adresse, q.role, projets(q.id).join(', ')], styles: [{ gras: true }] })));
+  let n = 0;
+  for (const s of SYSTEMES) {
+    const liste = equipements.filter((q) => q.systeme === s.id);
+    if (!liste.length) continue;
+    n += 1;
+    flux.titreSection(n, s.label);
+    ficheEquipementsPdf(flux, liste, String(n));
+  }
+  flux.finaliser({ premiereSansEntete: false });
+  return { octets: doc.octets({ date }), pages: doc.pages.length };
 }
 
 function pageDeGarde(doc, e, debuts) {

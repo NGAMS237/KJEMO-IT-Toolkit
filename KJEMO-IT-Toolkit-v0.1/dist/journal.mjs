@@ -65,6 +65,84 @@ export const CHAMPS_TEXTE = [
   { id: 'referencesTexte', label: 'Autres références (documents, liens)', long: true, max: 2000 },
 ];
 
+/**
+ * Exemples affichés dans les champs vides (indications, jamais enregistrées),
+ * adaptés à la catégorie du labo. Les colonnes des tableaux ont les leurs.
+ */
+export const EXEMPLES_CHAMPS = {
+  cisco: {
+    titre: 'TP VLAN, SSH et routage inter-VLAN',
+    objet: 'Séparer la gestion et les ventes sur un commutateur, administrer le commutateur par SSH et router entre les VLAN avec un routeur sur un bâton.',
+    environnement: 'Packet Tracer 8.2 (ou matériel du labo B-204) : commutateur Catalyst 2960, routeur ISR 4321, deux postes Windows 11.',
+    architecture: 'SW1 relie le poste de gestion (VLAN 99) et le poste des ventes (VLAN 10). Un trunk 802.1Q (Gi0/1) le relie à R1, qui porte une sous-interface par VLAN et sert de passerelle.',
+    acces: 'Console du commutateur, puis ssh admin@192.168.99.2 depuis le poste de gestion. Client Windows récent : ajouter -o KexAlgorithms=+diffie-hellman-group14-sha1.',
+    rangement: 'Gestionnaire de mots de passe, entrée « SW1 TP VLAN »',
+    sauvegarde: 'copy running-config startup-config sur SW1 et R1 après chaque modification ; copie texte de show running-config dans le dossier du labo.',
+    retourArriere: 'Étapes « Annuler » de la fiche du Toolkit, dans l’ordre inverse : routeur, trunk, ports, gestion, VLAN, SSH.',
+    referencesTexte: 'Énoncé du TP2 (Moodle), Cisco Catalyst 2960 Configuration Guide.',
+  },
+  systeme: {
+    titre: 'Jonction d’un client Ubuntu au domaine Samba AD',
+    objet: 'Joindre le poste Ubuntu au domaine serveur2.lan pour que les comptes du domaine puissent ouvrir une session.',
+    environnement: 'VMware Workstation 17 : SRV-DC01 (Ubuntu Server 24.04, Samba 4.19) et CLIENT01 (Ubuntu Desktop 24.04).',
+    architecture: 'Les deux VM sont sur le même réseau NAT 172.27.1.0/24. Le client utilise le contrôleur de domaine comme DNS.',
+    acces: 'ssh admin@172.27.1.210 (serveur), session locale sur le client.',
+    rangement: 'Gestionnaire de mots de passe, entrée « Labo Samba »',
+    sauvegarde: 'Instantané VMware « avant jonction » sur les deux VM.',
+    retourArriere: 'realm leave, puis restaurer l’instantané si besoin.',
+    referencesTexte: 'Documentation Samba « Setting up Samba as an Active Directory Domain Controller ».',
+  },
+  azure: {
+    titre: 'Réseau virtuel et machine virtuelle web dans Azure',
+    objet: 'Déployer une VM Linux dans un sous-réseau dédié, n’ouvrir que SSH (depuis le cégep) et HTTPS.',
+    environnement: 'Abonnement Azure for Students, région Canada Est, groupe de ressources rg-lab-canadaeast.',
+    architecture: 'vnet-lab (10.10.0.0/16) contient snet-web (10.10.1.0/24). vm-web01 y est, protégée par nsg-web.',
+    acces: 'ssh azureuser@<IP publique> avec la clé SSH créée au déploiement (clé privée gardée sur le poste, jamais copiée ici).',
+    rangement: 'Clé SSH dans ~/.ssh du poste ; mot de passe du compte Azure dans le gestionnaire de mots de passe.',
+    sauvegarde: 'Modèle ARM exporté depuis le portail, rangé avec ce PDF.',
+    retourArriere: 'Supprimer le groupe de ressources rg-lab-canadaeast (supprime tout ce qu’il contient) après vérification.',
+    referencesTexte: 'Microsoft Learn : « Quickstart: Create a Linux VM with the Azure CLI ».',
+  },
+  autre: {
+    titre: 'Réseau du bureau : box, commutateur et NAS',
+    objet: 'Documenter le réseau du bureau pour pouvoir le dépanner et le refaire.',
+    environnement: 'Box Internet du fournisseur, commutateur non administrable 8 ports, NAS Synology, trois postes.',
+    architecture: 'La box distribue les adresses (DHCP 192.168.1.100-199). Le NAS a une adresse fixe 192.168.1.20.',
+    acces: 'Interface web du NAS : https://192.168.1.20:5001 ; box : http://192.168.1.1.',
+    rangement: 'Gestionnaire de mots de passe, entrées « Box » et « NAS ».',
+    sauvegarde: 'Export de la configuration du NAS chaque mois.',
+    retourArriere: 'Réinitialiser la box puis remettre la réservation DHCP du NAS.',
+    referencesTexte: 'Guide du fournisseur Internet, manuel du NAS.',
+  },
+};
+/** Exemples des colonnes de tableaux, par catégorie. */
+export const EXEMPLES_TABLEAUX = {
+  cisco: {
+    adressage: { equipement: 'SW1', interface: 'Vlan99', adresse: '192.168.99.2/24', vlan: '99 (gestion)', passerelle: '192.168.99.1', note: 'Adresse de gestion' },
+    configuration: { titre: 'SW1 : VLAN et trunk', code: 'vlan 99\n name GESTION\ninterface GigabitEthernet0/1\n switchport mode trunk' },
+    validation: { test: 'ping 192.168.99.1 depuis le poste de gestion', attendu: 'Réponses (4/4)' },
+    incidents: { symptome: '% Please define a domain-name first', cause: 'Clé RSA demandée avant ip domain-name', solution: 'ip domain-name tp.local puis crypto key generate rsa' },
+  },
+  systeme: {
+    adressage: { equipement: 'SRV-DC01', interface: 'ens33', adresse: '172.27.1.210/24', vlan: 'NAT VMware', passerelle: '172.27.1.2', note: 'DNS du domaine' },
+    configuration: { titre: 'Client : jonction', code: 'sudo realm discover serveur2.lan\nsudo realm join -U administrator serveur2.lan' },
+    validation: { test: 'id administrator@serveur2.lan sur le client', attendu: 'uid et groupes du domaine' },
+    incidents: { symptome: 'realm: No such realm found', cause: 'Le client n’utilise pas le DC comme DNS', solution: 'DNS 172.27.1.210 dans netplan, puis netplan apply' },
+  },
+  azure: {
+    adressage: { equipement: 'vm-web01', interface: 'nic-web01', adresse: '10.10.1.4', vlan: 'snet-web', passerelle: '10.10.1.1', note: 'IP publique sur la NIC' },
+    configuration: { titre: 'Réseau', code: 'az network vnet create -g rg-lab-canadaeast -n vnet-lab --address-prefix 10.10.0.0/16 --subnet-name snet-web --subnet-prefix 10.10.1.0/24' },
+    validation: { test: 'curl -I https://<IP publique>', attendu: 'HTTP/1.1 200' },
+    incidents: { symptome: 'ssh : délai dépassé', cause: 'Règle NSG limitée à une autre IP source', solution: 'Mettre à jour la source de allow-ssh-admin' },
+  },
+  autre: {
+    adressage: { equipement: 'NAS-BUREAU', interface: 'LAN1', adresse: '192.168.1.20/24', vlan: '-', passerelle: '192.168.1.1', note: 'Réservation DHCP' },
+    configuration: { titre: 'Box : réservation DHCP', code: 'Réseau local > DHCP > Baux statiques : NAS-BUREAU → 192.168.1.20' },
+    validation: { test: 'Ouvrir \\\\NAS-BUREAU depuis un poste', attendu: 'Le partage s’ouvre' },
+    incidents: { symptome: 'NAS introuvable après coupure', cause: 'Adresse changée par le DHCP', solution: 'Réservation DHCP sur la box' },
+  },
+};
+
 const MAX_LIGNES = 60;
 const MAX_CODE = 20000;
 const MAX_CELLULE = 1000;
@@ -148,7 +226,7 @@ export function entreeVide({ categorieId = 'cisco', auteur = '', date = new Date
     creeLe: j, modifieLe: j,
     objet: '', environnement: '', architecture: '', acces: '', rangement: '', sauvegarde: '', retourArriere: '', referencesTexte: '',
     adressage: [], configuration: [], validation: [], incidents: [],
-    fiches: [], captures: [],
+    fiches: [], captures: [], equipements: [],
     revisions: [{ version: '1.0', date: j, resume: 'Création du document' }],
   };
 }
@@ -201,6 +279,12 @@ export function normaliserEntree(brut = {}) {
     e[nom] = lignes;
   }
 
+  // Équipements de l'inventaire utilisés dans ce labo, avec leur rôle ICI.
+  const vus = new Set();
+  e.equipements = (Array.isArray(b.equipements) ? b.equipements : [])
+    .filter((x) => x && /^e[\w]{3,40}$/.test(String(x.id ?? '')) && !vus.has(x.id) && vus.add(x.id)).slice(0, 60)
+    .map((x) => ({ id: String(x.id), role: texte(x.role, 200).trim() }));
+  e.equipements.forEach((x, i) => { const s = secretDans(x.role); if (s) erreurs[`equipements.${i}.role`] = messageSecret(s); });
   e.fiches = [...new Set((Array.isArray(b.fiches) ? b.fiches : []).map(String).filter((x) => /^[\w-]{2,120}$/.test(x)))].slice(0, 20);
   e.captures = (Array.isArray(b.captures) ? b.captures : []).filter((c) => c && /^[\w-]{4,80}$/.test(String(c.id ?? ''))).slice(0, MAX_CAPTURES)
     .map((c) => ({ id: String(c.id), nom: texte(c.nom, 120).trim() || 'capture.jpg', legende: texte(c.legende, 300).trim() }));
@@ -338,9 +422,9 @@ export function lireJournal(brut) {
   return { entrees, ecartees };
 }
 
-/** Fichier de sauvegarde : les entrées et les captures (JPEG en base64). */
-export function sauvegardeJournal(entrees, captures = {}, date = new Date()) {
-  return JSON.stringify({ format: FORMAT_SAUVEGARDE, version: 1, date: jour(date), entrees, captures }, null, 1);
+/** Fichier de sauvegarde : les entrées, les captures (JPEG en base64) et l'inventaire des équipements. */
+export function sauvegardeJournal(entrees, captures = {}, date = new Date(), equipements = []) {
+  return JSON.stringify({ format: FORMAT_SAUVEGARDE, version: 2, date: jour(date), entrees, captures, equipements }, null, 1);
 }
 
 /**
@@ -358,5 +442,27 @@ export function lireSauvegarde(texteFichier, existantes = []) {
     if (utiles.has(id) && typeof b64 === 'string' && /^[A-Za-z0-9+/=]+$/.test(b64) && b64.length < 8_000_000) captures[id] = b64;
   }
   const refs = new Set(existantes.map((e) => e.id));
-  return { entrees, captures, ecartees, doublons: entrees.filter((e) => refs.has(e.id)).map((e) => e.reference), erreur: null };
+  // L'inventaire (version 2) est rendu brut : inventaire.mjs le valide.
+  const equipements = Array.isArray(d.equipements) ? d.equipements : [];
+  return { entrees, captures, ecartees, equipements, doublons: entrees.filter((e) => refs.has(e.id)).map((e) => e.reference), erreur: null };
+}
+
+/**
+ * Un labo d'EXEMPLE entièrement rempli pour une catégorie : pour voir à quoi
+ * ressemble un dossier complet et son PDF. Le titre commence par « EXEMPLE » ;
+ * il n'est enregistré que si la personne le décide.
+ */
+export function entreeExemple(categorieId, { existantes = [], auteur = '', date = new Date() } = {}) {
+  const cat = categorie(categorieId).id;
+  const e = entreeVide({ categorieId: cat, existantes, auteur, date });
+  const ex = EXEMPLES_CHAMPS[cat];
+  for (const c of CHAMPS_TEXTE) e[c.id] = ex[c.id] ?? '';
+  e.titre = `EXEMPLE — ${ex.titre}`.slice(0, 120);
+  const t = EXEMPLES_TABLEAUX[cat];
+  e.adressage = [{ ...t.adressage }];
+  e.configuration = [{ ...t.configuration }];
+  e.validation = [{ ...t.validation, resultat: 'conforme' }, { test: 'Test encore à faire', attendu: 'Ce que tu dois voir', resultat: 'a-tester' }];
+  e.incidents = [{ ...t.incidents }];
+  e.revisions = [{ version: '1.0', date: e.creeLe, resume: 'Exemple fourni par le Toolkit : remplace les valeurs par les tiennes' }];
+  return normaliserEntree(e).entree;
 }

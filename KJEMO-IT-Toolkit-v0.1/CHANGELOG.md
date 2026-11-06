@@ -1,3 +1,14 @@
+## JOURNAL-LABO-02 et 03 (2026-11-05)
+
+- Exemples d’aide au remplissage : chaque champ vide du Journal de labo montre un exemple adapté à la catégorie (Cisco, Système, Azure, Autre) ; chaque tableau vide montre une ligne d’exemple ; les cellules vides affichent « ex. … ».
+- « Voir un exemple rempli » : un labo d’EXEMPLE complet par catégorie (TP VLAN, jonction Samba AD, VNet et VM Azure, réseau de bureau), non enregistré tant qu’on ne le décide pas, pour voir un dossier et son PDF.
+- Inventaire des équipements (`#/inventaire`) : un équipement existe une fois ; fiche qui s’adapte au système (interfaces et table de routage avec colonne « Pourquoi » pour tous, VLAN pour Cisco, services pour les serveurs et postes, règles de filtrage pour Azure et les pare-feu), exemples par système, recherche (nom, adresse, interface), export PDF de l’inventaire complet.
+- Section « Équipements » dans chaque labo : cocher les équipements de l’inventaire et noter leur rôle dans ce projet ; créer un équipement depuis le labo (il y est ajouté) ; supprimer un équipement le retire des labos (annoncé avant).
+- Depuis la fiche du TP VLAN, « Documenter dans le journal » crée aussi SW1 (SVI de gestion, trunk, VLAN, passerelle par défaut) et R1 (une sous-interface par VLAN, routes connectées calculées), sans jamais écraser un équipement du même nom.
+- PDF du labo : section « Équipements » (synthèse) et « Annexe A. Fiches des équipements » (interfaces, table de routage, VLAN, services, règles).
+- Sauvegarde du journal (version 2) : l’inventaire est inclus et restauré.
+- Tests : journal.test.mjs (157) et browser-journal.test.mjs (63). Rien n’est envoyé ; les tables de routage se remplissent à la main (aucune lecture automatique de « show ip route »).
+
 ## JOURNAL-LABO-01 (2026-11-05)
 
 - Nouvel espace « Journal de labo » (menu latéral, routes `#/journal` et `#/journal/<id>`) : documenter ses labos et projets (Réseau Cisco, Système, Azure, Autre) au format d’un dossier d’entreprise. Référence automatique (LAB-RES-2026-001…), version, état (brouillon, en service, archivé), classification, auteur, historique des révisions.

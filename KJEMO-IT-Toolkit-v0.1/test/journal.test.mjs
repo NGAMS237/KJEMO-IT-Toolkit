@@ -4,6 +4,9 @@
  * -------------------------------------------------------------------
  * Journal de labo : modèle (journal.mjs), moteur PDF (pdf-a4.mjs) et dossier
  * PDF (journal-pdf.mjs).
+ * JOURNAL-LABO-02/03 : exemples d'aide au remplissage, labos d'exemple,
+ * inventaire des équipements (fiche par système, table de routage),
+ * équipements proposés par le TP VLAN, annexe du PDF et PDF de l'inventaire.
  * CAS FONCTIONNELS : garde « aucun secret », normalisation, références et
  * versions, labos à revoir, filtres, création depuis une fiche (TP VLAN avec 1
  * puis 3 VLAN, et TOUTES les fiches du catalogue avec leurs exemples),
@@ -24,6 +27,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
+const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const JPEG = Uint8Array.from(Buffer.from('/9j/4AAQSkZJRgABAQEAAgACAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAYABEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3V3uVlYIgK54JB9KRZbvjMS+/Bq3RTuIKKKKQxC6g4LAH60m9T0YfnRRQA6iiigD/2Q==', 'base64'));
@@ -213,6 +217,82 @@ console.log('8. Écrans');
   assert(V.lireRouteJournal('#/journal').id === null && V.lireRouteJournal('#/journal/jabc12').id === 'jabc12' && V.lireRouteJournal('#/journal/../x') === null, 'routes du journal');
   const piege = V.journalListeMarkup({ entrees: [{ ...e, titre: '<img src=x onerror=alert(1)>' }], total: 1, compte: () => 1 });
   assert(!piege.includes('<img src=x'), 'titre échappé dans la liste');
+}
+
+
+console.log('9. Exemples d’aide au remplissage');
+{
+  for (const c of J.CATEGORIES_JOURNAL.map((x) => x.id)) {
+    const ex = J.EXEMPLES_CHAMPS[c];
+    assert(ex && ['titre', ...J.CHAMPS_TEXTE.map((x) => x.id)].every((k) => String(ex[k] ?? '').length >= 10), `exemples de champs complets : ${c}`);
+    assert(Object.values(ex).every((v) => !J.secretDans(v)) && Object.values(J.EXEMPLES_TABLEAUX[c]).every((r) => Object.values(r).every((v) => !J.secretDans(v))), `exemples sans mot de passe : ${c}`);
+    assert(Object.keys(J.TABLEAUX).every((n) => J.EXEMPLES_TABLEAUX[c][n]), `un exemple de ligne pour chaque tableau : ${c}`);
+    const e = J.entreeExemple(c, { existantes: [] });
+    assert(e.titre.startsWith('EXEMPLE — ') && !Object.keys(J.normaliserEntree(e).erreurs).length && e.adressage.length && e.configuration.length && e.validation.length === 2 && e.incidents.length, `labo d’exemple valide et rempli : ${c}`);
+    const r = JP.pdfJournal(e, {});
+    assert(xrefValide(r.octets) && r.sections.length >= 8, `PDF du labo d’exemple : ${c} (${r.pages} pages)`);
+  }
+  const h = V.journalEditeurMarkup({ entree: J.entreeVide({ categorieId: 'azure' }) });
+  assert(h.includes('placeholder="Ex. : Déployer une VM Linux') && h.includes('Exemple de ligne') && h.includes('vm-web01'), 'champs vides : exemples adaptés à la catégorie (Azure)');
+  const hc = V.journalEditeurMarkup({ entree: { ...J.entreeVide({ categorieId: 'cisco' }), adressage: [{ equipement: '', interface: '', adresse: '', vlan: '', passerelle: '', note: '' }] } });
+  assert(hc.includes('placeholder="ex. 192.168.99.2/24"'), 'cellules vides : exemple « ex. … » (Cisco)');
+  assert(V.journalListeMarkup({ total: 0 }).includes('id="jExemple"'), 'liste : bouton « Voir un exemple rempli »');
+}
+
+console.log('10. Inventaire');
+{
+  const { equipement: q, erreurs } = I.normaliserEquipement({ nom: ' R1 ', systeme: 'cisco', type: 'routeur', adresse: '192.168.99.1',
+    interfaces: [{ nom: 'Gi0/0.10', adresse: '192.168.10.1/24' }, { nom: '' }], routes: [{ type: 'S*', destination: '0.0.0.0/0', via: '203.0.113.1', pourquoi: 'Internet' }] });
+  assert(!Object.keys(erreurs).length && q.nom === 'R1' && q.interfaces.length === 1 && q.routes[0].pourquoi === 'Internet', 'équipement valide, lignes vides écartées');
+  assert(I.normaliserEquipement({}).erreurs.nom, 'nom obligatoire');
+  const s = I.normaliserEquipement({ nom: 'R1', notes: 'enable secret Cisco123', routes: [{ via: 'pass=abc' }] });
+  assert(s.erreurs.notes && s.erreurs['routes.0.via'], 'mot de passe refusé dans les notes et les tableaux');
+  assert(I.normaliserEquipement({ nom: 'x', systeme: 'azure', type: 'commutateur' }).equipement.type === 'vm', 'type incompatible avec le système : premier type du système');
+  const t = (sys, type) => I.tableauxVisibles(I.equipementVide({ systemeId: sys, typeId: type })).join(',');
+  assert(t('cisco', 'commutateur') === 'interfaces,routes,vlans' && t('systeme', 'serveur') === 'interfaces,routes,services' && t('azure', 'vm') === 'interfaces,routes,services,regles' && t('cisco', 'pare-feu') === 'interfaces,routes,regles', 'la fiche s’adapte au système et au type');
+  assert(I.tableauxVisibles({ ...I.equipementVide({ systemeId: 'systeme', typeId: 'serveur' }), vlans: [{ numero: '10' }] }).includes('vlans'), 'un tableau rempli reste visible même hors de son système');
+  const inv = I.lireInventaire({ equipements: [q, { ...q }, { nom: '' }, { nom: 'SRV', systeme: 'systeme', id: 'eabc123' }] });
+  assert(inv.equipements.length === 2 && inv.ecartes === 2, 'lecture : doublon d’identifiant et équipement invalide écartés');
+  assert(I.filtrerInventaire(inv.equipements, { requete: '192.168.10' }).length === 1 && I.filtrerInventaire(inv.equipements, { systemeId: 'systeme' })[0].nom === 'SRV', 'filtres : recherche dans les interfaces, système');
+  const lab = J.normaliserEntree({ titre: 'TP', equipements: [{ id: q.id, role: 'Passerelle' }, { id: q.id }, { id: '../x' }] }).entree;
+  assert(lab.equipements.length === 1 && lab.equipements[0].role === 'Passerelle' && I.labosDe(q.id, [lab]).length === 1, 'un labo référence un équipement (une fois, avec son rôle)');
+  assert(J.normaliserEntree({ titre: 'TP', equipements: [{ id: q.id, role: 'mot de passe : x' }] }).erreurs['equipements.0.role'], 'rôle avec mot de passe refusé');
+  // Depuis le TP VLAN (3 VLAN)
+  const trois = exemple(fiche); trois.plan = [...trois.plan, { vlan: '20', nom: 'TECHNIQUE', reseau: '192.168.20.0', prefixe: '24', passerelle: '192.168.20.1', ports: 'Fa0/2', poste: '192.168.20.10' }];
+  const v = J.valeursPourJournal(P.evaluerValeurs(fiche.params, trois));
+  const prop = I.equipementsDepuisFiche(v);
+  const sw = prop.find((x) => x.equipement.type === 'commutateur')?.equipement; const rt = prop.find((x) => x.equipement.type === 'routeur')?.equipement;
+  assert(prop.length === 2 && sw.nom === 'SW1' && rt.nom === 'R1', 'TP VLAN : commutateur SW1 et routeur R1 proposés');
+  assert(sw.interfaces.some((i) => i.nom === 'Vlan99' && i.adresse === '192.168.99.2/24') && sw.vlans.map((x) => x.numero).join() === '99,10,20' && sw.routes[0].via === '192.168.99.1', 'SW1 : SVI de gestion, VLAN 99,10,20, passerelle par défaut');
+  assert(rt.interfaces.filter((i) => /\.\d+$/.test(i.nom)).map((i) => i.nom).join() === 'GigabitEthernet0/0.99,GigabitEthernet0/0.10,GigabitEthernet0/0.20', 'R1 : une sous-interface par VLAN');
+  assert(rt.routes.map((r) => `${r.type} ${r.destination}`).join() === 'C 192.168.99.0/24,C 192.168.10.0/24,C 192.168.20.0/24', 'R1 : routes connectées calculées (réseau de gestion compris)');
+  assert(prop.every((x) => !Object.keys(I.normaliserEquipement(x.equipement).erreurs).length), 'équipements proposés valides');
+  assert(I.equipementsDepuisFiche({}).length === 0, 'fiche sans ces champs : aucun équipement proposé');
+  // PDF : annexe et inventaire
+  const e = depuis(fiche, exemple(fiche)).entree;
+  const r = JP.pdfJournal(e, { equipements: prop.map((x) => ({ equipement: x.equipement, role: x.role })) });
+  assert(xrefValide(r.octets) && r.sections.some((x) => x.titre === 'Équipements') && r.sections.at(-1).numero === 'Annexe A', 'PDF du labo : section Équipements et annexe A');
+  const ri = JP.pdfInventaire(prop.map((x) => x.equipement), { projets: () => ['LAB-RES-2026-001'], date: new Date('2026-11-05T10:00:00') });
+  assert(xrefValide(ri.octets) && ri.pages >= 2, `PDF de l’inventaire : ${ri.pages} pages`);
+  if (PDFTOTEXT) {
+    const t1 = texteDu(r.octets);
+    for (const x of ['Annexe A. Fiches des équipements', 'A.1', 'Table de routage', 'GigabitEthernet0/0.10', 'ip default-gateway', 'Commutateur du TP']) assert(t1.includes(x), `annexe : « ${x} »`);
+    const t2 = texteDu(ri.octets);
+    for (const x of ['Inventaire des équipements', '5 novembre 2026', 'LAB-RES-2026-001', 'Cisco', 'Pourquoi']) assert(t2.includes(x), `inventaire PDF : « ${x} »`);
+    if (QPDF) assert(qpdfOk(r.octets) && qpdfOk(ri.octets), 'qpdf --check : annexe et inventaire');
+  }
+  // Sauvegarde v2 avec l'inventaire
+  const txt = J.sauvegardeJournal([e], {}, new Date(), prop.map((x) => x.equipement));
+  const rs = J.lireSauvegarde(txt, []);
+  assert(rs.equipements.length === 2 && I.lireInventaire({ equipements: rs.equipements }).equipements.length === 2, 'sauvegarde : l’inventaire est inclus et relu');
+  // Écrans
+  const hl = VI.inventaireListeMarkup({ equipements: [sw, rt], total: 2, projets: () => [{ id: 'jx1', reference: 'LAB-RES-2026-001' }] });
+  assert(hl.includes(VI.routeEquipement(sw.id)) && hl.includes('LAB-RES-2026-001') && hl.includes('id="iPdf"'), 'liste de l’inventaire : liens, projets, export PDF');
+  const hf = VI.equipementMarkup({ equipement: I.equipementVide({ systemeId: 'azure', typeId: 'vm' }) });
+  assert(hf.includes('placeholder="Ex. : vm-web01"') && hf.includes('Règles de filtrage') && hf.includes('allow-ssh-admin') && !hf.includes('id="is-vlans"'), 'fiche Azure : exemples Azure, règles, pas de VLAN');
+  assert(VI.lireRouteInventaire('#/inventaire').id === null && VI.lireRouteInventaire('#/inventaire/eabc123').id === 'eabc123' && VI.lireRouteInventaire('#/inventaire/../x') === null, 'routes de l’inventaire');
+  const piege = VI.inventaireListeMarkup({ equipements: [{ ...sw, nom: '<script>x</script>' }], total: 1 });
+  assert(!piege.includes('<script>x'), 'nom échappé dans l’inventaire');
 }
 
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

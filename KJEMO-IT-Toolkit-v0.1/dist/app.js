@@ -9,8 +9,11 @@ import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
 import { plateformesDeProcedure } from './taches.mjs';
 import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, entreeVide, publierVersion, prochaineReference,
-         filtrerJournal, entreeDepuisFiche, valeursPourJournal, sauvegardeJournal, lireSauvegarde, jour } from './journal.mjs';
-import { pdfJournal, nomFichierPdf } from './journal-pdf.mjs';
+         filtrerJournal, entreeDepuisFiche, valeursPourJournal, entreeExemple, sauvegardeJournal, lireSauvegarde, jour } from './journal.mjs';
+import { pdfJournal, nomFichierPdf, pdfInventaire } from './journal-pdf.mjs';
+import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, normaliserEquipement, equipementVide, labosDe, filtrerInventaire,
+         equipementsDepuisFiche } from './inventaire.mjs';
+import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
 import { ROUTE_JOURNAL, routeEntreeJournal, lireRouteJournal, journalListeMarkup, journalEditeurMarkup } from './vue-journal.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
          compteParCategorie, couverture, liensDeAssistant } from './taches.mjs';
@@ -444,6 +447,8 @@ function espaceDepuisHash() {
   if (location.hash === ROUTE_LABO) return { type: 'labo' };
   const rj = lireRouteJournal(location.hash);
   if (rj) return { type: 'journal', id: rj.id };
+  const ri = lireRouteInventaire(location.hash);
+  if (ri) return { type: 'inventaire', id: ri.id };
   const pm = lireRouteMemo(location.hash);
   if (pm) return pm.type === 'catalogue' ? { type: 'catalogue' } : { type: 'memo', groupeId: pm.groupeId };
   const c = lireRouteCours(location.hash);
@@ -1897,6 +1902,20 @@ async function nettoyerImages(gardees) {
 }
 
 let journalMemoire = null;
+let inventaireMemoire = null;
+function lireEquipements() {
+  if (!inventaireMemoire) inventaireMemoire = lireInventaire(lireObjet(CLE_INVENTAIRE)).equipements;
+  return inventaireMemoire;
+}
+function ecrireEquipements(liste) {
+  inventaireMemoire = liste;
+  return ecrireStockage(CLE_INVENTAIRE, { equipements: liste });
+}
+/** Les équipements d'un labo, résolus dans l'inventaire (un lien vers un équipement supprimé est ignoré). */
+function equipementsDuLabo(e) {
+  const inv = lireEquipements();
+  return (e.equipements ?? []).map((l) => ({ equipement: inv.find((q) => q.id === l.id), role: l.role })).filter((x) => x.equipement);
+}
 /** L'auteur du dernier labo modifié : on ne retape pas son nom à chaque document. */
 function auteurParDefaut() {
   return [...lireEntreesJournal()].sort((a, b) => String(b.modifieLe).localeCompare(String(a.modifieLe))).find((e) => e.auteur)?.auteur ?? '';
@@ -1946,7 +1965,7 @@ function renderJournalListe() {
   const entrees = filtrerJournal(toutes, { categorieId: ej.categorieId, filtre: ej.filtre, requete: ej.requete });
   const compte = (cat) => filtrerJournal(toutes, { categorieId: cat, filtre: ej.filtre, requete: ej.requete }).length;
   view.innerHTML = journalListeMarkup({ entrees, total: toutes.length, compte, categorieId: ej.categorieId, filtre: ej.filtre, requete: ej.requete,
-    note: ej.note, stockageOk: stockageDisponible(), imagesOk, nouvelleCategorie: ej.nouvelleCategorie });
+    note: ej.note, stockageOk: stockageDisponible(), imagesOk, nouvelleCategorie: ej.nouvelleCategorie, nbEquipements: lireEquipements().length });
   document.title = 'Journal de labo — KJEMO IT Toolkit';
   view.querySelectorAll('[data-jcat]').forEach((b) => b.addEventListener('click', () => {
     etatJournal.categorieId = b.dataset.jcat || null; etatJournal.note = '';
@@ -1960,6 +1979,10 @@ function renderJournalListe() {
     const champ = document.querySelector('#jRecherche'); champ?.focus(); champ?.setSelectionRange?.(pos, pos);
   });
   view.querySelector('#jNouvelleCat').addEventListener('change', (ev) => { etatJournal.nouvelleCategorie = ev.target.value; });
+  view.querySelector('#jExemple').addEventListener('click', () => {
+    const e = entreeExemple(etatJournal.nouvelleCategorie, { existantes: lireEntreesJournal().map((x) => x.reference), auteur: auteurParDefaut() });
+    ouvrirBrouillon(e, { nouveau: true, note: 'Exemple rempli : lis-le, exporte le PDF pour voir le résultat, puis adapte-le ou supprime-le. Il n’est enregistré que si tu cliques sur « Enregistrer ».' });
+  });
   view.querySelector('#jNouveauForm').addEventListener('submit', (ev) => {
     ev.preventDefault();
     const e = entreeVide({ categorieId: etatJournal.nouvelleCategorie, auteur: auteurParDefaut(), existantes: lireEntreesJournal().map((x) => x.reference) });
@@ -1972,8 +1995,8 @@ function renderJournalListe() {
       const o = await lireImage(c.id);
       if (o) { let bin = ''; for (let i = 0; i < o.length; i += 0x8000) bin += String.fromCharCode(...o.subarray(i, i + 0x8000)); captures[c.id] = btoa(bin); }
     }
-    telechargerTexte(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures)}\n`, 'application/json;charset=utf-8');
-    etatJournal.note = `Sauvegarde téléchargée : ${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s).`;
+    telechargerTexte(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures, new Date(), lireEquipements())}\n`, 'application/json;charset=utf-8');
+    etatJournal.note = `Sauvegarde téléchargée : ${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s), ${lireEquipements().length} équipement(s).`;
     renderJournalListe(); document.querySelector('#jSauver')?.focus();
   });
   view.querySelector('#jRestaurer').addEventListener('change', async (ev) => {
@@ -1988,7 +2011,9 @@ function renderJournalListe() {
     const ids = new Set(r.entrees.map((e) => e.id));
     const fusion = [...lireEntreesJournal().filter((e) => !ids.has(e.id)), ...r.entrees];
     const ok = ecrireEntreesJournal(fusion);
-    etatJournal.note = `${r.entrees.length} labo(s) restauré(s)${r.doublons.length ? ` (${r.doublons.length} remplacé(s) : ${r.doublons.join(', ')})` : ''}${r.ecartees ? `, ${r.ecartees} écarté(s) car invalides` : ''}.${ok ? '' : ' Attention : le stockage est indisponible, rien ne sera conservé.'}`;
+    const eqs = lireInventaire({ equipements: r.equipements }).equipements;
+    if (eqs.length) { const idsEq = new Set(eqs.map((q) => q.id)); ecrireEquipements([...lireEquipements().filter((q) => !idsEq.has(q.id)), ...eqs]); }
+    etatJournal.note = `${r.entrees.length} labo(s)${eqs.length ? ` et ${eqs.length} équipement(s)` : ''} restauré(s)${r.doublons.length ? ` (${r.doublons.length} remplacé(s) : ${r.doublons.join(', ')})` : ''}${r.ecartees ? `, ${r.ecartees} écarté(s) car invalides` : ''}.${ok ? '' : ' Attention : le stockage est indisponible, rien ne sera conservé.'}`;
     renderJournalListe(); document.querySelector('#jNote')?.focus?.();
   });
   // Ménage : les images qu'aucun labo n'utilise plus.
@@ -2025,7 +2050,8 @@ function dessinerJournalFiche(view = document.querySelector('#journalView')) {
   const imagesUrl = Object.fromEntries(e.captures.map((c) => [c.id, urlImage(c.id)]).filter(([, u]) => u));
   const defil = window.scrollY;
   view.innerHTML = journalEditeurMarkup({ entree: e, erreurs: ej.erreurs, note: ej.noteFiche, modifie: ej.modifie, versionOuverte: ej.versionOuverte,
-    confirmerSuppression: ej.confirmerSuppression, imagesUrl, titresFiches: titresDesFiches(e.fiches), routeFiche: (id) => `#/tache/${id}`, imagesOk });
+    confirmerSuppression: ej.confirmerSuppression, imagesUrl, titresFiches: titresDesFiches(e.fiches), routeFiche: (id) => `#/tache/${id}`, imagesOk,
+    equipementsHtml: equipementsLaboMarkup({ liens: e.equipements, inventaire: lireEquipements(), erreurs: ej.erreurs, systemePrefere: e.categorie }) });
   window.scrollTo(0, defil);
   document.title = `${e.titre || 'Nouveau labo'} — Journal de labo — KJEMO IT Toolkit`;
   brancherJournalFiche(view);
@@ -2040,6 +2066,13 @@ function lireFormulaireJournal(view) {
     if (t?.[r]) t[r][i.dataset.col] = i.value;
   });
   view.querySelectorAll('[data-jcap]').forEach((i) => { const c = e.captures[Number(i.dataset.jcap)]; if (c) c.legende = i.value; });
+  // Équipements : les cases cochées, dans l'ordre déjà connu, puis les nouvelles.
+  const coches = [...view.querySelectorAll('[data-jeq]')].filter((c) => c.checked).map((c) => c.dataset.jeq);
+  if (view.querySelector('[data-jeq]')) {
+    const roles = Object.fromEntries([...view.querySelectorAll('[data-jeqrole]')].map((i) => [i.dataset.jeqrole, i.value]));
+    const avant = e.equipements.filter((l) => coches.includes(l.id)).map((l) => l.id);
+    e.equipements = [...avant, ...coches.filter((id) => !avant.includes(id))].map((id) => ({ id, role: roles[id] ?? e.equipements.find((l) => l.id === id)?.role ?? '' }));
+  }
 }
 
 /** Valide et enregistre le brouillon. Renvoie l'entrée enregistrée, ou null (erreurs affichées). */
@@ -2124,6 +2157,25 @@ function brancherJournalFiche(view) {
       document.querySelector('#jCaptureFichier')?.focus();
     }
   });
+  view.querySelectorAll('[data-jeq]').forEach((c) => c.addEventListener('change', () => {
+    lireFormulaireJournal(view); etatJournal.modifie = true; dessinerJournalFiche(view);
+    const suite = c.checked ? `#jeq-role-${c.dataset.jeq}` : `[data-jeq="${c.dataset.jeq}"]`;
+    document.querySelector(suite)?.focus();
+  }));
+  // Quitter vers l'inventaire : le labo est enregistré d'abord (sinon on reste, erreurs affichées).
+  const partir = (cible) => { if (etatJournal.modifie && !enregistrerJournal(view)) return; location.hash = cible; };
+  view.querySelector('#jEqNouveau')?.addEventListener('click', () => {
+    if (etatJournal.modifie && !enregistrerJournal(view)) return;
+    if (etatJournal.nouveau && !enregistrerJournal(view)) return;
+    const lab = etatJournal.brouillon;
+    const sys = { cisco: 'cisco', systeme: 'systeme', azure: 'azure' }[lab.categorie] ?? 'autre';
+    ouvrirEquipement(equipementVide({ systemeId: sys }), { nouveau: true, retour: { id: lab.id, reference: lab.reference } });
+  });
+  view.querySelectorAll('[data-jeqouvrir], #jEqInventaire').forEach((a) => a.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    if (a.dataset.jeqouvrir) etatInventaire.retour = { id: etatJournal.brouillon.id, reference: etatJournal.brouillon.reference };
+    partir(a.getAttribute('href'));
+  }));
   view.querySelector('#jCaptureFichier')?.addEventListener('change', (ev) => { const f = ev.target.files?.[0]; if (f) ajouterCapture(view, f); });
   view.querySelector('#jEnregistrer').addEventListener('click', () => {
     if (enregistrerJournal(view)) { dessinerJournalFiche(view); document.querySelector('#jEnregistrer')?.focus(); }
@@ -2134,7 +2186,7 @@ function brancherJournalFiche(view) {
     const captures = {};
     for (const c of e.captures) { const o = await lireImage(c.id); if (o) captures[c.id] = o; }
     try {
-      const r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches) });
+      const r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches), equipements: equipementsDuLabo(e) });
       telechargerOctets(nomFichierPdf(e), r.octets, 'application/pdf');
       etatJournal.noteFiche = `PDF téléchargé : ${nomFichierPdf(e)} (${r.pages} pages). Range-le avec tes documents.`;
     } catch {
@@ -2202,8 +2254,162 @@ function documenterFiche(entree) {
   const manquants = rendu.etapes.filter((x) => x.rendu?.bloque).length;
   const note = Object.keys(erreurs).length ? 'Certaines valeurs ont été refusées : vérifie les champs signalés.'
     : `Labo créé depuis la fiche${manquants ? ` (${manquants} étape(s) sans valeurs non reprises : remplis les champs de la fiche pour les avoir)` : ''}. Complète-le, puis enregistre.`;
-  ouvrirBrouillon(e, { nouveau: true, note });
+  // Équipements proposés par la fiche (TP VLAN : commutateur et routeur) : un équipement du même nom est réutilisé, jamais écrasé.
+  const proposes = equipementsDepuisFiche(valeurs);
+  let crees = 0;
+  if (proposes.length) {
+    const inv = [...lireEquipements()];
+    for (const { equipement, role } of proposes) {
+      let q = inv.find((x) => x.nom.toLowerCase() === equipement.nom.toLowerCase() && x.systeme === equipement.systeme);
+      if (!q) { q = equipement; inv.push(q); crees += 1; }
+      e.equipements.push({ id: q.id, role });
+    }
+    if (crees) ecrireEquipements(inv);
+  }
+  ouvrirBrouillon(e, { nouveau: true, note: proposes.length ? `${note} ${crees ? `${crees} équipement(s) ajouté(s) à l’inventaire` : 'Équipements déjà présents dans l’inventaire'} : ${proposes.map((x) => x.equipement.nom).join(', ')}.` : note });
   if (Object.keys(erreurs).length) etatJournal.erreurs = erreurs;
+}
+
+// ---------------------------------------------------------------------------
+// Inventaire des équipements (JOURNAL-LABO-03)
+// ---------------------------------------------------------------------------
+let etatInventaire = { systemeId: null, requete: '', note: '', nouveauSysteme: 'cisco',
+  brouillonId: null, brouillon: null, erreurs: {}, noteFiche: '', modifie: false, confirmerSuppression: false, nouveau: false, retour: null };
+
+function renderInventaire() { if (espace.id) renderEquipement(); else renderInventaireListe(); }
+
+function renderInventaireListe() {
+  const view = document.querySelector('#journalView');
+  const tous = lireEquipements(); const ei = etatInventaire; const entrees = lireEntreesJournal();
+  const projets = (id) => labosDe(id, entrees);
+  view.innerHTML = inventaireListeMarkup({ equipements: filtrerInventaire(tous, { systemeId: ei.systemeId, requete: ei.requete }), total: tous.length,
+    compte: (sys) => filtrerInventaire(tous, { systemeId: sys, requete: ei.requete }).length, systemeId: ei.systemeId, requete: ei.requete, projets, note: ei.note, nouveauSysteme: ei.nouveauSysteme });
+  document.title = 'Inventaire des équipements — KJEMO IT Toolkit';
+  etatInventaire.retour = null;
+  view.querySelectorAll('[data-isys]').forEach((b) => b.addEventListener('click', () => { etatInventaire.systemeId = b.dataset.isys || null; renderInventaireListe(); document.querySelector(`[data-isys="${b.dataset.isys}"]`)?.focus(); }));
+  view.querySelector('#iRecherche').addEventListener('input', (ev) => {
+    etatInventaire.requete = ev.target.value; const pos = ev.target.selectionStart;
+    renderInventaireListe(); const c = document.querySelector('#iRecherche'); c?.focus(); c?.setSelectionRange?.(pos, pos);
+  });
+  view.querySelector('#iNouveauSys').addEventListener('change', (ev) => { etatInventaire.nouveauSysteme = ev.target.value; });
+  view.querySelector('#iNouveauForm').addEventListener('submit', (ev) => { ev.preventDefault(); ouvrirEquipement(equipementVide({ systemeId: etatInventaire.nouveauSysteme }), { nouveau: true }); });
+  view.querySelector('#iPdf').addEventListener('click', () => {
+    try {
+      const r = pdfInventaire(filtrerInventaire(lireEquipements(), {}), { projets: (id) => projets(id).map((p) => p.reference), auteur: auteurParDefaut() });
+      const nom = `inventaire-equipements_${jour()}.pdf`;
+      telechargerOctets(nom, r.octets, 'application/pdf');
+      etatInventaire.note = `PDF téléchargé : ${nom} (${r.pages} pages).`;
+    } catch { etatInventaire.note = 'Le PDF n’a pas pu être fabriqué.'; }
+    renderInventaireListe(); document.querySelector('#iPdf')?.focus();
+  });
+}
+
+function ouvrirEquipement(eq, { nouveau = false, retour = null, note = '' } = {}) {
+  etatInventaire = { ...etatInventaire, brouillonId: eq.id, brouillon: structuredClone(eq), erreurs: {}, noteFiche: note, modifie: nouveau, confirmerSuppression: false, nouveau, retour };
+  const cible = routeEquipement(eq.id);
+  if (location.hash !== cible) location.hash = cible; else render();
+}
+
+function renderEquipement() {
+  const view = document.querySelector('#journalView'); const ei = etatInventaire;
+  if (ei.brouillonId !== espace.id || !ei.brouillon) {
+    const q = lireEquipements().find((x) => x.id === espace.id);
+    if (!q) {
+      view.innerHTML = `<h1>Équipement introuvable</h1><p>Cet équipement n’existe pas (ou plus) dans ce navigateur.</p><p><a href="${ROUTE_INVENTAIRE}">Retour à l’inventaire</a></p>`;
+      document.title = 'Équipement introuvable — KJEMO IT Toolkit'; return;
+    }
+    etatInventaire = { ...ei, brouillonId: q.id, brouillon: structuredClone(q), erreurs: {}, noteFiche: '', modifie: false, confirmerSuppression: false, nouveau: false };
+  }
+  dessinerEquipement(view);
+}
+
+function dessinerEquipement(view = document.querySelector('#journalView')) {
+  const ei = etatInventaire; const q = ei.brouillon;
+  const labos = labosDe(q.id, lireEntreesJournal()).map((l) => ({ id: l.id, reference: l.reference, titre: l.titre, role: l.equipements.find((x) => x.id === q.id)?.role ?? '' }));
+  const defil = window.scrollY;
+  view.innerHTML = equipementMarkup({ equipement: q, erreurs: ei.erreurs, note: ei.noteFiche, modifie: ei.modifie, labos, confirmerSuppression: ei.confirmerSuppression, retour: ei.retour });
+  window.scrollTo(0, defil);
+  document.title = `${q.nom || 'Nouvel équipement'} — Inventaire — KJEMO IT Toolkit`;
+  brancherEquipement(view);
+}
+
+function lireFormulaireEquipement(view) {
+  const q = etatInventaire.brouillon;
+  view.querySelectorAll('[data-i]').forEach((i) => { q[i.dataset.i] = i.value; });
+  view.querySelectorAll('[data-it]').forEach((i) => { const t = q[i.dataset.it]; const r = Number(i.dataset.row); if (t?.[r]) t[r][i.dataset.col] = i.value; });
+  // Un type qui n'existe pas pour ce système reprend le premier type du système.
+  const t = TYPES_EQUIPEMENT.find((x) => x.id === q.type);
+  if (!t || !t.systemes.includes(q.systeme)) q.type = TYPES_EQUIPEMENT.find((x) => x.systemes.includes(q.systeme)).id;
+}
+
+function enregistrerEquipement(view) {
+  lireFormulaireEquipement(view);
+  const { equipement, erreurs } = normaliserEquipement({ ...etatInventaire.brouillon, modifieLe: jour() });
+  if (Object.keys(erreurs).length) {
+    etatInventaire = { ...etatInventaire, erreurs, noteFiche: '' }; dessinerEquipement(view);
+    document.querySelector(`[aria-describedby="ierr-${Object.keys(erreurs)[0].replace(/\./g, '-')}"]`)?.focus();
+    return null;
+  }
+  const autres = lireEquipements().filter((x) => x.id !== equipement.id);
+  const ok = ecrireEquipements([...autres, equipement]);
+  let note = ok ? 'Enregistré dans l’inventaire.' : 'Le stockage de ce navigateur est indisponible : cet équipement ne sera pas conservé.';
+  if (autres.some((x) => x.nom.toLowerCase() === equipement.nom.toLowerCase())) note += ` Attention : un autre équipement s’appelle déjà « ${equipement.nom} ».`;
+  // Créé depuis un labo : on l'y ajoute.
+  const r = etatInventaire.retour;
+  if (etatInventaire.nouveau && r) {
+    const entrees = lireEntreesJournal();
+    const lab = entrees.find((x) => x.id === r.id);
+    if (lab && !lab.equipements.some((x) => x.id === equipement.id)) {
+      const maj = { ...lab, equipements: [...lab.equipements, { id: equipement.id, role: '' }] };
+      ecrireEntreesJournal(entrees.map((x) => (x.id === lab.id ? maj : x)));
+      if (etatJournal.brouillonId === lab.id) etatJournal.brouillon = structuredClone(maj);
+      note += ` Ajouté au labo ${lab.reference}.`;
+    }
+  }
+  etatInventaire = { ...etatInventaire, brouillon: structuredClone(equipement), erreurs: {}, modifie: false, nouveau: false, noteFiche: note };
+  return equipement;
+}
+
+function brancherEquipement(view) {
+  const form = view.querySelector('#iForm');
+  form.addEventListener('input', () => { if (!etatInventaire.modifie) { etatInventaire.modifie = true; const n = view.querySelector('#iNoteFiche'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; } });
+  form.addEventListener('submit', (ev) => ev.preventDefault());
+  form.addEventListener('change', (ev) => {
+    if (!ev.target.matches('[data-i="systeme"],[data-i="type"]')) return;
+    lireFormulaireEquipement(view); etatInventaire.modifie = true; dessinerEquipement(view); document.querySelector(`#${ev.target.id}`)?.focus();
+  });
+  form.addEventListener('click', (ev) => {
+    const ajout = ev.target.closest('[data-iadd]'); const retrait = ev.target.closest('[data-idel]');
+    if (!ajout && !retrait) return;
+    lireFormulaireEquipement(view);
+    const q = etatInventaire.brouillon;
+    if (ajout) {
+      const nom = ajout.dataset.iadd;
+      q[nom].push(Object.fromEntries(TABLEAUX_EQUIPEMENT[nom].colonnes.map((c) => [c.id, ''])));
+      etatInventaire.modifie = true; dessinerEquipement(view);
+      document.querySelector(`[data-it="${nom}"][data-row="${q[nom].length - 1}"]`)?.focus();
+    } else {
+      q[retrait.dataset.idel].splice(Number(retrait.dataset.row), 1);
+      etatInventaire.erreurs = {}; etatInventaire.modifie = true; dessinerEquipement(view);
+      document.querySelector(`[data-iadd="${retrait.dataset.idel}"]`)?.focus();
+    }
+  });
+  view.querySelector('#iEnregistrer').addEventListener('click', () => { if (enregistrerEquipement(view)) { dessinerEquipement(view); document.querySelector('#iEnregistrer')?.focus(); } });
+  view.querySelector('#iRetour')?.addEventListener('click', (ev) => {
+    if (!etatInventaire.modifie) return;
+    if (!enregistrerEquipement(view)) ev.preventDefault();
+  });
+  view.querySelector('#iSupprimer').addEventListener('click', () => { lireFormulaireEquipement(view); etatInventaire.confirmerSuppression = true; dessinerEquipement(view); document.querySelector('#iSupprimerNon')?.focus(); });
+  view.querySelector('#iSupprimerNon')?.addEventListener('click', () => { etatInventaire.confirmerSuppression = false; dessinerEquipement(view); document.querySelector('#iSupprimer')?.focus(); });
+  view.querySelector('#iSupprimerOui')?.addEventListener('click', () => {
+    const id = etatInventaire.brouillonId; const retour = etatInventaire.retour;
+    ecrireEquipements(lireEquipements().filter((x) => x.id !== id));
+    const entrees = lireEntreesJournal();
+    if (entrees.some((x) => x.equipements.some((l) => l.id === id))) ecrireEntreesJournal(entrees.map((x) => ({ ...x, equipements: x.equipements.filter((l) => l.id !== id) })));
+    if (etatJournal.brouillon) etatJournal.brouillon.equipements = etatJournal.brouillon.equipements.filter((l) => l.id !== id);
+    etatInventaire = { ...etatInventaire, brouillonId: null, brouillon: null, note: 'Équipement supprimé.', retour: null };
+    location.hash = retour ? routeEntreeJournal(retour.id) : ROUTE_INVENTAIRE;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -2329,7 +2535,7 @@ function majNavEspaces() {
   const surAccueil = !espace && !currentTool && !currentTache && modeListe() === 'accueil';
   document.querySelectorAll('#espacesNav a').forEach((a) => {
     const e = a.dataset.espace;
-    const actif = e === 'accueil' ? surAccueil : espace?.type === e;
+    const actif = e === 'accueil' ? surAccueil : (espace?.type === e || (e === 'journal' && espace?.type === 'inventaire'));
     if (actif) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     a.classList.toggle('active', actif);
   });
@@ -2442,6 +2648,7 @@ function routeParent() {
   if (espace?.type === 'memo') return espace.groupeId && MEMO_PAR_ID.has(espace.groupeId) ? ROUTE_MEMO : '#/';
   if (espace?.type === 'catalogue' || espace?.type === 'labo') return '#/';
   if (espace?.type === 'journal') return espace.id ? ROUTE_JOURNAL : '#/';
+  if (espace?.type === 'inventaire') return espace.id ? ROUTE_INVENTAIRE : ROUTE_JOURNAL;
   if (espace?.type === 'cours') return espace.coursId ? ROUTE_COURS : '#/';
   if (currentTache) {
     if (contexteParcours) return routeParcours(contexteParcours.coursId, contexteParcours.lettre);
@@ -2488,7 +2695,7 @@ function render() {
   document.querySelector('#portesView').hidden = !estPortes;
   document.querySelector('#coursView').hidden = vu?.type !== 'cours';
   document.querySelector('#laboView').hidden = vu?.type !== 'labo';
-  document.querySelector('#journalView').hidden = vu?.type !== 'journal';
+  document.querySelector('#journalView').hidden = vu?.type !== 'journal' && vu?.type !== 'inventaire';
   for (const id of ['#toolView', '#taskView']) {
     const el = document.querySelector(id);
     const ici = modale && !el.hidden;
@@ -2507,6 +2714,7 @@ function render() {
   else if (espace?.type === 'cours') renderCours();
   else if (espace?.type === 'labo') renderLabo();
   else if (espace?.type === 'journal') renderJournal();
+  else if (espace?.type === 'inventaire') renderInventaire();
   else if (estPortes) renderPortes();
   else if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
   if (modale) {

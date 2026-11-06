@@ -5,7 +5,7 @@
  * fiche d'un labo (saisie guidée, captures, versions, export PDF). Module PUR :
  * ne fabrique que du HTML échappé ; app.js branche les événements.
  */
-import { CATEGORIES_JOURNAL, ETATS_JOURNAL, CLASSIFICATIONS, RESULTATS, TABLEAUX, CHAMPS_TEXTE, MAX_CAPTURES,
+import { CATEGORIES_JOURNAL, ETATS_JOURNAL, CLASSIFICATIONS, RESULTATS, TABLEAUX, CHAMPS_TEXTE, MAX_CAPTURES, EXEMPLES_CHAMPS, EXEMPLES_TABLEAUX,
   categorie, etat, aRevoir } from './journal.mjs';
 import { dateLongue } from './journal-pdf.mjs';
 
@@ -31,7 +31,7 @@ const pastilleEtat = (id) => { const e = etat(id); return `<span class="j-etat j
 
 /** Liste des labos. `compte(cat)` : nombre d'entrées (hors filtre d'état) par catégorie ; null = toutes. */
 export function journalListeMarkup({ entrees = [], total = 0, compte = () => 0, categorieId = null, filtre = 'tous', requete = '', aujourdhui = new Date(),
-  note = '', stockageOk = true, imagesOk = true, nouvelleCategorie = 'cisco' } = {}) {
+  note = '', stockageOk = true, imagesOk = true, nouvelleCategorie = 'cisco', nbEquipements = 0 } = {}) {
   const onglets = [{ id: null, label: 'Tous' }, ...CATEGORIES_JOURNAL.map((c) => ({ id: c.id, label: c.label }))]
     .map((c) => `<button type="button" class="j-onglet" data-jcat="${esc(c.id ?? '')}" aria-pressed="${categorieId === c.id}">${esc(c.label)} <span class="j-compte">${compte(c.id)}</span></button>`).join('');
   const filtres = FILTRES_JOURNAL.map((f) => `<option value="${esc(f.id)}"${f.id === filtre ? ' selected' : ''}>${esc(f.label)}</option>`).join('');
@@ -54,7 +54,9 @@ export function journalListeMarkup({ entrees = [], total = 0, compte = () => 0, 
     + `${stockageOk ? '' : ' <b>Le stockage de ce navigateur est indisponible : rien ne sera conservé après fermeture.</b>'}`
     + `${imagesOk ? '' : ' <b>Les captures ne peuvent pas être conservées dans ce navigateur : elles seront perdues à la fermeture.</b>'}</p>`
     + `<form class="j-nouveau" id="jNouveauForm" aria-label="Nouveau labo"><label for="jNouvelleCat">Nouveau labo</label>`
-    + `<select id="jNouvelleCat">${cats}</select><button type="submit" class="primary-button j-btn">+ Créer</button></form>`
+    + `<select id="jNouvelleCat">${cats}</select><button type="submit" class="primary-button j-btn">+ Créer</button>`
+    + `<button type="button" class="secondary-button j-mini-btn" id="jExemple">Voir un exemple rempli</button>`
+    + `<a class="secondary-button j-lien-btn" id="jInventaire" href="#/inventaire">Inventaire des équipements${nbEquipements ? ` (${nbEquipements})` : ''}</a></form>`
     + `<div class="j-onglets" role="group" aria-label="Catégorie">${onglets}</div>`
     + `<div class="j-outils"><label class="sr-only" for="jRecherche">Rechercher dans le journal</label>`
     + `<input id="jRecherche" type="search" autocomplete="off" placeholder="Rechercher un titre, une référence, une adresse…" value="${esc(requete)}">`
@@ -70,12 +72,15 @@ export function journalListeMarkup({ entrees = [], total = 0, compte = () => 0, 
 const err = (erreurs, cle) => (erreurs[cle] ? `<p class="param-err" id="jerr-${esc(cle.replace(/\./g, '-'))}" role="alert">${esc(erreurs[cle])}</p>` : '');
 const inv = (erreurs, cle) => (erreurs[cle] ? ` aria-invalid="true" class="is-invalid" aria-describedby="jerr-${esc(cle.replace(/\./g, '-'))}"` : '');
 
+const exempleChamp = (e, id) => EXEMPLES_CHAMPS[e.categorie]?.[id] ?? EXEMPLES_CHAMPS.cisco[id] ?? '';
+const ph = (t) => (t ? ` placeholder="${esc(`Ex. : ${t}`)}"` : '');
+
 function champTexte(c, e, erreurs) {
-  const id = `jf-${c.id}`;
+  const id = `jf-${c.id}`; const p = ph(exempleChamp(e, c.id));
   const aide = c.aide ? `<p class="param-aide">${esc(c.aide)}</p>` : '';
   const ctl = c.long
-    ? `<textarea id="${id}" data-j="${esc(c.id)}" rows="3" maxlength="${c.max}"${inv(erreurs, c.id)}>${esc(e[c.id])}</textarea>`
-    : `<input id="${id}" data-j="${esc(c.id)}" type="text" maxlength="${c.max}" autocomplete="off" value="${esc(e[c.id])}"${inv(erreurs, c.id)}>`;
+    ? `<textarea id="${id}" data-j="${esc(c.id)}" rows="3" maxlength="${c.max}"${p}${inv(erreurs, c.id)}>${esc(e[c.id])}</textarea>`
+    : `<input id="${id}" data-j="${esc(c.id)}" type="text" maxlength="${c.max}" autocomplete="off"${p} value="${esc(e[c.id])}"${inv(erreurs, c.id)}>`;
   return `<div class="j-champ${c.long ? ' j-large' : ''}"><label for="${id}">${esc(c.label)}</label>${ctl}${aide}${err(erreurs, c.id)}</div>`;
 }
 const champ = (id) => CHAMPS_TEXTE.find((c) => c.id === id);
@@ -83,6 +88,8 @@ const champ = (id) => CHAMPS_TEXTE.find((c) => c.id === id);
 function tableauEditable(nom, e, erreurs, { titreAjout, aide = '' }) {
   const cols = TABLEAUX[nom];
   const lignes = e[nom];
+  const exl = EXEMPLES_TABLEAUX[e.categorie]?.[nom] ?? EXEMPLES_TABLEAUX.cisco[nom] ?? {};
+  const phc = (col) => (exl[col] ? ` placeholder="${esc(`ex. ${exl[col]}`)}"` : '');
   const corps = lignes.map((l, i) => `<tr>${cols.map((c) => {
     const cle = `${nom}.${i}.${c.id}`; const idc = `jt-${nom}-${i}-${c.id}`;
     if (c.id === 'resultat') {
@@ -91,11 +98,13 @@ function tableauEditable(nom, e, erreurs, { titreAjout, aide = '' }) {
     }
     const zone = c.id === 'code' || ['solution', 'cause', 'symptome', 'test', 'attendu'].includes(c.id);
     const ctl = zone
-      ? `<textarea id="${idc}" class="cell${c.id === 'code' ? ' j-code' : ''}" data-jt="${nom}" data-row="${i}" data-col="${esc(c.id)}" rows="${c.id === 'code' ? 8 : 2}" spellcheck="${c.id === 'code' ? 'false' : 'true'}"${inv(erreurs, cle)}>${esc(l[c.id])}</textarea>`
-      : `<input id="${idc}" class="cell" type="text" autocomplete="off" spellcheck="false" data-jt="${nom}" data-row="${i}" data-col="${esc(c.id)}" value="${esc(l[c.id])}"${inv(erreurs, cle)}>`;
+      ? `<textarea id="${idc}" class="cell${c.id === 'code' ? ' j-code' : ''}" data-jt="${nom}" data-row="${i}" data-col="${esc(c.id)}" rows="${c.id === 'code' ? 8 : 2}" spellcheck="${c.id === 'code' ? 'false' : 'true'}"${phc(c.id)}${inv(erreurs, cle)}>${esc(l[c.id])}</textarea>`
+      : `<input id="${idc}" class="cell" type="text" autocomplete="off" spellcheck="false" data-jt="${nom}" data-row="${i}" data-col="${esc(c.id)}"${phc(c.id)} value="${esc(l[c.id])}"${inv(erreurs, cle)}>`;
     return `<td data-label="${esc(c.label)}"><label class="sr-only" for="${idc}">${esc(c.label)}, ligne ${i + 1}</label>${ctl}${err(erreurs, cle)}</td>`;
   }).join('')}<td class="j-retrait"><button type="button" class="secondary-button j-mini" data-jdel="${nom}" data-row="${i}" aria-label="Supprimer la ligne ${i + 1}">✕</button></td></tr>`).join('');
+  const exemple = cols.filter((c) => c.id !== 'resultat' && exl[c.id]).map((c) => `${c.label} : ${exl[c.id].split('\n')[0]}`).join(' · ');
   return `${aide ? `<p class="param-aide">${esc(aide)}</p>` : ''}`
+    + (!lignes.length && exemple ? `<p class="param-aide j-exemple"><b>Exemple de ligne</b> · ${esc(exemple)}</p>` : '')
     + (lignes.length ? `<div class="j-tableau"><table class="plan j-table-${nom}"><thead><tr>${cols.map((c) => `<th scope="col">${esc(c.label)}</th>`).join('')}<th><span class="sr-only">Supprimer</span></th></tr></thead><tbody>${corps}</tbody></table></div>` : '')
     + `<button type="button" class="secondary-button j-ajout" data-jadd="${nom}">${esc(titreAjout)}</button>`;
 }
@@ -106,14 +115,14 @@ function section(id, titre, contenu, aide = '') {
 
 /** Fiche d'un labo : saisie, captures, versions, export. */
 export function journalEditeurMarkup({ entree: e, erreurs = {}, note = '', modifie = false, versionOuverte = false, confirmerSuppression = false,
-  imagesUrl = {}, titresFiches = {}, routeFiche = (id) => `#/tache/${id}`, imagesOk = true } = {}) {
+  imagesUrl = {}, titresFiches = {}, routeFiche = (id) => `#/tache/${id}`, imagesOk = true, equipementsHtml = '' } = {}) {
   const nbErr = Object.keys(erreurs).length;
   const opt = (liste, val) => liste.map((x) => `<option value="${esc(x.id ?? x)}"${(x.id ?? x) === val ? ' selected' : ''}>${esc(x.label ?? x)}</option>`).join('');
   const ident = `<div class="params-grid">`
-    + `<div class="j-champ j-large"><label for="jf-titre">Titre du document</label><input id="jf-titre" data-j="titre" type="text" maxlength="120" autocomplete="off" value="${esc(e.titre)}"${inv(erreurs, 'titre')}>${err(erreurs, 'titre')}</div>`
+    + `<div class="j-champ j-large"><label for="jf-titre">Titre du document</label><input id="jf-titre" data-j="titre" type="text" maxlength="120" autocomplete="off"${ph(exempleChamp(e, 'titre'))} value="${esc(e.titre)}"${inv(erreurs, 'titre')}>${err(erreurs, 'titre')}</div>`
     + `<div class="j-champ"><label for="jf-categorie">Catégorie</label><select id="jf-categorie" data-j="categorie">${opt(CATEGORIES_JOURNAL, e.categorie)}</select></div>`
     + `<div class="j-champ"><label for="jf-etat">État</label><select id="jf-etat" data-j="etat">${ETATS_JOURNAL.map((x) => `<option value="${esc(x.id)}"${x.id === e.etat ? ' selected' : ''}>${esc(x.symbole)} ${esc(x.label)}</option>`).join('')}</select></div>`
-    + `<div class="j-champ"><label for="jf-auteur">Rédigé par</label><input id="jf-auteur" data-j="auteur" type="text" maxlength="120" autocomplete="off" value="${esc(e.auteur)}"${inv(erreurs, 'auteur')}>${err(erreurs, 'auteur')}</div>`
+    + `<div class="j-champ"><label for="jf-auteur">Rédigé par</label><input id="jf-auteur" data-j="auteur" type="text" maxlength="120" autocomplete="off" placeholder="Ex. : B. Nganbou" value="${esc(e.auteur)}"${inv(erreurs, 'auteur')}>${err(erreurs, 'auteur')}</div>`
     + `<div class="j-champ"><label for="jf-classification">Classification</label><select id="jf-classification" data-j="classification">${opt(CLASSIFICATIONS, e.classification)}</select></div>`
     + `</div><dl class="j-controle"><div><dt>Référence</dt><dd>${esc(e.reference)}</dd></div><div><dt>Version</dt><dd>${esc(e.version)}</dd></div>`
     + `<div><dt>Créé le</dt><dd>${esc(dateLongue(e.creeLe))}</dd></div><div><dt>Modifié le</dt><dd>${esc(dateLongue(e.modifieLe))}</dd></div></dl>`;
@@ -157,13 +166,14 @@ export function journalEditeurMarkup({ entree: e, erreurs = {}, note = '', modif
     + section('identification', 'Identification', ident)
     + section('objet', '1. Objet et environnement', champTexte(champ('objet'), e, erreurs) + champTexte(champ('environnement'), e, erreurs))
     + section('architecture', '2. Architecture', champTexte(champ('architecture'), e, erreurs), 'Décris le montage en quelques phrases. L’éditeur de schéma viendra dans une prochaine étape ; en attendant, ajoute la capture de ta topologie dans « Captures ».')
-    + section('adressage', '3. Plan d’adressage', tableauEditable('adressage', e, erreurs, { titreAjout: '+ Ajouter une ligne' }))
-    + section('configuration', '4. Configuration', tableauEditable('configuration', e, erreurs, { titreAjout: '+ Ajouter un bloc de commandes' }), 'Colle les commandes appliquées, un bloc par équipement ou par phase. Une ligne « secret » se termine avant le mot de passe.')
-    + section('validation', '5. Validation', tableauEditable('validation', e, erreurs, { titreAjout: '+ Ajouter un test' }), '« Conforme » se coche après avoir lancé le test toi-même.')
-    + section('exploitation', '6. Exploitation', `<div class="params-grid">${['acces', 'rangement', 'sauvegarde', 'retourArriere'].map((id) => champTexte(champ(id), e, erreurs)).join('')}</div>`)
-    + section('incidents', '7. Incidents et solutions', tableauEditable('incidents', e, erreurs, { titreAjout: '+ Ajouter un incident' }), 'Le message d’erreur exact, sa cause, ce qui l’a réglé : c’est ce qui te fera gagner le plus de temps.')
-    + section('references', '8. Références', refs + champTexte(champ('referencesTexte'), e, erreurs))
-    + section('captures', `9. Captures (${e.captures.length} / ${MAX_CAPTURES})`,
+    + section('equipements', `3. Équipements (${e.equipements.length})`, equipementsHtml, 'Coche les équipements de l’inventaire utilisés dans ce labo et écris leur rôle ici. Leurs interfaces, VLAN et tables de routage seront en annexe du PDF.')
+    + section('adressage', '4. Plan d’adressage', tableauEditable('adressage', e, erreurs, { titreAjout: '+ Ajouter une ligne' }))
+    + section('configuration', '5. Configuration', tableauEditable('configuration', e, erreurs, { titreAjout: '+ Ajouter un bloc de commandes' }), 'Colle les commandes appliquées, un bloc par équipement ou par phase. Une ligne « secret » se termine avant le mot de passe.')
+    + section('validation', '6. Validation', tableauEditable('validation', e, erreurs, { titreAjout: '+ Ajouter un test' }), '« Conforme » se coche après avoir lancé le test toi-même.')
+    + section('exploitation', '7. Exploitation', `<div class="params-grid">${['acces', 'rangement', 'sauvegarde', 'retourArriere'].map((id) => champTexte(champ(id), e, erreurs)).join('')}</div>`)
+    + section('incidents', '8. Incidents et solutions', tableauEditable('incidents', e, erreurs, { titreAjout: '+ Ajouter un incident' }), 'Le message d’erreur exact, sa cause, ce qui l’a réglé : c’est ce qui te fera gagner le plus de temps.')
+    + section('references', '9. Références', refs + champTexte(champ('referencesTexte'), e, erreurs))
+    + section('captures', `10. Captures (${e.captures.length} / ${MAX_CAPTURES})`,
       (e.captures.length ? `<ul class="j-captures">${captures}</ul>` : '')
       + `<div class="params-actions"><label class="secondary-button j-fichier${plein ? ' is-disabled' : ''}" for="jCaptureFichier"${plein ? ' aria-disabled="true"' : ''}>+ Ajouter une capture (PNG ou JPEG)</label>`
       + `<input id="jCaptureFichier" type="file" accept="image/png,image/jpeg" class="sr-only"${plein ? ' disabled' : ''}>`

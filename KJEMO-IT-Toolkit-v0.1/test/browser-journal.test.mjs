@@ -5,7 +5,9 @@
  * de passe écrit, enregistrement et relecture après rechargement, capture
  * (fichier) gardée dans IndexedDB, export PDF téléchargé, nouvelle version,
  * duplication, suppression confirmée dans la page, sauvegarde puis restauration
- * dans un navigateur vierge, création depuis la fiche du TP VLAN, affichage à
+ * dans un navigateur vierge, création depuis la fiche du TP VLAN, exemples
+ * d'aide au remplissage et labo d'exemple, inventaire des équipements (SW1 et R1
+ * créés depuis le TP, route ajoutée, annexe du PDF, suppression), affichage à
  * 390 px sans débordement, stockage bloqué, aucune erreur de page.
  * NE PROUVE PAS l'affichage du PDF dans un lecteur précis (voir journal.test.mjs).
  * Usage : node test/browser-journal.test.mjs   (exit 0 = tout OK)
@@ -203,6 +205,76 @@ await ctx.close();
   await context.close();
 }
 
+
+// Exemples et inventaire
+{
+  const { context, page: p5, erreurs: e5 } = await nouvellePage({ acceptDownloads: true }, '/#/journal');
+  await p5.selectOption('#jNouvelleCat', 'systeme');
+  await p5.click('#jExemple'); await p5.waitForSelector('#jForm');
+  assert(/^EXEMPLE — /.test(await p5.inputValue('#jf-titre')) && (await p5.inputValue('#jf-objet')).length > 20, 'labo d’exemple : titre et objet remplis');
+  assert(/Il n’est enregistré que si/.test(await p5.locator('#jNote').innerText()), 'labo d’exemple : non enregistré tant qu’on ne le décide pas');
+  await p5.goto(`${BASE}/#/journal`); await p5.waitForSelector('#journalView h1');
+  assert(await p5.locator('.j-ligne').count() === 0, 'l’exemple non enregistré n’apparaît pas dans la liste');
+  await p5.click('#jNouveauForm button[type="submit"]'); await p5.waitForSelector('#jForm');
+  assert(/^Ex\. : /.test(await p5.getAttribute('#jf-objet', 'placeholder')) && await p5.locator('.j-exemple').count() >= 3, 'champs vides : exemples affichés');
+  // Depuis le TP : SW1 et R1 dans l'inventaire
+  await p5.goto(`${BASE}/#/tache/cours-tp-vlan-ssh-intervlan`); await p5.waitForSelector('#taskJournal');
+  await p5.click('#exemplesBtn'); await p5.click('#taskJournal'); await p5.waitForSelector('#jForm');
+  assert(await p5.locator('[data-jeq]:checked').count() === 2 && /SW1, R1/.test(await p5.locator('#jNote').innerText()), 'TP VLAN : SW1 et R1 créés et cochés');
+  await p5.click('#jEnregistrer');
+  const lab = await p5.evaluate(() => location.hash);
+  // Ouvrir R1, ajouter une route statique
+  await p5.locator('.i-choix', { hasText: 'R1' }).locator('[data-jeqouvrir]').click();
+  await p5.waitForSelector('#iForm');
+  assert(await p5.locator('#journalView h1').innerText() === 'R1' && await p5.locator('#iRetour').count() === 1, 'fiche de R1, avec le retour au labo');
+  assert(await p5.locator('[data-it="routes"]').count() >= 2 * 5, 'R1 : routes connectées préremplies');
+  await p5.click('[data-iadd="routes"]');
+  const n = await p5.locator('[data-it="routes"][data-col="type"]').count() - 1;
+  await p5.fill(`[data-it="routes"][data-row="${n}"][data-col="type"]`, 'S*');
+  await p5.fill(`[data-it="routes"][data-row="${n}"][data-col="destination"]`, '0.0.0.0/0');
+  await p5.fill(`[data-it="routes"][data-row="${n}"][data-col="via"]`, '203.0.113.1');
+  await p5.fill(`[data-it="routes"][data-row="${n}"][data-col="pourquoi"]`, 'Sortie Internet');
+  await p5.fill('#if-notes', 'enable secret Cisco123');
+  await p5.click('#iEnregistrer');
+  assert(await p5.locator('#ierr-notes').count() === 1, 'inventaire : mot de passe écrit refusé');
+  await p5.fill('#if-notes', 'Mot de passe dans le gestionnaire, entrée R1');
+  await p5.click('#iEnregistrer');
+  assert(/Enregistré dans l’inventaire/.test(await p5.locator('#iNoteFiche').innerText()), 'R1 enregistré avec sa nouvelle route');
+  await p5.click('#iRetour'); await p5.waitForSelector('#jForm');
+  assert(await p5.evaluate(() => location.hash) === lab, 'retour au labo');
+  const [dl] = await Promise.all([p5.waitForEvent('download'), p5.click('#jPdf')]);
+  const pdf = (await lireDl(dl)).toString('latin1');
+  assert(pdf.includes('Annexe A') && pdf.includes('Sortie Internet'), 'PDF du labo : annexe des équipements avec la nouvelle route');
+  // Inventaire
+  await p5.goto(`${BASE}/#/inventaire`); await p5.waitForSelector('.i-table');
+  assert(await p5.locator('.i-table tbody tr').count() === 2 && await p5.locator('#espacesNav a[data-espace="journal"]').getAttribute('aria-current') === 'page', 'inventaire : deux équipements, menu Journal actif');
+  await p5.fill('#iRecherche', 'introuvable');
+  assert(await p5.locator('.i-table tbody tr').count() === 0, 'recherche dans l’inventaire : rien');
+  await p5.fill('#iRecherche', 'gigabitethernet0/0.10');
+  assert(await p5.locator('.i-table tbody tr').count() === 1, 'recherche par interface : R1');
+  await p5.fill('#iRecherche', '');
+  const [dli] = await Promise.all([p5.waitForEvent('download'), p5.click('#iPdf')]);
+  assert((await lireDl(dli)).subarray(0, 8).toString('latin1') === '%PDF-1.4' && /^inventaire-equipements_\d{4}-\d{2}-\d{2}\.pdf$/.test(dli.suggestedFilename()), 'inventaire exporté en PDF');
+  if (CAPTURES) await p5.screenshot({ path: join(CAPTURES, 'inventaire.png') });
+  // Supprimer SW1 : retiré du labo
+  await p5.locator('.i-table a', { hasText: 'SW1' }).click(); await p5.waitForSelector('#iForm');
+  await p5.click('#iSupprimer');
+  assert(/Il sera retiré de 1 labo/.test(await p5.locator('.j-confirmer').innerText()), 'suppression : les labos concernés sont annoncés');
+  await p5.click('#iSupprimerOui'); await p5.waitForSelector('.i-table');
+  await p5.goto(BASE + '/' + lab); await p5.waitForSelector('#jForm');
+  assert(await p5.locator('[data-jeq]:checked').count() === 1, 'SW1 supprimé : retiré du labo, R1 reste');
+  // Nouvel équipement depuis le labo : ajouté au labo
+  await p5.click('#jEqNouveau'); await p5.waitForSelector('#iForm');
+  await p5.fill('#if-nom', 'PC-ADMIN'); await p5.selectOption('#if-systeme', 'systeme');
+  await p5.click('#iEnregistrer');
+  assert(/Ajouté au labo/.test(await p5.locator('#iNoteFiche').innerText()), 'équipement créé depuis le labo : ajouté au labo');
+  await p5.click('#iRetour'); await p5.waitForSelector('#jForm');
+  assert(await p5.locator('[data-jeq]:checked').count() === 2, 'le labo compte R1 et PC-ADMIN');
+  if (CAPTURES) await p5.screenshot({ path: join(CAPTURES, 'journal-equipements.png') });
+  assert(e5.length === 0, 'aucune erreur de page (exemples et inventaire)', e5.join(' | '));
+  await context.close();
+}
+
 // Téléphone : aucune barre de défilement horizontale
 {
   const { context, page: p3, erreurs: e3 } = await nouvellePage({ viewport: { width: 390, height: 844 } }, '/#/journal');
@@ -211,6 +283,10 @@ await ctx.close();
   assert(await sansDebordement(p3), '390 px : fiche sans débordement horizontal');
   await p3.goto(`${BASE}/#/journal`); await p3.waitForSelector('#journalView h1');
   assert(await sansDebordement(p3), '390 px : liste sans débordement horizontal');
+  await p3.goto(`${BASE}/#/inventaire`); await p3.waitForSelector('#journalView h1');
+  await p3.click('#iNouveauForm button[type="submit"]'); await p3.waitForSelector('#iForm');
+  await p3.click('[data-iadd="routes"]'); await p3.click('[data-iadd="vlans"]');
+  assert(await sansDebordement(p3), '390 px : fiche d’équipement sans débordement horizontal');
   assert(e3.length === 0, 'aucune erreur de page (téléphone)', e3.join(' | '));
   await context.close();
 }
