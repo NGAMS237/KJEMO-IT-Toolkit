@@ -19,7 +19,9 @@
  */
 
 import { etiquetteSortie, extensionDe } from './plateforme.mjs';
-import { EFFETS, METHODES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
+import { EFFETS, METHODES, MACHINES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
+import { POSTES_LECTURE } from './trouver.mjs';
+import { figureMarkup } from './schemas-cisco.mjs';
 
 /** Échappement HTML complet (guillemets inclus : le texte peut aller dans un attribut). */
 export function esc(texte) {
@@ -49,7 +51,9 @@ export function badgeEffet(effet) {
  * Commandes Cisco IOS), une fiche liste ses méthodes, un scénario ses
  * équipements.
  */
-export function libellesMethodes(entree) {
+export const METHODES_PLATEFORME = { Linux: ['linux'], Windows: ['powershell', 'cmd', 'gui'], Cisco: ['ios'], Azure: ['azure', 'powershell'] };
+
+export function libellesMethodes(entree, plateforme = null) {
   if (entree.tool) return [etiquetteSortie(entree.tool)];
   const p = entree.procedure;
   const ids = [];
@@ -57,11 +61,14 @@ export function libellesMethodes(entree) {
     const sous = m.id === 'scenario' ? (m.equipements ?? []).map((q) => q.methode) : [m.id];
     for (const id of sous) if (METHODES[id] && !ids.includes(id)) ids.push(id);
   }
-  return ids.map((id) => METHODES[id].label);
+  const compatibles = METHODES_PLATEFORME[plateforme];
+  // Un scénario garde visibles ses équipements : masquer une machine fausserait la procédure.
+  return ids.filter((id) => !compatibles || entree.kind === 'scenario' || compatibles.includes(id))
+    .map((id) => METHODES[id].label);
 }
 
-export function methodeBadgesMarkup(entree) {
-  return libellesMethodes(entree)
+export function methodeBadgesMarkup(entree, plateforme = null) {
+  return libellesMethodes(entree, plateforme)
     .map((l) => `<span class="methode-badge" data-methode-badge>${esc(l)}</span>`).join('');
 }
 
@@ -73,18 +80,18 @@ const LIBELLE_BOUTON = { procedure: 'Ouvrir la fiche', scenario: 'Ouvrir le scé
  * description. Conserve .tool-card / h3 / .tag / .fav-toggle / .open-tool, que
  * la navigation clavier, les favoris et les tests historiques utilisent.
  */
-export function ligneResultatMarkup(entree, { favori = false, motif = null } = {}) {
+export function ligneResultatMarkup(entree, { favori = false, motif = null, plateforme = null } = {}) {
   const tag = entree.tool?.subcategory
     ? `${entree.categorie.toUpperCase()} · ${entree.tool.subcategory}`
     : entree.categorie.toUpperCase();
-  const plat = entree.plateformes.map((p) => `<span class="plat" title="${esc(p)}"><span aria-hidden="true">${iconePlateforme(p)}</span> ${esc(p)}</span>`).join('');
+  const plat = entree.plateformes.filter((p) => !plateforme || p === plateforme).map((p) => `<span class="plat" title="${esc(p)}"><span aria-hidden="true">${iconePlateforme(p)}</span> ${esc(p)}</span>`).join('');
   return `<article class="tool-card task-row kind-${entree.kind}" data-id="${esc(entree.id)}" data-kind="${entree.kind}" role="listitem">`
     + `<div class="task-main">`
     + `<span class="tag">${esc(tag)}</span>`
     + `<h3>${esc(entree.titre)}</h3>`
     + `<p class="task-desc">${esc(entree.resume)}</p>`
     + (motif ? `<p class="match-reason">Correspond au ${esc(motif)}</p>` : '')
-    + `<div class="task-badges"><span class="kind kind-${entree.kind}">${LIBELLE_KIND[entree.kind]}</span>${plat}${methodeBadgesMarkup(entree)}${badgeEffet(entree.effet)}</div>`
+    + `<div class="task-badges"><span class="kind kind-${entree.kind}">${LIBELLE_KIND[entree.kind]}</span>${plat}${methodeBadgesMarkup(entree, plateforme)}${badgeEffet(entree.effet)}</div>`
     + `</div>`
     + `<div class="task-actions">`
     + `<button class="fav-toggle${favori ? ' is-fav' : ''}" type="button" aria-pressed="${favori}" title="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'} : ${esc(entree.titre)}">${favori ? '★' : '☆'}</button>`
@@ -163,9 +170,16 @@ function blocEtapeMarkup(etape, i, ctx, { compact }) {
   return corps;
 }
 
+function puceMachine(id) {
+  const m = MACHINES[id];
+  return m ? `<span class="machine-chip machine-${esc(id)}" title="${esc(m.label)}"><span aria-hidden="true">▣</span> Sur : ${esc(m.court)}</span>` : '';
+}
+
 function etiquettesEtape(etape) {
   return [
+    puceMachine(etape.machine),
     etape.verification ? '<span class="step-flag flag-verif"><span aria-hidden="true">✔</span> Vérification</span>' : '',
+    etape.annulation ? '<span class="step-flag flag-annul"><span aria-hidden="true">↩</span> Annulation</span>' : '',
     etape.facultatif ? '<span class="step-flag flag-fac">Facultatif</span>' : '',
     etape.dernierRecours ? '<span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : '',
   ].join('');
@@ -186,7 +200,7 @@ function enteteIPhase(ph, rendu, ctx, { rapide = false } = {}) {
   // Vue rapide : un bloc dont la copie unique serait trompeuse n'affiche pas de bouton désactivé,
   // seulement la raison en quelques mots ; chaque segment garde son propre bouton.
   const refusSansBouton = rapide && ph.texte === null && ph.raison && ph.raison !== 'manquants';
-  const noteRefus = refusSansBouton ? `<span class="phase-copy-note">${esc(({ interactif: '⏸ copie par segment', entrecoupee: 'copie par bloc', 'plusieurs-machines': 'une copie par machine', 'plusieurs-equipements': 'pas de copie unique' })[ph.raison] ?? raisonRefusCourte(ph.raison))}</span>` : '';
+  const noteRefus = refusSansBouton ? `<span class="phase-copy-note">${esc(({ interactif: '⏸ copie par segment', entrecoupee: 'copie par bloc', 'plusieurs-machines': 'une copie par machine', 'plusieurs-equipements': 'pas de copie unique', 'plusieurs-postes': 'une copie par poste' })[ph.raison] ?? raisonRefusCourte(ph.raison))}</span>` : '';
   const copie = refusSansBouton ? '' : nbCmd >= 2 || ph.equipement
     ? boutonCopie({ classe: 'copy-phase', data: `data-phase="${ph.numero}"`, libelle: 'Copier ce bloc', bloque: ph.texte === null,
       indice: ph.texte === null ? (rapide ? raisonRefusCourte(ph.raison) : raisonRefus(ph.raison)) : '', idIndice: `hp-${ph.numero}`, court: true })
@@ -196,6 +210,7 @@ function enteteIPhase(ph, rendu, ctx, { rapide = false } = {}) {
   return `<header class="phase-head">`
     + `<h3 class="phase-title"><span class="phase-icone" aria-hidden="true">${ICONE_CATEGORIE[ph.categorie]}</span> ${esc(ph.titre)}`
     + `<span class="sr-only"> — ${esc(LIBELLE_CATEGORIE[ph.categorie])}</span></h3>`
+    + (ph.machine ? puceMachine(ph.machine) : '')
     + (eq ? `<span class="eq-chip eq-${esc(eq.methode)}"><span aria-hidden="true">${ICONE_EQUIPEMENT[eq.methode] ?? '○'}</span> ${esc(eq.label)}</span>` : '')
     + chipCat
     + (rapide && effet === 'lecture' ? '' : badgeEffet(effet))
@@ -211,6 +226,7 @@ function etapeRapide(etape, i, ctx) {
     + `<p class="qstep-head"><span class="qstep-titre">${esc(etape.titre)}</span>`
     + (etape.mode ? ` <span class="qstep-mode">${esc(etape.mode)}</span>` : '')
     + etiquettesEtape(etape) + `</p>`
+    + (etape.suppose ? `<p class="qstep-suppose"><span class="step-suppose-label">Suppose</span> ${inline(etape.suppose)}</p>` : '')
     + blocEtapeMarkup(etape, i, ctx, { compact: true })
     + `</li>`;
 }
@@ -222,7 +238,7 @@ function etapePas(etape, i, numero, ctx) {
     + `<div class="step-head"><span class="step-num" aria-hidden="true">${numero}</span>`
     + `<h4 class="step-title"><span class="sr-only">Étape ${numero} : </span>${esc(etape.titre)}</h4>`
     + `${etiquettesEtape(etape)}${etape.effet ? badgeEffet(etape.effet) : ''}</div>`
-    + `<div class="step-body"><p class="step-expl">${inline(etape.explication)}</p>`
+    + `<div class="step-body">${etape.suppose ? `<p class="step-suppose"><span class="step-suppose-label">Cette étape suppose</span> ${inline(etape.suppose)}</p>` : ''}<p class="step-expl">${inline(etape.explication)}</p>`
     + (etape.mode ? `<p class="step-mode"><span class="step-mode-label">Mode attendu</span> ${esc(etape.mode)}</p>` : '')
     + blocEtapeMarkup(etape, i, ctx, { compact: false })
     + attenduMarkup(etape)
@@ -256,6 +272,14 @@ function barreCopieMarkup(procedure, methode, rendu, ctx, { rapide = false } = {
         + `</div>`;
     }).join('');
     return `<div class="eq-bar" role="group" aria-label="Équipements">${cartes}</div>`;
+  }
+  if (rendu.parMachine?.length > 1) {
+    const cartes = rendu.parMachine.map((q) => `<div class="eq-card machine-card" data-machine="${esc(q.id)}">`
+      + `<h3 class="eq-title"><span aria-hidden="true">▣</span> ${esc(q.label)}</h3>`
+      + boutonCopie({ classe: 'secondary-button copy-machine', data: `data-machine="${esc(q.id)}"`, libelle: 'Copier la séquence de ce poste', bloque: q.texte === null,
+        indice: q.texte === null ? (rapide ? raisonRefusCourte(q.raison) : raisonRefus(q.raison)) : 'Étapes facultatives exclues. Colle-la seulement sur ce poste.', idIndice: `hm-${esc(q.id)}`, court: true })
+      + `</div>`).join('');
+    return `<div class="eq-bar machine-bar" role="group" aria-label="Postes (machines) de cette procédure"><p class="machine-note">Cette procédure se déroule sur plusieurs machines : la copie est séparée par poste, jamais en un seul bloc.</p>${cartes}</div>`;
   }
   const copiables = rendu.etapes.filter((e) => e.rendu && !e.facultatif && !e.dernierRecours);
   if (methode.id === 'gui' || methode.copieSequence === false || copiables.length < 2) return '';
@@ -312,7 +336,7 @@ function segmentMarkup(seg, rendu, ctx, { boutonSegment, numeros }) {
   const signale = true;
   const corps = etapes.map((e) => {
     const titre = signale
-      ? `<span class="cmd-comment"><span class="cmd-comment-titre"># ${numeros.get(rendu.etapes.indexOf(e))}. ${esc(e.titre)}</span>${e.facultatif ? ' <span class="step-flag flag-fac">Facultatif</span>' : ''}${e.dernierRecours ? ' <span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : ''}</span>`
+      ? `<span class="cmd-comment"><span class="cmd-comment-titre"># ${numeros.get(rendu.etapes.indexOf(e))}. ${esc(e.titre)}</span>${e.annulation ? ' <span class="step-flag flag-annul">Annulation</span>' : ''}${e.facultatif ? ' <span class="step-flag flag-fac">Facultatif</span>' : ''}${e.dernierRecours ? ' <span class="step-flag flag-dernier"><span aria-hidden="true">⚠</span> Dernier recours</span>' : ''}</span>`
       : '';
     return titre + lignesCode(e.rendu.lignes);
   }).join('');
@@ -375,13 +399,39 @@ function vuePasMarkup(procedure, methode, rendu, ctx) {
 // Paramètres : champs simples et tableaux
 // ---------------------------------------------------------------------------
 
+/** Petit texte sous un champ : sur QUEL poste et avec QUELLE commande on lit la valeur à saisir. */
+function noteTrouver(p, id) {
+  const t = p.trouver;
+  if (!t) return '';
+  const m = MACHINES[t.poste] ?? POSTES_LECTURE[t.poste];
+  const poste = m ? `<span class="trouver-poste machine-${esc(t.poste)}">${esc(m.court)}</span>` : '';
+  const cmd = t.commande ? ` <code class="trouver-cmd">${esc(t.commande)}</code>` : '';
+  const texte = t.texte ? ` ${esc(t.texte)}` : '';
+  return `<p class="param-trouver" id="${id}-trouver">À lire sur : ${poste}${cmd}${texte}</p>`;
+}
+
 function champMarkup(p, saisies) {
   const id = `p-${p.id}`;
+  // Valeur parmi une liste fermée : liste déroulante. `libelles` (facultatif) donne un nom lisible
+  // à chaque valeur ; la valeur technique reste celle qui est validée et copiée.
+  if (p.type === 'choix') {
+    const courant = String(saisies[p.id] ?? '');
+    const options = `<option value=""${courant === '' ? ' selected' : ''}>— Choisir —</option>`
+      + (p.choix ?? []).map((c) => `<option value="${esc(c)}"${c === courant ? ' selected' : ''}>${esc(p.libelles?.[c] ?? c)}</option>`).join('');
+    return `<div class="param">`
+      + `<label for="${id}">${esc(p.label.charAt(0).toUpperCase() + p.label.slice(1))}</label>`
+      + `<select id="${id}" name="${esc(p.id)}" data-param="${esc(p.id)}" aria-describedby="${id}-aide ${id}-err">${options}</select>`
+      + `<p class="param-aide" id="${id}-aide">${esc(p.aide ?? '')}</p>`
+      + noteTrouver(p, id)
+      + `<p class="param-err" id="${id}-err" role="alert"></p>`
+      + `</div>`;
+  }
   return `<div class="param">`
     + `<label for="${id}">${esc(p.label.charAt(0).toUpperCase() + p.label.slice(1))}</label>`
     + `<input id="${id}" name="${esc(p.id)}" data-param="${esc(p.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" `
     + `placeholder="Exemple : ${esc(p.exemple)}" value="${esc(saisies[p.id] ?? '')}" aria-describedby="${id}-aide ${id}-err">`
     + `<p class="param-aide" id="${id}-aide">${esc(p.aide ?? '')}</p>`
+    + noteTrouver(p, id)
     + `<p class="param-err" id="${id}-err" role="alert"></p>`
     + `</div>`;
 }
@@ -455,12 +505,19 @@ function hypothesesMarkup(p, { replie = false } = {}) {
     + `</section>`;
 }
 
+/** « Avant de commencer » : ce que la fiche suppose déjà fait, avec le lien vers la fiche qui le fait. */
+function prerequisMarkup(p, titres = {}) {
+  if (!p.prerequis?.length) return '';
+  const items = p.prerequis.map((r) => `<li>${inline(r.texte)}${r.fiche ? ` <a class="prerequis-lien" href="#/tache/${esc(r.fiche)}">${esc(titres[r.fiche] ?? r.fiche)} <span aria-hidden="true">→</span></a>` : ''}</li>`).join('');
+  return `<aside class="prerequis" aria-label="Avant de commencer"><h2 class="prerequis-titre">Avant de commencer</h2><ul>${items}</ul></aside>`;
+}
+
 function selecteurVueMarkup(vue) {
   return `<div class="vue-switch" role="group" aria-label="Affichage de la procédure">${VUES.map((v) => `<button type="button" class="vue-option${v.id === vue ? ' is-selected' : ''}" id="vue-${v.id}" data-vue="${v.id}" aria-pressed="${v.id === vue}" title="${esc(v.aide)}">${esc(v.label)}</button>`).join('')}</div>`;
 }
 
 /** Page complète d'une fiche tâche (avant branchement des événements). */
-export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, favori = false, assistantTitre = null, prete = false } = {}) {
+export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, favori = false, assistantTitre = null, prete = false, prerequisTitres = {} } = {}) {
   const p = entree.procedure;
   const methode = p.methodes.find((m) => m.id === methodeId) ?? p.methodes[0];
   const { html: etapes, rendu } = etapesMarkup(p, methode, saisies, { vue });
@@ -484,6 +541,12 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
   const retour = methode.retour
     ? repliable('Retour en arrière', `<p>${inline(methode.retour)}</p>`)
     : '';
+  const rappel = p.rappel
+    ? repliable(p.rappel.titre ?? 'Rappel du cours', `<ul class="rappel-points">${p.rappel.points.map((x) => `<li>${inline(x)}</li>`).join('')}</ul>`, { id: 'rappel-cours' })
+    : '';
+  const schemas = (p.figures ?? []).length
+    ? `<details class="fold schemas-fiche" id="schemas-fiche" open><summary>Schémas (${p.figures.length})</summary><div class="fold-body schemas-grille">${p.figures.map((x) => figureMarkup(x) ?? '').join('')}</div></details>`
+    : '';
   const sources = repliable('Sources et limites de validation',
     `<ul class="sources">${p.sources.map((s) => `<li><a class="source-link" target="_blank" rel="noreferrer" href="${esc(s.url)}">${esc(s.label)}</a></li>`).join('')}</ul>`
     + `<p class="validation-note"><strong>Validation :</strong> ${esc(p.validation ?? 'Non précisée.')}</p>`
@@ -504,6 +567,8 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
     + `<div class="tache-meta">${plateformes}${p.methodes.length === 1 || scenario ? methodeBadgesMarkup(entree) : ''}${badgeEffet(p.effet)}<button class="fav-toggle${favori ? ' is-fav' : ''}" id="taskFav" type="button" aria-pressed="${favori}" aria-label="${favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${favori ? '★' : '☆'}</button></div>`
     + `</div></div>`
     + `<p class="tache-resume">${esc(p.resume)}</p>`
+    + schemas
+    + prerequisMarkup(p, prerequisTitres)
     + hypothesesMarkup(p, { replie: vue === 'rapide' })
     + `<div class="tache-controls">${selecteurVueMarkup(vue)}${onglets}</div>`
     + `<div id="panneau-methode" class="method-panel" role="${p.methodes.length > 1 ? 'tabpanel' : 'region'}" aria-label="${esc(METHODES[methode.id].label)}"${p.methodes.length > 1 ? ` aria-labelledby="tab-${methode.id}"` : ''}>`
@@ -512,7 +577,7 @@ export function tachePageMarkup(entree, { methodeId, vue = 'pas', saisies = {}, 
     + `<div id="etapesZone">${etapes}</div>`
     + dossier
     + `</div>`
-    + `<div class="folds">${comprendre}${depannage}${retour}${sources}</div>`
+    + `<div class="folds">${rappel}${comprendre}${depannage}${retour}${sources}</div>`
     + assistant
     + `</div>`;
 }

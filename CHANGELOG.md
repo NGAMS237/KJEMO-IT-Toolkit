@@ -1,5 +1,29 @@
 # Journal des changements
 
+## KJEMO-UX-ACCUEIL-01 — Accueil a trois portes, aide-memoire, catalogue pro (branche claude/commandes-cours-tp2-01)
+
+**Etat : developpe localement, teste localement (statique + Chromium 1280 et 390 px). NON teste en CI GitHub, NON publie, NON fusionne, NON deploye (ecriture au depot refusee, non contournee). Aucune commande executee sur machine reelle.**
+
+- Accueil : trois portes colorees (Mes cours et TP avec avancement, Aide-memoire, Catalogue professionnel) puis groupes de l'aide-memoire ; grille de domaines deplacee sous `#/catalogue` ; filtre « Contenu » masque sans recherche.
+- Nouvelles routes `#/memo`, `#/memo/<groupe>`, `#/catalogue` ; bouton Accueil persistant ; fil d'Ariane ; retours haut et bas ; retour de fiche vers son groupe ; Echap = un pas en arriere.
+- Un seul filtre de plateforme, pastille « Filtre : X » avec sortie ; puces Tous / Nouveautes / Lies au TP calculees ; groupes vides grises et expliques.
+- Nouveaux fichiers : `dist/memo.mjs`, `dist/vue-portes.mjs`, `test/memo.test.mjs`, `test/browser-portes.test.mjs`, `docs/UX-ACCUEIL-01.md`.
+
+## KJEMO-COURS-TP2-01-R1 — Parcours fideles au sujet TP2, CSV, postes clients, memo complete (branche claude/commandes-cours-tp2-01)
+
+**Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON publie, NON fusionne, NON deploye (acces en ecriture au depot refuse depuis la session, non contourne). Aucune commande n'a ete executee sur un poste, un serveur ou un equipement ; seul le script d'import CSV a ete execute, contre un FAUX samba-tool.**
+
+- Parcours A a E **reecrits d'apres l'enonce reel** (45 elements, 92 points) a la place de la lecture reconstruite ; 17 ambiguites reelles ecrites ; liens vers fiche + methode + etape, avec controle du titre de l'etape.
+- CSV conforme au sujet (`;`, login ; mot de passe ; departement, `Finance`), modele public FICTIF, vrai CSV sur la VM, aucun mot de passe reel dans l'application. Script d'import unique (`dist/cours-script-import.mjs`) execute par `test/cours-import.test.mjs` contre un faux samba-tool : CRLF, BOM, doublons, lignes invalides, compte/groupe existants, echecs, essai sans ecriture, aucun secret en sortie, codes de sortie.
+- Fiches ajoutees pour A5 (session Windows de domaine), B1 (disque dans l'hyperviseur : VMware, VirtualBox, Proxmox VE, Hyper-V), D4 a D7 (client Ubuntu, client Windows CMD/PowerShell/interface, transferts smbclient) : etapes etiquetees par machine, copie separee par poste, prerequis exposes a l'arrivee directe, aucun « compte » litteral a remplacer a la main.
+- 17 fiches de memo pour des commandes sans route (processus, sessions, comptes locaux, archives, localisation, comparaison, etat, arret, ext4, edquota, smbstatus, planification, ifconfig, service, printf) ; matrice « commande -> fiche -> route -> etat reel » recalculee (83 commandes) ; 412 entrees classees.
+- Bancs : cours (50 fiches), cours-import, matrice du sujet, matrice des commandes, navigateur cours (3 gestes, GUI, postes, 390 px) ; cables dans package.json et validate-linux.yml. Un test existant ajuste : cmd-methodes attend 16 fiches CMD (2 fiches Windows nommees). Aucune assertion supprimee ni affaiblie.
+- Limites : rien execute sur machine reelle ; options samba-tool et md127 non confirmees ; menus des hyperviseurs relus, non verifies. Reprise : docs/REPRISE-COURS-TP2-R1.md.
+
+## KJEMO-COMMANDES-COURS-TP2-01 (remplace par R1 ci-dessus) — Mes cours et TP, fiches de cours, laboratoire
+
+Premiere version (28 fiches, parcours reconstruits). Les parcours et le format CSV de cette version etaient inexacts ; voir R1.
+
 ## UX-NAVIGATION-CATALOGUE-01 — Navigation par groupes et sous-groupes de toutes les cartes (branche claude/ux-navigation-catalogue-01)
 
 **Etat : developpe localement, teste localement (statique + navigateur Chromium). NON teste en CI GitHub, NON fusionne, NON deploye. Aucune commande n'a ete executee sur un poste, un equipement ou un tenant.**

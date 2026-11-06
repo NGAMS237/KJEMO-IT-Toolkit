@@ -1,0 +1,641 @@
+#!/usr/bin/env node
+/**
+ * journal.test.mjs — JOURNAL-LABO-01 · KJEMO IT Toolkit
+ * -------------------------------------------------------------------
+ * Journal de labo : modèle (journal.mjs), moteur PDF (pdf-a4.mjs) et dossier
+ * PDF (journal-pdf.mjs).
+ * JOURNAL-LABO-05 : schéma d'architecture (modèle, dessin SVG et PDF, éditeur).
+ * JOURNAL-LABO-02/03 : exemples d'aide au remplissage, labos d'exemple,
+ * inventaire des équipements (fiche par système, table de routage),
+ * équipements proposés par le TP VLAN, annexe du PDF et PDF de l'inventaire.
+ * CAS FONCTIONNELS : garde « aucun secret », normalisation, références et
+ * versions, labos à revoir, filtres, création depuis une fiche (TP VLAN avec 1
+ * puis 3 VLAN, et TOUTES les fiches du catalogue avec leurs exemples),
+ * sauvegarde et restauration, PDF valide (xref recalculée, pages, texte
+ * extrait, accents, image JPEG, coupure des tableaux et du code).
+ * CONTRE-ÉPREUVES : un mot de passe écrit, une sauvegarde étrangère, un JSON
+ * cassé, une image non JPEG, un PDF à xref faussée DOIVENT être refusés.
+ * NE PROUVE PAS : le rendu exact dans chaque lecteur PDF (qpdf et pdftotext
+ * sont utilisés s'ils sont installés).
+ * Usage : node test/journal.test.mjs   (exit 0 = tout OK)
+ */
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { resolve, dirname, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
+const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
+const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
+const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
+const AZ = await imp('config-azure.mjs'); const VA = await imp('vue-azure.mjs'); const MS = await imp('modeles-schema.mjs');
+const CI = await imp('config-ios.mjs'); const VC = await imp('vue-config.mjs');
+const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs'); const SR = await imp('schema-remplir.mjs'); const MO = await imp('modeles.mjs');
+let passed = 0; let failed = 0;
+const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
+const JPEG = Uint8Array.from(Buffer.from('/9j/4AAQSkZJRgABAQEAAgACAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAYABEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3V3uVlYIgK54JB9KRZbvjMS+/Bq3RTuIKKKKQxC6g4LAH60m9T0YfnRRQA6iiigD/2Q==', 'base64'));
+const TMP = mkdtempSync(join(tmpdir(), 'kjemo-journal-'));
+const outil = (nom) => { try { execFileSync(nom, ['--version'], { stdio: 'ignore' }); return true; } catch { return false; } };
+const QPDF = outil('qpdf'); const PDFTOTEXT = (() => { try { execFileSync('pdftotext', ['-v'], { stdio: 'ignore' }); return true; } catch { return false; } })();
+const texteDu = (octets) => { const f = join(TMP, `t${passed + failed}.pdf`); writeFileSync(f, octets); return execFileSync('pdftotext', ['-layout', f, '-'], { encoding: 'utf8' }); };
+const qpdfOk = (octets) => { const f = join(TMP, `q${passed + failed}.pdf`); writeFileSync(f, octets); try { execFileSync('qpdf', ['--check', f], { stdio: 'pipe' }); return true; } catch { return false; } };
+
+/** Vérifie la table xref : chaque décalage pointe bien sur « n 0 obj ». */
+function xrefValide(octets) {
+  const s = Buffer.from(octets).toString('latin1');
+  const sx = Number(/startxref\n(\d+)\n%%EOF\n$/.exec(s)?.[1]);
+  if (!Number.isFinite(sx) || !s.startsWith('xref', sx)) return false;
+  const lignes = s.slice(sx).split('\n');
+  const n = Number(lignes[1].split(' ')[1]);
+  for (let k = 1; k < n; k++) {
+    const off = Number(lignes[2 + k].slice(0, 10));
+    if (!s.startsWith(`${k} 0 obj`, off)) return false;
+  }
+  return true;
+}
+
+console.log('1. Garde « aucun secret »');
+for (const t of ['username admin privilege 15 secret Cisco123', 'enable secret 5 $1$mERr$hx5', 'enable password cisco', 'mot de passe : Abc123', 'mdp=toto',
+  'az vm create --admin-password Abc!123', '-Password "P@ss1"', 'ConvertTo-SecureString "P@ss1" -AsPlainText -Force', 'key-string 7 1234', 'crypto isakmp key 0 cisco', 'pre-shared-key Secr3t',
+  '-----BEGIN RSA PRIVATE KEY-----']) assert(J.secretDans(t), `refusé : « ${t} »`);
+for (const t of ['username admin privilege 15 secret', 'enable secret ***', 'service password-encryption', 'le secret est tapé sur la console', 'password recovery',
+  'gestionnaire de mots de passe, entrée SW1', 'New-LocalUser -Name eleve -Password $mdp', '-Password (Read-Host -AsSecureString)', 'ssh admin@192.168.99.2', 'show ip ssh'])
+  assert(!J.secretDans(t), `accepté : « ${t} »`, J.secretDans(t)?.quoi);
+assert(J.secretDans('ligne 1\nligne 2\nenable secret Cisco')?.ligne === 3, 'la ligne fautive est donnée');
+
+console.log('2. Normalisation');
+{
+  const vide = J.normaliserEntree({});
+  assert(vide.erreurs.titre && Object.keys(vide.erreurs).length === 1, 'titre obligatoire, rien d’autre');
+  const { entree, erreurs } = J.normaliserEntree({ titre: '  TP  ', categorie: 'azure', etat: 'service', reference: 'LAB-AZ-2026-004', version: '2.3', classification: 'Confidentiel',
+    adressage: [{ equipement: 'R1', adresse: '10.0.0.1/24' }, { equipement: '', adresse: '' }, 'x'], validation: [{ test: 'ping', resultat: 'bizarre' }],
+    configuration: [{ titre: 'R1', code: 'hostname R1\nenable secret ***' }], fiches: ['cours-tp-vlan-ssh-intervlan', 'a b', 'cours-tp-vlan-ssh-intervlan'],
+    captures: [{ id: 'cap1234', nom: 'a.png' }, { id: '../x' }], creeLe: '2026-01-02', modifieLe: 'hier' });
+  assert(!Object.keys(erreurs).length, 'entrée correcte acceptée', JSON.stringify(erreurs));
+  assert(entree.titre === 'TP' && entree.categorie === 'azure' && entree.etat === 'service' && entree.version === '2.3' && entree.classification === 'Confidentiel', 'champs simples gardés');
+  assert(entree.reference === 'LAB-AZ-2026-004', 'référence valide gardée');
+  assert(entree.adressage.length === 1 && entree.validation[0].resultat === 'a-tester', 'lignes vides écartées, résultat inconnu → À tester');
+  assert(entree.fiches.join() === 'cours-tp-vlan-ssh-intervlan' && entree.captures.length === 1, 'fiches dédoublonnées, capture au nom piégé écartée');
+  assert(entree.modifieLe === '2026-01-02' && entree.revisions.length === 1, 'date invalide remplacée, historique créé');
+  const r2 = J.normaliserEntree({ titre: 'x', reference: '../../etc', categorie: 'inconnue', etat: '?', classification: 'Secret défense' });
+  assert(/^LAB-GEN-\d{4}-001$/.test(r2.entree.reference) && r2.entree.categorie === 'autre' && r2.entree.etat === 'brouillon' && r2.entree.classification === 'Interne', 'valeurs inconnues ramenées au défaut');
+  const s = J.normaliserEntree({ titre: 'x', configuration: [{ titre: 'SW', code: 'hostname SW1\nusername admin privilege 15 secret Cisco123' }], incidents: [{ symptome: 'a', solution: 'mot de passe : abc' }], acces: 'ssh -l admin 10.0.0.1' });
+  assert(s.erreurs['configuration.0.code'] && /ligne 2/.test(s.erreurs['configuration.0.code']) && s.erreurs['incidents.0.solution'] && !s.erreurs.acces, 'mot de passe écrit refusé dans le code et les incidents, avec la ligne');
+  const long = J.normaliserEntree({ titre: 'x'.repeat(500), adressage: Array.from({ length: 100 }, (_, i) => ({ equipement: `E${i}` })) });
+  assert(long.entree.titre.length === 120 && long.entree.adressage.length === 60, 'longueurs bornées (titre 120, 60 lignes)');
+}
+
+console.log('3. Références, versions, à revoir, filtres');
+{
+  assert(J.prochaineReference('cisco', '2026', []) === 'LAB-RES-2026-001', 'première référence');
+  assert(J.prochaineReference('cisco', '2026', ['LAB-RES-2026-001', 'LAB-RES-2026-007', 'LAB-SYS-2026-009', 'LAB-RES-2025-030']) === 'LAB-RES-2026-008', 'suite par catégorie et par année');
+  assert(J.prochaineReference('systeme', '2027', ['LAB-SYS-2026-009']) === 'LAB-SYS-2027-001', 'nouvelle année : on repart à 001');
+  assert(J.versionSuivante('1.9') === '1.10' && J.versionSuivante('1.9', true) === '2.0' && J.versionSuivante('n/a') === '1.1', 'versions mineures et majeures');
+  const base = J.normaliserEntree({ titre: 'TP', version: '1.2' }).entree;
+  assert(J.publierVersion(base, { resume: ' ' }).erreur, 'nouvelle version : résumé obligatoire');
+  assert(J.publierVersion(base, { resume: 'mot de passe : abc' }).erreur, 'nouvelle version : résumé avec mot de passe refusé');
+  const v = J.publierVersion(base, { resume: 'Ajout du VLAN 20', date: new Date('2026-11-06T10:00:00') }).entree;
+  assert(v.version === '1.3' && v.revisions.at(-1).resume === 'Ajout du VLAN 20' && v.revisions.at(-1).date === '2026-11-06' && v.modifieLe === '2026-11-06', 'version publiée et datée');
+  const vieux = { ...base, modifieLe: '2026-08-01' };
+  assert(J.aRevoir(vieux, new Date('2026-11-05T10:00:00')) && !J.aRevoir({ ...vieux, etat: 'archive' }, new Date('2026-11-05T10:00:00')) && !J.aRevoir({ ...vieux, modifieLe: '2026-10-01' }, new Date('2026-11-05T10:00:00')), 'à revoir après 60 jours, sauf archivé');
+  const mk = (t, cat, etat, d, adr = []) => J.normaliserEntree({ titre: t, categorie: cat, etat, modifieLe: d, creeLe: '2026-01-01', adressage: adr }).entree;
+  const liste = [mk('VLAN et routage', 'cisco', 'service', '2026-10-01', [{ adresse: '192.168.99.2/24' }]), mk('Jonction Samba', 'systeme', 'brouillon', '2026-11-01'), mk('VNet', 'azure', 'archive', '2026-09-01')];
+  assert(J.filtrerJournal(liste).map((e) => e.titre).join() === 'Jonction Samba,VLAN et routage', 'actifs triés du plus récent, archives cachées');
+  assert(J.filtrerJournal(liste, { filtre: 'archive' }).length === 1 && J.filtrerJournal(liste, { categorieId: 'cisco' }).length === 1, 'filtres état et catégorie');
+  assert(J.filtrerJournal(liste, { requete: 'jonction' }).length === 1 && J.filtrerJournal(liste, { requete: '192.168.99' }).length === 1 && J.filtrerJournal(liste, { requete: 'ROUTÉ' }).length === 0, 'recherche dans le titre et les adresses, sans accents');
+}
+
+console.log('4. Création depuis une fiche');
+const fiche = T.entreeParId('cours-tp-vlan-ssh-intervlan').procedure;
+const exemple = (p) => Object.fromEntries((p.params ?? []).map((x) => [x.id, x.type === 'table' ? x.exemple.map((r) => ({ ...r })) : x.exemple]));
+const depuis = (p, saisies) => {
+  const m = p.methodes[0];
+  return J.entreeDepuisFiche(p, { methode: m, rendu: P.rendreMethode(m, p.params ?? [], saisies), valeurs: J.valeursPourJournal(P.evaluerValeurs(p.params ?? [], saisies)),
+    plateformes: T.plateformesDeProcedure(p), auteur: 'B. Nganbou', date: new Date('2026-11-05T10:00:00'), existantes: ['LAB-RES-2026-001'] });
+};
+{
+  const { entree: e, erreurs } = depuis(fiche, exemple(fiche));
+  const code = e.configuration.map((b) => b.code).join('\n');
+  assert(!Object.keys(erreurs).length, 'TP VLAN : aucune erreur', JSON.stringify(erreurs));
+  assert(e.reference === 'LAB-RES-2026-002' && e.categorie === 'cisco' && e.auteur === 'B. Nganbou' && e.fiches[0] === fiche.id, 'référence suivante, catégorie Cisco, auteur, fiche liée');
+  assert(e.adressage.length === 3 && e.adressage[0].adresse === '192.168.99.2/24' && e.adressage[0].interface === 'Vlan99' && e.adressage[2].adresse === '192.168.10.0/24', 'adressage : gestion, poste de gestion et VLAN du tableau');
+  assert(code.includes('switchport trunk allowed vlan 99,10') && code.includes('encapsulation dot1Q 10') && /username admin privilege 15 secret$/m.test(code), 'configuration reprise avec les valeurs, secret arrêté avant le mot de passe');
+  assert(!/^no vlan|allowed vlan add|username tech2/m.test(code), 'ni annulations, ni étapes facultatives');
+  assert(!code.includes('{{') && /^! 2\. Nommer le commutateur/m.test(code), 'aucun champ restant ; commentaire IOS avec le numéro d’étape');
+  assert(e.configuration.length >= 6 && e.configuration[0].titre.startsWith('Phase 1'), 'un bloc par phase');
+  assert(e.validation.length === 3 && e.validation.every((v) => v.resultat === 'a-tester'), 'validation : la vérification finale, à tester');
+  assert(/« Annuler »/.test(e.retourArriere) && e.retourArriere.includes(fiche.titre), 'retour arrière : renvoie aux étapes Annuler de la fiche');
+  const trois = exemple(fiche); trois.plan = [...trois.plan, { vlan: '20', nom: 'TECHNIQUE', reseau: '192.168.20.0', prefixe: '24', passerelle: '192.168.20.1', ports: 'Fa0/2', poste: '192.168.20.10' }];
+  const e3 = depuis(fiche, trois).entree;
+  assert(e3.adressage.length === 4 && e3.configuration.map((b) => b.code).join('\n').includes('allowed vlan 99,10,20'), 'un VLAN ajouté au tableau : une ligne et une commande de plus');
+  const vides = depuis(fiche, {}).entree;
+  assert(vides.configuration.every((b) => !b.code.includes('{{')) && vides.adressage.length === 0, 'fiche vide : étapes incomplètes non reprises, aucun « {{ »');
+}
+{
+  let n = 0; const fautes = [];
+  for (const en of T.TOUTES_LES_ENTREES) {
+    const p = en.procedure; if (!p?.methodes?.length) continue;
+    n++;
+    const { entree: e, erreurs } = depuis(p, exemple(p));
+    if (Object.keys(erreurs).length) fautes.push(`${p.id}: ${Object.keys(erreurs).join(',')}`);
+    else if (JSON.stringify(e).includes('{{')) fautes.push(`${p.id}: {{`);
+  }
+  assert(n > 300 && fautes.length === 0, `toutes les fiches (${n}) donnent un labo valide, sans secret ni champ restant`, fautes.slice(0, 5).join(' | '));
+}
+
+console.log('5. Sauvegarde et restauration');
+{
+  const e1 = depuis(fiche, exemple(fiche)).entree; e1.captures = [{ id: 'cap0001', nom: 'vlan.png', legende: 'show vlan brief' }];
+  const b64 = Buffer.from(JPEG).toString('base64');
+  const txt = J.sauvegardeJournal([e1], { cap0001: b64, orpheline: b64 }, new Date('2026-11-05T10:00:00'));
+  const r = J.lireSauvegarde(txt, []);
+  assert(!r.erreur && r.entrees.length === 1 && JSON.stringify(r.entrees[0]) === JSON.stringify(J.normaliserEntree(e1).entree), 'aller-retour identique');
+  assert(Object.keys(r.captures).join() === 'cap0001', 'seules les captures utilisées sont reprises');
+  assert(J.lireSauvegarde(txt, [e1]).doublons[0] === e1.reference, 'les labos déjà présents sont signalés');
+  assert(J.lireSauvegarde('{pas du json').erreur && J.lireSauvegarde(JSON.stringify({ format: 'autre' })).erreur, 'JSON cassé ou étranger refusé');
+  const piege = JSON.parse(txt); piege.entrees.push({ titre: 'x', acces: 'mot de passe : abc' }); piege.captures.cap0001 = '<script>';
+  const rp = J.lireSauvegarde(JSON.stringify(piege), []);
+  assert(rp.ecartees === 1 && rp.entrees.length === 1 && !rp.captures.cap0001, 'entrée avec mot de passe écartée, image non base64 refusée');
+}
+
+console.log('6. Moteur PDF');
+{
+  assert(PDF.versWinAnsi('Été → ✔ 🚀 Œuvre ≥ 2') === 'Été -> OK  Œuvre >= 2', 'accents gardés, substituts lisibles, emoji retiré', PDF.versWinAnsi('Été → ✔ 🚀 Œuvre ≥ 2'));
+  assert(PDF.largeur('W', 'gras', 10) > PDF.largeur('i', 'normal', 10) && PDF.largeur('abc', 'mono', 10) === 18, 'largeurs AFM et Courier');
+  const l = PDF.couper('un mot trèstrèstrèstrèstrèslongsansespace fin', 'normal', 10, 60);
+  assert(l.every((x) => PDF.largeur(x, 'normal', 10) <= 60.01) && l.join('').replace(/ /g, '') === 'unmottrèstrèstrèstrèstrèslongsansespacefin', 'coupure sans débordement ni perte');
+  assert(JSON.stringify(PDF.dimensionsJpeg(JPEG)) !== 'null' && PDF.dimensionsJpeg(new Uint8Array([0x89, 0x50, 0x4e, 0x47])) === null, 'dimensions JPEG lues, PNG refusé');
+  const doc = new PDF.DocumentPdf({ titre: 'Essai é' });
+  assert(doc.ajouterJpeg(new Uint8Array([1, 2, 3])) === -1, 'contre-épreuve : image non JPEG refusée');
+}
+
+console.log('7. Dossier PDF');
+{
+  const e = depuis(fiche, exemple(fiche)).entree;
+  e.incidents = [{ symptome: 'no matching key exchange method found', cause: 'IOS ancien', solution: 'ssh -o KexAlgorithms=+diffie-hellman-group14-sha1 admin@192.168.99.2' }];
+  e.acces = 'ssh admin@192.168.99.2'; e.rangement = 'Gestionnaire de mots de passe, entrée « SW1 »';
+  e.validation[0].resultat = 'conforme';
+  e.captures = [{ id: 'cap0001', nom: 'vlan.jpg', legende: 'show vlan brief → OK' }];
+  const r = JP.pdfJournal(e, { captures: { cap0001: JPEG }, titresFiches: { [fiche.id]: fiche.titre }, date: new Date('2026-11-05T10:00:00Z') });
+  const s = Buffer.from(r.octets).toString('latin1');
+  assert(s.startsWith('%PDF-1.4') && s.endsWith('%%EOF\n'), 'en-tête et fin de fichier PDF');
+  assert(xrefValide(r.octets), 'table xref exacte (chaque objet à son décalage)');
+  assert(new RegExp(`/Count ${r.pages} `).test(s) && r.pages >= 4, `${r.pages} pages déclarées`);
+  assert(s.includes('/DCTDecode') && s.includes('/Im0 Do'), 'la capture JPEG est intégrée');
+  assert(r.sections.map((x) => x.titre).join('|') === 'Objet|Plan d’adressage|Configuration|Validation|Exploitation|Incidents et solutions|Références|Captures', 'plan fixe, sections vides omises (environnement, architecture)');
+  assert(r.sections.every((x, i) => i === 0 || x.page >= r.sections[i - 1].page) && r.sections[0].page === 2, 'sections dans l’ordre, à partir de la page 2');
+  assert(JP.nomFichierPdf(e) === 'LAB-RES-2026-002_v1.0.pdf', 'nom du fichier : référence et version');
+  if (QPDF) assert(qpdfOk(r.octets), 'qpdf --check : aucune erreur');
+  if (PDFTOTEXT) {
+    const t = texteDu(r.octets);
+    for (const x of ['Contrôle du document', 'LAB-RES-2026-002', 'Historique des révisions', 'Sommaire', 'Plan d’adressage', '192.168.99.2/24', 'switchport trunk allowed vlan 99,10',
+      '✔ Conforme'.replace('✔', 'OK'), 'Figure 1 : show vlan brief -> OK', `Page 1 / ${r.pages}`, `Page ${r.pages} / ${r.pages}`, 'B. Nganbou', '5 novembre 2026'])
+      assert(t.includes(x), `texte du PDF : « ${x} »`);
+    assert(!/secret\s+\S*[0-9A-Z]/.test(t.replace(/secret\n/g, '')), 'aucun mot de passe dans le texte du PDF');
+    // Code long et tableau long : coupés entre les pages, rien de perdu.
+    const gros = J.normaliserEntree({ titre: 'Gros labo', configuration: [{ titre: 'R1', code: Array.from({ length: 220 }, (_, i) => `ip route 10.${i}.0.0 255.255.0.0 192.0.2.1`).join('\n') }],
+      adressage: Array.from({ length: 60 }, (_, i) => ({ equipement: `SW${i}`, adresse: `10.${i}.0.1/24`, note: 'note longue '.repeat(6) })) }).entree;
+    const rg = JP.pdfJournal(gros, {});
+    const tg = texteDu(rg.octets);
+    assert(rg.pages >= 6 && xrefValide(rg.octets), `gros labo : ${rg.pages} pages, xref exacte`);
+    assert(tg.includes('ip route 10.0.0.0') && tg.includes('ip route 10.219.0.0') && tg.includes('SW0') && tg.includes('SW59'), 'première et dernière lignes du code et du tableau présentes');
+    assert((tg.match(/Équipement/g) ?? []).length >= 2, 'l’en-tête du tableau est répété sur la page suivante');
+  } else console.log('  (pdftotext absent : contrôles du texte ignorés)');
+  const sans = JP.pdfJournal(J.normaliserEntree({ titre: 'Vide' }).entree, {});
+  assert(xrefValide(sans.octets) && sans.pages === 2 && sans.sections.length === 0, 'labo vide : page de garde et page « aucune section »');
+  const faux = new Uint8Array(r.octets); const i = Buffer.from(faux).toString('latin1').lastIndexOf('0000000');
+  faux[i + 9] = faux[i + 9] === 0x31 ? 0x32 : 0x31;
+  assert(!xrefValide(faux), 'contre-épreuve : une xref faussée est détectée');
+}
+
+console.log('8. Écrans');
+{
+  const e = depuis(fiche, exemple(fiche)).entree;
+  const h = V.journalEditeurMarkup({ entree: e, erreurs: { 'configuration.0.code': 'X <b>' }, titresFiches: { [fiche.id]: fiche.titre } });
+  assert(h.includes('id="jPdf"') && h.includes('Exporter en PDF') && h.includes('id="jEnregistrer"') && h.includes('data-jadd="adressage"'), 'fiche : actions et tableaux');
+  assert(h.includes('X &lt;b&gt;') && !h.includes('X <b>') && h.includes('aria-invalid="true"'), 'erreurs échappées et reliées au champ');
+  assert(!/mot de passe" |name="password|type="password"/i.test(h), 'aucun champ de mot de passe');
+  const l = V.journalListeMarkup({ entrees: [e], total: 1, compte: () => 1 });
+  assert(l.includes(V.routeEntreeJournal(e.id)) && l.includes(e.reference) && l.includes('Sauvegarder le journal'), 'liste : lien, référence, sauvegarde');
+  assert(V.lireRouteJournal('#/journal').id === null && V.lireRouteJournal('#/journal/jabc12').id === 'jabc12' && V.lireRouteJournal('#/journal/../x') === null, 'routes du journal');
+  const piege = V.journalListeMarkup({ entrees: [{ ...e, titre: '<img src=x onerror=alert(1)>' }], total: 1, compte: () => 1 });
+  assert(!piege.includes('<img src=x'), 'titre échappé dans la liste');
+}
+
+
+console.log('9. Exemples d’aide au remplissage');
+{
+  for (const c of J.CATEGORIES_JOURNAL.map((x) => x.id)) {
+    const ex = J.EXEMPLES_CHAMPS[c];
+    assert(ex && ['titre', ...J.CHAMPS_TEXTE.map((x) => x.id)].every((k) => String(ex[k] ?? '').length >= 10), `exemples de champs complets : ${c}`);
+    assert(Object.values(ex).every((v) => !J.secretDans(v)) && Object.values(J.EXEMPLES_TABLEAUX[c]).every((r) => Object.values(r).every((v) => !J.secretDans(v))), `exemples sans mot de passe : ${c}`);
+    assert(Object.keys(J.TABLEAUX).every((n) => J.EXEMPLES_TABLEAUX[c][n]), `un exemple de ligne pour chaque tableau : ${c}`);
+    const e = J.entreeExemple(c, { existantes: [] });
+    assert(e.titre.startsWith('EXEMPLE — ') && !Object.keys(J.normaliserEntree(e).erreurs).length && e.adressage.length && e.configuration.length && e.validation.length === 2 && e.incidents.length, `labo d’exemple valide et rempli : ${c}`);
+    const r = JP.pdfJournal(e, {});
+    assert(xrefValide(r.octets) && r.sections.length >= 8, `PDF du labo d’exemple : ${c} (${r.pages} pages)`);
+  }
+  const h = V.journalEditeurMarkup({ entree: J.entreeVide({ categorieId: 'azure' }) });
+  assert(h.includes('placeholder="Ex. : Déployer une VM Linux') && h.includes('Exemple de ligne') && h.includes('vm-web01'), 'champs vides : exemples adaptés à la catégorie (Azure)');
+  const hc = V.journalEditeurMarkup({ entree: { ...J.entreeVide({ categorieId: 'cisco' }), adressage: [{ equipement: '', interface: '', adresse: '', vlan: '', passerelle: '', note: '' }] } });
+  assert(hc.includes('placeholder="ex. 192.168.99.2/24"'), 'cellules vides : exemple « ex. … » (Cisco)');
+  assert(V.journalListeMarkup({ total: 0 }).includes('id="jExemple"'), 'liste : bouton « Voir un exemple rempli »');
+}
+
+console.log('10. Inventaire');
+{
+  const { equipement: q, erreurs } = I.normaliserEquipement({ nom: ' R1 ', systeme: 'cisco', type: 'routeur', adresse: '192.168.99.1',
+    interfaces: [{ nom: 'Gi0/0.10', adresse: '192.168.10.1/24' }, { nom: '' }], routes: [{ type: 'S*', destination: '0.0.0.0/0', via: '203.0.113.1', pourquoi: 'Internet' }] });
+  assert(!Object.keys(erreurs).length && q.nom === 'R1' && q.interfaces.length === 1 && q.routes[0].pourquoi === 'Internet', 'équipement valide, lignes vides écartées');
+  assert(I.normaliserEquipement({}).erreurs.nom, 'nom obligatoire');
+  const s = I.normaliserEquipement({ nom: 'R1', notes: 'enable secret Cisco123', routes: [{ via: 'pass=abc' }] });
+  assert(s.erreurs.notes && s.erreurs['routes.0.via'], 'mot de passe refusé dans les notes et les tableaux');
+  assert(I.normaliserEquipement({ nom: 'x', systeme: 'azure', type: 'commutateur' }).equipement.type === 'vm', 'type incompatible avec le système : premier type du système');
+  const t = (sys, type) => I.tableauxVisibles(I.equipementVide({ systemeId: sys, typeId: type })).join(',');
+  assert(t('cisco', 'commutateur') === 'interfaces,routes,vlans' && t('systeme', 'serveur') === 'interfaces,routes,services' && t('azure', 'vm') === 'interfaces,routes,services,regles' && t('cisco', 'pare-feu') === 'interfaces,routes,regles', 'la fiche s’adapte au système et au type');
+  assert(I.tableauxVisibles({ ...I.equipementVide({ systemeId: 'systeme', typeId: 'serveur' }), vlans: [{ numero: '10' }] }).includes('vlans'), 'un tableau rempli reste visible même hors de son système');
+  const inv = I.lireInventaire({ equipements: [q, { ...q }, { nom: '' }, { nom: 'SRV', systeme: 'systeme', id: 'eabc123' }] });
+  assert(inv.equipements.length === 2 && inv.ecartes === 2, 'lecture : doublon d’identifiant et équipement invalide écartés');
+  assert(I.filtrerInventaire(inv.equipements, { requete: '192.168.10' }).length === 1 && I.filtrerInventaire(inv.equipements, { systemeId: 'systeme' })[0].nom === 'SRV', 'filtres : recherche dans les interfaces, système');
+  const lab = J.normaliserEntree({ titre: 'TP', equipements: [{ id: q.id, role: 'Passerelle' }, { id: q.id }, { id: '../x' }] }).entree;
+  assert(lab.equipements.length === 1 && lab.equipements[0].role === 'Passerelle' && I.labosDe(q.id, [lab]).length === 1, 'un labo référence un équipement (une fois, avec son rôle)');
+  assert(J.normaliserEntree({ titre: 'TP', equipements: [{ id: q.id, role: 'mot de passe : x' }] }).erreurs['equipements.0.role'], 'rôle avec mot de passe refusé');
+  // Depuis le TP VLAN (3 VLAN)
+  const trois = exemple(fiche); trois.plan = [...trois.plan, { vlan: '20', nom: 'TECHNIQUE', reseau: '192.168.20.0', prefixe: '24', passerelle: '192.168.20.1', ports: 'Fa0/2', poste: '192.168.20.10' }];
+  const v = J.valeursPourJournal(P.evaluerValeurs(fiche.params, trois));
+  const prop = I.equipementsDepuisFiche(v);
+  const sw = prop.find((x) => x.equipement.type === 'commutateur')?.equipement; const rt = prop.find((x) => x.equipement.type === 'routeur')?.equipement;
+  assert(prop.length === 2 && sw.nom === 'SW1' && rt.nom === 'R1', 'TP VLAN : commutateur SW1 et routeur R1 proposés');
+  assert(sw.interfaces.some((i) => i.nom === 'Vlan99' && i.adresse === '192.168.99.2/24') && sw.vlans.map((x) => x.numero).join() === '99,10,20' && sw.routes[0].via === '192.168.99.1', 'SW1 : SVI de gestion, VLAN 99,10,20, passerelle par défaut');
+  assert(rt.interfaces.filter((i) => /\.\d+$/.test(i.nom)).map((i) => i.nom).join() === 'GigabitEthernet0/0.99,GigabitEthernet0/0.10,GigabitEthernet0/0.20', 'R1 : une sous-interface par VLAN');
+  assert(rt.routes.map((r) => `${r.type} ${r.destination}`).join() === 'C 192.168.99.0/24,C 192.168.10.0/24,C 192.168.20.0/24', 'R1 : routes connectées calculées (réseau de gestion compris)');
+  assert(prop.every((x) => !Object.keys(I.normaliserEquipement(x.equipement).erreurs).length), 'équipements proposés valides');
+  assert(I.equipementsDepuisFiche({}).length === 0, 'fiche sans ces champs : aucun équipement proposé');
+  // PDF : annexe et inventaire
+  const e = depuis(fiche, exemple(fiche)).entree;
+  const r = JP.pdfJournal(e, { equipements: prop.map((x) => ({ equipement: x.equipement, role: x.role })) });
+  assert(xrefValide(r.octets) && r.sections.some((x) => x.titre === 'Équipements') && r.sections.at(-1).numero === 'Annexe A', 'PDF du labo : section Équipements et annexe A');
+  const ri = JP.pdfInventaire(prop.map((x) => x.equipement), { projets: () => ['LAB-RES-2026-001'], date: new Date('2026-11-05T10:00:00') });
+  assert(xrefValide(ri.octets) && ri.pages >= 2, `PDF de l’inventaire : ${ri.pages} pages`);
+  if (PDFTOTEXT) {
+    const t1 = texteDu(r.octets);
+    for (const x of ['Annexe A. Fiches des équipements', 'A.1', 'Table de routage', 'GigabitEthernet0/0.10', 'ip default-gateway', 'Commutateur du TP']) assert(t1.includes(x), `annexe : « ${x} »`);
+    const t2 = texteDu(ri.octets);
+    for (const x of ['Inventaire des équipements', '5 novembre 2026', 'LAB-RES-2026-001', 'Cisco', 'Pourquoi']) assert(t2.includes(x), `inventaire PDF : « ${x} »`);
+    if (QPDF) assert(qpdfOk(r.octets) && qpdfOk(ri.octets), 'qpdf --check : annexe et inventaire');
+  }
+  // Sauvegarde v2 avec l'inventaire
+  const txt = J.sauvegardeJournal([e], {}, new Date(), prop.map((x) => x.equipement));
+  const rs = J.lireSauvegarde(txt, []);
+  assert(rs.equipements.length === 2 && I.lireInventaire({ equipements: rs.equipements }).equipements.length === 2, 'sauvegarde : l’inventaire est inclus et relu');
+  // Écrans
+  const hl = VI.inventaireListeMarkup({ equipements: [sw, rt], total: 2, projets: () => [{ id: 'jx1', reference: 'LAB-RES-2026-001' }] });
+  assert(hl.includes(VI.routeEquipement(sw.id)) && hl.includes('LAB-RES-2026-001') && hl.includes('id="iPdf"'), 'liste de l’inventaire : liens, projets, export PDF');
+  const hf = VI.equipementMarkup({ equipement: I.equipementVide({ systemeId: 'azure', typeId: 'vm' }) });
+  assert(hf.includes('placeholder="Ex. : vm-web01"') && hf.includes('Règles de filtrage') && hf.includes('allow-ssh-admin') && !hf.includes('id="is-vlans"'), 'fiche Azure : exemples Azure, règles, pas de VLAN');
+  assert(VI.lireRouteInventaire('#/inventaire').id === null && VI.lireRouteInventaire('#/inventaire/eabc123').id === 'eabc123' && VI.lireRouteInventaire('#/inventaire/../x') === null, 'routes de l’inventaire');
+  const piege = VI.inventaireListeMarkup({ equipements: [{ ...sw, nom: '<script>x</script>' }], total: 1 });
+  assert(!piege.includes('<script>x'), 'nom échappé dans l’inventaire');
+}
+
+console.log('11. Schéma d’architecture');
+{
+  const brut = { noeuds: [{ id: 'na1', type: 'routeur', nom: 'R1', x: 5000, y: -10 }, { id: 'na2', type: 'inconnu', nom: 'X', x: 300, y: 300 }, { id: 'na1', type: 'poste' },
+    { id: 'na3', type: 'perso', typePerso: 'tcam1', nom: '', note: '10.0.0.5', x: 200, y: 200 }, { id: '../x', type: 'routeur' }],
+    liens: [{ id: 'la1', de: 'na1', a: 'na2', style: 'trunk', etiquetteDe: 'Gi0/0' }, { id: 'la2', de: 'na1', a: 'absent' }, { id: 'la3', de: 'na2', a: 'na2' }],
+    zones: [{ id: 'za1', nom: 'VLAN 10', couleur: 'rose', x: 990, y: 10, l: 500, h: 5 }], textes: [{ id: 'ta1', texte: '' }, { id: 'ta2', texte: 'Note', x: 10, y: 0 }] };
+  const { schema: s, erreurs } = SC.normaliserSchema(brut);
+  assert(!Object.keys(erreurs).length && s.noeuds.length === 3 && s.noeuds[1].type === 'autre' && s.noeuds[2].type === 'perso', 'nœuds : doublon et identifiant piégé écartés, type inconnu → Autre, type personnel gardé');
+  assert(s.noeuds[0].x === 960 && s.noeuds[0].y === 30, 'coordonnées bornées à la feuille');
+  assert(s.liens.length === 1 && s.liens[0].style === 'trunk', 'liens vers un nœud absent ou vers soi-même écartés');
+  assert(s.zones[0].couleur === 'bleu' && s.zones[0].x + s.zones[0].l <= 1000 && s.zones[0].h >= 40, 'zone : couleur inconnue → bleu, taille bornée');
+  assert(s.textes.length === 1 && s.textes[0].y >= 14, 'texte vide écarté');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'nb1', type: 'routeur', nom: 'mot de passe : abc' }] }).erreurs['schema.nb1.nom'], 'mot de passe refusé dans le schéma');
+  assert(SC.normaliserSchema({ noeuds: Array.from({ length: 120 }, (_, i) => ({ id: `nc${i}`, type: 'poste', x: 100, y: 100 })) }).schema.noeuds.length === 80, '80 équipements au plus');
+  assert(SC.normaliserTypesPerso([{ id: 'tcam1', nom: 'Caméra IP', code: 'cam' }, { id: 'tcam1', nom: 'x', code: 'y' }, { id: 'tx', nom: '', code: 'A' }]).map((t) => `${t.nom}:${t.code}`).join() === 'Caméra IP:CAM', 'types personnels : code en majuscules, doublons et vides écartés');
+  const ops = SC.dessinerSchema(s, { typesPerso: [{ id: 'tcam1', nom: 'Caméra IP', code: 'CAM' }], selection: 'na1' });
+  assert(ops.some((o) => o.k === 'texte' && o.t === 'CAM') && ops.some((o) => o.k === 'texte' && o.t === 'Caméra IP') && ops.some((o) => o.selection), 'dessin : code et nom du type personnel, sélection marquée');
+  const svg = SC.versSvg(ops, { interactif: true, grille: true });
+  assert(svg.startsWith('<svg') && svg.includes('<title') && svg.includes('data-el="na1"') && !svg.includes('<script'), 'SVG interactif : titre, cibles, pas de script');
+  assert(!SC.versSvg(SC.dessinerSchema({ ...s, noeuds: [{ ...s.noeuds[0], nom: '<b>&"' }] })).includes('<b>&'), 'SVG : textes échappés');
+  // Avec l'inventaire : nom et adresse viennent de la fiche
+  const q = I.normaliserEquipement({ id: 'eq0001', nom: 'R1-EDGE', adresse: '192.168.99.1', systeme: 'cisco', type: 'routeur' }).equipement;
+  const sq = { ...SC.schemaVide(), noeuds: [{ id: 'nd1', type: 'routeur', nom: 'ancien', note: '', equipementId: q.id, typePerso: null, x: 300, y: 200 }] };
+  assert(SC.versSvg(SC.dessinerSchema(sq, { resoudre: (id) => (id === q.id ? q : null) })).includes('R1-EDGE') && SC.decrireSchema(sq, { resoudre: () => q }).includes('R1-EDGE'), 'équipement lié : nom de l’inventaire');
+  // TP VLAN
+  const trois = exemple(fiche); trois.plan = [...trois.plan, { vlan: '20', nom: 'TECHNIQUE', reseau: '192.168.20.0', prefixe: '24', passerelle: '192.168.20.1', ports: 'Fa0/2', poste: '192.168.20.10' }];
+  const v = J.valeursPourJournal(P.evaluerValeurs(fiche.params, trois));
+  const st = SC.schemaDepuisFiche(v, { commutateur: 'eswxxx1', routeur: 'ertxxx1' });
+  assert(st.noeuds.length === 5 && st.zones.length === 3 && st.liens.length === 4, 'TP VLAN (3 VLAN) : R1, SW1, trois postes, trois zones, quatre liens');
+  assert(st.liens[0].style === 'trunk' && st.liens[0].etiquetteDe === 'GigabitEthernet0/0' && st.liens[0].etiquetteA === 'GigabitEthernet0/1', 'trunk R1–SW1 avec les interfaces de la fiche');
+  assert(st.noeuds.find((n) => n.type === 'routeur').equipementId === 'ertxxx1' && /^VLAN 99 · GESTION( · [\d.]+\/\d+)?\|VLAN 10 · VENTES · 192\.168\.10\.0\/24\|VLAN 20 · TECHNIQUE · 192\.168\.20\.0\/24$/.test(st.zones.map((z) => z.nom).join('|')), 'équipements liés à l’inventaire, une zone par VLAN (avec son réseau)', st.zones.map((z) => z.nom).join('|'));
+  assert(st.zones.every((z, i) => i === 0 || z.x >= st.zones[i - 1].x + st.zones[i - 1].l) && st.zones.every((z) => z.x >= 0 && z.x + z.l <= 1000), 'zones côte à côte, dans la feuille');
+  assert(SC.schemaEstVide(SC.schemaDepuisFiche({}, {})), 'fiche sans équipements : schéma vide');
+  // Le schéma voyage avec le labo
+  const lab = J.normaliserEntree({ titre: 'TP', schema: st }).entree;
+  assert(lab.schema.noeuds.length === 5 && J.normaliserEntree({ titre: 'TP' }).entree.schema.noeuds.length === 0, 'le labo garde son schéma (vide par défaut)');
+  const r = JP.pdfJournal(lab, {});
+  assert(xrefValide(r.octets) && r.sections[0].titre === 'Architecture', 'PDF : section Architecture créée par le schéma seul');
+  const sv = Buffer.from(r.octets).toString('latin1');
+  assert(/ c\n|\d c /.test(sv) && sv.includes(' re') && sv.includes(' d '), 'PDF : schéma vectoriel (courbes, tirets)');
+  if (PDFTOTEXT) {
+    const t = texteDu(r.octets);
+    for (const x of ['Figure : schéma d’architecture', 'VLAN 99 · GESTION', 'PC TECHNIQUE', '192.168.20.10', '802.1Q']) assert(t.includes(x), `PDF du schéma : « ${x} »`);
+  }
+  if (QPDF) assert(qpdfOk(r.octets), 'qpdf --check : PDF avec schéma');
+  const doc = new PDF.DocumentPdf({}); const pg = doc.nouvellePage();
+  doc.cercle(pg, 100, 100, 20, { fond: '#ffffff', trait: '#000000' }); doc.rectArrondi(pg, 10, 10, 80, 40, 8, { trait: '#000000', tirets: [4, 2] });
+  assert(xrefValide(doc.octets()), 'moteur PDF : cercle et rectangle arrondi');
+  // Éditeur
+  const h = VS.editeurSchemaMarkup(st, { inventaire: [q], etat: { selection: st.liens[0].id } });
+  assert(h.includes('data-sadd="routeur"') && h.includes('id="schFeuille"') && h.includes('Côté') && h.includes('id="schAdrDe"') && h.includes('id="schSvg"'), 'éditeur : palette, feuille, propriétés du câble (interface et adresse de chaque côté), export SVG');
+  assert(SC.STYLES_LIEN.length === 10 && SC.STYLES_LIEN.every((x) => h.includes(`data-scable="${x.id}"`)), 'palette « Câbles » (tous) : dix types, dont flux et liaison privée Azure');
+  assert(VS.editeurSchemaMarkup(st, { etat: { cablage: { style: 'serie', depuis: null } } }).includes('clique le <b>premier</b>'), 'mode câble : consigne du premier clic');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'nq1', type: 'routeur' }, { id: 'nq2', type: 'routeur' }], liens: [{ id: 'lq1', de: 'nq1', a: 'nq2', style: 'plein' }, { id: 'lq2', de: 'nq2', a: 'nq1', style: 'tirets' }] }).schema.liens.map((l) => l.style).join() === 'droit,vpn', 'anciens styles : plein → droit, tirets → VPN');
+  const avecAdr = { ...st, liens: st.liens.map((l, i) => (i === 0 ? { ...l, adresseDe: '192.168.99.1/24' } : l)) };
+  assert(SC.versSvg(SC.dessinerSchema(avecAdr)).includes('192.168.99.1/24') && SC.decrireSchema(avecAdr).includes('GigabitEthernet0/0 192.168.99.1/24'), 'adresse d’interface affichée sur le câble et décrite');
+  assert(SC.normaliserSchema({ ...avecAdr, liens: [{ ...avecAdr.liens[0], adresseA: 'mot de passe : x' }] }).erreurs[`schema.${avecAdr.liens[0].id}`], 'mot de passe refusé dans une adresse de câble');
+  assert(st.liens.slice(1).every((l) => l.style === 'droit' && /^192\.168\.\d+\.10\/24$/.test(l.adresseA)), 'TP VLAN : câbles droits vers les postes, adresse du poste côté poste');
+  if (PDFTOTEXT) { const tl = texteDu(JP.pdfJournal(J.normaliserEntree({ titre: 'TP', schema: avecAdr }).entree, {}).octets); assert(tl.includes('Trunk 802.1Q') && tl.includes('Câble droit') && tl.includes('192.168.99.1/24'), 'PDF : légende des câbles et adresse d’interface'); }
+  assert(VS.editeurSchemaMarkup(SC.schemaVide(), { etat: { typeOuvert: true } }).includes('id="schTypeCode"'), 'éditeur : création d’un type personnel');
+}
+
+console.log('12. Remplir le document et l’inventaire depuis le schéma');
+{
+  const v = J.valeursPourJournal(P.evaluerValeurs(fiche.params, exemple(fiche)));
+  const prop = I.equipementsDepuisFiche(v);
+  const inv = prop.map((x) => x.equipement);
+  const idDe = (t) => inv.find((q) => q.type === t).id;
+  const lab = J.normaliserEntree({ titre: 'TP', schema: SC.schemaDepuisFiche(v, { commutateur: idDe('commutateur'), routeur: idDe('routeur') }) }).entree;
+  // Ajouts « dessinés » : un serveur hors inventaire câblé à SW1 avec interface et adresse.
+  const sw = lab.schema.noeuds.find((n) => n.type === 'commutateur');
+  lab.schema.noeuds.push({ id: 'nsrv01', type: 'serveur', nom: 'SRV-WEB', note: '', equipementId: null, typePerso: null, x: 850, y: 300 });
+  lab.schema.noeuds.push({ id: 'nnet01', type: 'internet', nom: 'Internet', note: '', equipementId: null, typePerso: null, x: 850, y: 60 });
+  lab.schema.liens.push({ id: 'lsrv01', de: sw.id, a: 'nsrv01', style: 'droit', etiquette: '', etiquetteDe: 'Fa0/5', etiquetteA: 'ens18', adresseDe: '', adresseA: '192.168.10.20/24' });
+  const { entree: e, inventaire: inv2, bilan } = SR.remplirDepuisSchema(lab, { inventaire: inv, date: new Date('2026-11-05T10:00:00') });
+  assert(bilan.equipementsCrees.join() === 'Poste de gestion,PC VENTES,SRV-WEB', 'équipements dessinés ajoutés à l’inventaire (Internet exclu)', bilan.equipementsCrees.join());
+  assert(e.schema.noeuds.filter((n) => n.type !== 'internet').every((n) => n.equipementId) && e.equipements.length === 5, 'chaque nœud pointe sur sa fiche ; cinq équipements reliés au labo');
+  const srv = inv2.find((q) => q.nom === 'SRV-WEB');
+  assert(srv.systeme === 'systeme' && srv.type === 'serveur' && srv.interfaces[0].nom === 'ens18' && srv.adresse === '192.168.10.20', 'SRV-WEB : système, type, interface et adresse de gestion');
+  assert(inv2.find((q) => q.nom === 'SW1').interfaces.some((i) => i.nom === 'Fa0/5'), 'SW1 : le port du câble ajouté à ses interfaces');
+  const ligne = (nom) => e.adressage.find((l) => l.equipement === nom);
+  assert(ligne('PC VENTES')?.adresse === '192.168.10.10/24' && ligne('PC VENTES').vlan.startsWith('VLAN 10 · VENTES') && ligne('PC VENTES').passerelle === '192.168.10.1', 'plan d’adressage : poste avec sa zone et sa passerelle (sous-interface de R1)');
+  assert(ligne('Poste de gestion')?.passerelle === '192.168.99.1' && ligne('SRV-WEB')?.interface === 'ens18' && ligne('SRV-WEB').passerelle === '192.168.10.1', 'passerelles trouvées par le calcul du réseau');
+  assert(bilan.architecture && e.architecture.includes('SRV-WEB'), 'description de l’architecture rédigée (champ vide)');
+  assert(!Object.keys(J.normaliserEntree(e).erreurs).length && inv2.every((q) => !Object.keys(I.normaliserEquipement(q).erreurs).length), 'résultat valide (labo et fiches)');
+  // Deuxième passage : rien en double
+  const r2 = SR.remplirDepuisSchema(e, { inventaire: inv2 });
+  assert(!r2.bilan.equipementsCrees.length && !r2.bilan.lignesAjoutees && !r2.bilan.interfaces && r2.inventaire.length === inv2.length && r2.entree.adressage.length === e.adressage.length, 'deuxième passage : aucun doublon');
+  assert(/déjà à jour/.test(SR.phraseBilan(r2.bilan)) && /ajouté\(s\) à l’inventaire/.test(SR.phraseBilan(bilan)), 'bilan lisible');
+  // Rien n'est effacé ; une adresse changée sur le schéma met la ligne à jour
+  const e3 = structuredClone(e); e3.architecture = 'Ma description'; e3.adressage.push({ equipement: 'Imprimante', interface: '', adresse: '192.168.10.50', vlan: '', passerelle: '', note: 'à la main' });
+  e3.schema.liens.find((l) => l.id === 'lsrv01').adresseA = '192.168.10.21/24';
+  const r3 = SR.remplirDepuisSchema(e3, { inventaire: inv2 });
+  assert(r3.entree.architecture === 'Ma description' && r3.entree.adressage.some((l) => l.equipement === 'Imprimante') && r3.entree.adressage.find((l) => l.equipement === 'SRV-WEB').adresse === '192.168.10.21/24' && r3.inventaire.find((q) => q.nom === 'SRV-WEB').interfaces[0].adresse === '192.168.10.21/24', 'rien n’est effacé ; une adresse changée est reportée partout');
+  // Contre-épreuves
+  assert(SR.lireAdresse('192.168.1.300') === null && SR.lireAdresse('10.0.0.1/33') === null && SR.lireAdresse('10.0.0.1/8').prefixe === 8, 'adresses invalides refusées');
+  const vide = SR.remplirDepuisSchema(J.normaliserEntree({ titre: 'x' }).entree, {});
+  assert(!vide.bilan.equipementsCrees.length && !vide.entree.adressage.length && !vide.bilan.architecture, 'schéma vide : rien n’est rempli');
+  assert(VS.editeurSchemaMarkup(lab.schema, {}).includes('id="schRemplir"'), 'bouton « Remplir le document et l’inventaire depuis le schéma »');
+}
+
+console.log('13. Modèles, ports et câble automatique');
+{
+  assert(MO.developperPorts('Fa0/1-3, Gi0/1, Gi1/0/1-2, Console').join() === 'Fa0/1,Fa0/2,Fa0/3,Gi0/1,Gi1/0/1,Gi1/0/2,Console', 'plages de ports développées (le dernier nombre varie)');
+  assert(MO.developperPorts('Gi0/1-500').length === 1 && MO.developperPorts('a, a, b').length === 2, 'plage démesurée refusée, doublons retirés');
+  assert(MO.developperPorts(MO.modele('2960-24tt').ports).length === 28 && MO.developperPorts(MO.modele('3650-24ps').ports).includes('Gi1/1/4'), '2960-24TT : 28 ports ; 3650 : ports de liaison Gi1/1/x');
+  assert(MO.modeleDefaut('commutateur') === '2960-24tt' && MO.modeleDefaut('commutateur-l3') === '3650-24ps' && MO.modeleDefaut('telephone-ip') === '7960' && MO.modeleDefaut('autre') === null, 'modèles proposés : 2960 en accès, 3650 en cœur, 7960 pour le téléphone IP');
+  assert(SC.TYPES_NOEUD.every((t) => t.id === 'autre' || MO.modeleDefaut(t.id)), 'chaque type d’équipement a un modèle par défaut');
+  assert(MO.clePort('GigabitEthernet0/1') === MO.clePort('Gi0/1') && MO.clePort('FastEthernet0/24') === 'fa0/24' && MO.clePort('Serial0/0/0') === 'se0/0/0' && MO.clePort('Ethernet0') === 'ethernet0', 'noms longs et abrégés reconnus comme le même port');
+  const n = { id: 'nm1', type: 'commutateur', modele: '2960-24tt' };
+  const liens = [{ id: 'lm1', de: 'nm1', a: 'nm2', etiquetteDe: 'GigabitEthernet0/1', etiquetteA: 'Gi0/0/0' }];
+  const ports = MO.portsDuNoeud(n, { equipement: { interfaces: [{ nom: 'Vlan99' }, { nom: 'Gi0/2' }] }, liens });
+  assert(ports.length === 29 && ports.includes('Vlan99') && !ports.includes('GigabitEthernet0/1'), 'ports du nœud : modèle + interfaces de la fiche, sans doublon de nom long');
+  assert(MO.portsOccupes(n, liens).get('gi0/1')?.vers === 'nm2', 'port occupé retrouvé quelle que soit l’écriture');
+  assert(MO.portsDuNoeud({ id: 'x', type: 'autre', modele: 'perso', ports: 'eth0-1' }, {}).join() === 'eth0,eth1', 'modèle personnalisé : ports écrits à la main');
+  const A = MO.cableAutomatique;
+  assert(A('commutateur', 'Fa0/1', 'poste', 'FastEthernet0') === 'droit' && A('commutateur', 'Gi0/1', 'commutateur-l3', 'Gi1/0/1') === 'croise' && A('routeur', 'Gi0/0', 'routeur', 'Gi0/0') === 'croise'
+    && A('routeur', 'Se0/0/0', 'routeur', 'Se0/0/0') === 'serie' && A('poste', 'RS232', 'routeur', 'Console') === 'console' && A('point-acces', 'Sans fil', 'portable', 'Wireless0') === 'sansfil' && A('routeur', 'Gi0/0', 'poste', 'FastEthernet0') === 'croise',
+    'câble automatique : droit, croisé, série, console, sans fil selon les équipements et les ports');
+  const ns = SC.normaliserSchema({ noeuds: [{ id: 'np1', type: 'commutateur', modele: '4321' }, { id: 'np2', type: 'routeur' }, { id: 'np3', type: 'autre', modele: 'perso', ports: 'p1-2' }] }).schema.noeuds;
+  assert(ns[0].modele === '2960-24tt' && ns[1].modele === '4321' && ns[2].modele === 'perso' && ns[2].ports === 'p1-2', 'modèle incompatible avec le type → modèle par défaut ; personnalisé gardé');
+  const deux = { ...SC.schemaVide(), noeuds: [{ id: 'nk1', type: 'commutateur', x: 200, y: 200 }, { id: 'nk2', type: 'commutateur', x: 600, y: 200 }],
+    liens: [{ id: 'lk1', de: 'nk1', a: 'nk2', style: 'croise' }, { id: 'lk2', de: 'nk1', a: 'nk2', style: 'croise' }] };
+  const lignes = SC.dessinerSchema(SC.normaliserSchema(deux).schema).filter((o) => o.k === 'ligne' && o.id);
+  assert(lignes.length === 2 && lignes[0].y1 !== lignes[1].y1, 'deux câbles entre les mêmes équipements : tracés côte à côte');
+  assert(SC.dessinerSchema({ ...SC.schemaVide(), noeuds: ['telephone-ip', 'commutateur-l3', 'camera-ip', 'nas', 'passerelle-vpn'].map((t, i) => ({ id: `nt${i}x`, type: t, nom: '', x: 100 + i * 150, y: 200 })) }).filter((o) => o.k !== 'clic').length > 30, 'nouveaux symboles dessinés (téléphone IP, cœur, caméra, NAS, VPN)');
+}
+
+console.log('14. Configuration des équipements (simple → complet) et commandes IOS');
+{
+  // Adresses
+  const a = CI.cidr('192.168.10.1/24');
+  assert(a.masque === '255.255.255.0' && a.reseau === '192.168.10.0' && a.wildcard === '0.0.0.255' && CI.cidr('10.0.0.5/30').reseau === '10.0.0.4' && CI.cidr('0.0.0.0/0').masque === '0.0.0.0', 'masque, réseau et wildcard calculés depuis le préfixe');
+  assert(CI.cidr('192.168.10.1') === null && CI.cidr('300.1.1.1/24') === null && CI.cidr('1.1.1.1/33') === null, 'adresse sans préfixe ou invalide refusée');
+  assert(CI.listeVlans('10,20,30-35') && !CI.listeVlans('10,,20') && !CI.listeVlans('5000'), 'liste de VLAN autorisés validée');
+  const brut = CI.normaliserConfig({ niveau: 'expert', ports: { 'Gi0/1': { mode: 'hack', vlan: '10' } }, canaux: [{ groupe: '1', protocole: 'xx', mode: 'zz', ports: 'Gi0/1, Gi0/2' }], inconnu: 1 });
+  assert(brut.niveau === 'simple' && brut.ports['Gi0/1'].mode === '' && brut.canaux[0].protocole === 'lacp' && brut.canaux[0].mode === 'active' && brut.canaux[0].ports.length === 2 && !('inconnu' in brut), 'configuration brute bornée (niveau, mode, protocole inconnus → défauts)');
+  // Schéma : R1 (routeur sur un bâton + Internet), SW1 (2960), PC1, Internet
+  const zones = [{ id: 'zcv10', nom: 'VLAN 10 · VENTES · 192.168.10.0/24', couleur: 'bleu', x: 0, y: 360, l: 400, h: 220 },
+    { id: 'zcv99', nom: 'VLAN 99 · GESTION · 192.168.99.0/24', couleur: 'vert', x: 600, y: 360, l: 390, h: 220 }];
+  const sch = SC.normaliserSchema({ noeuds: [
+    { id: 'ncr1', type: 'routeur', modele: '4321', nom: 'R1', x: 500, y: 60 }, { id: 'ncsw', type: 'commutateur', modele: '2960-24tt', nom: 'SW1', note: '192.168.99.2/24', x: 500, y: 300 },
+    { id: 'ncpc', type: 'poste', modele: 'pc', nom: 'PC1', x: 200, y: 480 }, { id: 'ncin', type: 'internet', nom: 'Internet', x: 850, y: 60 }],
+  liens: [{ id: 'lcr1', de: 'ncr1', a: 'ncsw', style: 'trunk', etiquetteDe: 'Gi0/0/0', etiquetteA: 'Gi0/1' },
+    { id: 'lcpc', de: 'ncsw', a: 'ncpc', style: 'droit', etiquetteDe: 'Fa0/1', etiquetteA: 'FastEthernet0', adresseA: '192.168.10.10/24' },
+    { id: 'lcin', de: 'ncr1', a: 'ncin', style: 'droit', etiquetteDe: 'Gi0/0/1', etiquetteA: '', adresseDe: '203.0.113.2/30', adresseA: '203.0.113.1/30' }], zones }).schema;
+  const R = sch.noeuds[0]; const S = sch.noeuds[1]; const PC = sch.noeuds[2];
+  const pr = CI.proposerConfig(sch, R.id, null, { niveau: 'complet' }); R.config = pr.config;
+  const rc = pr.config;
+  assert(rc.sousInterfaces.map((x) => `${x.port}.${x.vlan}=${x.adresse}`).join() === 'Gi0/0/0.10=192.168.10.1/24,Gi0/0/0.99=192.168.99.1/24', 'R1 : une sous-interface par zone VLAN, passerelle = première adresse', rc.sousInterfaces.map((x) => `${x.port}.${x.vlan}=${x.adresse}`).join());
+  assert(rc.ports['Gi0/0/1'].adresse === '203.0.113.2/30' && rc.statiques[0].reseau === '0.0.0.0/0' && rc.statiques[0].saut === '203.0.113.1', 'R1 : adresse du câble Internet reprise, route par défaut vers l’opérateur');
+  assert(rc.nat.sortie === 'Gi0/0/1' && rc.ports['Gi0/0/1'].nat === 'outside' && rc.sousInterfaces.every((x) => x.nat === 'inside'), 'R1 (complet) : NAT PAT, inside sur les sous-interfaces, outside vers Internet');
+  const simple = CI.proposerConfig(sch, R.id, CI.configVide(), { niveau: 'simple' }).config;
+  assert(!simple.statiques.length && !simple.nat.sortie && simple.sousInterfaces.length === 2, 'niveau simple : sous-interfaces seulement (ni route ni NAT)');
+  const cmdR = CI.commandesIos(R, rc, { nom: 'R1' });
+  const tR = CI.texteCommandes(cmdR);
+  const ordre = cmdR.blocs.map((b) => b.titre);
+  assert(ordre[0] === 'Base' && ordre.at(-1) === 'Fin' && ordre.indexOf('Ports') < ordre.indexOf('Sous-interfaces (routeur sur un bâton)') && ordre.indexOf('Routes statiques') < ordre.indexOf('NAT (PAT)'), 'R1 : blocs dans l’ordre (base, ports, sous-interfaces, routes, NAT, fin)', ordre.join(' > '));
+  assert(tR.includes('hostname R1') && tR.includes('interface GigabitEthernet0/0/0.10\n encapsulation dot1Q 10\n ip address 192.168.10.1 255.255.255.0') && tR.includes('interface GigabitEthernet0/0/0\n') && tR.includes('ip route 0.0.0.0 0.0.0.0 203.0.113.1'), 'R1 : sous-interfaces dot1Q, parent allumé, route par défaut');
+  assert(tR.includes('access-list 1 permit 192.168.10.0 0.0.0.255') && tR.includes('ip nat inside source list 1 interface GigabitEthernet0/0/1 overload') && tR.includes(' ip nat outside'), 'R1 : NAT PAT avec wildcard calculé');
+  assert(!/switchport/.test(tR) && /^[\x20-\x7e\n]*$/.test(tR) && tR.endsWith('copy running-config startup-config'), 'R1 : aucune commande de commutateur, ASCII seulement, sauvegarde à la fin');
+  // SW1 au niveau intermédiaire : la passerelle de gestion vient de la sous-interface de R1.
+  const ps = CI.proposerConfig(sch, S.id, null, { niveau: 'intermediaire' }); S.config = ps.config; const sc = ps.config;
+  assert(sc.vlans.map((v) => `${v.id}:${v.nom}`).join() === '10:VENTES,99:GESTION' && sc.ports['Gi0/1'].mode === 'trunk' && sc.ports['Gi0/1'].autorises === '10,99' && sc.ports['Fa0/1'].mode === 'access' && sc.ports['Fa0/1'].vlan === '10', 'SW1 : VLAN des zones, trunk vers R1 (VLAN autorisés), accès VLAN 10 vers PC1');
+  assert(sc.gestion.vlan === '99' && sc.gestion.adresse === '192.168.99.2/24' && sc.gestion.passerelle === '192.168.99.1', 'SW1 : gestion VLAN 99, adresse de sa note, passerelle = sous-interface .99 de R1');
+  sc.ssh = { actif: true, utilisateur: 'admin' }; sc.domaine = 'cegeplimoilou.lan'; sc.banniere = 'Accès réservé';
+  const tS = CI.texteCommandes(CI.commandesIos(S, sc, { nom: 'SW1' }));
+  assert(tS.indexOf('vlan 10\n name VENTES') < tS.indexOf('interface GigabitEthernet0/1') && tS.includes(' switchport mode trunk\n switchport trunk allowed vlan 10,99') && tS.includes('interface FastEthernet0/1\n description Vers PC1 FastEthernet0\n switchport mode access\n switchport access vlan 10'), 'SW1 : VLAN créés avant les ports, trunk et accès');
+  assert(tS.includes('interface vlan 99\n ip address 192.168.99.2 255.255.255.0\n no shutdown') && tS.includes('ip default-gateway 192.168.99.1'), 'SW1 : SVI de gestion et ip default-gateway');
+  assert(/username admin privilege 15 secret\n/.test(tS) && tS.includes('ip ssh version 2') && tS.includes(' transport input ssh') && J.secretDans(tS) === null, 'SSH : la ligne « secret » s’arrête avant le mot de passe (aucun secret écrit)');
+  assert(tS.includes('banner motd # Acces reserve #') && !/[^\x00-\x7e]/.test(tS), 'bannière en ASCII (accents retirés pour IOS)');
+  assert(!tS.includes('switchport trunk encapsulation'), '2960 : pas d’encapsulation à écrire (dot1Q seulement)');
+  const pc = CI.proposerConfig(sch, PC.id).config; PC.config = pc;
+  assert(pc.hote.adresse === '192.168.10.10/24' && pc.hote.passerelle === '192.168.10.1', 'PC1 : adresse du câble, passerelle trouvée (sous-interface .10 de R1)');
+  const h = CI.commandesHote(PC, pc, { nom: 'PC1' });
+  assert(h.blocs.length === 3 && h.blocs[0].lignes.includes('Subnet Mask : 255.255.255.0') && h.blocs[1].lignes[0].includes('-PrefixLength 24 -DefaultGateway 192.168.10.1'), 'PC1 : configuration IP pour Packet Tracer, Windows et Linux');
+  // Vérifications
+  const w = CI.verifierConfig(S, CI.normaliserConfig({ ports: { 'Gi0/1': { mode: 'routed', adresse: '10.0.0.1/30' }, 'Gi9/9': { mode: 'access', vlan: '50' } }, ssh: { actif: true } }));
+  assert(w.some((x) => /n’a pas de port routé/.test(x)) && w.some((x) => /Gi9\/9.*n’existe pas/.test(x)) && w.some((x) => /VLAN 50 n’est pas créé/.test(x)) && w.some((x) => /nom de domaine/.test(x)), 'avertissements : port routé sur 2960, port inconnu, VLAN non créé, SSH sans domaine');
+  // Cœur + accès au niveau complet : EtherChannel, STP, SVI.
+  const z2 = [{ id: 'zcc10', nom: 'VLAN 10 · VENTES · 192.168.10.0/24', couleur: 'bleu', x: 0, y: 360, l: 500, h: 220 }, { id: 'zcc20', nom: 'VLAN 20 · TECH · 192.168.20.0/24', couleur: 'jaune', x: 500, y: 360, l: 490, h: 220 }];
+  const sch2 = SC.normaliserSchema({ noeuds: [{ id: 'nccor', type: 'commutateur-l3', modele: '3650-24ps', nom: 'CORE', x: 500, y: 80 }, { id: 'ncacc', type: 'commutateur', modele: '2960-24tt', nom: 'ACC1', x: 500, y: 300 }, { id: 'ncpcb', type: 'poste', nom: 'PC2', x: 700, y: 480 }],
+    liens: [{ id: 'lcec1', de: 'nccor', a: 'ncacc', style: 'croise', etiquetteDe: 'Gi1/0/1', etiquetteA: 'Gi0/1' }, { id: 'lcec2', de: 'nccor', a: 'ncacc', style: 'croise', etiquetteDe: 'Gi1/0/2', etiquetteA: 'Gi0/2' },
+      { id: 'lcpcb', de: 'ncacc', a: 'ncpcb', style: 'droit', etiquetteDe: 'Fa0/5', etiquetteA: 'FastEthernet0', adresseA: '192.168.20.10/24' }], zones: z2 }).schema;
+  const [CO, AC, P2] = sch2.noeuds;
+  CO.config = CI.proposerConfig(sch2, CO.id, null, { niveau: 'complet' }).config; AC.config = CI.proposerConfig(sch2, AC.id, null, { niveau: 'complet' }).config;
+  assert(CO.config.canaux[0]?.ports.join() === 'Gi1/0/1,Gi1/0/2' && AC.config.canaux[0]?.ports.join() === 'Gi0/1,Gi0/2' && AC.config.canaux[0].protocole === 'lacp', 'câbles parallèles : EtherChannel LACP des deux côtés');
+  assert(CO.config.ipRouting && CO.config.svis.map((x) => x.adresse).join() === '192.168.10.1/24,192.168.20.1/24' && CO.config.stp.primaire === '10,20' && AC.config.stp.mode === 'rapid-pvst' && !AC.config.stp.primaire, 'cœur : SVI + ip routing + racine STP ; accès : Rapid-PVST sans racine');
+  assert(AC.config.ports['Fa0/5'].portfast && AC.config.ports['Fa0/5'].bpduguard && AC.config.ports['Fa0/5'].vlan === '20', 'accès (complet) : PortFast et BPDU Guard vers le poste');
+  const tC = CI.texteCommandes(CI.commandesIos(CO, CO.config, { nom: 'CORE' }));
+  assert(tC.includes('interface range GigabitEthernet1/0/1 , GigabitEthernet1/0/2\n switchport mode trunk\n channel-group 1 mode active') && tC.includes('interface Port-channel1\n switchport mode trunk') && tC.includes('spanning-tree vlan 10,20 root primary') && tC.includes('ip routing\ninterface vlan 10\n ip address 192.168.10.1 255.255.255.0'), 'CORE : EtherChannel, racine STP, routage par SVI');
+  const c3560 = { ...CO, modele: '3560-24ps' };
+  assert(CI.texteCommandes(CI.commandesIos(c3560, CO.config, { nom: 'CORE' })).includes(' switchport trunk encapsulation dot1q\n switchport mode trunk'), '3560 : encapsulation dot1q avant le mode trunk');
+  P2.config = CI.proposerConfig(sch2, P2.id).config;
+  assert(P2.config.hote.passerelle === '192.168.20.1', 'PC2 : passerelle = SVI 20 du cœur');
+  const tests = CI.testsProposes(CO, CO.config, 'CORE').map((x) => x.test);
+  assert(tests.includes('CORE : show etherchannel summary') && tests.includes('CORE : show spanning-tree summary') && tests.includes('CORE : show ip route'), 'tests de vérification proposés selon la configuration');
+  // Aides DHCP et OSPF
+  const cd = CI.normaliserConfig(rc); const k = VC.poolsParVlan(cd);
+  assert(k === 2 && cd.dhcp.pools[0].reseau === '192.168.10.0/24' && cd.dhcp.pools[0].passerelle === '192.168.10.1' && cd.dhcp.exclusions[0].debut === '192.168.10.1' && cd.dhcp.exclusions[0].fin === '192.168.10.10', 'un pool DHCP par VLAN (10 premières adresses exclues)');
+  const ko = VC.ospfDepuisInterfaces(cd);
+  assert(ko === 3 && cd.ospf.processus === '1' && CI.texteCommandes(CI.commandesIos(R, CI.normaliserConfig({ ...cd, niveau: 'complet' }), { nom: 'R1' })).includes(' network 192.168.10.0 0.0.0.255 area 0'), 'OSPF : réseaux des interfaces annoncés avec leur wildcard');
+  // Secret et schéma
+  const bad = SC.normaliserSchema({ noeuds: [{ id: 'ncbad', type: 'routeur', config: { banniere: 'enable secret Cisco123' } }] });
+  assert(Object.keys(bad.erreurs).some((x) => x.endsWith('.config')), 'un mot de passe dans une configuration est refusé');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'ncnon', type: 'internet', config: { domaine: 'x' } }] }).schema.noeuds[0].config === null && SC.normaliserSchema(sch).schema.noeuds[0].config.sousInterfaces.length === 2, 'configuration gardée par le schéma (pas pour Internet)');
+  // Panneau
+  const pSimple = VC.configMarkup(sch, S, { ...sc, niveau: 'simple' }, { nom: 'SW1' }); const pComplet = VC.configMarkup(sch, S, { ...sc, niveau: 'complet' }, { nom: 'SW1' });
+  assert(!pSimple.includes('<legend>Spanning Tree') && !pSimple.includes('<legend>SSH') && pComplet.includes('<legend>Spanning Tree') && pComplet.includes('<legend>EtherChannel') && pComplet.includes('<legend>SSH'), 'panneau : sections selon le niveau');
+  assert(VC.configMarkup(sch, R, rc, { nom: 'R1' }).includes('Sous-interfaces') && !VC.configMarkup(sch, R, rc, { nom: 'R1' }).includes('<legend>Spanning Tree') && VC.configMarkup(sch, PC, pc, { nom: 'PC1' }).includes('Adresse IP du poste'), 'panneau : sections selon le type (routeur, poste)');
+  assert(VC.configMarkup(sch, S, { ...sc, banniere: '<script>' }, { nom: 'SW1' }).includes('&lt;script&gt;') && !VC.configMarkup(sch, S, { ...sc, banniere: '<script>' }, { nom: 'SW1' }).includes('<script>'), 'panneau : textes échappés');
+  // Remplir depuis le schéma avec les configurations
+  const lab = { ...J.entreeVide({ categorieId: 'cisco', date: new Date('2026-11-05T10:00:00'), existantes: [] }), titre: 'Config', schema: sch };
+  const { entree: e, inventaire: inv, bilan } = SR.remplirDepuisSchema(lab, { inventaire: [], date: new Date('2026-11-05T10:00:00') });
+  const qR = inv.find((q) => q.nom === 'R1'); const qS = inv.find((q) => q.nom === 'SW1');
+  assert(qR.interfaces.some((i) => i.nom === 'Gi0/0/0.10' && i.adresse === '192.168.10.1/24') && qR.routes.some((r) => r.type === 'S*' && r.via === '203.0.113.1') && qR.routes.some((r) => r.type === 'C' && r.destination === '192.168.99.0/24'), 'fiche R1 : sous-interfaces, routes connectées et route par défaut');
+  assert(qS.vlans.map((v) => `${v.numero}:${v.ports}:${v.reseau}`).join() === '10:Fa0/1:192.168.10.0/24,99::192.168.99.0/24' && qS.adresse.startsWith('192.168.99.2'), 'fiche SW1 : VLAN avec ports et réseau, adresse de gestion', qS.vlans.map((v) => `${v.numero}:${v.ports}:${v.reseau}`).join());
+  const lg = (eq, itf) => e.adressage.find((l) => l.equipement === eq && l.interface === itf);
+  assert(lg('R1', 'Gi0/0/0.10')?.adresse === '192.168.10.1/24' && lg('SW1', 'Vlan99')?.passerelle === '192.168.99.1' && e.adressage.find((l) => l.equipement === 'PC1')?.passerelle === '192.168.10.1', 'plan d’adressage : sous-interfaces, gestion du commutateur, poste avec passerelle');
+  assert(e.adressage.filter((l) => l.equipement === 'PC1').length === 1 && e.adressage.filter((l) => l.equipement === 'R1' && l.interface === 'Gi0/0/1').length === 1, 'plan d’adressage : pas de doublon entre câble et configuration');
+  assert(e.configuration.map((b) => b.titre).join() === 'Configuration de R1,Configuration de SW1,Configuration IP de PC1' && e.configuration[0].code.startsWith('! --- Base ---'), 'un bloc « Configuration de X » par équipement configuré');
+  assert(e.validation.some((v) => v.test === 'SW1 : show interfaces trunk') && e.validation.some((v) => v.test === 'PC1 : ping 192.168.10.1') && bilan.tests === e.validation.length, 'tests de vérification ajoutés à la Validation');
+  assert(/R1 : ISR 4321/.test(e.environnement) && /SW1 : Catalyst 2960/.test(e.environnement) && bilan.environnement, 'environnement rempli avec les modèles', e.environnement);
+  const deuxieme = SR.remplirDepuisSchema(e, { inventaire: inv, date: new Date('2026-11-05T10:00:00') });
+  assert(deuxieme.entree.configuration.length === 3 && deuxieme.entree.validation.length === e.validation.length && deuxieme.bilan.configurations === 0 && deuxieme.entree.adressage.length === e.adressage.length, 'remplir deux fois : rien n’est dupliqué');
+  assert(J.normaliserEntree(e).erreurs && !Object.keys(J.normaliserEntree(e).erreurs).length, 'le labo rempli est valide (aucun secret)');
+  // PDF : tableau de câblage
+  assert(JP.tableauCablage(sch).some((l) => l.join('|') === 'R1|Gi0/0/0|SW1|Gi0/1|Trunk 802.1Q|-' || (l[0] === 'R1' && l[1] === 'Gi0/0/0' && l[3] === 'Gi0/1')), 'câblage : une ligne par câble avec les ports');
+  if (PDFTOTEXT) {
+    const r = JP.pdfJournal(J.normaliserEntree(e).entree, { inventaire: inv, equipements: e.equipements.map((l) => ({ equipement: inv.find((q) => q.id === l.id), role: l.role })) });
+    const txt = texteDu(r.octets);
+    assert(/Câblage/.test(txt) && /Configuration de R1/.test(txt) && /encapsulation dot1Q 10/.test(txt), 'PDF : tableau de câblage et commandes de R1');
+    if (QPDF) assert(qpdfOk(r.octets), 'PDF avec configurations valide (qpdf)');
+  }
+  // Section Équipements du labo : seulement les équipements reliés
+  const m = VI.equipementsLaboMarkup({ liens: [{ id: qR.id, role: '' }], inventaire: inv });
+  assert((m.match(/data-jeq="/g) ?? []).length === 1 && m.includes('id="jEqAjout"') && m.includes(`value="${qS.id}"`), 'labo : seuls ses équipements sont listés ; les autres s’ajoutent depuis l’inventaire');
+  assert(VI.equipementsLaboMarkup({ liens: [], inventaire: inv }).includes('Aucun équipement dans ce labo') && !VI.equipementsLaboMarkup({ liens: [], inventaire: inv }).includes('data-jeq="'), 'nouveau labo : aucun équipement d’un autre labo n’apparaît');
+}
+
+console.log('15. Azure : ressources, zones VNet et sous-réseaux, commandes Azure CLI');
+{
+  // Adresses
+  assert(AZ.utilisablesAzure('10.1.1.0/24') === 251 && AZ.utilisablesAzure('10.1.1.0/29') === 3 && AZ.prefixePour(40) === 26 && AZ.prefixePour(120) === 25 && AZ.prefixePour(1) === 29 && AZ.prefixePour(59) === 26 && AZ.prefixePour(60) === 25, 'adresses utilisables Azure (5 réservées) et préfixe minimal pour un besoin');
+  assert(AZ.chevauche('10.1.0.0/16', '10.1.4.0/24') && !AZ.chevauche('10.1.0.0/16', '10.2.0.0/16') && AZ.contient('10.1.0.0/16', '10.1.4.0/24') && !AZ.contient('10.1.0.0/24', '10.1.0.0/23'), 'chevauchement et inclusion de plages');
+  const d = AZ.decouperVnet('10.10.0.0/22', [{ id: 'a', nom: 'snet-apps', besoin: 40 }, { id: 'b', nom: 'snet-db', besoin: 8 }, { id: 'c', nom: 'snet-vm', besoin: 120 }, { id: 'g', nom: 'GatewaySubnet', besoin: 1 }]);
+  assert(!d.erreur && d.plages.c === '10.10.0.0/25' && d.plages.a === '10.10.0.128/26' && d.plages.g === '10.10.0.192/27' && d.plages.b === '10.10.0.224/28', 'découpage VLSM : plus grands d’abord, alignés ; GatewaySubnet au moins /27', JSON.stringify(d.plages));
+  assert(AZ.decouperVnet('10.10.0.0/26', [{ id: 'c', nom: 'x', besoin: 120 }]).erreur?.includes('trop petit') && AZ.decouperVnet('', []).erreur, 'découpage : espace trop petit ou absent signalé');
+  assert(AZ.espaceConseille([40, 8, 120, 1]) === 24, 'taille de VNet conseillée pour les besoins de Solaria Canada (/24)');
+  assert(AZ.etiquetteService('AppService.CanadaCentral') && AZ.etiquetteService('EventHub.CanadaEast') && AZ.etiquetteService('Internet') && !AZ.etiquetteService('10.0.0.0/8') && !AZ.etiquetteService('Bidon'), 'étiquettes de service reconnues (destinations de routes)');
+  // Modèle TP2 et script
+  const s2 = SC.normaliserSchema(MS.modeleSchema('azure-tp2-tardi').construire()).schema;
+  assert(s2.zones.filter((z) => z.genre === 'vnet').length === 2 && s2.zones.filter((z) => z.genre === 'sous-reseau').length === 9 && s2.noeuds.some((n) => n.type === 'stockage'), 'modèle TP2 : VNET1 et VNET2, neuf sous-réseaux, compte de stockage, points de terminaison privés');
+  const ctx = AZ.contexteAzure(s2);
+  const pe = s2.noeuds.find((n) => n.nom === 'pe-sttardi-blob');
+  assert(ctx.noeud(pe).sousReseau?.nom === 'StorageSubnet' && ctx.noeud(pe).vnet?.nom === 'VNET2' && AZ.cibleDuPe(s2, pe)?.type === 'stockage', 'contexte : le point de terminaison est dans VNET2/StorageSubnet et cible le stockage (liaison privée)');
+  const v1 = s2.zones.find((z) => z.nom === 'VNET1'); const v2 = s2.zones.find((z) => z.nom === 'VNET2');
+  v1.config.espace = '10.1.0.0/16'; v2.config.espace = '10.1.0.0/16'; v1.config.appairages = [v2.id];
+  assert(AZ.verifierAzure(s2).some((x) => /Appairage VNET1 ↔ VNET2 impossible/.test(x)), 'appairage refusé si les espaces se chevauchent');
+  v2.config.espace = '10.2.0.0/16';
+  for (const v of [v1, v2]) { const c2 = AZ.contexteAzure(s2); const r = AZ.decouperVnet(v.config.espace, c2.sousReseaux.filter((x) => x.vnet?.id === v.id).map((x) => ({ id: x.id, nom: x.nom, besoin: 20 }))); for (const [id, p] of Object.entries(r.plages)) s2.zones.find((z) => z.id === id).config.plage = p; }
+  const app = s2.noeuds.find((n) => n.type === 'app-service');
+  app.config.integration = s2.zones.find((z) => z.nom === 'AppServiceOutboundSubnet').id; app.config.acces = 'desactive';
+  const script = AZ.texteAzure(AZ.scriptAzure(s2));
+  const ordre = (a, b) => script.indexOf(a) >= 0 && script.indexOf(a) < script.indexOf(b);
+  assert(ordre('az group create -n rg-tardi', 'az network vnet create -g rg-tardi -n VNET1') && ordre('az network vnet create -g rg-tardi -n VNET2', 'az network vnet peering create') && ordre('az storage account create', 'az network private-endpoint create'), 'script : groupe, VNet, puis appairages après les deux VNet, stockage avant les points de terminaison');
+  assert(script.includes('--vnet-name VNET1 -n AppServiceOutboundSubnet --address-prefixes 10.1.0.64/27 --delegations Microsoft.Web/serverFarms') && script.includes('az webapp vnet-integration add -g rg-tardi -n WebAPP1 --vnet VNET1 --subnet AppServiceOutboundSubnet'), 'sous-réseau délégué et intégration VNet de l’application');
+  assert(script.includes('--container-image-name index.docker.io/romaric/tpasr:latest') && script.includes('WEBSITES_PORT=8080') && script.includes('--sku B1 --is-linux'), 'App Service : plan B1 Linux, conteneur et port 8080 de l’énoncé');
+  assert(script.includes('CHAINE=$(az storage account show-connection-string') && script.includes('StorageConnectionString="$CHAINE"') && J.secretDans(script) === null, 'chaîne de connexion lue au déploiement, jamais écrite (aucun secret)');
+  assert(ordre('az storage queue create --account-name sttardi -n queue1', 'az storage account update -g rg-tardi -n sttardi --public-network-access Disabled') && script.includes('az storage container-rm create -g rg-tardi --storage-account sttardi -n blob1'), 'stockage : contenu créé avant de fermer l’accès public');
+  assert(script.includes('--group-id blob') && script.includes('--group-id queue') && (script.match(/private-dns zone create -g rg-tardi -n privatelink.blob.core.windows.net/g) ?? []).length === 1 && script.includes('-z privatelink.blob.core.windows.net -n lien-VNET1 -v VNET1'), 'points de terminaison blob et queue, zone privatelink créée une fois et liée aux VNet appairés');
+  assert(script.includes('az webapp update -g rg-tardi -n WebAPP1 --set publicNetworkAccess=Disabled') && !/[ ]/.test(script), 'accès public de l’application désactivé');
+  assert(!AZ.verifierAzure(s2).length, 'TP2 complété : aucun avertissement', AZ.verifierAzure(s2).join(' | '));
+  // Routes de l'exercice 4 et règles
+  const rt = { id: 'nrtab1', type: 'table-routage', nom: 'rt-vm', x: 100, y: 100, config: AZ.normaliserConfigAzure('table-routage', { routes: [
+    { nom: 'defaut', prefixe: '0.0.0.0/0', saut: 'VirtualNetworkGateway' }, { nom: 'bloque', prefixe: '12.12.12.0/30', saut: 'None' },
+    { nom: 'appsvc', prefixe: 'AppService.CanadaCentral', saut: 'VirtualAppliance', ip: '10.3.2.100' }, { nom: 'mauvais', prefixe: 'Bidon', saut: 'VirtualAppliance' }],
+  sousReseaux: [s2.zones.find((z) => z.nom === 'VMSubnet').id] }) };
+  const s3 = { ...s2, noeuds: [...s2.noeuds, rt] };
+  const crt = AZ.texteAzure(AZ.commandesAzure(s3, rt));
+  assert(crt.includes('--address-prefix 12.12.12.0/30 --next-hop-type None') && crt.includes('--address-prefix AppService.CanadaCentral --next-hop-type VirtualAppliance --next-hop-ip-address 10.3.2.100') && crt.includes('az network vnet subnet update -g rg-tardi --vnet-name VNET1 -n VMSubnet --route-table rt-vm'), 'table de routage : service tag, saut « Aucun », appliance, association au sous-réseau');
+  assert(AZ.verifierAzure(s3).some((x) => /Bidon/.test(x)) && AZ.verifierAzure(s3).some((x) => /demande son IP/.test(x)), 'route : destination inconnue et appliance sans IP signalées');
+  assert(AZ.tablesAzure(s3, rt).routes.length === 4 && AZ.tablesAzure(s3, rt).routes[1].via === 'None', 'routes reportées dans la fiche (table de routage)');
+  // Vérifications diverses
+  const bad = { ...SC.schemaVide(), zones: [{ id: 'zbv1', nom: 'V', genre: 'vnet', x: 0, y: 0, l: 900, h: 500, config: AZ.normaliserConfigAzure('vnet', { espace: '10.0.0.0/16' }, { zone: true }) },
+    { id: 'zbs1', nom: 'GatewaySubnet', genre: 'sous-reseau', x: 10, y: 40, l: 200, h: 100, config: AZ.normaliserConfigAzure('sous-reseau', { plage: '10.0.0.0/29' }, { zone: true }) },
+    { id: 'zbs2', nom: 'snet-a', genre: 'sous-reseau', x: 220, y: 40, l: 200, h: 100, config: AZ.normaliserConfigAzure('sous-reseau', { plage: '10.0.0.0/28', besoin: '20' }, { zone: true }) },
+    { id: 'zbs3', nom: 'snet-b', genre: 'sous-reseau', x: 430, y: 40, l: 200, h: 100, config: AZ.normaliserConfigAzure('sous-reseau', { plage: '10.9.0.0/24' }, { zone: true }) }],
+  noeuds: [{ id: 'nbst1', type: 'stockage', nom: 'Mon_Stockage', x: 700, y: 300 }, { id: 'nbpe1', type: 'point-terminaison-prive', nom: 'pe', x: 300, y: 90 }] };
+  const w = AZ.verifierAzure(bad);
+  assert(w.some((x) => /chevauchent/.test(x)) && w.some((x) => /hors de l’espace/.test(x)) && w.some((x) => /11 adresses utilisables pour 20/.test(x)) && w.some((x) => /GatewaySubnet.*\/27 conseillé/.test(x)) && w.some((x) => /3 à 24 lettres minuscules/.test(x)) && w.some((x) => /ressource ciblée/.test(x)),
+    'avertissements : chevauchement, hors espace, besoin non couvert, GatewaySubnet trop petit, nom de stockage, point de terminaison sans cible', w.join(' | '));
+  // Zone DNS (TP1) et rôle de l'administrateur
+  const zd = { id: 'nzdns1', type: 'zone-dns', nom: 'app-canada-solaria', x: 50, y: 50, config: AZ.normaliserConfigAzure('zone-dns', { niveau: 'intermediaire', domaine: 'app.intra.canada.solaria.corp', privee: true, vnets: [v1.id], enregistrements: [{ nom: 'hrapp', genre: 'A', valeur: '10.1.0.10' }], administrateur: 'admin.dns@exemple.ca' }) };
+  const cz = AZ.texteAzure(AZ.commandesAzure({ ...s2, noeuds: [zd] }, zd));
+  assert(cz.includes('az network private-dns zone create -g rg-tardi -n app.intra.canada.solaria.corp') && cz.includes('az network private-dns record-set a add-record -g rg-tardi -z app.intra.canada.solaria.corp -n hrapp -a 10.1.0.10') && cz.includes('-n lien-VNET1 -v VNET1 -e false') && cz.includes('--role "Private DNS Zone Contributor" --scope $(az network private-dns zone show'), 'zone DNS privée : enregistrement A, lien au VNet, administrateur limité à sa zone');
+  const sql = { id: 'nsql01', type: 'base-sql', nom: 'billing', x: 50, y: 50, config: { serveur: 'sql-tardi', base: 'billing', admin: 'sqladmin' } };
+  const csql = AZ.texteAzure(AZ.commandesAzure({ ...SC.schemaVide(), noeuds: [sql] }, sql));
+  assert(/--admin-user sqladmin --admin-password\n/.test(`${csql}\n`) && J.secretDans(csql) === null, 'Azure SQL : la ligne s’arrête avant le mot de passe');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'nsecr1', type: 'vm', config: { utilisateur: 'password: Hunter2!' } }] }).erreurs['schema.nsecr1.config'], 'un mot de passe dans une configuration Azure est refusé');
+  // Modèle TP1 : besoins de l'énoncé, plages à choisir
+  const s1 = SC.normaliserSchema(MS.modeleSchema('azure-tp1-energia').construire()).schema;
+  const c1 = AZ.contexteAzure(s1);
+  assert(c1.vnets.length === 4 && c1.sousReseaux.length === 16 && c1.sousReseaux.every((x) => x.vnet) && c1.sousReseaux.every((x) => !x.c.plage) && c1.vnets.every((v) => !v.c.espace), 'modèle TP1 : quatre VNet, seize sous-réseaux, plages et espaces laissés à l’étudiant');
+  assert(c1.sousReseaux.filter((x) => x.vnet.nom === 'vnet-solaria-canada').map((x) => x.c.besoin).join() === '40,8,120,1' && c1.vnets.find((v) => v.nom === 'vnet-hydrix-france').region === 'francecentral', 'modèle TP1 : besoins de l’énoncé et régions');
+  // Dessin et panneaux
+  const ops = SC.dessinerSchema(s2);
+  assert(ops.some((o) => o.k === 'texte' && /VNET1 · 10\.1\.0\.0\/16/.test(o.t)) && ops.some((o) => o.k === 'etiquette' && o.t === 'Appairage') && ops.some((o) => o.k === 'texte' && /StorageSubnet · 10\.2\./.test(o.t)), 'dessin : VNet et sous-réseaux avec leurs plages, trait d’appairage');
+  const ed = VS.editeurSchemaMarkup(s2, { categorie: 'azure', etat: {} });
+  assert(ed.includes('data-sadd="zone:vnet"') && ed.includes('data-sadd="stockage"') && ed.includes('data-sadd="equilibreur"') && !ed.includes('data-sadd="routeur"') && !ed.includes('data-sadd="commutateur"') && !ed.includes('data-sfiltre="cisco"') && ed.includes('data-scable="liaison-privee"') && !ed.includes('data-scable="console"'), 'labo Azure : seulement les ressources, zones et liens Azure');
+  assert(ed.includes('id="azRegion"') && ed.includes('azure-tp2-tardi'), 'labo Azure : réglages (groupe, région) et modèles des TP');
+  const edC = VS.editeurSchemaMarkup(SC.schemaVide(), { categorie: 'cisco', etat: {} });
+  assert(edC.includes('data-sadd="routeur"') && !edC.includes('data-sadd="stockage"') && !edC.includes('data-scable="liaison-privee"') && !edC.includes('azRegion'), 'labo Cisco : rien d’Azure');
+  const pz = VA.panneauZoneAzure(s2, v1); const pr = VA.panneauRessourceAzure(s2, app);
+  assert(pz.includes('data-cfgaction="decouper"') && pz.includes('Espace d’adressage') && pz.includes('data-cfgmulti="appairages"') && pr.includes('Intégration au réseau virtuel') && pr.includes('cfg-ports') === false && pr.includes('VNET1 / AppServiceOutboundSubnet'), 'panneaux Azure : VNet (découper, appairages) et App Service (intégration)');
+  assert(!VA.panneauRessourceAzure(s2, { ...app, config: { niveau: 'simple' } }).includes('Restrictions d’accès') && VA.panneauRessourceAzure(s2, { ...app, config: { niveau: 'complet' } }).includes('Restrictions d’accès'), 'panneau Azure : champs selon le niveau');
+  // Remplir
+  const lab = { ...J.entreeVide({ categorieId: 'azure', date: new Date('2026-11-06T10:00:00'), existantes: [] }), titre: 'TP2', schema: s2 };
+  const { entree: e, inventaire: inv, bilan } = SR.remplirDepuisSchema(lab, { inventaire: [], date: new Date('2026-11-06T10:00:00') });
+  const qv1 = inv.find((q) => q.nom === 'VNET1');
+  assert(qv1?.type === 'reseau-virtuel' && qv1.adresse === '10.1.0.0/16' && qv1.interfaces.some((i) => i.nom === 'AppServiceOutboundSubnet' && i.adresse === '10.1.0.64/27' && /Microsoft\.Web/.test(i.description)), 'fiche VNET1 : espace, sous-réseaux en interfaces (délégation notée)');
+  assert(e.adressage.some((l) => l.equipement === 'VNET2' && l.interface === 'StorageSubnet' && /utilisable/.test(l.note)) && e.configuration.some((b) => b.titre === 'Azure : Appairages (après la création des deux VNet)') && e.validation.some((v) => /nslookup sttardi\.blob\.core\.windows\.net/.test(v.test)), 'document : plan par sous-réseau, blocs Azure CLI, tests (nslookup du point de terminaison)');
+  assert(/Microsoft Azure : groupe\(s\) de ressources rg-tardi/.test(e.environnement) && bilan.vnets === 2 && !Object.keys(J.normaliserEntree(e).erreurs).length, 'environnement Azure, deux VNet documentés, labo valide');
+  const deux = SR.remplirDepuisSchema(e, { inventaire: inv });
+  assert(deux.entree.configuration.length === e.configuration.length && deux.entree.adressage.length === e.adressage.length && deux.inventaire.length === inv.length, 'remplir deux fois : rien n’est dupliqué');
+  if (PDFTOTEXT) {
+    const r = JP.pdfJournal(J.normaliserEntree(e).entree, { inventaire: inv, equipements: e.equipements.map((l) => ({ equipement: inv.find((q) => q.id === l.id), role: '' })) });
+    const tx = texteDu(r.octets);
+    assert(/Sous-réseau/.test(tx) && /az network private-endpoint create/.test(tx) && /StorageSubnet/.test(tx), 'PDF du labo Azure : plan par sous-réseau et commandes');
+    if (QPDF) assert(qpdfOk(r.octets), 'PDF Azure valide (qpdf)');
+  }
+  // Section Équipements : un labo Azure ne propose que des équipements Azure
+  const mix = [{ id: 'eaz00001', nom: 'VNET9', systeme: 'azure', type: 'reseau-virtuel', adresse: '' }, { id: 'eci00001', nom: 'SW9', systeme: 'cisco', type: 'commutateur', adresse: '' }];
+  const ml = VI.equipementsLaboMarkup({ liens: [], inventaire: mix, systemePrefere: 'azure' });
+  assert(ml.includes('value="eaz00001"') && !ml.includes('value="eci00001"'), 'labo Azure : seuls les équipements Azure se proposent depuis l’inventaire');
+}
+
+console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);
+console.log('Le PDF est vérifié par sa structure, qpdf et pdftotext ; l’affichage dans chaque lecteur PDF n’est pas prouvé.');
+process.exit(failed ? 1 : 0);
