@@ -24,6 +24,8 @@ import { COURS_CISCO_S09_PARCOURS } from './cours-cisco-s09.mjs';
 import { COURS_CISCO_NAT_PARCOURS } from './cours-cisco-nat.mjs';
 import { COURS_CISCO_TP_VLAN_PARCOURS } from './cours-cisco-tp-vlan.mjs';
 import { COURS_AZURE_PARCOURS } from './cours-azure.mjs';
+import { COURS_AZURE_TP_PARCOURS } from './cours-azure-tp.mjs';
+import { COURS_AZURE_CARTE } from './cours-azure-carte.mjs';
 import { COURS_WINDOWS_EXAMEN } from './cours-windows-examen.mjs';
 
 export const ROUTE_COURS = '#/cours';
@@ -285,6 +287,8 @@ export const COURS = [
   ...COURS_CISCO_NAT_PARCOURS,
   ...COURS_CISCO_TP_VLAN_PARCOURS,
   ...COURS_AZURE_PARCOURS,
+  ...COURS_AZURE_TP_PARCOURS,
+  ...COURS_AZURE_CARTE,
   ...COURS_WINDOWS_EXAMEN,
 ];
 
@@ -301,7 +305,7 @@ function variantes(coursCle, item) {
   return [`${coursCle} ${sans}`, sans, `${coursCle} ${sans.replace(/^([a-z])(\d)/, '$1 $2')}`];
 }
 
-const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco', 'cisco-s09-dhcp-ipv6': 's09', 'cisco-nat-adressage-recap': 'nat', 'cisco-tp-vlan-ssh-intervlan': 'tp vlan', 'azure-01-02-infonuagique-azure': 'azure 01', 'azure-03-reseau-virtuel': 'azure 03', 'azure-04-resolution-noms': 'azure 04', 'azure-05-peering-routage': 'azure 05', 'azure-06-07-acces-prive-equilibrage': 'azure 06' };
+const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco', 'cisco-s09-dhcp-ipv6': 's09', 'cisco-nat-adressage-recap': 'nat', 'cisco-tp-vlan-ssh-intervlan': 'tp vlan', 'azure-01-02-infonuagique-azure': 'azure 01', 'azure-03-reseau-virtuel': 'azure 03', 'azure-04-resolution-noms': 'azure 04', 'azure-05-peering-routage': 'azure 05', 'azure-06-07-acces-prive-equilibrage': 'azure 06', 'azure-tp1-energia': 'tp1 azure', 'azure-tp2-tardi': 'tp2 azure', 'azure-08-carte-documentation': 'azure carte' };
 
 const ALIAS = (() => {
   const m = new Map();

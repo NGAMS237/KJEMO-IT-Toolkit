@@ -72,7 +72,7 @@ const SCHEMAS = Object.fromEntries(NOUVEAUX.map((id) => [id, COURS.find((c) => c
   await clicPlat(page, 'Azure');
   await page.goto(`${BASE}/#/cours`);
   await page.waitForSelector('.cours-carte');
-  assert(await page.locator('.cours-carte').count() === 5, 'filtre Azure : cinq cours');
+  assert(await page.locator('.cours-carte').count() === 8, 'filtre Azure : huit cours');
   for (const id of NOUVEAUX) assert(await page.locator(`[data-resume="${id}"]`).count() === 1, `lien « Résumé du cours » : ${id}`);
   assert(erreurs.length === 0, 'aucune erreur de page', erreurs.join(' | '));
   await context.close();

@@ -155,7 +155,7 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 - **B15 — quotacheck** — Les notes écrivent « quotacheck -c ». La fiche écrit « -cu » (quotas utilisateur explicitement). Sur un noyau allégé, la prise en charge des quotas peut demander un paquet de modules supplémentaires.
 - **E — nom du document de référence** — L’énoncé renvoie à « S06-Exemple de partage… » alors que le fichier fourni s’appelle « S05-Exemple de partage… » : même document, numéro différent.
 
-## Fiches du cours (62)
+## Fiches du cours (128)
 
 | Fiche | Titre | Étapes | Effet |
 |---|---|---|---|
@@ -169,27 +169,27 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-grep-wc` | Chercher un motif et compter : grep, wc | 3 | lecture |
 | `cours-find-fichiers` | Trouver des fichiers par nom, type ou taille : find | 4 | lecture |
 | `cours-redirections-tubes` | Rediriger et enchaîner : >, >>, 2>, \| | 3 | modification |
-| `cours-groupes-locaux` | Créer un groupe local et y ajouter un compte | 6 | modification |
-| `cours-droits-dossier-partage` | Régler les droits d’un dossier de groupe : chgrp, chmod | 5 | modification |
+| `cours-groupes-locaux` | Créer un groupe local et y ajouter un compte | 9 | modification |
+| `cours-droits-dossier-partage` | Régler les droits d’un dossier de groupe : chgrp, chmod | 6 | modification |
 | `cours-bash-condition` | Écrire un script Bash avec if et case | 4 | modification |
 | `cours-bash-boucles` | Écrire un script Bash avec for et while | 3 | modification |
 | `cours-bash-fonctions` | Écrire un script Bash avec une fonction et des arguments | 3 | modification |
-| `cours-partition-formater-monter` | Partitionner, formater et monter un nouveau disque (fdisk, ext4) | 12 | destructif |
-| `cours-quotas-utilisateur` | Activer les quotas utilisateur sur une partition ext4 | 8 | modification |
-| `cours-donner-dossier-compte` | Donner un dossier à un compte et tester l’écriture | 5 | modification |
-| `cours-raid1-creer` | Créer un RAID 1 (miroir) avec mdadm, le formater et le monter | 11 | destructif |
+| `cours-partition-formater-monter` | Partitionner, formater et monter un nouveau disque (fdisk, ext4) | 14 | destructif |
+| `cours-quotas-utilisateur` | Activer les quotas utilisateur sur une partition ext4 | 10 | modification |
+| `cours-donner-dossier-compte` | Donner un dossier à un compte et tester l’écriture | 7 | modification |
+| `cours-raid1-creer` | Créer un RAID 1 (miroir) avec mdadm, le formater et le monter | 14 | destructif |
 | `cours-raid1-panne-secours` | RAID 1 : panne simulée, remplacement et disque de secours | 12 | interruption |
 | `cours-samba-groupes` | Gérer les groupes Samba AD avec samba-tool | 6 | modification |
 | `cours-samba-import-csv` | Import CSV Samba renforcé (essai -n, hors cours) | 11 | modification |
-| `cours-samba-partage-utilisateurs` | Partage Samba : un compte en écriture, un en lecture | 9 | modification |
-| `cours-samba-partage-groupe` | Partager un dossier avec un groupe Samba (un compte en lecture seule) | 10 | modification |
-| `cours-smbclient-transferts` | Télécharger et déposer des fichiers avec smbclient | 10 | modification |
-| `cours-samba-dns` | Gérer le DNS d’un domaine Samba : zone inverse, hôte A et PTR | 5 | modification |
-| `cours-ubuntu-jonction-ad` | Joindre un poste Ubuntu à un domaine Samba AD (realmd et SSSD) | 13 | interruption |
-| `cours-rsat-windows` | Installer les outils RSAT (AD et DNS) sur un poste Windows | 5 | modification |
+| `cours-samba-partage-utilisateurs` | Partage Samba : un compte en écriture, un en lecture | 12 | modification |
+| `cours-samba-partage-groupe` | Partager un dossier avec un groupe Samba (un compte en lecture seule) | 12 | modification |
+| `cours-smbclient-transferts` | Télécharger et déposer des fichiers avec smbclient | 12 | modification |
+| `cours-samba-dns` | Gérer le DNS d’un domaine Samba : zone inverse, hôte A et PTR | 6 | modification |
+| `cours-ubuntu-jonction-ad` | Joindre un poste Ubuntu à un domaine Samba AD (serveur et client) | 30 | interruption |
+| `cours-rsat-windows` | Installer les outils RSAT (AD et DNS) sur un poste Windows | 5/6 | modification |
 | `cours-hyperviseur-ajouter-disque` | Ajouter un disque virtuel de 1 Go à une VM et le repérer | 9/5 | destructif |
-| `cours-ubuntu-reseau-client` | Configurer la carte réseau d’un client Ubuntu Desktop | 3/5 | interruption |
-| `cours-ubuntu-acces-partage` | Accéder au partage Samba depuis Ubuntu : écriture et lecture seule | 6/6 | modification |
+| `cours-ubuntu-reseau-client` | Configurer la carte réseau d’un client Ubuntu Desktop | 3/6 | interruption |
+| `cours-ubuntu-acces-partage` | Accéder au partage Samba depuis Ubuntu : écriture et lecture seule | 6/7 | modification |
 | `cours-windows-acces-partage` | Accéder au partage Samba depuis Windows 11 : écriture et lecture seule | 7/10/9 | modification |
 | `cours-windows-connexion-domaine` | Ouvrir une session Windows avec un compte du domaine | 4/3/3 | lecture |
 | `cours-processus` | Voir et arrêter des processus : ps, top, kill | 5 | interruption |
@@ -201,23 +201,89 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-comparer-trier` | Comparer et transformer du texte : diff, sort, uniq, tr, more | 4 | lecture |
 | `cours-etat-systeme` | État du système : free, uptime, uname, df | 4 | lecture |
 | `cours-arret-redemarrage` | Arrêter ou redémarrer le serveur : shutdown et reboot | 4 | interruption |
-| `cours-disque-entretien` | Entretenir un système de fichiers ext4 : tune2fs et fsck | 3 | modification |
-| `cours-quota-edquota` | Fixer un quota avec l’éditeur : edquota et repquota | 3 | modification |
+| `cours-disque-entretien` | Entretenir un système de fichiers ext4 : tune2fs et fsck | 4 | modification |
+| `cours-quota-edquota` | Fixer un quota avec l’éditeur : edquota et repquota | 4 | modification |
 | `cours-samba-connexions` | Voir qui utilise un partage Samba : smbstatus | 3 | lecture |
-| `cours-planifier-taches` | Planifier une commande : at et crontab | 4 | modification |
+| `cours-planifier-taches` | Planifier une commande : at et crontab | 5 | modification |
 | `cours-ifconfig-ancien` | L’ancienne commande ifconfig et son remplaçant ip | 2 | lecture |
 | `cours-service-ancien` | L’ancienne commande service et systemctl | 4 | interruption |
-| `cours-creer-compte-local` | Créer un compte local : adduser ou useradd, puis passwd | 4 | modification |
+| `cours-creer-compte-local` | Créer un compte local : adduser ou useradd, puis passwd | 5 | modification |
 | `cours-afficher-texte` | Afficher du texte : echo et printf | 4 | lecture |
 | `cours-bash-menu` | Écrire un menu en Bash : while, case et fonctions | 3 | modification |
 | `cours-samba-script-menu` | TP2 A : le script à menu qui crée les comptes depuis le CSV | 7 | modification |
-| `cours-droits-fichier` | Lire et changer les droits d’un fichier : ls -l, chmod | 5 | modification |
+| `cours-droits-fichier` | Lire et changer les droits d’un fichier : ls -l, chmod | 6 | modification |
 | `cours-ec-avant-de-grouper` | Vérifier les ports avant de former un EtherChannel | 3 | lecture |
-| `cours-ec-pagp` | Créer un EtherChannel PAgP (Cisco) entre deux commutateurs | 5 | modification |
-| `cours-ec-lacp` | Créer un EtherChannel LACP (802.3ad) entre deux commutateurs | 5 | modification |
-| `cours-ec-statique` | Créer un EtherChannel statique (mode on, sans protocole) | 5 | modification |
+| `cours-ec-pagp` | Créer un EtherChannel PAgP (Cisco) entre deux commutateurs | 6 | modification |
+| `cours-ec-lacp` | Créer un EtherChannel LACP (802.3ad) entre deux commutateurs | 6 | modification |
+| `cours-ec-statique` | Créer un EtherChannel statique (mode on, sans protocole) | 6 | modification |
 | `cours-ec-verifier` | Vérifier un EtherChannel : show etherchannel et port-channel | 5 | lecture |
 | `cours-ec-depanner` | Dépanner un EtherChannel qui ne se forme pas | 7 | modification |
 | `cours-stp-lire` | Lire l’état de Spanning Tree et retrouver le chemin actif | 4 | lecture |
-| `cours-stp-racines` | Choisir PVST+ ou Rapid PVST+ et fixer les ponts racines | 4 | modification |
-| `cours-stp-portfast-bpduguard` | Activer PortFast et la protection BPDU sur un port d’accès | 4 | modification |
+| `cours-stp-racines` | Choisir PVST+ ou Rapid PVST+ et fixer les ponts racines | 6 | modification |
+| `cours-stp-portfast-bpduguard` | Activer PortFast et la protection BPDU sur un port d’accès | 6 | modification |
+| `cours-base-peripherique` | Configuration de base d’un commutateur ou d’un routeur | 9 | modification |
+| `cours-sw-gestion-ip` | Adresse de gestion d’un commutateur : interface VLAN et passerelle | 4 | modification |
+| `cours-sw-duplex-vitesse` | Régler la vitesse, le duplex et l’auto-MDIX d’un port | 4 | interruption |
+| `cours-sw-diagnostiquer-port` | Diagnostiquer un port : état, protocole de ligne et erreurs | 3 | lecture |
+| `cours-sw-ports-inutilises` | Désactiver les ports inutilisés d’un commutateur | 6 | modification |
+| `cours-sw-portsec` | Sécurité des ports : limiter, apprendre et sanctionner (un port) | 9 | modification |
+| `cours-config-portable` | Sauvegarder une configuration en texte et la recharger ailleurs | 6 | modification |
+| `cours-rt-interface-ip` | Donner une adresse IP à une interface de routeur (Gigabit, série) | 5 | modification |
+| `cours-rt-statique` | Créer une route statique vers un réseau distant | 5 | modification |
+| `cours-rt-defaut-flottante` | Route par défaut et route statique de secours (flottante) | 5 | modification |
+| `cours-rt-tester` | Tester la connectivité d’un routeur : ping et traceroute | 2 | lecture |
+| `cours-rip-configurer` | Configurer RIPv2 sur un routeur | 6 | modification |
+| `cours-rip-verifier` | Vérifier et dépanner RIP : protocoles, routes et base de données | 4 | lecture |
+| `cours-vtp-reseau` | Configurer VTP : serveur, domaine et clients | 7 | modification |
+| `cours-vtp-transparent-etendus` | Mode VTP transparent et VLAN étendus (1006 à 4094) | 5 | modification |
+| `cours-dtp-trunk` | Choisir le mode DTP d’un port : auto, desirable, trunk ou access | 5 | modification |
+| `cours-vtp-dtp-depanner` | Dépanner VTP et DTP : trunk absent, VLAN non reçus | 4 | lecture |
+| `cours-dhcp4-serveur-routeur` | Faire d’un routeur Cisco un serveur DHCPv4 (exclusions et pool) | 5 | modification |
+| `cours-dhcp4-relais` | Relayer le DHCPv4 vers un autre réseau (ip helper-address) | 3 | modification |
+| `cours-dhcp4-client-routeur` | Interface de routeur client DHCP (adresse IPv4 reçue) | 3 | modification |
+| `cours-dhcp4-depanner` | Dépanner DHCPv4 sur un routeur : interface, relais, baux et débogage | 5 | modification |
+| `cours-ipv6-adresser-interface` | Adresser une interface de routeur en IPv6 (globale et link-local) | 4 | modification |
+| `cours-ipv6-verifier` | Vérifier IPv6 : interfaces, table de routage et ping | 3 | lecture |
+| `cours-ipv6-routes-statiques` | Route statique IPv6 : récursive, connectée ou spécifiée | 6 | modification |
+| `cours-ipv6-defaut-flottante` | Route IPv6 par défaut (::/0) et route flottante de secours | 4 | modification |
+| `cours-dhcp6-slaac` | SLAAC : laisser les postes se fabriquer leur adresse IPv6 | 4 | modification |
+| `cours-dhcp6-sans-etat` | Serveur DHCPv6 sans état sur un routeur (SLAAC + DNS) | 6 | modification |
+| `cours-dhcp6-avec-etat` | Serveur DHCPv6 avec état sur un routeur (le serveur donne l’adresse) | 6 | modification |
+| `cours-dhcp6-relais` | Relayer le DHCPv6 vers un serveur situé sur un autre réseau | 4 | modification |
+| `cours-dhcp6-verifier` | Vérifier DHCPv6 : pool, baux, annonces du routeur et poste | 4 | lecture |
+| `cours-nat-statique` | NAT statique : une adresse interne = une adresse publique | 5 | modification |
+| `cours-nat-dynamique` | NAT dynamique : un groupe d’adresses publiques à la demande | 8 | modification |
+| `cours-nat-pat` | PAT (surcharge) : tout un réseau derrière une seule adresse publique | 7 | modification |
+| `cours-nat-redirection-port` | Redirection de port (port forwarding) vers un serveur interne | 5 | modification |
+| `cours-nat-verifier` | Lire et vider la table NAT | 3 | lecture |
+| `cours-route-recap-statique` | Route statique récapitulative (plusieurs réseaux en une ligne) | 6 | modification |
+| `cours-route-recap-rip` | Résumé de routes annoncé par RIPv2 (ip summary-address rip) | 4 | modification |
+| `cours-show-cisco` | Commandes show Cisco : toutes les lectures utiles, par groupe | 16 | lecture |
+| `cours-tp-vlan-ssh-intervlan` | TP complet : VLAN, SSH et routage inter-VLAN (de A à Z) | 39 | modification |
+| `cours-az-groupe-ressources` | Créer un groupe de ressources | 3 | modification |
+| `cours-az-verrou-ressource` | Poser un verrou contre la suppression accidentelle | 3 | modification |
+| `cours-az-role-coequipier` | Donner un rôle Azure à un coéquipier | 3 | modification |
+| `cours-az-vnet-creer` | Créer un réseau virtuel (VNet) avec son premier sous-réseau | 4 | modification |
+| `cours-az-sous-reseau-ajouter` | Ajouter un sous-réseau à un réseau virtuel | 3 | modification |
+| `cours-az-plan-adressage` | Relire le plan d’adressage d’un réseau virtuel | 4 | lecture |
+| `cours-az-ip-publique-privee` | Adresses IP Azure : publique statique et privée fixe | 4 | modification |
+| `cours-az-vm-creer-vnet` | Créer une machine virtuelle Linux dans un VNet | 5 | modification |
+| `cours-az-dns-zone-publique` | Créer une zone DNS publique Azure | 3 | modification |
+| `cours-az-dns-enregistrement-a` | Ajouter un enregistrement A ou CNAME dans une zone Azure | 5 | modification |
+| `cours-az-dns-zone-privee` | Créer une zone DNS privée et la lier à un VNet | 5 | modification |
+| `cours-az-peering-creer` | Appairer deux réseaux virtuels (peering) | 5 | modification |
+| `cours-az-peering-verifier` | Vérifier l’état d’un appairage de réseaux virtuels | 3 | lecture |
+| `cours-az-routes-effectives` | Lire les routes effectives d’une interface réseau | 2 | lecture |
+| `cours-az-route-personnalisee` | Créer une route personnalisée (UDR) vers une appliance | 8 | interruption |
+| `cours-az-point-service-stockage` | Limiter un compte de stockage à un sous-réseau (point de service) | 8 | interruption |
+| `cours-az-point-prive-stockage` | Créer un point de terminaison privé pour un compte de stockage | 7 | modification |
+| `cours-az-lb-creer` | Créer un équilibreur de charge public (Azure Load Balancer) | 8 | modification |
+| `cours-az-lb-etat` | Lire la configuration et la santé d’un Azure Load Balancer | 5 | lecture |
+| `cours-az-app-service-creer` | Créer une application App Service (conteneur Linux) | 8 | modification |
+| `cours-az-app-service-restriction-ip` | Restreindre l’accès à une application App Service (IP, sous-réseau) | 8 | interruption |
+| `cours-az-app-service-integration-vnet` | Intégrer App Service à un réseau virtuel (trafic sortant) | 5 | modification |
+| `cours-az-app-service-point-prive` | Isoler App Service avec un point de terminaison privé (entrant) | 7 | interruption |
+| `cours-az-stockage-file-conteneur` | Compte de stockage avec file et conteneur, puis accès public fermé | 7 | modification |
+| `cours-az-point-prive-stockage-sous-ressource` | Point privé par sous-ressource du stockage (blob, queue…) | 6 | modification |
+| `cours-az-table-routage-gerer` | Gérer une table de routage : lire, modifier, dissocier, supprimer | 9 | interruption |
+| `cours-az-routes-etiquettes-service` | Routes du TP2 : passerelle, plage supprimée, appliance, étiquettes | 10 | interruption |

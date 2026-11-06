@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) passed++; else { failed++; console.error(`ÉCHEC :
 const idsCours = PROCEDURES_COURS.map((p) => p.id);
 const existe = (id) => { const e = T.entreeParId(id); return Boolean(e?.procedure) || (e?.kind === 'assistant' && String(e.route).startsWith('#/outil/')); };
 
-// 1. cohérence : chaque fiche existe, rangée UNE fois, les 120 fiches de cours toutes rangées
+// 1. cohérence : chaque fiche existe, rangée UNE fois, les 128 fiches de cours toutes rangées
 const pb = M.incoherencesMemo({ existe, fichesAttendues: idsCours });
 ok(pb.length === 0, `incohérences : ${pb.join(' | ')}`);
-ok(idsCours.length === 120, `120 fiches de cours attendues, ${idsCours.length} trouvées`);
+ok(idsCours.length === 128, `128 fiches de cours attendues, ${idsCours.length} trouvées`);
 ok(M.toutesLesFichesMemo().length === new Set(M.toutesLesFichesMemo()).size, 'aucune fiche rangée deux fois');
 for (const id of M.toutesLesFichesMemo()) {
   const e = T.entreeParId(id);
@@ -102,7 +102,7 @@ ok(V.retourMemoFicheMarkup(g0).includes('id="retourMemo"'), 'retour de fiche');
   ok(M.MEMO_GROUPES.filter((g) => g.id.startsWith('win-')).every((g) => w.includes(`<details class="groupe-bloc" style="--gc:${g.couleur}" data-groupe="${g.id}"`)), 'Windows : les 7 groupes Windows sont dépliables');
   const az = mk('Azure');
   const azA = (az.match(/<details class="groupe-bloc"/g) ?? []).length; const azM = (az.match(/class="groupe-masque"/g) ?? []).length;
-ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'].every((id) => az.includes(`data-groupe="${id}"`)), `Azure : ${azA} groupes actifs (dont les 4 groupes Azure) + ${azM} nommés dans la ligne`);
+ok(azA + azM === M.MEMO_GROUPES.length && ['az-base', 'az-reseau', 'az-routage-prive', 'az-app-service', 'az-equilibrage'].every((id) => az.includes(`data-groupe="${id}"`)), `Azure : ${azA} groupes actifs (dont les 5 groupes Azure) + ${azM} nommés dans la ligne`);
   const sans = mk(null);
   ok(!sans.includes('groupes-masques') && (sans.match(/<details class="groupe-bloc"/g) ?? []).length === M.MEMO_GROUPES.length, 'sans filtre : comportement inchangé, aucun groupe masqué');
   const ligA = V.ficheLigneMarkup({ id: 'ad-user', titre: 'Créer un utilisateur AD', resume: 'r', effet: 'modification', plateformes: ['Windows'], assistant: true, route: '#/outil/ad-user', nbEtapes: 0 }, '#6d28d9');

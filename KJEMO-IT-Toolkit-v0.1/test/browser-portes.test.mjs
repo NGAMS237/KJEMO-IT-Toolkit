@@ -164,9 +164,9 @@ const fiche0 = G[0].sous[0].fiches[0];
 {
   const { context, page } = await nouvellePage({}, '/#/');
   await page.click('#platFilters [data-plat="Azure"]');
-  assert(await page.locator('#home .groupe-carte').count() === 4, 'Azure : accueil avec les 4 groupes Azure, aucune carte vide');
+  assert(await page.locator('#home .groupe-carte').count() === 5, 'Azure : accueil avec les 5 groupes Azure, aucune carte vide');
   await page.goto(`${BASE}/#/memo`);
-  assert(await page.locator('#portesView details.groupe-bloc').count() === 4 && await page.locator('#portesView .groupe-masque').count() === G.length - 4, 'Azure : page Aide-mémoire, 4 groupes actifs, les autres nommés dans une ligne, aucun supprimé sans explication');
+  assert(await page.locator('#portesView details.groupe-bloc').count() === 5 && await page.locator('#portesView .groupe-masque').count() === G.length - 5, 'Azure : page Aide-mémoire, 5 groupes actifs, les autres nommés dans une ligne, aucun supprimé sans explication');
   await page.goto(`${BASE}/#/`);
   await page.goto(`${BASE}/#/memo`);
   assert(await page.locator('#filtreActif').isVisible(), 'aide-mémoire : badge « Filtre : Azure » visible');

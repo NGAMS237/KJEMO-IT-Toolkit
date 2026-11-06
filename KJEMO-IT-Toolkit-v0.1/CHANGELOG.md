@@ -1,3 +1,12 @@
+## AZURE-TP-01 (2026-11-06)
+
+- 8 nouvelles fiches Azure tirées des 5 pages Learn du prof : créer une application web (App Service), restrictions d’accès IP, intégration au VNet, point privé App Service, conteneur/fichier de stockage, point privé de stockage par sous-ressource (blob, queue, file, table), gestion d’une table de routage, routes par étiquette de service. Total 128 fiches.
+- Parcours TP : deux cours « TP1 Azure » (Energia) et « TP2 Azure » (Tardi) découpés en points à cocher, liés aux fiches ; les points de calcul restent marqués non couverts.
+- Cours « Carte de la documentation Azure » : sommaire du PDF azure-virtual-network (titres et pages seulement) rangé en 13 groupes A–M, chaque article lié à une fiche ou signalé « à lire ».
+- Classement et mémo : nouvelle famille/groupe « App Service », fiches ajoutées à routage, point privé et stockage.
+- Honnêteté : restrictions d’accès et table de routage vérifiées contre les pages lues ; création de l’app, plan, intégration VNet et `--route-table null` NON confirmés (pages CLI bloquées). Rien n’est exécuté dans Azure.
+- Tests : `test/azure-tp.test.mjs` 94 vérifications ; comptes mis à jour (128 fiches, 8 cours Azure, 5 groupes Azure).
+
 ## JOURNAL-LABO-11 (2026-11-06)
 
 - Appairage complet : chaque VNet porte les réglages de SON côté de l’appairage, avec les libellés du portail : accéder au VNet appairé (coché par défaut), recevoir le trafic transféré, la passerelle ou le serveur de routes peut transférer le trafic, utiliser la passerelle ou le serveur de routes distant. Les deux moitiés sont générées avec leurs propres options (`--allow-vnet-access`, `--allow-forwarded-traffic`, `--allow-gateway-transit`, `--use-remote-gateways`). Changement : l’ancien réglage unique « transit » s’applique maintenant au côté qui le déclare ; la passerelle distante se coche sur l’autre VNet.

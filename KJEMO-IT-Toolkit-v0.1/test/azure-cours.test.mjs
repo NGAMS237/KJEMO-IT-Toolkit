@@ -178,7 +178,7 @@ const resolveur = {
 assert(COURS_AZURE_PARCOURS.map((c) => c.id).join() === COURS_IDS.join(), '5 cours dans l’ordre du programme');
 {
   const ordre = K.COURS.filter((c) => c.plateformes.includes('Azure')).map((c) => c.id);
-  assert(ordre.join() === COURS_IDS.join(), '5 cours Azure au total', ordre.join());
+  assert(ordre.join() === COURS_IDS.concat(['azure-tp1-energia', 'azure-tp2-tardi', 'azure-08-carte-documentation']).join(), '8 cours Azure au total', ordre.join());
 }
 for (const cid of COURS_IDS) {
   const c = K.COURS_PAR_ID.get(cid);
