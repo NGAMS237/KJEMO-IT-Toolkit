@@ -636,6 +636,46 @@ console.log('15. Azure : ressources, zones VNet et sous-réseaux, commandes Azur
   assert(ml.includes('value="eaz00001"') && !ml.includes('value="eci00001"'), 'labo Azure : seuls les équipements Azure se proposent depuis l’inventaire');
 }
 
+// ===== 16. Appairage complet (JOURNAL-LABO-11) =====
+{
+  const CA2 = await imp('config-azure.mjs');
+  const hs = SC.normaliserSchema(MS.modeleSchema('azure-hub-spoke').construire()).schema;
+  const vn = (n) => hs.zones.find((z) => z.nom === n);
+  const h = vn('vnet-hub'); const sp1 = vn('vnet-spoke1'); const sp2 = vn('vnet-spoke2');
+  assert(h.config.transitPasserelle === true && sp1.config.passerelleDistante === true && sp1.config.accesVnet === true && sp1.config.transitPasserelle === false, 'appairage : options par sens conservées (hub transit, spoke passerelle distante, accès par défaut)');
+  const sc = CA2.scriptAzure(hs); const app = sc.blocs.find((b) => /^Appairages/.test(b.titre));
+  const lg = app.lignes.join('\n');
+  assert(/vnet-hub-vers-vnet-spoke1 .*--allow-gateway-transit/.test(lg) && /vnet-spoke1-vers-vnet-hub .*--use-remote-gateways/.test(lg) && !/vnet-hub-vers-vnet-spoke1 .*--use-remote-gateways/.test(lg), 'appairage : chaque sens a ses propres options (transit côté hub, passerelle distante côté spoke)');
+  assert(sc.blocs.findIndex((b) => b === app) > sc.blocs.findIndex((b) => /Passerelle VPN/.test(b.titre)) && /vnet-gateway wait/.test(lg), 'appairage : créé après la passerelle VPN quand un spoke l’utilise');
+  assert(sc.blocs.some((b) => /Network Contributor/.test(b.titre)) && sc.blocs.find((b) => /Network Contributor/.test(b.titre)).lignes.filter((l) => l.startsWith('az role assignment create')).length === 3, 'droits : une commande Network Contributor par VNet appairé');
+  const av = CA2.verifierAzure(hs).join('\n');
+  assert(!/pas transitif/.test(av) && !/passerelle distante/.test(av), 'hub et spoke complet : appliance dans le hub, aucun avertissement d’appairage');
+  // Sans appliance : non-transitivité signalée
+  const sansNva = { ...hs, noeuds: hs.noeuds.filter((n) => n.type !== 'appliance') };
+  assert(/vnet-spoke1 et vnet-spoke2 .* pas transitif/.test(CA2.verifierAzure(sansNva).join('\n')), 'non-transitivité signalée sans appliance dans le hub');
+  // Passerelle distante sans transit côté hub, sans passerelle
+  const casse = JSON.parse(JSON.stringify(hs));
+  casse.zones.find((z) => z.nom === 'vnet-hub').config.transitPasserelle = false; casse.noeuds = casse.noeuds.filter((n) => n.type !== 'passerelle-vpn'); casse.zones = casse.zones.filter((z) => z.nom !== 'GatewaySubnet');
+  const avc = CA2.verifierAzure(casse).join('\n');
+  assert(/demande que vnet-hub autorise le transit/.test(avc) && /rien à utiliser/.test(avc), 'passerelle distante : exige le transit côté distant');
+  // Global + DNS
+  const glob = JSON.parse(JSON.stringify(hs)); glob.zones.find((z) => z.nom === 'vnet-spoke1').config.region = 'francecentral'; glob.zones.find((z) => z.nom === 'vnet-spoke2').config.dns = '10.0.0.4';
+  const avg = CA2.verifierAzure(glob).join('\n');
+  assert(/Appairage global vnet-hub .* vnet-spoke1/.test(avg) && /serveurs DNS diffèrent/.test(avg), 'appairage global et DNS différents signalés');
+  // Accès coupé
+  const coupe = JSON.parse(JSON.stringify(hs)); coupe.zones.find((z) => z.nom === 'vnet-spoke2').config.accesVnet = false;
+  assert(/accès au VNet appairé est coupé/.test(CA2.verifierAzure(coupe).join('\n')) && !/--allow-vnet-access/.test(CA2.scriptAzure(coupe).blocs.find((b) => /^Appairages/.test(b.titre)).lignes.find((l) => /vnet-spoke2-vers/.test(l))), 'accès coupé : signalé et option absente de la commande');
+  // Tests et notes
+  const tv = CA2.testsAzure(hs, h).map((t) => t.test).join('\n');
+  assert(/peeringState/.test(tv) && /show-effective-route-table/.test(tv), 'tests : état Connected et route VNetPeering');
+  const nt = CA2.notesAppairages(hs);
+  assert(/Network Contributor/.test(nt.acces) && /facturé/.test(nt.acces) && /déplacé/.test(nt.retourArriere) && CA2.notesAppairages(SC.schemaVide()).acces === '', 'notes d’exploitation des appairages (droits, coût, déplacement)');
+  const lab2 = { ...J.entreeVide({ categorieId: 'azure', date: new Date('2026-11-06T10:00:00'), existantes: [] }), titre: 'Hub', schema: hs };
+  const r2 = SR.remplirDepuisSchema(lab2, { inventaire: [], date: new Date('2026-11-06T10:00:00') });
+  assert(/Network Contributor/.test(r2.entree.acces) && /peering delete/.test(r2.entree.retourArriere) && !Object.keys(J.normaliserEntree(r2.entree).erreurs).length, 'remplir : accès et retour arrière rédigés, labo valide');
+  assert(MS.modelesPour('azure').some((m) => m.id === 'azure-hub-spoke') && VA.panneauZoneAzure(hs, { ...h, config: { ...h.config, niveau: 'complet' } }).includes('utiliser la passerelle'), 'modèle hub et spoke proposé ; panneau VNet avec les options par côté');
+}
+
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);
 console.log('Le PDF est vérifié par sa structure, qpdf et pdftotext ; l’affichage dans chaque lecteur PDF n’est pas prouvé.');
 process.exit(failed ? 1 : 0);

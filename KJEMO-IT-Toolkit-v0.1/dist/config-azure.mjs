@@ -131,7 +131,10 @@ export const FORMULAIRES = {
 export const FORMULAIRES_ZONE = {
   vnet: [T('espace', 'Espace d’adressage (CIDR, virgules si plusieurs)', { place: '10.1.0.0/16' }), C('region', 'Région', [['', 'héritée de la zone ou du labo'], ...REGIONS]),
     T('groupe', 'Groupe de ressources', { place: 'hérité', niveau: 'intermediaire' }), M('appairages', 'Appairé avec (dans les deux sens)', 'autresVnets'),
-    K('transfert', 'Appairage : autoriser le trafic transféré (NVA, hub)', { niveau: 'complet' }), K('transitPasserelle', 'Appairage : transit par la passerelle de ce VNet', { niveau: 'complet' }),
+    K('accesVnet', 'Appairage, ce côté : autoriser le VNet appairé à accéder à ce VNet', { defaut: true, niveau: 'intermediaire' }),
+    K('transfert', 'Appairage, ce côté : autoriser le VNet appairé à recevoir le trafic transféré (NVA, hub)', { niveau: 'complet' }),
+    K('transitPasserelle', 'Appairage, ce côté : la passerelle ou le serveur de routes de ce VNet peut transférer le trafic au VNet appairé', { niveau: 'complet' }),
+    K('passerelleDistante', 'Appairage, ce côté : utiliser la passerelle ou le serveur de routes du VNet appairé', { niveau: 'complet' }),
     T('dns', 'Serveurs DNS personnalisés', { place: 'vide = Azure (168.63.129.16)', niveau: 'complet' })],
   'sous-reseau': [T('plage', 'Plage (CIDR)', { place: '10.1.1.0/24' }), T('besoin', 'Adresses nécessaires (pour le découpage)', { place: '40' }),
     C('delegation', 'Délégation', DELEGATIONS, { niveau: 'intermediaire' }), M('pointsService', 'Points de terminaison de service', 'pointsService', { niveau: 'intermediaire' }),
@@ -291,6 +294,54 @@ export function espaceConseille(besoins) {
  * Vérifications
  * ------------------------------------------------------------------------ */
 const NOM_STOCKAGE = /^[a-z0-9]{3,24}$/;
+/* ---------------------------------------------------------------------------
+ * Appairages : paires, options par sens, vérifications
+ * ------------------------------------------------------------------------ */
+/** Paires de VNet appairés, une fois chacune (déclarées d'un côté ou des deux). */
+export function pairesAppairees(ctx) {
+  const paires = [];
+  for (const v of ctx.vnets) for (const id of v.c.appairages) {
+    const w = ctx.vnets.find((x) => x.id === id); if (!w || w.id === v.id) continue;
+    if (paires.some(([a, b]) => (a.id === v.id && b.id === w.id) || (a.id === w.id && b.id === v.id))) continue;
+    paires.push([v, w]);
+  }
+  return paires;
+}
+const sontAppaires = (ctx, a, b) => pairesAppairees(ctx).some(([x, y]) => (x.id === a.id && y.id === b.id) || (x.id === b.id && y.id === a.id));
+const passerelleVpnDans = (schema, v) => schema.noeuds.some((n) => n.type === 'passerelle-vpn' && ((normaliserConfigAzure(n.type, n.config)?.vnet) === v.id || (!normaliserConfigAzure(n.type, n.config)?.vnet && contexteAzure(schema).noeud(n).vnet?.id === v.id)));
+const aSousReseauPasserelle = (ctx, v) => ctx.sousReseaux.some((s) => s.vnet?.id === v.id && s.nom === 'GatewaySubnet');
+/** Avertissements propres aux appairages (jamais bloquants). */
+function verifierAppairages(schema, ctx) {
+  const m = []; const paires = pairesAppairees(ctx);
+  for (const [a, b] of paires) {
+    for (const [v, w] of [[a, b], [b, a]]) {
+      if (!v.c.passerelleDistante) continue;
+      if (!w.c.transitPasserelle) m.push(`Appairage ${v.nom} → ${w.nom} : « utiliser la passerelle distante » demande que ${w.nom} autorise le transit par sa passerelle (option du côté ${w.nom}).`);
+      if (!passerelleVpnDans(schema, w) && !aSousReseauPasserelle(ctx, w)) m.push(`Appairage ${v.nom} → ${w.nom} : ${w.nom} n’a ni passerelle VPN ni GatewaySubnet, il n’y a rien à utiliser.`);
+      if (passerelleVpnDans(schema, v)) m.push(`Appairage ${v.nom} → ${w.nom} : ${v.nom} a déjà sa propre passerelle, il ne peut pas utiliser celle de ${w.nom}.`);
+    }
+    if (a.c.passerelleDistante && b.c.passerelleDistante) m.push(`Appairage ${a.nom} ↔ ${b.nom} : « utiliser la passerelle distante » ne s’active que d’un seul côté.`);
+    if (!a.c.accesVnet || !b.c.accesVnet) m.push(`Appairage ${a.nom} ↔ ${b.nom} : l’accès au VNet appairé est coupé d’un côté (${[a, b].filter((x) => !x.c.accesVnet).map((x) => x.nom).join(', ')}) : le trafic ne passe pas dans ce sens.`);
+    if (a.region !== b.region) {
+      const basique = schema.noeuds.some((n) => n.type === 'equilibreur' && [a.id, b.id].includes(contexteAzure(schema).noeud(n).vnet?.id) && /basic|base/i.test(String(normaliserConfigAzure(n.type, n.config)?.sku ?? '')));
+      m.push(`Appairage global ${a.nom} (${a.region}) ↔ ${b.nom} (${b.region}) : la frontale d’un équilibreur de charge De base n’est pas joignable à travers un appairage global${basique ? ' (un équilibreur De base est présent)' : ' ; utilise le niveau Standard'}.`);
+    }
+    if ((a.c.dns || '') !== (b.c.dns || '')) m.push(`Appairage ${a.nom} ↔ ${b.nom} : les serveurs DNS diffèrent (${a.c.dns || 'Azure'} / ${b.c.dns || 'Azure'}) : les noms ne se résoudront pas de la même façon des deux côtés.`);
+  }
+  // Non-transitivité : A–B et B–C appairés, A–C non.
+  for (const b of ctx.vnets) {
+    const voisins = ctx.vnets.filter((x) => x.id !== b.id && sontAppaires(ctx, x, b));
+    for (let i = 0; i < voisins.length; i++) for (let j = i + 1; j < voisins.length; j++) {
+      const [a, c] = [voisins[i], voisins[j]];
+      if (sontAppaires(ctx, a, c)) continue;
+      const nva = schema.noeuds.some((n) => ['appliance', 'pare-feu-azure'].includes(n.type) && contexteAzure(schema).noeud(n).vnet?.id === b.id);
+      if (!nva) m.push(`${a.nom} et ${c.nom} sont appairés chacun à ${b.nom}, mais l’appairage n’est pas transitif : ils ne se joignent pas. Ajoute un appairage direct, ou une appliance (NVA) dans ${b.nom} avec transfert de trafic et une route (UDR) dans chaque réseau.`);
+      else for (const x of [a, c]) if (!x.c.transfert || !b.c.transfert) { m.push(`${a.nom} ↔ ${c.nom} par l’appliance de ${b.nom} : active « recevoir le trafic transféré » sur ${x.nom} et ${b.nom}, sinon le trafic de l’appliance est refusé.`); break; }
+    }
+  }
+  return [...new Set(m)];
+}
+
 /** Avertissements sur tout le schéma Azure (jamais bloquants). */
 export function verifierAzure(schema) {
   const ctx = contexteAzure(schema); const m = [];
@@ -307,6 +358,7 @@ export function verifierAzure(schema) {
       if (w && espaces.some((e) => w.c.espace.split(',').some((f) => chevauche(e, f.trim())))) m.push(`Appairage ${v.nom} ↔ ${w.nom} impossible : leurs espaces d’adressage se chevauchent.`);
     }
   }
+  m.push(...verifierAppairages(schema, ctx));
   for (let i = 0; i < ctx.vnets.length; i++) for (let j = i + 1; j < ctx.vnets.length; j++) {
     const [a, b] = [ctx.vnets[i], ctx.vnets[j]];
     if (a.c.appairages.includes(b.id) || b.c.appairages.includes(a.id)) continue;
@@ -412,17 +464,40 @@ export function commandesZone(schema, z, { appairages = true } = {}) {
   }
   return { blocs: [], avertissements: [] };
 }
-/** Appairages déclarés sur un VNet (les deux sens, une seule fois par paire). */
+/** Options d'un côté de l'appairage : les réglages du VNet qui porte cette moitié. */
+const optionsCote = (c) => `${c.accesVnet ? ' --allow-vnet-access' : ''}${c.transfert ? ' --allow-forwarded-traffic' : ''}${c.transitPasserelle ? ' --allow-gateway-transit' : ''}${c.passerelleDistante ? ' --use-remote-gateways' : ''}`;
+/** Appairages déclarés sur un VNet : une moitié par sens, avec les options de chaque côté, écrites une fois par paire. */
 function lignesAppairages(ctx, v) {
   const L2 = [];
   for (const id of v.c.appairages) {
     const w = ctx.vnets.find((x) => x.id === id); if (!w) continue;
     if (w.c.appairages.includes(v.id) && w.id < v.id) continue;   // déclaré des deux côtés : écrit une fois
-    const opt = v.c.transfert ? ' --allow-forwarded-traffic' : '';
     const distant = w.groupe === v.groupe ? w.nom : `$(az network vnet show -g ${w.groupe} -n ${w.nom} --query id -o tsv)`;
     const retour = w.groupe === v.groupe ? v.nom : `$(az network vnet show -g ${v.groupe} -n ${v.nom} --query id -o tsv)`;
-    L2.push(`az network vnet peering create -g ${v.groupe} -n ${v.nom}-vers-${w.nom} --vnet-name ${v.nom} --remote-vnet ${distant} --allow-vnet-access${opt}${v.c.transitPasserelle ? ' --allow-gateway-transit' : ''}`);
-    L2.push(`az network vnet peering create -g ${w.groupe} -n ${w.nom}-vers-${v.nom} --vnet-name ${w.nom} --remote-vnet ${retour} --allow-vnet-access${opt}${v.c.transitPasserelle ? ' --use-remote-gateways' : ''}`);
+    L2.push(`az network vnet peering create -g ${v.groupe} -n ${v.nom}-vers-${w.nom} --vnet-name ${v.nom} --remote-vnet ${distant}${optionsCote(v.c)}`);
+    L2.push(`az network vnet peering create -g ${w.groupe} -n ${w.nom}-vers-${v.nom} --vnet-name ${w.nom} --remote-vnet ${retour}${optionsCote(w.c)}`);
+    L2.push(`# État : « Initiated » après la première moitié, « Connected » quand les deux existent.`);
+  }
+  return L2;
+}
+/** Texte d'exploitation des appairages (droits, coût, retour arrière) ; vide s'il n'y en a pas. */
+export function notesAppairages(schema) {
+  const ctx = contexteAzure(schema); const paires = pairesAppairees(ctx);
+  if (!paires.length) return { acces: '', retourArriere: '' };
+  const noms = paires.map(([a, b]) => `${a.nom} ↔ ${b.nom}`).join(', ');
+  const globaux = paires.filter(([a, b]) => a.region !== b.region).map(([a, b]) => `${a.nom} ↔ ${b.nom}`);
+  return {
+    acces: `Appairages (${noms}) : le rôle Network Contributor (ou un rôle personnalisé avec Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write, read et delete) est nécessaire sur chaque VNet ; pour supprimer la moitié distante, le droit est aussi nécessaire sur l’autre VNet. Le trafic entrant et sortant d’un appairage est facturé${globaux.length ? ` (plus cher entre régions : ${globaux.join(', ')})` : ''}. Les noms Azure par défaut ne se résolvent pas d’un VNet appairé à l’autre : zone DNS privée liée aux deux VNet ou DNS personnalisé.`,
+    retourArriere: `Appairages : supprimer les deux moitiés (az network vnet peering delete -g <groupe> --vnet-name <vnet> -n <nom>, pour chaque sens). Un VNet appairé ne peut pas être déplacé ni supprimé tant que l’appairage existe : supprimer l’appairage, déplacer, puis le recréer. Les clients VPN point à site doivent re-télécharger leur profil après un changement d’appairage.`,
+  };
+}
+
+/** Commandes de droits pour les appairages (rôle Network Contributor, une fois par VNet concerné). */
+export function droitsAppairages(ctx) {
+  const vus = new Set(); const L2 = [];
+  for (const [a, b] of pairesAppairees(ctx)) for (const v of [a, b]) {
+    if (vus.has(v.id)) continue; vus.add(v.id);
+    L2.push(`az role assignment create --assignee <compte ou groupe> --role "Network Contributor" --scope $(az network vnet show -g ${v.groupe} -n ${v.nom} --query id -o tsv)`);
   }
   return L2;
 }
@@ -628,7 +703,9 @@ export function scriptAzure(schema) {
   if (groupes.size) blocs.push({ titre: 'Groupes de ressources', lignes: ['az login', ...[...groupes].map(([g, r]) => `az group create -n ${g} -l ${r}`)] });
   for (const v of ctx.vnets) blocs.push(...commandesZone(schema, v.zone, { appairages: false }).blocs);
   const app = ctx.vnets.flatMap((v) => lignesAppairages(ctx, v));
-  if (app.length) blocs.push({ titre: 'Appairages (après la création des deux VNet)', lignes: app });
+  const apresNoeuds = ctx.vnets.some((v) => v.c.passerelleDistante);   // la passerelle doit exister avant « use-remote-gateways »
+  const blocApp = { titre: apresNoeuds ? 'Appairages (après la passerelle VPN)' : 'Appairages (après la création des deux VNet)', lignes: apresNoeuds ? [...schema.noeuds.filter((n) => n.type === 'passerelle-vpn').map((n) => `az network vnet-gateway wait -g ${ctx.noeud(n).groupe} -n ${nomAzure(n.nom, n.type)} --created`), ...app] : app };
+  if (app.length && !apresNoeuds) blocs.push(blocApp);
   const noeuds = schema.noeuds.filter((n) => estAzure(n.type)).sort((a, b) => ORDRE.indexOf(a.type) - ORDRE.indexOf(b.type));
   // Une zone DNS privée et ses liens ne se créent qu'une fois, même si plusieurs points de terminaison l'utilisent.
   const dejaFait = new Set();
@@ -636,6 +713,9 @@ export function scriptAzure(schema) {
     const lignes = b.lignes.filter((x) => { if (!/^az network private-dns (zone create|link vnet create)/.test(x)) return true; if (dejaFait.has(x)) return false; dejaFait.add(x); return true; });
     blocs.push({ ...b, lignes });
   }
+  if (app.length && apresNoeuds) blocs.push(blocApp);
+  const droits = droitsAppairages(ctx);
+  if (droits.length) blocs.push({ titre: 'Droits pour créer et supprimer les appairages (rôle Network Contributor)', lignes: ['# À donner sur chaque VNet appairé ; pour supprimer une moitié distante, le droit est aussi nécessaire sur l’autre VNet.', ...droits] });
   return { blocs, avertissements: verifierAzure(schema) };
 }
 
@@ -683,7 +763,11 @@ export function testsAzure(schema, el) {
   if (el.genre === 'vnet') {
     const v = ctx.vnets.find((x) => x.id === el.id); if (!v) return T2;
     A(`az network vnet subnet list -g ${v.groupe} --vnet-name ${v.nom} -o table`, `Sous-réseaux ${ctx.sousReseaux.filter((s) => s.vnet?.id === v.id).map((s) => `${s.nom} ${s.c.plage}`).join(', ') || 'attendus'}`);
-    if (v.c.appairages.length) A(`az network vnet peering list -g ${v.groupe} --vnet-name ${v.nom} -o table`, 'Appairages à l’état « Connected »');
+    if (v.c.appairages.length || ctx.vnets.some((w) => w.c.appairages.includes(v.id))) {
+      A(`az network vnet peering list -g ${v.groupe} --vnet-name ${v.nom} --query "[].{nom:name,etat:peeringState,sync:peeringSyncLevel,distant:remoteVirtualNetwork.id}" -o table`, 'PeeringState « Connected » (« Initiated » = l’autre moitié manque), sync FullyInSync');
+      const dist = ctx.vnets.find((w) => v.c.appairages.includes(w.id) || w.c.appairages.includes(v.id));
+      if (dist) A(`az network nic show-effective-route-table -g ${v.groupe} -n <nic d’une VM de ${v.nom}> -o table`, `Une route « VNetPeering » vers ${dist.c.espace || 'l’espace de ' + dist.nom}`);
+    }
     return T2;
   }
   if (!estAzure(el.type)) return T2;

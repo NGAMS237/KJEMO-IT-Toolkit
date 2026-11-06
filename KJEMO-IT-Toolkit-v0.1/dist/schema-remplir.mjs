@@ -25,7 +25,7 @@ import { normaliserEquipement, equipementVide, TYPES_EQUIPEMENT } from './invent
 import { typeNoeud, decrireSchema, normaliserSchema } from './schema.mjs';
 import { modele, clePort } from './modeles.mjs';
 import { estAzure, typeAzure, TYPES_AZURE, REGIONS } from './azure-types.mjs';
-import { contexteAzure, scriptAzure, adressageAzure, tablesAzure, modeleAzure, testsAzure, nomAzure, utilisablesAzure } from './config-azure.mjs';
+import { contexteAzure, notesAppairages, scriptAzure, adressageAzure, tablesAzure, modeleAzure, testsAzure, nomAzure, utilisablesAzure } from './config-azure.mjs';
 import { normaliserConfig, famille, estIos, commandesNoeud, texteAvecTitres, interfacesDepuisConfig, adressesDepuisConfig, routesDepuisConfig, vlansDepuisConfig, testsProposes, cidr } from './config-ios.mjs';
 
 /** Système de l'inventaire déduit du symbole. */
@@ -288,6 +288,9 @@ function remplirAzure(e, s, { inv, parId, nomsPris, bilan, date }) {
       + `${ctx.vnets.length ? `Réseaux virtuels : ${ctx.vnets.map((v) => `${v.nom}${v.c.espace ? ` (${v.c.espace})` : ''}`).join(', ')}. ` : ''}${res.length ? `Ressources : ${res.join(' ; ')}.` : ''}`.slice(0, 2000);
     bilan.environnement = true;
   }
+  // 7. Exploitation des appairages (droits, coût, retour arrière), si ces champs sont vides.
+  const nap = notesAppairages(s);
+  for (const k of ['acces', 'retourArriere']) if (nap[k] && !String(e[k] ?? '').trim()) e[k] = nap[k].slice(0, 2000);
 }
 
 /** Phrase de bilan pour la barre d'état. */

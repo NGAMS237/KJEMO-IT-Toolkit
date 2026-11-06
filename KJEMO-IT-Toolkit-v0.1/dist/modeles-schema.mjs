@@ -59,7 +59,33 @@ function tp2() {
   return s;
 }
 
+/** Hub et spoke : un réseau central (passerelle VPN, appliance) et deux réseaux périphériques appairés au centre seulement. */
+function hubSpoke() {
+  const s = schemaVide(); s.azure = { groupe: 'rg-hub-spoke', region: 'canadacentral' };
+  const hub = zone('vnet', 'vnet-hub', 250, 20, 500, 240, { espace: '' });
+  const sp1 = zone('vnet', 'vnet-spoke1', 20, 310, 400, 220, { espace: '' });
+  const sp2 = zone('vnet', 'vnet-spoke2', 580, 310, 400, 220, { espace: '' });
+  hub.config = { espace: '', appairages: [sp1.id, sp2.id], accesVnet: true, transfert: true, transitPasserelle: true };
+  for (const sp of [sp1, sp2]) sp.config = { espace: '', appairages: [hub.id], accesVnet: true, transfert: true, passerelleDistante: true };
+  const sn = (nom, x, y, l, h) => zone('sous-reseau', nom, x, y, l, h, { plage: '' });
+  s.zones.push(hub, sp1, sp2,
+    sn('GatewaySubnet', 265, 55, 220, 190), sn('snet-nva', 515, 55, 220, 190),
+    sn('snet-charge1', 35, 345, 370, 170), sn('snet-charge2', 595, 345, 370, 170));
+  const gw = noeud('passerelle-vpn', 'vpngw-hub', 340, 130, { niveau: 'intermediaire', vnet: hub.id, sku: 'VpnGw1' });
+  const nva = noeud('appliance', 'nva-hub', 590, 130, null);
+  const vm1 = noeud('vm', 'vm-spoke1', 150, 420, null);
+  const vm2 = noeud('vm', 'vm-spoke2', 710, 420, null);
+  const rt = noeud('table-routage', 'rt-spokes', 480, 285, { niveau: 'intermediaire', sousReseaux: [sp1, sp2].map((z) => z.id), routes: [] });
+  s.noeuds.push(gw, nva, vm1, vm2, rt);
+  s.liens.push(lien(vm1, nva, 'trafic', 'via l’appliance'), lien(nva, vm2, 'trafic'));
+  s.textes.push({ id: id('t'), texte: 'Appairage non transitif : spoke1 et spoke2 ne se joignent que par l’appliance (transfert de trafic + route UDR vers son IP). Espaces et plages : à remplir.', x: 20, y: 545 });
+  return s;
+}
+
 export const MODELES_SCHEMA = [
+  { id: 'azure-hub-spoke', label: 'Azure · Hub et spoke : passerelle partagée et appliance au centre', categorie: 'azure', construire: hubSpoke,
+    titre: 'Réseau en étoile (hub et spoke) avec passerelle partagée',
+    objet: 'Relier deux réseaux périphériques (spoke) à un réseau central (hub) par appairage : les spokes utilisent la passerelle VPN du hub, et leur trafic mutuel passe par une appliance du hub, car l’appairage n’est pas transitif.' },
   { id: 'azure-tp2-tardi', label: 'Infonuagique I · TP2 : App Service et stockage privé (banque Tardi)', categorie: 'azure', construire: tp2,
     titre: 'TP2 : accès privé à App Service et au stockage (banque Tardi)',
     objet: 'Déployer WebAPP1 (conteneur) qui utilise une file d’attente et un conteneur blob, rendre le compte de stockage privé (points de terminaison privés dans VNET2), isoler l’application dans VNET1 et mettre en place le routage demandé.' },

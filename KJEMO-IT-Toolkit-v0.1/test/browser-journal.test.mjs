@@ -504,6 +504,11 @@ await ctx.close();
   assert(await p9.locator('#schFeuille').innerText().then((t) => t.includes('Appairage')), 'appairage VNET1 ↔ VNET2 tracé');
   await p9.selectOption('#schElement', { label: 'Réseau virtuel (VNet) · VNET2' });
   await p9.fill('#cfg-espace', '10.2.0.0/16'); await p9.click('[data-cfgaction="decouper"]');
+  // Appairage par sens : options du VNet (niveau complet)
+  await p9.selectOption('#schElement', { label: 'Réseau virtuel (VNet) · VNET1' });
+  await p9.check('input[name="cfgNiveau"][value="complet"]');
+  assert(await p9.locator('#cfg-accesVnet').isChecked() && await p9.locator('#cfg-passerelleDistante').count() === 1 && await p9.locator('#cfg-transitPasserelle').count() === 1 && !await p9.locator('#cfg-transfert').isChecked(),
+    'VNet (complet) : options de l’appairage par côté, accès coché par défaut, le reste décoché');
   // WebAPP1 : intégration au VNet
   await p9.selectOption('#schElement', { label: 'Équipement · WebAPP1' });
   assert(/az webapp create -g rg-tardi -p asp-tardi -n WebAPP1 --container-image-name index\.docker\.io\/romaric\/tpasr:latest/.test(await p9.locator('#cfgCode').innerText()), 'WebAPP1 : commandes de l’énoncé (B1, conteneur, port 8080)');

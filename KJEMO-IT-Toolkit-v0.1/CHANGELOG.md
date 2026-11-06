@@ -1,3 +1,13 @@
+## JOURNAL-LABO-11 (2026-11-06)
+
+- Appairage complet : chaque VNet porte les réglages de SON côté de l’appairage, avec les libellés du portail : accéder au VNet appairé (coché par défaut), recevoir le trafic transféré, la passerelle ou le serveur de routes peut transférer le trafic, utiliser la passerelle ou le serveur de routes distant. Les deux moitiés sont générées avec leurs propres options (`--allow-vnet-access`, `--allow-forwarded-traffic`, `--allow-gateway-transit`, `--use-remote-gateways`). Changement : l’ancien réglage unique « transit » s’applique maintenant au côté qui le déclare ; la passerelle distante se coche sur l’autre VNet.
+- Vérifications : passerelle distante exige le transit côté distant, une passerelle VPN ou un GatewaySubnet distant, aucune passerelle locale, et un seul côté ; accès coupé d’un côté ; appairage global (régions différentes, équilibreur De base) ; DNS différents ; non-transitivité (A–B et B–C sans A–C), et avec appliance dans le hub, transfert de trafic à activer.
+- Script : si un spoke utilise la passerelle du hub, les appairages passent après la passerelle VPN (`az network vnet-gateway wait`), puis un bloc de droits (rôle Network Contributor par VNet). États « Initiated » → « Connected » notés ; tests : `peeringState`, synchronisation, route VNetPeering dans les routes effectives.
+- « Remplir depuis le schéma » : Accès (droits, coût, résolution de noms) et Retour arrière (suppression des deux moitiés, VNet appairé non déplaçable) rédigés s’ils sont vides.
+- Nouveau modèle de schéma « Hub et spoke » : hub (passerelle VPN, appliance), deux spokes appairés au hub, route UDR ; plages à remplir.
+- Source : page Microsoft Learn « Créer, modifier ou supprimer un appairage de réseaux virtuels ». Noms des options CLI issus de mes connaissances (onglet CLI non lu). Commandes vérifiées dans leur forme, PAS exécutées dans Azure.
+- Tests : journal 322 vérifications, navigateur 146.
+
 ## JOURNAL-LABO-10 (2026-11-06)
 
 - Labo par système dès le départ : un labo Azure (ou Cisco, Système) ne montre que ses ressources, ses zones, ses liens et les équipements de son système dans l’inventaire ; l’onglet « Tous » reste pour un projet hybride. Plan d’adressage aux colonnes Azure (ressource ou VNet, sous-réseau, VNet / région).
