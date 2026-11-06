@@ -49,8 +49,15 @@ export const MODELES = [
   { id: 'vm-azure', label: 'VM Azure', type: 'vm', defaut: true, ports: 'nic0, nic1' },
   { id: 'vnet', label: 'Réseau virtuel Azure', type: 'reseau-virtuel', defaut: true, ports: 'Appairage 1-4' },
   { id: 'sous-reseau', label: 'Sous-réseau Azure', type: 'sous-reseau', defaut: true, ports: 'Lien 1-8' },
-  { id: 'vpn-gateway', label: 'Passerelle VPN Azure', type: 'passerelle-vpn', defaut: true, ports: 'Public, GatewaySubnet' },
-  { id: 'service-cloud', label: 'Service cloud', type: 'service-cloud', defaut: true, ports: 'Point de terminaison' },
+  { id: 'vpn-gateway', label: 'Passerelle VPN Azure', type: 'passerelle-vpn', defaut: true, ports: '' },
+  { id: 'service-cloud', label: 'Service cloud', type: 'service-cloud', defaut: true, ports: '' },
+  // Ressources Azure : pas de ports physiques, un lien se pose sans menu (flux, liaison privée).
+  ...[['app-service', 'App Service (Linux)'], ['fonction', 'Function App'], ['stockage', 'Compte de stockage StorageV2'], ['base-sql', 'Azure SQL Database'],
+    ['event-hub', 'Espace de noms Event Hubs'], ['point-terminaison-prive', 'Point de terminaison privé'], ['nsg', 'Groupe de sécurité réseau'], ['table-routage', 'Table de routage'],
+    ['zone-dns', 'Zone DNS'], ['equilibreur', 'Équilibreur de charge Standard'], ['passerelle-app', 'Application Gateway v2'], ['ip-publique', 'IP publique Standard'],
+    ['passerelle-nat', 'Passerelle NAT'], ['front-door', 'Front Door Standard'], ['pare-feu-azure', 'Azure Firewall'], ['bastion', 'Azure Bastion'],
+    ['appliance', 'Appliance virtuelle (VM)'], ['coffre-cles', 'Key Vault'], ['log-analytics', 'Espace Log Analytics']]
+    .map(([type, label]) => ({ id: `az-${type}`, label, type, defaut: true, ports: '' })),
   // WAN
   { id: 'internet', label: 'Internet', type: 'internet', defaut: true, ports: 'Lien 1-8' },
   { id: 'operateur', label: 'Nuage de l’opérateur', type: 'nuage-operateur', defaut: true, ports: 'Lien 1-8' },
@@ -129,7 +136,12 @@ export function cableAutomatique(typeA, portA, typeB, portB) {
   if (ports.every((p) => /^se/.test(p))) return 'serie';
   if (ports.some((p) => /wireless|sans fil|wi-fi|wlan/.test(p))) return 'sansfil';
   if (ports.some((p) => /^te/.test(p))) return 'fibre';
-  if (['internet', 'nuage-operateur', 'reseau-virtuel', 'sous-reseau', 'passerelle-vpn', 'service-cloud'].some((t) => t === typeA || t === typeB)) return 'droit';
+  // Azure : un point de terminaison privé vers sa ressource = liaison privée ; le reste = flux.
+  const AZURE = new Set(['vm', 'app-service', 'fonction', 'stockage', 'base-sql', 'event-hub', 'point-terminaison-prive', 'nsg', 'table-routage', 'zone-dns', 'equilibreur', 'passerelle-app',
+    'ip-publique', 'passerelle-nat', 'front-door', 'pare-feu-azure', 'bastion', 'appliance', 'coffre-cles', 'log-analytics', 'service-cloud', 'passerelle-vpn', 'reseau-virtuel', 'sous-reseau']);
+  if (typeA === 'point-terminaison-prive' || typeB === 'point-terminaison-prive') return 'liaison-privee';
+  if ((AZURE.has(typeA) && typeA !== 'vm') || (AZURE.has(typeB) && typeB !== 'vm') || (AZURE.has(typeA) && typeB === 'internet') || (AZURE.has(typeB) && typeA === 'internet')) return 'trafic';
+  if (['internet', 'nuage-operateur'].some((t) => t === typeA || t === typeB)) return 'droit';
   return FAMILLE_COMMUTATION.has(typeA) === FAMILLE_COMMUTATION.has(typeB) ? 'croise' : 'droit';
 }
 

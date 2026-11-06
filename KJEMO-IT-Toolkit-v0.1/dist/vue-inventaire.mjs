@@ -117,7 +117,8 @@ export function equipementsLaboMarkup({ liens = [], inventaire = [], erreurs = {
       + ` <a class="i-ouvrir" href="${esc(routeEquipement(e.id))}" data-jeqouvrir="${esc(e.id)}">Fiche</a></li>`;
   }).join('');
   const choisis = new Set(relies.map((l) => l.id));
-  const autres = inventaire.filter((e) => !choisis.has(e.id))
+  // Un labo Cisco, Système ou Azure propose les équipements de son système (et ceux « autre »).
+  const autres = inventaire.filter((e) => !choisis.has(e.id) && (!['cisco', 'systeme', 'azure'].includes(systemePrefere) || e.systeme === systemePrefere || e.systeme === 'autre'))
     .sort((a, b) => ((b.systeme === systemePrefere) - (a.systeme === systemePrefere)) || a.nom.localeCompare(b.nom, 'fr', { numeric: true }));
   const ajout = autres.length
     ? `<div class="j-eq-ajout"><label for="jEqAjout">Ajouter depuis l’inventaire</label><select id="jEqAjout"><option value="">— choisir un équipement existant —</option>${autres.map((e) => `<option value="${esc(e.id)}">${esc(e.nom)} · ${esc(typeEquipement(e.type).label)}${e.adresse ? ` · ${esc(e.adresse)}` : ''}</option>`).join('')}</select><button type="button" class="secondary-button" id="jEqAjouter">Ajouter au labo</button></div>`

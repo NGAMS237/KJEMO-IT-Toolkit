@@ -13,10 +13,13 @@ import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, ent
 import { pdfJournal, nomFichierPdf, pdfInventaire } from './journal-pdf.mjs';
 import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, normaliserEquipement, equipementVide, labosDe, filtrerInventaire,
          equipementsDepuisFiche } from './inventaire.mjs';
-import { FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
+import { FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, normaliserSchema, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
 import { editeurSchemaMarkup, feuilleSvg, menuPortsMarkup } from './vue-schema.mjs';
 import { apercuConfigMarkup, nouvelleLigne, poolsParVlan, ospfDepuisInterfaces } from './vue-config.mjs';
 import { normaliserConfig, proposerConfig, commandesNoeud, texteAvecTitres } from './config-ios.mjs';
+import { normaliserConfigAzure, FORMULAIRES, FORMULAIRES_ZONE, estAzure, decouperVnet, contexteAzure, commandesAzure, commandesZone, scriptAzure, texteAzure, nomAzure } from './config-azure.mjs';
+import { apercuAzureMarkup } from './vue-azure.mjs';
+import { modeleSchema } from './modeles-schema.mjs';
 import { remplirDepuisSchema, phraseBilan, SYSTEME_DU_TYPE } from './schema-remplir.mjs';
 import { MODELES, MODELE_PERSO, modele, modelesDuType, portsDuNoeud, portsOccupes, cableAutomatique, clePort } from './modeles.mjs';
 import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
@@ -2085,7 +2088,7 @@ function dessinerJournalFiche(view = document.querySelector('#journalView')) {
   view.innerHTML = journalEditeurMarkup({ entree: e, erreurs: ej.erreurs, note: ej.noteFiche, modifie: ej.modifie, versionOuverte: ej.versionOuverte,
     confirmerSuppression: ej.confirmerSuppression, imagesUrl, titresFiches: titresDesFiches(e.fiches), routeFiche: (id) => `#/tache/${id}`, imagesOk,
     equipementsHtml: equipementsLaboMarkup({ liens: e.equipements, inventaire: lireEquipements(), erreurs: ej.erreurs, systemePrefere: e.categorie }),
-    schemaHtml: editeurSchemaMarkup(e.schema, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: ej.erreurs }) });
+    schemaHtml: editeurSchemaMarkup(e.schema, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: ej.erreurs, categorie: e.categorie }) });
   window.scrollTo(0, defil);
   document.title = `${e.titre || 'Nouveau labo'} — Journal de labo — KJEMO IT Toolkit`;
   brancherJournalFiche(view);
@@ -2342,7 +2345,7 @@ function majFeuilleSchema() {
 function majBlocSchema(focus = null) {
   const bloc = document.querySelector('#schBloc');
   if (!bloc) return;
-  bloc.innerHTML = editeurSchemaMarkup(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: etatJournal.erreurs });
+  bloc.innerHTML = editeurSchemaMarkup(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: etatJournal.erreurs, categorie: etatJournal.brouillon.categorie });
   const v = document.querySelector('#schVider'); if (v && etatSchema.viderConfirme) v.textContent = 'Confirmer : vider le schéma';
   if (focus) document.querySelector(focus)?.focus({ preventScroll: true });
 }
@@ -2420,8 +2423,16 @@ function adresseConnue(noeudId, itf) {
 // ---------------------------------------------------------------------------
 const nomNoeudApp = (n) => resoudreEquipement(n.equipementId)?.nom || n.nom || typeNoeud(n.type).label;
 /** Pose une valeur dans la configuration du nœud par son chemin « a|b|c » (crée ce qui manque). */
+/** Élément Azure (ressource ou zone) : sa configuration se décrit par les formulaires de config-azure. */
+const estElementAzure = (el) => Boolean(el && (('type' in el && estAzure(el.type)) || ('l' in el && el.genre)));
+const configVideDe = (el) => (estElementAzure(el) ? normaliserConfigAzure(el.genre || el.type, null, { zone: Boolean(el.genre) }) : normaliserConfig(null));
 function poserConfig(n, chemin, valeur) {
-  if (!n.config) n.config = normaliserConfig(null);
+  if (!n.config) n.config = configVideDe(n);
+  if (estElementAzure(n)) {
+    const parts = chemin.split('|'); let o = n.config;
+    for (const k of parts.slice(0, -1)) { const cle = /^\d+$/.test(k) ? Number(k) : k; if (o[cle] == null) o[cle] = {}; o = o[cle]; }
+    o[parts.at(-1)] = valeur; return;
+  }
   const parts = chemin.split('|');
   if (parts[0] === 'ports') {
     const nom = parts[1];
@@ -2434,12 +2445,12 @@ function poserConfig(n, chemin, valeur) {
 }
 /** Liste de la configuration désignée par « a|b ». */
 function listeConfig(n, chemin) {
-  if (!n.config) n.config = normaliserConfig(null);
+  if (!n.config) n.config = configVideDe(n);
   return chemin.split('|').reduce((o, k) => o?.[k], n.config);
 }
 function majApercuConfig(n) {
   const a = document.querySelector('#cfgApercu');
-  if (a) a.innerHTML = apercuConfigMarkup(n, n.config, { nom: nomNoeudApp(n) });
+  if (a) a.innerHTML = estElementAzure(n) ? apercuAzureMarkup(schemaCourant(), n) : apercuConfigMarkup(n, n.config, { nom: nomNoeudApp(n) });
 }
 /** L'adresse d'un port configuré passe sur le câble branché à ce port et dans la fiche de l'équipement. */
 function synchroniserAdressePort(n, port, adresse) {
@@ -2450,16 +2461,87 @@ function synchroniserAdressePort(n, port, adresse) {
   return reporterInterface(n.id, port, adresse);
 }
 function texteConfigNoeud(n) {
+  if (estElementAzure(n)) return texteAzure(n.genre ? commandesZone(schemaCourant(), n) : commandesAzure(schemaCourant(), n));
   const c = normaliserConfig(n.config);
   return texteAvecTitres(n, commandesNoeud(n, c, { nom: nomNoeudApp(n) }));
 }
 
 
+/** Nouvelle zone Azure : un sous-réseau se pose dans le VNet choisi (sinon le premier), un VNet sous les autres. */
+function ajouterZoneAzure(genre) {
+  const s = schemaCourant();
+  if (s.zones.length >= 60) return null;
+  const sel = etatSchema.selection ? s.zones.find((z) => z.id === etatSchema.selection) : null;
+  const noms = { vnet: `VNET${s.zones.filter((z) => z.genre === 'vnet').length + 1}`, 'sous-reseau': 'Subnet', groupe: 'rg-labo', region: 'Canada Centre' };
+  let x = 40; let y = 110; let l = 460; let h = 250;
+  if (genre === 'sous-reseau') {
+    const v = sel?.genre === 'vnet' ? sel : s.zones.find((z) => z.genre === 'vnet');
+    const enfants = v ? s.zones.filter((z) => z.genre === 'sous-reseau' && z.x >= v.x && z.y >= v.y && z.x + z.l <= v.x + v.l && z.y + z.h <= v.y + v.h).length : 0;
+    l = 180; h = 120;
+    if (v) { x = v.x + 12 + (enfants % Math.max(1, Math.floor((v.l - 12) / 190))) * 190; y = v.y + 30 + Math.floor(enfants / Math.max(1, Math.floor((v.l - 12) / 190))) * 130; }
+    x = Math.min(x, 1000 - l); y = Math.min(y, 600 - h);
+  } else if (genre === 'vnet') {
+    const n = s.zones.filter((z) => z.genre === 'vnet').length;
+    x = 30 + (n % 2) * 480; y = 100 + Math.floor(n / 2) * 250; l = 460; h = 240;
+    x = Math.min(x, 1000 - l); y = Math.min(y, 600 - h);
+  } else if (genre === 'groupe') { x = 10; y = 20; l = 980; h = 575; }
+  else { x = 5; y = 10; l = 990; h = 588; }
+  const z = { id: idSchema('z'), nom: noms[genre] ?? 'Zone', genre, couleur: 'bleu', x, y, l, h };
+  z.config = configVideDe(z);
+  s.zones.push(z);
+  return z;
+}
+
+/** Boutons du panneau Azure (ressource ou zone). */
+async function actionConfigAzure(b, n, montrer) {
+  const zone = Boolean(n.genre); const genre = n.genre || n.type;
+  if (b.id === 'cfgBascule') { etatSchema.cfgOuvert = etatSchema.cfgOuvert === false; majBlocSchema('#cfgBascule'); return; }
+  if (b.dataset.cfgadd) {
+    const liste = listeConfig(n, b.dataset.cfgadd);
+    const def = (zone ? FORMULAIRES_ZONE : FORMULAIRES)[genre]?.find((f) => f.id === b.dataset.cfgadd);
+    if (!Array.isArray(liste) || !def) return;
+    if (liste.length >= 60) { montrer('Limite atteinte pour cette liste.', `[data-cfgadd="${b.dataset.cfgadd}"]`); return; }
+    liste.push(Object.fromEntries(def.colonnes.map((c) => [c.id, c.type === 'choix' && !c.dyn ? c.options[0][0] : ''])));
+    schemaModifie();
+    majBlocSchema(`#cfg-${`${b.dataset.cfgadd}|${liste.length - 1}|${def.colonnes[0].id}`.replace(/[^\w-]/g, '_')}`); return;
+  }
+  if (b.dataset.cfgdel) {
+    const parts = b.dataset.cfgdel.split('|'); const i = Number(parts.pop()); const liste = listeConfig(n, parts.join('|'));
+    if (Array.isArray(liste)) { liste.splice(i, 1); schemaModifie(); }
+    majBlocSchema(`[data-cfgadd="${parts.join('|')}"]`); return;
+  }
+  const a = b.dataset.cfgaction; const sel = `[data-cfgaction="${a}"]`;
+  if (a === 'copier') { let ok = false; try { await navigator.clipboard.writeText(texteConfigNoeud(n)); ok = true; } catch { ok = false; } montrer(ok ? 'Commandes copiées.' : 'La copie est bloquée ici : sélectionne le texte des commandes et copie-le (Ctrl+C).', sel); return; }
+  if (a === 'telecharger') {
+    const res = await enregistrerFichier(`${etatJournal.brouillon.reference}_${nomAzure(n.nom, genre)}.sh`, `#!/usr/bin/env bash\n${texteConfigNoeud(n)}\n`, 'text/x-shellscript');
+    montrer(res.ok ? `Commandes ${res.message}.` : res.message, sel); return;
+  }
+  if (a === 'effacer') {
+    if (!etatSchema.cfgEffacer) { etatSchema.cfgEffacer = true; majBlocSchema(sel); const x = document.querySelector(sel); if (x) x.textContent = 'Confirmer : effacer la configuration'; return; }
+    etatSchema.cfgEffacer = false; n.config = configVideDe(n); schemaModifie(); montrer('Configuration remise à zéro.', '[data-cfgaction="copier"]'); return;
+  }
+  if (a === 'decouper' && n.genre === 'vnet') {
+    const s = schemaCourant(); const ctx = contexteAzure(s);
+    const v = ctx.vnets.find((x) => x.id === n.id); const sns = ctx.sousReseaux.filter((x) => x.vnet?.id === n.id);
+    const r = decouperVnet(v?.c.espace, sns.map((x) => ({ id: x.id, nom: x.nom, besoin: x.c.besoin })));
+    for (const [id, plage] of Object.entries(r.plages)) { const z = s.zones.find((x) => x.id === id); if (z) { z.config = z.config ?? configVideDe(z); z.config.plage = plage; } }
+    if (Object.keys(r.plages).length) schemaModifie();
+    montrer(r.erreur ?? `${Object.keys(r.plages).length} plage(s) attribuée(s)${r.reste ? ` ; ${r.reste} adresse(s) libres pour la croissance` : ''}. Vérifie et justifie tes choix.`, sel);
+  }
+}
+
 /** Boutons du panneau « Configuration ». */
 async function actionConfig(b, view) {
-  const n = etatSchema.selection ? schemaCourant().noeuds.find((x) => x.id === etatSchema.selection) : null;
-  if (!n) return;
   const montrer = (note, focus) => { etatSchema.cfgNote = note; majBlocSchema(focus); etatSchema.cfgNote = ''; };
+  if (b.dataset.cfgaction === 'scriptComplet') {
+    const r = scriptAzure(schemaCourant());
+    const res = await enregistrerFichier(`${etatJournal.brouillon.reference}_azure.sh`, `#!/usr/bin/env bash\n# ${etatJournal.brouillon.titre || etatJournal.brouillon.reference} : déploiement Azure (vérifié dans sa forme, pas exécuté)\nset -e\n${texteAzure(r)}\n`, 'text/x-shellscript');
+    montrer(res.ok ? `Script complet ${res.message}${r.avertissements.length ? ` (${r.avertissements.length} avertissement(s) à régler avant de l’exécuter)` : ''}.` : res.message, '[data-cfgaction="scriptComplet"]');
+    return;
+  }
+  const n = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+  if (!n || 'de' in n || 'texte' in n) return;
+  if (estElementAzure(n)) { await actionConfigAzure(b, n, montrer); return; }
   if (b.id === 'cfgBascule') { etatSchema.cfgOuvert = etatSchema.cfgOuvert === false; majBlocSchema('#cfgBascule'); return; }
   if (b.dataset.cfgadd) {
     const liste = listeConfig(n, b.dataset.cfgadd); const ligne = nouvelleLigne(b.dataset.cfgadd, normaliserConfig(n.config));
@@ -2516,12 +2598,12 @@ function pointFeuille(ev, svg) {
 }
 
 /** Port choisi dans le menu : premier bout du câble, ou création du câble au deuxième. */
-function choisirPort(port) {
+function choisirPort(port, { sansPort = false } = {}) {
   const s = schemaCourant(); const c = etatSchema.cablage; const nom = String(port ?? '').trim().slice(0, 30);
-  if (!c?.enAttente || !nom) return;
+  if (!c?.enAttente || (!nom && !sansPort)) return;
   const n = s.noeuds.find((x) => x.id === c.enAttente);
   const note = document.querySelector('#jNote');
-  if (portsOccupes(n, s.liens).has(clePort(nom))) { if (note) note.textContent = `Le port ${nom} est déjà câblé : choisis-en un autre.`; return; }
+  if (nom && portsOccupes(n, s.liens).has(clePort(nom))) { if (note) note.textContent = `Le port ${nom} est déjà câblé : choisis-en un autre.`; return; }
   if (!c.depuis) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: { noeud: n.id, port: nom }, enAttente: null }, selection: n.id }; majBlocSchema('#schFeuille'); return; }
   const a = s.noeuds.find((x) => x.id === c.depuis.noeud);
   const style = c.style === 'auto' ? cableAutomatique(a.type, c.depuis.port, n.type, nom) : c.style;
@@ -2557,6 +2639,9 @@ function brancherSchema(view) {
       if (c.depuis?.noeud === id) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: null, enAttente: null }, selection: null }; majBlocSchema(); return; }
       // Le menu des ports de cet équipement s'ouvre sur la feuille.
       etatSchema = { ...etatSchema, cablage: { ...c, enAttente: id }, selection: c.depuis ? c.depuis.noeud : id };
+      // Ressource sans port (Azure, nuage) : pas de menu, le lien se pose directement.
+      const nd = s.noeuds.find((x) => x.id === id);
+      if (!portsDuNoeud(nd, { equipement: resoudreEquipement(nd.equipementId), liens: s.liens }).length) { choisirPort('', { sansPort: true }); return; }
       majBlocSchema('#schPortChoix');
       return;
     }
@@ -2608,9 +2693,12 @@ function brancherSchema(view) {
     schemaModifie(); majFeuilleSchema();
   });
   bloc.addEventListener('input', (ev) => {
+    if (ev.target.id === 'azGroupe') { const s = schemaCourant(); s.azure = { ...(s.azure ?? {}), groupe: ev.target.value }; schemaModifie(); return; }
     const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null; if (!el) return;
     if (ev.target.dataset?.cfg && ev.target.type === 'text') {
-      poserConfig(el, ev.target.dataset.cfg, ev.target.value); schemaModifie(); majApercuConfig(el); return;
+      poserConfig(el, ev.target.dataset.cfg, ev.target.value); schemaModifie(); majApercuConfig(el);
+      if (estElementAzure(el) && 'l' in el) majFeuilleSchema();
+      return;
     }
     if (ev.target.id === 'schPorts') { el.ports = ev.target.value; schemaModifie(); return; }
     const champ = { schNom: 'nom', schNote: 'note', schEtiquette: 'etiquette', schItfDe: 'etiquetteDe', schItfA: 'etiquetteA', schAdrDe: 'adresseDe', schAdrA: 'adresseA', schZoneNom: 'nom', schTexte: 'texte' }[ev.target.id];
@@ -2619,8 +2707,15 @@ function brancherSchema(view) {
   });
   bloc.addEventListener('change', (ev) => {
     const id = ev.target.id; const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+    if (id === 'azRegion' || id === 'azGroupe') { const s = schemaCourant(); s.azure = { ...(s.azure ?? {}), [id === 'azRegion' ? 'region' : 'groupe']: ev.target.value }; schemaModifie(); return; }
     if (id === 'schElement') { etatSchema = { ...etatSchema, selection: ev.target.value || null, relierDepuis: null, cfgEffacer: false }; majBlocSchema('#schElement'); return; }
     if (!el) return;
+    if (ev.target.dataset?.cfgmulti) {
+      const ch = ev.target.dataset.cfgmulti; const actuel = listeConfig(el, ch);
+      const liste = Array.isArray(actuel) ? actuel : [];
+      const v = ev.target.value; const nouvelle = ev.target.checked ? [...new Set([...liste, v])] : liste.filter((x) => x !== v);
+      poserConfig(el, ch, nouvelle); schemaModifie(); majFeuilleSchema(); majApercuConfig(el); return;
+    }
     const chemin = ev.target.dataset?.cfg;
     if (chemin) {
       const t = ev.target;
@@ -2662,6 +2757,7 @@ function brancherSchema(view) {
     }
     else if (id === 'schStyle') el.style = ev.target.value;
     else if (id === 'schZoneCouleur') el.couleur = ev.target.value;
+    else if (id === 'schZoneGenre') { el.genre = ev.target.value || undefined; el.config = el.genre ? configVideDe(el) : undefined; if (!el.genre) { delete el.genre; delete el.config; } }
     else if (id === 'schZoneL') el.l = Math.max(60, Math.min(FEUILLE.largeur - el.x, aimanter(Number(ev.target.value) || 60)));
     else if (id === 'schZoneH') el.h = Math.max(40, Math.min(FEUILLE.hauteur - el.y, aimanter(Number(ev.target.value) || 40)));
     else return;
@@ -2693,10 +2789,11 @@ function brancherSchema(view) {
     if (b.dataset.sadd) {
       const v = b.dataset.sadd; let nouvel = null;
       if (v === 'zone') { nouvel = { id: idSchema('z'), nom: 'Nouvelle zone', couleur: 'bleu', x: 40, y: 360, l: 300, h: 200 }; s.zones.push(nouvel); }
+      else if (v.startsWith('zone:')) nouvel = ajouterZoneAzure(v.slice(5));
       else if (v === 'texte') { nouvel = { id: idSchema('t'), texte: 'Texte', x: 30, y: 34 }; s.textes.push(nouvel); }
       else if (v.startsWith('perso:')) nouvel = ajouterNoeud({ type: 'perso', typePerso: v.slice(6) });
       else nouvel = ajouterNoeud({ type: v });
-      if (nouvel) { etatSchema = { ...etatSchema, selection: nouvel.id, relierDepuis: null }; schemaModifie(); majBlocSchema(v === 'zone' ? '#schZoneNom' : v === 'texte' ? '#schTexte' : '#schNom'); }
+      if (nouvel) { etatSchema = { ...etatSchema, selection: nouvel.id, relierDepuis: null }; schemaModifie(); majBlocSchema(v.startsWith('zone') ? '#schZoneNom' : v === 'texte' ? '#schTexte' : '#schNom'); }
       return;
     }
     switch (b.id) {
@@ -2722,6 +2819,19 @@ function brancherSchema(view) {
         etatJournal = { ...etatJournal, brouillon: r.entree, noteFiche: phraseBilan(r.bilan), modifie: true };
         dessinerJournalFiche(view);
         document.querySelector('#schRemplir')?.focus({ preventScroll: true });
+        break;
+      }
+      case 'schModeleCharger': {
+        const m = modeleSchema(document.querySelector('#schModeleLabo')?.value);
+        if (!m) break;
+        const vide = !s.noeuds.length && !s.zones.length && !s.textes.length;
+        if (!vide && !etatSchema.modeleConfirme) { etatSchema.modeleConfirme = true; majBlocSchema('#schModeleCharger'); const x = document.querySelector('#schModeleCharger'); if (x) x.textContent = 'Confirmer : remplacer le schéma'; break; }
+        const { schema: nouveau } = normaliserSchema(m.construire());
+        lireFormulaireJournal(view);
+        e.schema = nouveau; if (!e.titre.trim()) e.titre = m.titre ?? ''; if (!e.objet.trim()) e.objet = m.objet ?? '';
+        etatSchema = { ...etatSchema, selection: null, modeleConfirme: false, cablage: null, relierDepuis: null }; schemaModifie(); dessinerJournalFiche(view);
+        document.querySelector('#schFeuille')?.focus({ preventScroll: true });
+        const n = document.querySelector('#jNote'); if (n) n.textContent = `Modèle chargé : ${m.label}. Complète les plages, appairages et réglages demandés par l’énoncé.`;
         break;
       }
       case 'schCablageFin': etatSchema = { ...etatSchema, cablage: null }; majBlocSchema('#schFeuille'); break;

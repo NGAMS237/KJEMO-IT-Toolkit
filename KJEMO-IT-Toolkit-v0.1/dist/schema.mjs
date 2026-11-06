@@ -17,15 +17,17 @@ import { secretDans, nouvelId } from './journal.mjs';
 import { largeur, versWinAnsi } from './pdf-a4.mjs';
 import { modele, modeleDefaut, MODELE_PERSO } from './modeles.mjs';
 import { normaliserConfig, secretConfig, famille, cidr } from './config-ios.mjs';
+import { TYPES_AZURE, GROUPES_AZURE, estAzure, genreZone, REGIONS, typeAzure } from './azure-types.mjs';
+import { normaliserConfigAzure, secretAzure } from './config-azure.mjs';
 
 export const FEUILLE = { largeur: 1000, hauteur: 600, pas: 10 };
-export const LIMITES = { noeuds: 80, liens: 150, zones: 30, textes: 40, typesPerso: 30 };
+export const LIMITES = { noeuds: 80, liens: 150, zones: 60, textes: 40, typesPerso: 30 };
 
 const BLEU = '#1f5f99'; const VERT = '#1d7a4a'; const CYAN = '#0a6c8f'; const GRIS = '#5d6a79';
 /** Groupes de la palette, comme les catégories de Packet Tracer. */
 export const GROUPES_NOEUD = [
   { id: 'reseau', label: 'Réseau' }, { id: 'terminaux', label: 'Terminaux' }, { id: 'serveurs', label: 'Serveurs' },
-  { id: 'cloud', label: 'Azure et cloud' }, { id: 'wan', label: 'WAN' }, { id: 'autre', label: 'Autre' },
+  ...GROUPES_AZURE, { id: 'wan', label: 'WAN' }, { id: 'autre', label: 'Autre' },
 ];
 /** Filtre « système » de la palette. */
 export const SYSTEMES_PALETTE = [
@@ -45,11 +47,11 @@ export const TYPES_NOEUD = [
   { id: 'camera-ip', label: 'Caméra IP', couleur: VERT, groupe: 'terminaux', systemes: ['systeme'] },
   { id: 'serveur', label: 'Serveur', couleur: VERT, groupe: 'serveurs', systemes: ['systeme'] },
   { id: 'nas', label: 'NAS', couleur: VERT, groupe: 'serveurs', systemes: ['systeme'] },
-  { id: 'vm', label: 'Machine virtuelle', couleur: CYAN, groupe: 'cloud', systemes: ['azure', 'systeme'] },
-  { id: 'reseau-virtuel', label: 'Réseau virtuel', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
-  { id: 'sous-reseau', label: 'Sous-réseau', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
-  { id: 'passerelle-vpn', label: 'Passerelle VPN', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
-  { id: 'service-cloud', label: 'Service cloud', couleur: CYAN, groupe: 'cloud', systemes: ['azure'] },
+  // Azure (config-azure.mjs) : la VM sert aussi aux labos système (VMware, Hyper-V).
+  ...TYPES_AZURE.map((t) => (t.id === 'vm' ? { ...t, systemes: ['azure', 'systeme'] } : t)),
+  // Anciens symboles : un VNet et un sous-réseau se dessinent maintenant comme des zones.
+  { id: 'reseau-virtuel', label: 'Réseau virtuel (symbole)', couleur: CYAN, groupe: 'az-reseau', systemes: ['azure'], palette: false },
+  { id: 'sous-reseau', label: 'Sous-réseau (symbole)', couleur: CYAN, groupe: 'az-reseau', systemes: ['azure'], palette: false },
   { id: 'internet', label: 'Internet', couleur: GRIS, groupe: 'wan', systemes: ['cisco', 'systeme', 'azure'] },
   { id: 'nuage-operateur', label: 'Nuage de l’opérateur', couleur: GRIS, groupe: 'wan', systemes: ['cisco'] },
   { id: 'autre', label: 'Autre', couleur: GRIS, groupe: 'autre', systemes: ['cisco', 'systeme', 'azure'] },
@@ -67,8 +69,10 @@ export const STYLES_LIEN = [
   { id: 'serie', label: 'Série (WAN)', court: 'Série', aide: 'Liaison série entre deux routeurs (Se0/0/0).', trait: '#c0392b', ep: 2.4, tirets: null },
   { id: 'fibre', label: 'Fibre optique', court: 'Fibre', aide: 'Liaison fibre (ports SFP, Gi ou Te).', trait: '#d98a00', ep: 2.6, tirets: null },
   { id: 'sansfil', label: 'Sans fil', court: 'Wi-Fi', aide: 'Poste ou téléphone relié à un point d’accès.', trait: '#7d8a99', ep: 2, tirets: [1.5, 5] },
-  { id: 'vpn', label: 'VPN / logique', court: 'VPN', aide: 'Tunnel ou lien logique (site à site, Azure VPN Gateway).', trait: '#5b3fa8', ep: 2.2, tirets: [10, 6] },
-];
+  { id: 'vpn', label: 'VPN / logique', court: 'VPN', aide: 'Tunnel ou lien logique (site à site, Azure VPN Gateway).', trait: '#5b3fa8', ep: 2.2, tirets: [10, 6], systemes: ['cisco', 'systeme', 'azure'] },
+  { id: 'trafic', label: 'Flux (trafic)', court: 'Flux', aide: 'Sens du trafic entre ressources Azure (entrant, sortant, intégration VNet).', trait: '#2f6fb3', ep: 2, tirets: [6, 4], systemes: ['azure'] },
+  { id: 'liaison-privee', label: 'Liaison privée', court: 'Privé', aide: 'Point de terminaison privé → ressource (Private Link).', trait: '#2e9d57', ep: 2.6, tirets: null, systemes: ['azure'] },
+].map((x) => ({ systemes: ['cisco', 'systeme'], ...x }));
 export const styleLien = (id) => STYLES_LIEN.find((x) => x.id === id) ?? STYLES_LIEN[0];
 /** Anciens noms (avant JOURNAL-LABO-06) : « plein » et « tirets ». */
 const ANCIENS_STYLES = { plein: 'droit', tirets: 'vpn' };
@@ -111,7 +115,7 @@ export function normaliserSchema(brut) {
       modele: mod, ports: mod === MODELE_PERSO ? texte(n.ports, 300) : '',
       equipementId: /^e[\w]{3,40}$/.test(String(n.equipementId ?? '')) ? n.equipementId : null,
       // Configuration (config-ios.mjs) : seulement pour les équipements qui en ont une.
-      config: n.config && typeof n.config === 'object' && famille(type) ? normaliserConfig(n.config) : null,
+      config: n.config && typeof n.config === 'object' ? (famille(type) ? normaliserConfig(n.config) : estAzure(type) ? normaliserConfigAzure(type, n.config) : null) : null,
       x: borne(n.x, 40, FEUILLE.largeur - 40), y: borne(n.y, 30, FEUILLE.hauteur - 60) });
   }
   const ids = new Set(s.noeuds.map((n) => n.id));
@@ -124,8 +128,10 @@ export function normaliserSchema(brut) {
   }
   for (const z of (Array.isArray(b.zones) ? b.zones : []).filter(unique).slice(0, LIMITES.zones)) {
     const x = borne(z.x, 0, FEUILLE.largeur - 60); const y = borne(z.y, 0, FEUILLE.hauteur - 40);
+    const genre = genreZone(z.genre) ? z.genre : '';
     s.zones.push({ id: z.id, nom: texte(z.nom, 60), couleur: couleurZone(z.couleur).id, x, y,
-      l: borne(z.l, 60, FEUILLE.largeur - x), h: borne(z.h, 40, FEUILLE.hauteur - y) });
+      l: borne(z.l, 60, FEUILLE.largeur - x), h: borne(z.h, 40, FEUILLE.hauteur - y),
+      ...(genre ? { genre, config: normaliserConfigAzure(genre, z.config, { zone: true }) } : {}) });
   }
   for (const t of (Array.isArray(b.textes) ? b.textes : []).filter(unique).slice(0, LIMITES.textes)) {
     const v = texte(t.texte, 120);
@@ -135,11 +141,16 @@ export function normaliserSchema(brut) {
   const verifier = (cle, v) => { const x = secretDans(v); if (x) erreurs[cle] = `Le schéma contient ${x.quoi} : remplace la valeur par ***.`; };
   s.noeuds.forEach((n) => {
     verifier(`schema.${n.id}.nom`, n.nom); verifier(`schema.${n.id}.note`, n.note);
-    const x = n.config ? secretConfig(n.config) : null;
+    const x = n.config ? (estAzure(n.type) ? secretAzure(n.config) : secretConfig(n.config)) : null;
     if (x) erreurs[`schema.${n.id}.config`] = `La configuration de ${n.nom || 'cet équipement'} contient ${x.quoi} : remplace la valeur par ***.`;
   });
   s.liens.forEach((l) => { verifier(`schema.${l.id}`, [l.etiquette, l.etiquetteDe, l.etiquetteA, l.adresseDe, l.adresseA].join('\n')); });
-  s.zones.forEach((z) => verifier(`schema.${z.id}`, z.nom));
+  s.zones.forEach((z) => { verifier(`schema.${z.id}`, z.nom); const x = z.config ? secretAzure(z.config) : null; if (x) erreurs[`schema.${z.id}.config`] = `La zone ${z.nom} contient ${x.quoi} : remplace la valeur par ***.`; });
+  // Réglages Azure du labo : groupe de ressources et région par défaut.
+  if (b.azure && typeof b.azure === 'object') {
+    s.azure = { groupe: texte(b.azure.groupe, 90), region: REGIONS.some(([r]) => r === b.azure.region) ? b.azure.region : 'canadacentral' };
+    verifier('schema.azure', s.azure.groupe);
+  }
   s.textes.forEach((t) => verifier(`schema.${t.id}`, t.texte));
   return { schema: s, erreurs };
 }
@@ -174,11 +185,35 @@ export function dessinerSchema(schema, { resoudre = () => null, typesPerso = [],
   const ops = [];
   const persos = new Map(typesPerso.map((t) => [t.id, t]));
   // Zones d'abord (en dessous).
-  for (const z of schema.zones) {
-    const c = couleurZone(z.couleur);
-    ops.push({ k: 'rect', id: z.id, x: z.x, y: z.y, w: z.l, h: z.h, r: 12, fond: c.fond, trait: c.trait, ep: 1.6, tirets: [8, 5] });
-    if (z.nom) ops.push({ k: 'texte', x: z.x + 10, y: z.y + 18, t: z.nom, taille: 12, gras: true, couleur: c.trait });
+  // Les zones Azure emboîtées (groupe ⊃ VNet ⊃ sous-réseau) : les plus grandes d'abord.
+  const zonesTriees = [...schema.zones].sort((a, b) => (b.l * b.h) - (a.l * a.h));
+  for (const z of zonesTriees) {
+    const g = z.genre ? genreZone(z.genre) : null;
+    const c = g ? { trait: g.trait, fond: g.fond } : couleurZone(z.couleur);
+    ops.push({ k: 'rect', id: z.id, x: z.x, y: z.y, w: z.l, h: z.h, r: g?.id === 'sous-reseau' ? 6 : 12, fond: c.fond, trait: c.trait, ep: g?.id === 'sous-reseau' ? 1.2 : 1.6, tirets: g ? g.tirets : [8, 5] });
+    const plage = z.genre === 'vnet' ? z.config?.espace : z.genre === 'sous-reseau' ? z.config?.plage : '';
+    const prefixe = g ? (z.genre === 'vnet' ? '‹··› ' : z.genre === 'groupe' ? '[ ] ' : '') : '';
+    const taille = g?.id === 'sous-reseau' ? 10.5 : 12;
+    const ligne1 = `${prefixe}${z.nom}${plage ? ` · ${plage}` : ''}`;
+    // Trop long pour la zone (sous-réseau étroit) : le nom, puis la plage en dessous.
+    if (plage && largeurTexte(ligne1, taille, true) > z.l - 16) {
+      ops.push({ k: 'texte', x: z.x + 8, y: z.y + taille + 4, t: `${prefixe}${z.nom}`, taille, gras: true, couleur: c.trait });
+      ops.push({ k: 'texte', x: z.x + 8, y: z.y + 2 * taille + 7, t: plage, taille: taille - 0.5, mono: true, couleur: c.trait });
+    } else if (z.nom || plage) ops.push({ k: 'texte', x: z.x + 10, y: z.y + (g?.id === 'sous-reseau' ? 15 : 18), t: ligne1, taille, gras: true, couleur: c.trait });
     if (selection === z.id) ops.push({ k: 'rect', x: z.x - 4, y: z.y - 4, w: z.l + 8, h: z.h + 8, r: 14, trait: '#d4462e', ep: 2, tirets: [5, 4], selection: true });
+  }
+  // Appairages de VNet : un trait entre les deux zones, étiqueté.
+  const vnets = new Map(schema.zones.filter((z) => z.genre === 'vnet').map((z) => [z.id, z]));
+  const vus = new Set();
+  for (const z of vnets.values()) for (const id of z.config?.appairages ?? []) {
+    const w = vnets.get(id); const k = [z.id, id].sort().join('|');
+    if (!w || vus.has(k)) continue; vus.add(k);
+    const a = { x: z.x + z.l / 2, y: z.y + z.h / 2 }; const b = { x: w.x + w.l / 2, y: w.y + w.h / 2 };
+    // Du bord de l'une au bord de l'autre (le trait ne traverse pas les sous-réseaux).
+    const bord = (zz, vers) => { const dx = vers.x - (zz.x + zz.l / 2); const dy = vers.y - (zz.y + zz.h / 2); const t = Math.min(Math.abs((zz.l / 2) / (dx || 1e-6)), Math.abs((zz.h / 2) / (dy || 1e-6))); return { x: zz.x + zz.l / 2 + dx * t, y: zz.y + zz.h / 2 + dy * t }; };
+    const p = bord(z, b); const q = bord(w, a);
+    ops.push({ k: 'ligne', x1: p.x, y1: p.y, x2: q.x, y2: q.y, trait: '#0a8fa6', ep: 2.4, tirets: [3, 3] });
+    ops.push({ k: 'etiquette', x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, t: 'Appairage', taille: 10.5, gras: true });
   }
   const noeuds = new Map(schema.noeuds.map((n) => [n.id, n]));
   // Liens ensuite (sous les équipements).
@@ -312,6 +347,46 @@ function icone(ops, type, x, y, c, code) {
     case 'perso':
       R(-24, -18, 48, 36, 8); T(code || '?', code.length > 3 ? 10 : 12);
       break;
+    case 'app-service':
+      ops.push({ k: 'cercle', x, y: y - 2, r: 19, fond, trait: c, ep: 2 });
+      ops.push({ k: 'chemin', pts: [[x - 18, y - 2], { c: [x - 10, y - 10, x + 10, y - 10, x + 18, y - 2] }], trait: c, ep: 1.4 });
+      ops.push({ k: 'chemin', pts: [[x - 18, y - 2], { c: [x - 10, y + 6, x + 10, y + 6, x + 18, y - 2] }], trait: c, ep: 1.4 });
+      L(0, -21, 0, 17, 1.4);
+      break;
+    case 'stockage':
+      R(-24, -16, 48, 32, 3); ops.push({ k: 'rect', x: x - 24, y: y - 16, w: 48, h: 8, r: 2, fond: c, trait: c, ep: 1 });
+      L(-18, 0, 18, 0, 3); L(-18, 8, 18, 8, 3);
+      break;
+    case 'base-sql':
+      ops.push({ k: 'chemin', pts: [[x - 18, y - 14], { c: [x - 18, y - 22, x + 18, y - 22, x + 18, y - 14] }, [x + 18, y + 14], { c: [x + 18, y + 22, x - 18, y + 22, x - 18, y + 14] }], fond, trait: c, ep: 2, ferme: true });
+      ops.push({ k: 'chemin', pts: [[x - 18, y - 14], { c: [x - 18, y - 6, x + 18, y - 6, x + 18, y - 14] }], trait: c, ep: 1.4 });
+      ops.push({ k: 'texte', x, y: y + 9, t: 'SQL', taille: 10, gras: true, ancre: 'middle', couleur: c });
+      break;
+    case 'point-terminaison-prive':
+      L(-20, 0, -8, -12, 2.6); L(-20, 0, -8, 12, 2.6); L(20, 0, 8, -12, 2.6); L(20, 0, 8, 12, 2.6);
+      L(0, -20, 0, 2, 2); ops.push({ k: 'cercle', x, y: y - 20, r: 3, fond: c, trait: null }); ops.push({ k: 'cercle', x, y: y + 4, r: 5, fond: '#2e9d57', trait: null });
+      break;
+    case 'nsg':
+      F([[0, -22], [20, -14], [18, 6], [0, 22], [-18, 6], [-20, -14]], { fond, trait: c, ep: 2 }); T('NSG', 10);
+      break;
+    case 'zone-dns':
+      ops.push({ k: 'cercle', x, y, r: 20, fond, trait: c, ep: 2 }); T('DNS', 10);
+      break;
+    case 'equilibreur':
+      F([[0, -22], [24, 0], [0, 22], [-24, 0]], { fond, trait: c, ep: 2 }); L(-12, 0, 12, 0, 1.6); L(0, -11, 0, 11, 1.6);
+      break;
+    case 'fonction':
+      F([[4, -22], [-12, 3], [-1, 3], [-6, 22], [12, -4], [1, -4]], { fond: c, trait: c, ep: 1 });
+      break;
+    case 'ip-publique':
+      ops.push({ k: 'cercle', x, y, r: 19, fond, trait: c, ep: 2 }); T('IP', 12);
+      break;
+    case 'pare-feu-azure': case 'appliance': case 'bastion': case 'passerelle-app': case 'passerelle-nat': case 'front-door': case 'coffre-cles':
+    case 'event-hub': case 'table-routage': case 'log-analytics':
+      R(-26, -18, 52, 36, 6); T(typeAzure(type)?.code ?? '?', (typeAzure(type)?.code.length ?? 1) > 2 ? 11 : 12);
+      if (type === 'pare-feu-azure') { L(-26, 10, 26, 10, 1.2); }
+      if (type === 'table-routage') { L(-18, 10, 18, 10, 1.2); L(-18, -10, 18, -10, 1.2); }
+      break;
     default:
       R(-24, -18, 48, 36, 8); T('?', 14);
   }
@@ -416,7 +491,11 @@ export function decrireSchema(schema, { resoudre = () => null, typesPerso = [] }
   if (schema.noeuds.length) morceaux.push(`${schema.noeuds.length} équipement(s) : ${schema.noeuds.map(nom).join(', ')}.`);
   const cote = (n, itf, adr) => `${nom(n)}${itf ? ` ${itf}` : ''}${adr ? ` ${adr}` : ''}`;
   if (schema.liens.length) morceaux.push(`Liens : ${schema.liens.map((l) => `${cote(parId.get(l.de), l.etiquetteDe, l.adresseDe)} – ${cote(parId.get(l.a), l.etiquetteA, l.adresseA)} (${styleLien(l.style).label}${l.etiquette ? `, ${l.etiquette}` : ''})`).join(' ; ')}.`);
-  if (schema.zones.length) morceaux.push(`Zones : ${schema.zones.map((z) => z.nom || 'sans nom').join(', ')}.`);
+  const nz = (z) => `${z.genre ? `${genreZone(z.genre).label} ` : ''}${z.nom || 'sans nom'}${z.genre === 'vnet' && z.config?.espace ? ` (${z.config.espace})` : z.genre === 'sous-reseau' && z.config?.plage ? ` (${z.config.plage})` : ''}`;
+  if (schema.zones.length) morceaux.push(`Zones : ${schema.zones.map(nz).join(', ')}.`);
+  const app = [];
+  for (const z of schema.zones) for (const id of z.config?.appairages ?? []) { const w = schema.zones.find((x) => x.id === id); if (w && !app.some((a) => a.includes(w.nom) && a.includes(z.nom))) app.push(`${z.nom} ↔ ${w.nom}`); }
+  if (app.length) morceaux.push(`Appairages : ${app.join(', ')}.`);
   return morceaux.join(' ') || 'Schéma vide.';
 }
 

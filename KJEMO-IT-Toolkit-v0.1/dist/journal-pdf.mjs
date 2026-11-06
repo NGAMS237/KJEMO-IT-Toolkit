@@ -116,8 +116,8 @@ export function pdfJournal(e, { captures = {}, titresFiches = {}, equipements = 
     if (id === 'annexe') ficheEquipementsPdf(flux, equipements.map((x) => x.equipement), 'A');
     if (id === 'adressage') {
       const cols = [
-        { id: 'equipement', titre: 'Équipement', part: 1.25 }, { id: 'interface', titre: 'Interface', part: 1, mono: true },
-        { id: 'adresse', titre: 'Adresse / préfixe', part: 1.35, mono: true }, { id: 'vlan', titre: 'VLAN / zone', part: 0.85 },
+        { id: 'equipement', titre: e.categorie === 'azure' ? 'Ressource / VNet' : 'Équipement', part: 1.25 }, { id: 'interface', titre: e.categorie === 'azure' ? 'Sous-réseau' : 'Interface', part: 1, mono: true },
+        { id: 'adresse', titre: 'Adresse / préfixe', part: 1.35, mono: true }, { id: 'vlan', titre: e.categorie === 'azure' ? 'VNet / région' : 'VLAN / zone', part: 0.85 },
         { id: 'passerelle', titre: 'Passerelle', part: 1.1, mono: true }, { id: 'note', titre: 'Note', part: 1.3 },
       ].filter((c) => e.adressage.some((l) => plein(l[c.id])));
       flux.tableau(cols, e.adressage.map((l) => cols.map((c) => l[c.id] ?? '')));
@@ -167,6 +167,7 @@ const COLONNES_PDF = {
   vlans: { numero: [0.7, false], nom: [1.2, false], ports: [1.6, true], reseau: [1.5, true] },
   services: { nom: [1.2, false], port: [0.9, true], etat: [0.8, false], note: [2.4, false] },
   regles: { priorite: [0.7, false], nom: [1.4, false], port: [0.8, true], source: [1.6, true], action: [0.9, false] },
+  dns: { nom: [1.2, true], type: [0.6, false], valeur: [2, true] },
 };
 
 /** Fiches détaillées d'équipements, numérotées `<prefixe>.1`, `<prefixe>.2`… */

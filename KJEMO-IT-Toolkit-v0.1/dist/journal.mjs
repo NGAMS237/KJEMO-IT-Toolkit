@@ -158,7 +158,10 @@ const MOTIFS_SECRET = [
   { re: /\b(?:secret|password)\s+(?:[0-9]\s+)?(?![$(]|\*{3}|(?:est|et|de|du|des|le|la|les|se|sur|dans|pour|par|qui|que|ne|n['’]\S*|tap\S*|demand\S*|saisi\S*|is|for|of|to|the|and|policy|recovery|encryption|reset|tap)(?:\s|[.,;:!?)»]|$))\S+/i, quoi: 'un mot de passe après « secret » ou « password »' },
   { re: /\b(?:key-string|pre-shared-key|key\s+[0-9])\s+(?!\*{3})\S+/i, quoi: 'une clé après « key-string » ou « pre-shared-key »' },
   { re: /\bmots?\s+de\s+passe\s*[:=]\s*(?!\*{3})\S+/i, quoi: 'un mot de passe après « mot de passe : »' },
-  { re: /\b(?:pwd|passwd|mdp|pass|passphrase)\s*[:=]\s*(?!\*{3})\S+/i, quoi: 'un mot de passe après « pass= » ou « mdp: »' },
+  { re: /\b(?:pwd|passwd|password|mdp|pass|passphrase)\s*[:=]\s*(?!\*{3})\S+/i, quoi: 'un mot de passe après « pass= » ou « mdp: »' },
+  // Azure : clé d'un compte de stockage ou d'un espace de noms, jeton SAS (une chaîne de connexion copiée du portail).
+  { re: /\b(?:AccountKey|SharedAccessKey|SharedAccessSignature)\s*=\s*(?!\*{3})[^;\s"]+/i, quoi: 'une clé Azure (AccountKey, SharedAccessKey)' },
+  { re: /[?&]sig=(?!\*{3})[^&\s"]+/i, quoi: 'un jeton SAS (sig=…)' },
   { re: /--(?:admin-)?password(?:=|\s+)(?!\*{3})\S+/i, quoi: 'un mot de passe après « --password »' },
   { re: /-(?:Account)?Password\s+(?!\*{3})["']?[^\s"'$(]\S*/i, quoi: 'un mot de passe après « -Password »' },
   { re: /ConvertTo-SecureString\s+["'][^"']+["']/i, quoi: 'un mot de passe dans ConvertTo-SecureString' },

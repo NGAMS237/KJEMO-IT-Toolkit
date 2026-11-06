@@ -1133,3 +1133,12 @@ details.schemas-fiche{margin:14px 0}
 .cfg-avert{margin:6px 0;padding:8px 10px 8px 28px;color:var(--warn-text);background:var(--warn-bg);border-radius:8px}
 .cfg-ok{color:var(--ok-text);margin:6px 0}
 .cfg-aide{color:var(--muted)}
+/* JOURNAL-LABO-10 : Azure */
+.cfg-multi{border:1px dashed var(--border);border-radius:8px;padding:6px 10px;margin:8px 0;display:flex;flex-wrap:wrap;gap:4px 14px;min-width:0}
+.cfg-multi legend{font-weight:600;padding:0 4px}
+.cfg-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.86rem}
+.cfg-table caption{text-align:left;font-weight:600;margin-bottom:4px}
+.cfg-table th,.cfg-table td{border:1px solid var(--border);padding:4px 6px;text-align:left;overflow-wrap:anywhere}
+.sch-modeles{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.sch-modeles select{flex:1 1 260px;min-width:0}
+.sch-modeles small{flex-basis:100%;color:var(--muted)}

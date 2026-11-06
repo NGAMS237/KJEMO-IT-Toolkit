@@ -29,6 +29,7 @@ const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
 const J = await imp('journal.mjs'); const PDF = await imp('pdf-a4.mjs'); const JP = await imp('journal-pdf.mjs');
 const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const V = await imp('vue-journal.mjs');
 const I = await imp('inventaire.mjs'); const VI = await imp('vue-inventaire.mjs');
+const AZ = await imp('config-azure.mjs'); const VA = await imp('vue-azure.mjs'); const MS = await imp('modeles-schema.mjs');
 const CI = await imp('config-ios.mjs'); const VC = await imp('vue-config.mjs');
 const SC = await imp('schema.mjs'); const VS = await imp('vue-schema.mjs'); const SR = await imp('schema-remplir.mjs'); const MO = await imp('modeles.mjs');
 let passed = 0; let failed = 0;
@@ -349,7 +350,7 @@ console.log('11. Schéma d’architecture');
   // Éditeur
   const h = VS.editeurSchemaMarkup(st, { inventaire: [q], etat: { selection: st.liens[0].id } });
   assert(h.includes('data-sadd="routeur"') && h.includes('id="schFeuille"') && h.includes('Côté') && h.includes('id="schAdrDe"') && h.includes('id="schSvg"'), 'éditeur : palette, feuille, propriétés du câble (interface et adresse de chaque côté), export SVG');
-  assert(SC.STYLES_LIEN.length === 8 && SC.STYLES_LIEN.every((x) => h.includes(`data-scable="${x.id}"`)), 'palette « Câbles » : huit types (droit, croisé, trunk, console, série, fibre, sans fil, VPN)');
+  assert(SC.STYLES_LIEN.length === 10 && SC.STYLES_LIEN.every((x) => h.includes(`data-scable="${x.id}"`)), 'palette « Câbles » (tous) : dix types, dont flux et liaison privée Azure');
   assert(VS.editeurSchemaMarkup(st, { etat: { cablage: { style: 'serie', depuis: null } } }).includes('clique le <b>premier</b>'), 'mode câble : consigne du premier clic');
   assert(SC.normaliserSchema({ noeuds: [{ id: 'nq1', type: 'routeur' }, { id: 'nq2', type: 'routeur' }], liens: [{ id: 'lq1', de: 'nq1', a: 'nq2', style: 'plein' }, { id: 'lq2', de: 'nq2', a: 'nq1', style: 'tirets' }] }).schema.liens.map((l) => l.style).join() === 'droit,vpn', 'anciens styles : plein → droit, tirets → VPN');
   const avecAdr = { ...st, liens: st.liens.map((l, i) => (i === 0 ? { ...l, adresseDe: '192.168.99.1/24' } : l)) };
@@ -536,6 +537,103 @@ console.log('14. Configuration des équipements (simple → complet) et commande
   const m = VI.equipementsLaboMarkup({ liens: [{ id: qR.id, role: '' }], inventaire: inv });
   assert((m.match(/data-jeq="/g) ?? []).length === 1 && m.includes('id="jEqAjout"') && m.includes(`value="${qS.id}"`), 'labo : seuls ses équipements sont listés ; les autres s’ajoutent depuis l’inventaire');
   assert(VI.equipementsLaboMarkup({ liens: [], inventaire: inv }).includes('Aucun équipement dans ce labo') && !VI.equipementsLaboMarkup({ liens: [], inventaire: inv }).includes('data-jeq="'), 'nouveau labo : aucun équipement d’un autre labo n’apparaît');
+}
+
+console.log('15. Azure : ressources, zones VNet et sous-réseaux, commandes Azure CLI');
+{
+  // Adresses
+  assert(AZ.utilisablesAzure('10.1.1.0/24') === 251 && AZ.utilisablesAzure('10.1.1.0/29') === 3 && AZ.prefixePour(40) === 26 && AZ.prefixePour(120) === 25 && AZ.prefixePour(1) === 29 && AZ.prefixePour(59) === 26 && AZ.prefixePour(60) === 25, 'adresses utilisables Azure (5 réservées) et préfixe minimal pour un besoin');
+  assert(AZ.chevauche('10.1.0.0/16', '10.1.4.0/24') && !AZ.chevauche('10.1.0.0/16', '10.2.0.0/16') && AZ.contient('10.1.0.0/16', '10.1.4.0/24') && !AZ.contient('10.1.0.0/24', '10.1.0.0/23'), 'chevauchement et inclusion de plages');
+  const d = AZ.decouperVnet('10.10.0.0/22', [{ id: 'a', nom: 'snet-apps', besoin: 40 }, { id: 'b', nom: 'snet-db', besoin: 8 }, { id: 'c', nom: 'snet-vm', besoin: 120 }, { id: 'g', nom: 'GatewaySubnet', besoin: 1 }]);
+  assert(!d.erreur && d.plages.c === '10.10.0.0/25' && d.plages.a === '10.10.0.128/26' && d.plages.g === '10.10.0.192/27' && d.plages.b === '10.10.0.224/28', 'découpage VLSM : plus grands d’abord, alignés ; GatewaySubnet au moins /27', JSON.stringify(d.plages));
+  assert(AZ.decouperVnet('10.10.0.0/26', [{ id: 'c', nom: 'x', besoin: 120 }]).erreur?.includes('trop petit') && AZ.decouperVnet('', []).erreur, 'découpage : espace trop petit ou absent signalé');
+  assert(AZ.espaceConseille([40, 8, 120, 1]) === 24, 'taille de VNet conseillée pour les besoins de Solaria Canada (/24)');
+  assert(AZ.etiquetteService('AppService.CanadaCentral') && AZ.etiquetteService('EventHub.CanadaEast') && AZ.etiquetteService('Internet') && !AZ.etiquetteService('10.0.0.0/8') && !AZ.etiquetteService('Bidon'), 'étiquettes de service reconnues (destinations de routes)');
+  // Modèle TP2 et script
+  const s2 = SC.normaliserSchema(MS.modeleSchema('azure-tp2-tardi').construire()).schema;
+  assert(s2.zones.filter((z) => z.genre === 'vnet').length === 2 && s2.zones.filter((z) => z.genre === 'sous-reseau').length === 9 && s2.noeuds.some((n) => n.type === 'stockage'), 'modèle TP2 : VNET1 et VNET2, neuf sous-réseaux, compte de stockage, points de terminaison privés');
+  const ctx = AZ.contexteAzure(s2);
+  const pe = s2.noeuds.find((n) => n.nom === 'pe-sttardi-blob');
+  assert(ctx.noeud(pe).sousReseau?.nom === 'StorageSubnet' && ctx.noeud(pe).vnet?.nom === 'VNET2' && AZ.cibleDuPe(s2, pe)?.type === 'stockage', 'contexte : le point de terminaison est dans VNET2/StorageSubnet et cible le stockage (liaison privée)');
+  const v1 = s2.zones.find((z) => z.nom === 'VNET1'); const v2 = s2.zones.find((z) => z.nom === 'VNET2');
+  v1.config.espace = '10.1.0.0/16'; v2.config.espace = '10.1.0.0/16'; v1.config.appairages = [v2.id];
+  assert(AZ.verifierAzure(s2).some((x) => /Appairage VNET1 ↔ VNET2 impossible/.test(x)), 'appairage refusé si les espaces se chevauchent');
+  v2.config.espace = '10.2.0.0/16';
+  for (const v of [v1, v2]) { const c2 = AZ.contexteAzure(s2); const r = AZ.decouperVnet(v.config.espace, c2.sousReseaux.filter((x) => x.vnet?.id === v.id).map((x) => ({ id: x.id, nom: x.nom, besoin: 20 }))); for (const [id, p] of Object.entries(r.plages)) s2.zones.find((z) => z.id === id).config.plage = p; }
+  const app = s2.noeuds.find((n) => n.type === 'app-service');
+  app.config.integration = s2.zones.find((z) => z.nom === 'AppServiceOutboundSubnet').id; app.config.acces = 'desactive';
+  const script = AZ.texteAzure(AZ.scriptAzure(s2));
+  const ordre = (a, b) => script.indexOf(a) >= 0 && script.indexOf(a) < script.indexOf(b);
+  assert(ordre('az group create -n rg-tardi', 'az network vnet create -g rg-tardi -n VNET1') && ordre('az network vnet create -g rg-tardi -n VNET2', 'az network vnet peering create') && ordre('az storage account create', 'az network private-endpoint create'), 'script : groupe, VNet, puis appairages après les deux VNet, stockage avant les points de terminaison');
+  assert(script.includes('--vnet-name VNET1 -n AppServiceOutboundSubnet --address-prefixes 10.1.0.64/27 --delegations Microsoft.Web/serverFarms') && script.includes('az webapp vnet-integration add -g rg-tardi -n WebAPP1 --vnet VNET1 --subnet AppServiceOutboundSubnet'), 'sous-réseau délégué et intégration VNet de l’application');
+  assert(script.includes('--container-image-name index.docker.io/romaric/tpasr:latest') && script.includes('WEBSITES_PORT=8080') && script.includes('--sku B1 --is-linux'), 'App Service : plan B1 Linux, conteneur et port 8080 de l’énoncé');
+  assert(script.includes('CHAINE=$(az storage account show-connection-string') && script.includes('StorageConnectionString="$CHAINE"') && J.secretDans(script) === null, 'chaîne de connexion lue au déploiement, jamais écrite (aucun secret)');
+  assert(ordre('az storage queue create --account-name sttardi -n queue1', 'az storage account update -g rg-tardi -n sttardi --public-network-access Disabled') && script.includes('az storage container-rm create -g rg-tardi --storage-account sttardi -n blob1'), 'stockage : contenu créé avant de fermer l’accès public');
+  assert(script.includes('--group-id blob') && script.includes('--group-id queue') && (script.match(/private-dns zone create -g rg-tardi -n privatelink.blob.core.windows.net/g) ?? []).length === 1 && script.includes('-z privatelink.blob.core.windows.net -n lien-VNET1 -v VNET1'), 'points de terminaison blob et queue, zone privatelink créée une fois et liée aux VNet appairés');
+  assert(script.includes('az webapp update -g rg-tardi -n WebAPP1 --set publicNetworkAccess=Disabled') && !/[ ]/.test(script), 'accès public de l’application désactivé');
+  assert(!AZ.verifierAzure(s2).length, 'TP2 complété : aucun avertissement', AZ.verifierAzure(s2).join(' | '));
+  // Routes de l'exercice 4 et règles
+  const rt = { id: 'nrtab1', type: 'table-routage', nom: 'rt-vm', x: 100, y: 100, config: AZ.normaliserConfigAzure('table-routage', { routes: [
+    { nom: 'defaut', prefixe: '0.0.0.0/0', saut: 'VirtualNetworkGateway' }, { nom: 'bloque', prefixe: '12.12.12.0/30', saut: 'None' },
+    { nom: 'appsvc', prefixe: 'AppService.CanadaCentral', saut: 'VirtualAppliance', ip: '10.3.2.100' }, { nom: 'mauvais', prefixe: 'Bidon', saut: 'VirtualAppliance' }],
+  sousReseaux: [s2.zones.find((z) => z.nom === 'VMSubnet').id] }) };
+  const s3 = { ...s2, noeuds: [...s2.noeuds, rt] };
+  const crt = AZ.texteAzure(AZ.commandesAzure(s3, rt));
+  assert(crt.includes('--address-prefix 12.12.12.0/30 --next-hop-type None') && crt.includes('--address-prefix AppService.CanadaCentral --next-hop-type VirtualAppliance --next-hop-ip-address 10.3.2.100') && crt.includes('az network vnet subnet update -g rg-tardi --vnet-name VNET1 -n VMSubnet --route-table rt-vm'), 'table de routage : service tag, saut « Aucun », appliance, association au sous-réseau');
+  assert(AZ.verifierAzure(s3).some((x) => /Bidon/.test(x)) && AZ.verifierAzure(s3).some((x) => /demande son IP/.test(x)), 'route : destination inconnue et appliance sans IP signalées');
+  assert(AZ.tablesAzure(s3, rt).routes.length === 4 && AZ.tablesAzure(s3, rt).routes[1].via === 'None', 'routes reportées dans la fiche (table de routage)');
+  // Vérifications diverses
+  const bad = { ...SC.schemaVide(), zones: [{ id: 'zbv1', nom: 'V', genre: 'vnet', x: 0, y: 0, l: 900, h: 500, config: AZ.normaliserConfigAzure('vnet', { espace: '10.0.0.0/16' }, { zone: true }) },
+    { id: 'zbs1', nom: 'GatewaySubnet', genre: 'sous-reseau', x: 10, y: 40, l: 200, h: 100, config: AZ.normaliserConfigAzure('sous-reseau', { plage: '10.0.0.0/29' }, { zone: true }) },
+    { id: 'zbs2', nom: 'snet-a', genre: 'sous-reseau', x: 220, y: 40, l: 200, h: 100, config: AZ.normaliserConfigAzure('sous-reseau', { plage: '10.0.0.0/28', besoin: '20' }, { zone: true }) },
+    { id: 'zbs3', nom: 'snet-b', genre: 'sous-reseau', x: 430, y: 40, l: 200, h: 100, config: AZ.normaliserConfigAzure('sous-reseau', { plage: '10.9.0.0/24' }, { zone: true }) }],
+  noeuds: [{ id: 'nbst1', type: 'stockage', nom: 'Mon_Stockage', x: 700, y: 300 }, { id: 'nbpe1', type: 'point-terminaison-prive', nom: 'pe', x: 300, y: 90 }] };
+  const w = AZ.verifierAzure(bad);
+  assert(w.some((x) => /chevauchent/.test(x)) && w.some((x) => /hors de l’espace/.test(x)) && w.some((x) => /11 adresses utilisables pour 20/.test(x)) && w.some((x) => /GatewaySubnet.*\/27 conseillé/.test(x)) && w.some((x) => /3 à 24 lettres minuscules/.test(x)) && w.some((x) => /ressource ciblée/.test(x)),
+    'avertissements : chevauchement, hors espace, besoin non couvert, GatewaySubnet trop petit, nom de stockage, point de terminaison sans cible', w.join(' | '));
+  // Zone DNS (TP1) et rôle de l'administrateur
+  const zd = { id: 'nzdns1', type: 'zone-dns', nom: 'app-canada-solaria', x: 50, y: 50, config: AZ.normaliserConfigAzure('zone-dns', { niveau: 'intermediaire', domaine: 'app.intra.canada.solaria.corp', privee: true, vnets: [v1.id], enregistrements: [{ nom: 'hrapp', genre: 'A', valeur: '10.1.0.10' }], administrateur: 'admin.dns@exemple.ca' }) };
+  const cz = AZ.texteAzure(AZ.commandesAzure({ ...s2, noeuds: [zd] }, zd));
+  assert(cz.includes('az network private-dns zone create -g rg-tardi -n app.intra.canada.solaria.corp') && cz.includes('az network private-dns record-set a add-record -g rg-tardi -z app.intra.canada.solaria.corp -n hrapp -a 10.1.0.10') && cz.includes('-n lien-VNET1 -v VNET1 -e false') && cz.includes('--role "Private DNS Zone Contributor" --scope $(az network private-dns zone show'), 'zone DNS privée : enregistrement A, lien au VNet, administrateur limité à sa zone');
+  const sql = { id: 'nsql01', type: 'base-sql', nom: 'billing', x: 50, y: 50, config: { serveur: 'sql-tardi', base: 'billing', admin: 'sqladmin' } };
+  const csql = AZ.texteAzure(AZ.commandesAzure({ ...SC.schemaVide(), noeuds: [sql] }, sql));
+  assert(/--admin-user sqladmin --admin-password\n/.test(`${csql}\n`) && J.secretDans(csql) === null, 'Azure SQL : la ligne s’arrête avant le mot de passe');
+  assert(SC.normaliserSchema({ noeuds: [{ id: 'nsecr1', type: 'vm', config: { utilisateur: 'password: Hunter2!' } }] }).erreurs['schema.nsecr1.config'], 'un mot de passe dans une configuration Azure est refusé');
+  // Modèle TP1 : besoins de l'énoncé, plages à choisir
+  const s1 = SC.normaliserSchema(MS.modeleSchema('azure-tp1-energia').construire()).schema;
+  const c1 = AZ.contexteAzure(s1);
+  assert(c1.vnets.length === 4 && c1.sousReseaux.length === 16 && c1.sousReseaux.every((x) => x.vnet) && c1.sousReseaux.every((x) => !x.c.plage) && c1.vnets.every((v) => !v.c.espace), 'modèle TP1 : quatre VNet, seize sous-réseaux, plages et espaces laissés à l’étudiant');
+  assert(c1.sousReseaux.filter((x) => x.vnet.nom === 'vnet-solaria-canada').map((x) => x.c.besoin).join() === '40,8,120,1' && c1.vnets.find((v) => v.nom === 'vnet-hydrix-france').region === 'francecentral', 'modèle TP1 : besoins de l’énoncé et régions');
+  // Dessin et panneaux
+  const ops = SC.dessinerSchema(s2);
+  assert(ops.some((o) => o.k === 'texte' && /VNET1 · 10\.1\.0\.0\/16/.test(o.t)) && ops.some((o) => o.k === 'etiquette' && o.t === 'Appairage') && ops.some((o) => o.k === 'texte' && /StorageSubnet · 10\.2\./.test(o.t)), 'dessin : VNet et sous-réseaux avec leurs plages, trait d’appairage');
+  const ed = VS.editeurSchemaMarkup(s2, { categorie: 'azure', etat: {} });
+  assert(ed.includes('data-sadd="zone:vnet"') && ed.includes('data-sadd="stockage"') && ed.includes('data-sadd="equilibreur"') && !ed.includes('data-sadd="routeur"') && !ed.includes('data-sadd="commutateur"') && !ed.includes('data-sfiltre="cisco"') && ed.includes('data-scable="liaison-privee"') && !ed.includes('data-scable="console"'), 'labo Azure : seulement les ressources, zones et liens Azure');
+  assert(ed.includes('id="azRegion"') && ed.includes('azure-tp2-tardi'), 'labo Azure : réglages (groupe, région) et modèles des TP');
+  const edC = VS.editeurSchemaMarkup(SC.schemaVide(), { categorie: 'cisco', etat: {} });
+  assert(edC.includes('data-sadd="routeur"') && !edC.includes('data-sadd="stockage"') && !edC.includes('data-scable="liaison-privee"') && !edC.includes('azRegion'), 'labo Cisco : rien d’Azure');
+  const pz = VA.panneauZoneAzure(s2, v1); const pr = VA.panneauRessourceAzure(s2, app);
+  assert(pz.includes('data-cfgaction="decouper"') && pz.includes('Espace d’adressage') && pz.includes('data-cfgmulti="appairages"') && pr.includes('Intégration au réseau virtuel') && pr.includes('cfg-ports') === false && pr.includes('VNET1 / AppServiceOutboundSubnet'), 'panneaux Azure : VNet (découper, appairages) et App Service (intégration)');
+  assert(!VA.panneauRessourceAzure(s2, { ...app, config: { niveau: 'simple' } }).includes('Restrictions d’accès') && VA.panneauRessourceAzure(s2, { ...app, config: { niveau: 'complet' } }).includes('Restrictions d’accès'), 'panneau Azure : champs selon le niveau');
+  // Remplir
+  const lab = { ...J.entreeVide({ categorieId: 'azure', date: new Date('2026-11-06T10:00:00'), existantes: [] }), titre: 'TP2', schema: s2 };
+  const { entree: e, inventaire: inv, bilan } = SR.remplirDepuisSchema(lab, { inventaire: [], date: new Date('2026-11-06T10:00:00') });
+  const qv1 = inv.find((q) => q.nom === 'VNET1');
+  assert(qv1?.type === 'reseau-virtuel' && qv1.adresse === '10.1.0.0/16' && qv1.interfaces.some((i) => i.nom === 'AppServiceOutboundSubnet' && i.adresse === '10.1.0.64/27' && /Microsoft\.Web/.test(i.description)), 'fiche VNET1 : espace, sous-réseaux en interfaces (délégation notée)');
+  assert(e.adressage.some((l) => l.equipement === 'VNET2' && l.interface === 'StorageSubnet' && /utilisable/.test(l.note)) && e.configuration.some((b) => b.titre === 'Azure : Appairages (après la création des deux VNet)') && e.validation.some((v) => /nslookup sttardi\.blob\.core\.windows\.net/.test(v.test)), 'document : plan par sous-réseau, blocs Azure CLI, tests (nslookup du point de terminaison)');
+  assert(/Microsoft Azure : groupe\(s\) de ressources rg-tardi/.test(e.environnement) && bilan.vnets === 2 && !Object.keys(J.normaliserEntree(e).erreurs).length, 'environnement Azure, deux VNet documentés, labo valide');
+  const deux = SR.remplirDepuisSchema(e, { inventaire: inv });
+  assert(deux.entree.configuration.length === e.configuration.length && deux.entree.adressage.length === e.adressage.length && deux.inventaire.length === inv.length, 'remplir deux fois : rien n’est dupliqué');
+  if (PDFTOTEXT) {
+    const r = JP.pdfJournal(J.normaliserEntree(e).entree, { inventaire: inv, equipements: e.equipements.map((l) => ({ equipement: inv.find((q) => q.id === l.id), role: '' })) });
+    const tx = texteDu(r.octets);
+    assert(/Sous-réseau/.test(tx) && /az network private-endpoint create/.test(tx) && /StorageSubnet/.test(tx), 'PDF du labo Azure : plan par sous-réseau et commandes');
+    if (QPDF) assert(qpdfOk(r.octets), 'PDF Azure valide (qpdf)');
+  }
+  // Section Équipements : un labo Azure ne propose que des équipements Azure
+  const mix = [{ id: 'eaz00001', nom: 'VNET9', systeme: 'azure', type: 'reseau-virtuel', adresse: '' }, { id: 'eci00001', nom: 'SW9', systeme: 'cisco', type: 'commutateur', adresse: '' }];
+  const ml = VI.equipementsLaboMarkup({ liens: [], inventaire: mix, systemePrefere: 'azure' });
+  assert(ml.includes('value="eaz00001"') && !ml.includes('value="eci00001"'), 'labo Azure : seuls les équipements Azure se proposent depuis l’inventaire');
 }
 
 console.log(`journal : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);

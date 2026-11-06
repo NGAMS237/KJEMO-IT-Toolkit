@@ -13,6 +13,7 @@
  * quitte le navigateur. Module PUR.
  */
 import { secretDans, jour, nouvelId } from './journal.mjs';
+import { TYPES_AZURE } from './azure-types.mjs';
 
 export const CLE_INVENTAIRE = 'kjemo.inventaire.v1';
 export const MAX_EQUIPEMENTS = 300;
@@ -43,6 +44,8 @@ export const TYPES_EQUIPEMENT = [
   { id: 'sous-reseau', label: 'Sous-réseau', systemes: ['azure'] },
   { id: 'passerelle-vpn', label: 'Passerelle VPN', systemes: ['azure'] },
   { id: 'nuage-operateur', label: 'Nuage de l’opérateur', systemes: ['autre'] },
+  // Ressources Azure (JOURNAL-LABO-10)
+  ...TYPES_AZURE.filter((t) => !['vm', 'service-cloud', 'passerelle-vpn'].includes(t.id)).map((t) => ({ id: t.id, label: t.label, systemes: ['azure'] })),
   { id: 'autre', label: 'Autre équipement', systemes: ['cisco', 'systeme', 'azure', 'autre'] },
 ];
 export const systeme = (id) => SYSTEMES.find((s) => s.id === id) ?? SYSTEMES[3];
@@ -91,6 +94,11 @@ export const TABLEAUX_EQUIPEMENT = {
     label: 'Services', ajout: '+ Ajouter un service', pour: (s, t) => s === 'systeme' || ['serveur', 'poste', 'vm', 'nas'].includes(t),
     colonnes: [{ id: 'nom', label: 'Service' }, { id: 'port', label: 'Port' }, { id: 'etat', label: 'État' }, { id: 'note', label: 'Note' }],
     exemples: { systeme: { nom: 'ssh', port: '22/tcp', etat: 'actif', note: 'Accès des administrateurs' }, azure: { nom: 'nginx', port: '443/tcp', etat: 'actif', note: 'Site de test' } },
+  },
+  dns: {
+    label: 'Enregistrements DNS', ajout: '+ Ajouter un enregistrement', pour: (s, t) => t === 'zone-dns',
+    colonnes: [{ id: 'nom', label: 'Nom' }, { id: 'type', label: 'Type' }, { id: 'valeur', label: 'Valeur' }],
+    exemples: { azure: { nom: 'hrapp', type: 'A', valeur: '10.1.1.10' } },
   },
   regles: {
     label: 'Règles de filtrage', ajout: '+ Ajouter une règle', pour: (s, t) => s === 'azure' || t === 'pare-feu',

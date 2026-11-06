@@ -24,13 +24,16 @@
 import { normaliserEquipement, equipementVide, TYPES_EQUIPEMENT } from './inventaire.mjs';
 import { typeNoeud, decrireSchema, normaliserSchema } from './schema.mjs';
 import { modele, clePort } from './modeles.mjs';
+import { estAzure, typeAzure, TYPES_AZURE, REGIONS } from './azure-types.mjs';
+import { contexteAzure, scriptAzure, adressageAzure, tablesAzure, modeleAzure, testsAzure, nomAzure, utilisablesAzure } from './config-azure.mjs';
 import { normaliserConfig, famille, estIos, commandesNoeud, texteAvecTitres, interfacesDepuisConfig, adressesDepuisConfig, routesDepuisConfig, vlansDepuisConfig, testsProposes, cidr } from './config-ios.mjs';
 
 /** Système de l'inventaire déduit du symbole. */
 export const SYSTEME_DU_TYPE = {
   routeur: 'cisco', commutateur: 'cisco', 'commutateur-l3': 'cisco', 'pare-feu': 'cisco', 'point-acces': 'cisco', 'telephone-ip': 'cisco',
   serveur: 'systeme', poste: 'systeme', portable: 'systeme', imprimante: 'systeme', smartphone: 'systeme', 'camera-ip': 'systeme', nas: 'systeme',
-  vm: 'azure', 'reseau-virtuel': 'azure', 'sous-reseau': 'azure', 'passerelle-vpn': 'azure', 'service-cloud': 'azure',
+  'reseau-virtuel': 'azure', 'sous-reseau': 'azure',
+  ...Object.fromEntries(TYPES_AZURE.map((t) => [t.id, 'azure'])),
 };
 /** Symboles qui jouent le rôle d'hôte : on leur cherche une passerelle. */
 const HOTES = new Set(['poste', 'portable', 'telephone-ip', 'imprimante', 'smartphone', 'camera-ip', 'serveur', 'nas', 'vm']);
@@ -67,7 +70,7 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
   const inv = inventaire.map((q) => structuredClone(q));
   const persos = new Map(typesPerso.map((t) => [t.id, t]));
   const bilan = { equipementsCrees: [], equipementsLies: 0, interfaces: 0, lignesAjoutees: 0, lignesMisesAJour: 0, architecture: false,
-    configurations: 0, routes: 0, vlans: 0, tests: 0, environnement: false };
+    configurations: 0, routes: 0, vlans: 0, tests: 0, environnement: false, vnets: 0 };
   const s = e.schema;
   const parId = new Map(inv.map((q) => [q.id, q]));
   const nomsPris = new Set(inv.map((q) => q.nom.toLowerCase()));
@@ -192,8 +195,12 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
       e.validation.push(t); bilan.tests += 1;
     }
   }
+  // Azure : VNet dans l'inventaire, tables des ressources, plan d'adressage, commandes CLI et tests.
+  const azure = s.zones.some((z) => z.genre) || s.noeuds.some((n) => estAzure(n.type));
+  if (azure) remplirAzure(e, s, { inv, parId, nomsPris, bilan, date });
+
   // Environnement : la liste des équipements et de leur modèle, si le champ est vide.
-  if (!String(e.environnement ?? '').trim() && s.noeuds.some((n) => n.type !== 'internet')) {
+  if (!azure && !String(e.environnement ?? '').trim() && s.noeuds.some((n) => n.type !== 'internet')) {
     const lignes = s.noeuds.filter((n) => n.type !== 'internet').map((n) => {
       const nom = (n.equipementId && parId.get(n.equipementId)?.nom) || n.nom || typeNoeud(n.type).label;
       return `${nom} : ${modele(n.modele)?.label ?? typeNoeud(n.type).label}`;
@@ -212,6 +219,77 @@ export function remplirDepuisSchema(entree, { inventaire = [], typesPerso = [], 
   return { entree: e, inventaire: inventaireFinal, bilan };
 }
 
+/** La partie Azure du remplissage (voir l'en-tête). */
+function remplirAzure(e, s, { inv, parId, nomsPris, bilan, date }) {
+  const ctx = contexteAzure(s);
+  const fusion = (table, ligne, cle) => {
+    const ex = table.find((x) => cle(x) === cle(ligne));
+    if (!ex) { table.push(ligne); return true; }
+    let ch = false; for (const [k, v] of Object.entries(ligne)) if (v && ex[k] !== v) { ex[k] = v; ch = true; }
+    return ch;
+  };
+  // 1. Chaque VNet devient une fiche « Réseau virtuel » : ses sous-réseaux sont ses interfaces.
+  for (const v of ctx.vnets) {
+    let q = inv.find((x) => x.type === 'reseau-virtuel' && x.nom.toLowerCase() === v.nom.toLowerCase());
+    if (!q) {
+      const r = normaliserEquipement({ ...equipementVide({ systemeId: 'azure', typeId: 'reseau-virtuel', date }), nom: v.nom });
+      if (Object.keys(r.erreurs).length) continue;
+      q = r.equipement; inv.push(q); parId.set(q.id, q); nomsPris.add(v.nom.toLowerCase()); bilan.equipementsCrees.push(v.nom);
+    }
+    q.adresse = v.c.espace || q.adresse; q.modele = q.modele || 'Réseau virtuel Azure';
+    q.emplacement = q.emplacement || `${v.groupe} · ${REGIONS.find(([r]) => r === v.region)?.[1] ?? v.region}`;
+    for (const sn of ctx.sousReseaux.filter((x) => x.vnet?.id === v.id)) {
+      const desc = [sn.c.delegation && `délégué à ${sn.c.delegation}`, sn.c.pointsService.length && `points de service ${sn.c.pointsService.join(', ')}`,
+        ...s.noeuds.filter((n) => (n.type === 'nsg' || n.type === 'table-routage' || n.type === 'passerelle-nat') && (n.config?.sousReseaux ?? []).includes(sn.id)).map((n) => `${typeAzure(n.type).code} ${nomAzure(n.nom)}`)].filter(Boolean).join(' ; ');
+      if (fusion(q.interfaces, { nom: sn.nom, adresse: sn.c.plage, vlan: sn.c.plage ? `${utilisablesAzure(sn.c.plage)} utilisables` : '', etat: '', description: desc }, (x) => x.nom.toLowerCase())) bilan.interfaces += 1;
+    }
+    if (!e.equipements.some((l) => l.id === q.id)) { e.equipements.push({ id: q.id, role: '' }); bilan.equipementsLies += 1; }
+    bilan.vnets += 1;
+  }
+  // 2. Ressources : modèle (taille, niveau), adresse privée, routes, règles, enregistrements DNS.
+  for (const n of s.noeuds) {
+    if (!estAzure(n.type) || !n.equipementId) continue;
+    const q = parId.get(n.equipementId); if (!q) continue;
+    if (n.config) q.modele = modeleAzure(n) || q.modele;
+    const o = ctx.noeud(n);
+    if (!q.emplacement) q.emplacement = `${o.groupe} · ${REGIONS.find(([r]) => r === o.region)?.[1] ?? o.region}${o.sousReseau ? ` · ${o.vnet?.nom ?? ''}/${o.sousReseau.nom}` : ''}`;
+    const ip = n.config?.ipPrivee || n.config?.ip || n.config?.ipFrontend;
+    if (ip && !q.adresse) q.adresse = ip;
+    const t = tablesAzure(s, n);
+    for (const r of t.routes ?? []) if (fusion(q.routes, r, (x) => `${x.type}|${x.destination}`)) bilan.routes += 1;
+    for (const r of t.regles ?? []) fusion(q.regles, r, (x) => `${x.priorite}|${x.nom}`);
+    for (const r of t.dns ?? []) fusion(q.dns, r, (x) => `${x.nom}|${x.type}`);
+  }
+  // 3. Plan d'adressage : sous-réseaux et adresses privées connues.
+  for (const l of adressageAzure(s)) {
+    const cle = (x) => `${x.equipement.toLowerCase()}|${x.interface.toLowerCase()}`;
+    const ex = e.adressage.find((x) => cle(x) === cle(l));
+    if (!ex) { e.adressage.push(l); bilan.lignesAjoutees += 1; }
+    else if (Object.entries(l).some(([k, v]) => v && ex[k] !== v)) { Object.assign(ex, Object.fromEntries(Object.entries(l).filter(([, v]) => v))); bilan.lignesMisesAJour += 1; }
+  }
+  // 4. Configuration : les commandes Azure CLI, bloc par bloc, dans l'ordre de déploiement.
+  for (const b of scriptAzure(s).blocs) {
+    const titre = `Azure : ${b.titre}`.slice(0, 120); const code = b.lignes.join('\n');
+    const ex = e.configuration.find((x) => x.titre === titre);
+    if (!ex) { e.configuration.push({ titre, code }); bilan.configurations += 1; }
+    else if (ex.code !== code) { ex.code = code; bilan.configurations += 1; }
+  }
+  // 5. Validation : tests proposés (sans doublon).
+  for (const el of [...ctx.vnets.map((v) => v.zone), ...s.noeuds]) for (const t of testsAzure(s, el)) {
+    if (e.validation.some((v) => v.test === t.test)) continue;
+    e.validation.push(t); bilan.tests += 1;
+  }
+  // 6. Environnement, s'il est vide.
+  if (!String(e.environnement ?? '').trim()) {
+    const groupes = [...new Set([...ctx.vnets.map((v) => v.groupe), ...s.noeuds.filter((n) => estAzure(n.type)).map((n) => ctx.noeud(n).groupe)])];
+    const regions = [...new Set([...ctx.vnets.map((v) => v.region), ...s.noeuds.filter((n) => estAzure(n.type)).map((n) => ctx.noeud(n).region)])].map((r) => REGIONS.find(([x]) => x === r)?.[1] ?? r);
+    const res = s.noeuds.filter((n) => estAzure(n.type)).map((n) => `${nomAzure(n.nom, n.type)} (${typeAzure(n.type).label})`);
+    e.environnement = `Microsoft Azure : groupe(s) de ressources ${groupes.join(', ') || '—'} ; région(s) ${regions.join(', ') || '—'}. `
+      + `${ctx.vnets.length ? `Réseaux virtuels : ${ctx.vnets.map((v) => `${v.nom}${v.c.espace ? ` (${v.c.espace})` : ''}`).join(', ')}. ` : ''}${res.length ? `Ressources : ${res.join(' ; ')}.` : ''}`.slice(0, 2000);
+    bilan.environnement = true;
+  }
+}
+
 /** Phrase de bilan pour la barre d'état. */
 export function phraseBilan(b) {
   const p = [];
@@ -226,5 +304,6 @@ export function phraseBilan(b) {
   if (b.configurations) p.push(`${b.configurations} bloc(s) de configuration`);
   if (b.tests) p.push(`${b.tests} test(s) de validation proposé(s)`);
   if (b.environnement) p.push('environnement rempli');
+  if (b.vnets) p.push(`${b.vnets} VNet documenté(s) avec leurs sous-réseaux`);
   return p.length ? `Depuis le schéma : ${p.join(', ')}. Vérifie, puis enregistre.` : 'Le document et l’inventaire sont déjà à jour avec le schéma.';
 }

@@ -326,9 +326,9 @@ await ctx.close();
   assert((await p7.locator('#schElement option:checked').innerText()).includes('R1'), 'l’équipement glissé est choisi');
   // Palette par groupes et filtre par système
   assert(await p7.locator('.sch-famille-titre', { hasText: 'Terminaux' }).count() === 1 && await p7.locator('[data-sadd="telephone-ip"]').count() === 1, 'palette par groupes, avec le téléphone IP');
-  await p7.click('[data-sfiltre="azure"]');
-  assert(await p7.locator('[data-sadd="telephone-ip"]').count() === 0 && await p7.locator('[data-sadd="passerelle-vpn"]').count() === 1, 'filtre Azure : seulement les équipements Azure');
+  assert(await p7.locator('[data-sfiltre="azure"]').count() === 0 && await p7.locator('[data-sadd="passerelle-vpn"]').count() === 0 && await p7.locator('[data-sfiltre="cisco"]').getAttribute('aria-pressed') === 'true', 'labo Cisco : palette Cisco seulement (pas d’onglet Azure)');
   await p7.click('[data-sfiltre="tous"]');
+  assert(await p7.locator('[data-sadd="passerelle-vpn"]').count() === 1 && await p7.locator('[data-sadd="telephone-ip"]').count() === 1, '« Tous » : projet hybride, Cisco et Azure');
   await p7.click('[data-sadd="telephone-ip"]');
   assert(await p7.locator('#schModele').inputValue() === '7960', 'téléphone IP posé avec son modèle (ports Switch et PC)');
   await p7.click('#schSupprimer');
@@ -483,6 +483,65 @@ await ctx.close();
   await context.close();
 }
 
+// Labo Azure : palette Azure seulement, modèle du TP2, VNet, découpage, configuration et commandes Azure CLI (JOURNAL-LABO-10)
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+  const p9 = await context.newPage(); const e9 = []; p9.on('pageerror', (e) => e9.push(e.message));
+  await p9.goto(`${BASE}/#/journal`); await p9.waitForSelector('#jNouveauForm');
+  await p9.selectOption('#jNouvelleCat', 'azure'); await p9.click('#jNouveauForm button[type="submit"]'); await p9.waitForSelector('#schFeuille');
+  assert(await p9.locator('[data-sadd="routeur"]').count() === 0 && await p9.locator('[data-sadd="commutateur"]').count() === 0 && await p9.locator('[data-sadd="stockage"]').count() === 1
+    && await p9.locator('[data-sadd="zone:vnet"]').count() === 1 && await p9.locator('[data-sfiltre="cisco"]').count() === 0 && await p9.locator('[data-scable="console"]').count() === 0,
+  'labo Azure : dès le départ, seulement les ressources, zones et liens Azure');
+  await p9.selectOption('#schModeleLabo', 'azure-tp2-tardi'); await p9.click('#schModeleCharger');
+  assert(/Modèle chargé/.test(await p9.locator('#jNote').innerText()) && await p9.locator('#schFeuille').innerText().then((t) => t.includes('VNET1') && t.includes('StorageSubnet') && t.includes('WebAPP1')), 'modèle du TP2 chargé (VNET1, VNET2, sous-réseaux, WebAPP1, stockage)');
+  // VNET1 : espace, découpage, appairage
+  await p9.selectOption('#schElement', { label: 'Réseau virtuel (VNet) · VNET1' });
+  await p9.fill('#cfg-espace', '10.1.0.0/16');
+  assert(await p9.locator('#schFeuille').innerText().then((t) => t.includes('VNET1 · 10.1.0.0/16')), 'espace du VNet affiché sur la feuille pendant la frappe');
+  await p9.click('[data-cfgaction="decouper"]');
+  assert(/5 plage\(s\) attribuée\(s\)/.test(await p9.locator('.cfg-note').innerText()) && await p9.locator('#schFeuille').innerText().then((t) => /CoreSubnet/.test(t) && /10\.1\.\d+\.0\/24/.test(t)), 'Découper : chaque sous-réseau reçoit sa plage', await p9.locator('.cfg-note').innerText());
+  await p9.locator('[data-cfgmulti="appairages"]').first().check();
+  assert(await p9.locator('#schFeuille').innerText().then((t) => t.includes('Appairage')), 'appairage VNET1 ↔ VNET2 tracé');
+  await p9.selectOption('#schElement', { label: 'Réseau virtuel (VNet) · VNET2' });
+  await p9.fill('#cfg-espace', '10.2.0.0/16'); await p9.click('[data-cfgaction="decouper"]');
+  // WebAPP1 : intégration au VNet
+  await p9.selectOption('#schElement', { label: 'Équipement · WebAPP1' });
+  assert(/az webapp create -g rg-tardi -p asp-tardi -n WebAPP1 --container-image-name index\.docker\.io\/romaric\/tpasr:latest/.test(await p9.locator('#cfgCode').innerText()), 'WebAPP1 : commandes de l’énoncé (B1, conteneur, port 8080)');
+  const opt = await p9.locator('#cfg-integration option', { hasText: 'AppServiceOutboundSubnet' }).getAttribute('value');
+  await p9.selectOption('#cfg-integration', opt);
+  assert(/vnet-integration add -g rg-tardi -n WebAPP1 --vnet VNET1 --subnet AppServiceOutboundSubnet/.test(await p9.locator('#cfgCode').innerText()), 'intégration VNet choisie dans la liste des sous-réseaux du schéma');
+  // Lien sans port : pas de menu de ports pour les ressources Azure
+  const position = (nom) => p9.evaluate((n) => { const t = [...document.querySelectorAll('#schFeuille text')].find((x) => x.textContent === n); return t ? [Number(t.getAttribute('x')), Number(t.getAttribute('y'))] : null; }, nom);
+  const coord = async (x, y) => { await p9.locator('#schFeuille').scrollIntoViewIfNeeded(); const b = await p9.locator('#schFeuille svg').boundingBox(); return [b.x + (x * b.width) / 1000, b.y + (y * b.height) / 600]; };
+  const clic = async (nom) => { const pos = await position(nom); const [a, b] = await coord(pos[0], pos[1] - 40); await p9.mouse.click(a, b); };
+  await p9.click('[data-sadd="equilibreur"]'); await p9.fill('#schNom', 'lb-web');
+  const liensAvant = await p9.locator('#schFeuille line[data-el]').count();
+  await p9.click('[data-scable="auto"]'); await clic('lb-web'); await clic('WebAPP1');
+  assert(await p9.locator('.sch-menu-ports').count() === 0 && await p9.locator('#schFeuille line[data-el]').count() === liensAvant + 1 && await p9.locator('#schStyle').inputValue() === 'trafic', 'ressources Azure reliées sans menu de ports (flux)');
+  await p9.click('#schCablageFin');
+  // Remplir, script complet, enregistrer, PDF
+  await p9.click('#schRemplir');
+  const titres = await p9.locator('[data-jt="configuration"][data-col="titre"]').evaluateAll((l) => l.map((x) => x.value));
+  assert(titres.includes('Azure : App Service WebAPP1') && titres.includes('Azure : Appairages (après la création des deux VNet)'), 'remplir : blocs Azure CLI dans la Configuration', titres.join(' | '));
+  const sn = await p9.locator('[data-jt="adressage"][data-col="interface"]').evaluateAll((l) => l.map((x) => x.value));
+  assert(sn.includes('StorageSubnet') && sn.includes('AppServiceOutboundSubnet') && /Sous-réseau/.test(await p9.locator('#jForm').innerText()), 'plan d’adressage par sous-réseau, colonnes adaptées à Azure');
+  await p9.selectOption('#schElement', '');
+  const [dl] = await Promise.all([p9.waitForEvent('download'), p9.click('[data-cfgaction="scriptComplet"]')]);
+  const sh = (await lireDl(dl)).toString('utf8');
+  assert(/_azure\.sh$/.test(dl.suggestedFilename()) && sh.startsWith('#!/usr/bin/env bash') && sh.includes('az network vnet peering create') && sh.includes('az network private-endpoint create') && !/AccountKey=/.test(sh), 'script complet téléchargé (.sh), sans clé');
+  await p9.click('#jEnregistrer');
+  assert(/Enregistré/.test(await p9.locator('#jNote').innerText()), 'labo Azure enregistré', `${await p9.locator('#jNote').innerText()} ${await p9.locator('.param-err').allInnerTexts()}`);
+  await p9.reload(); await p9.waitForSelector('#schFeuille');
+  await p9.selectOption('#schElement', { label: 'Sous-réseau · StorageSubnet' });
+  assert(/10\.2\.\d+\.\d+\/\d+/.test(await p9.inputValue('#cfg-plage')), 'après rechargement : les plages sont relues');
+  const [dp] = await Promise.all([p9.waitForEvent('download'), p9.click('#jPdf')]);
+  const pdf = (await lireDl(dp)).toString('latin1');
+  assert(pdf.includes('private-endpoint create') && pdf.includes('StorageSubnet'), 'PDF du labo Azure : schéma, plan et commandes');
+  if (CAPTURES) await p9.screenshot({ path: join(CAPTURES, 'journal-azure.png') });
+  assert(e9.length === 0, 'aucune erreur de page (labo Azure)', e9.join(' | '));
+  await context.close();
+}
+
 // Téléphone : aucune barre de défilement horizontale
 {
   const { context, page: p3, erreurs: e3 } = await nouvellePage({ viewport: { width: 390, height: 844 } }, '/#/journal');
@@ -501,6 +560,8 @@ await ctx.close();
   await p3.click('[data-sadd="commutateur-l3"]'); await p3.locator('input[name="cfgNiveau"][value="complet"]').check();
   await p3.click('[data-cfgadd="canaux"]'); await p3.click('[data-cfgaction="tousPorts"]');
   assert(await sansDebordement(p3), '390 px : panneau Configuration (complet) sans débordement horizontal');
+  await p3.click('[data-sfiltre="tous"]'); await p3.click('[data-sadd="zone:vnet"]'); await p3.locator('input[name="cfgNiveau"][value="complet"]').check();
+  assert(await sansDebordement(p3), '390 px : panneau Azure d’un VNet sans débordement horizontal');
   assert(e3.length === 0, 'aucune erreur de page (téléphone)', e3.join(' | '));
   await context.close();
 }

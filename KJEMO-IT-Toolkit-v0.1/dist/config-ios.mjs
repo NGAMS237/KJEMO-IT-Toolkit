@@ -29,7 +29,7 @@ export function famille(type) {
   if (type === 'routeur') return 'routeur';
   if (type === 'commutateur') return 'commutateur';
   if (type === 'commutateur-l3') return 'commutateur-l3';
-  if (['poste', 'portable', 'telephone-ip', 'imprimante', 'smartphone', 'camera-ip', 'serveur', 'nas', 'vm'].includes(type)) return 'hote';
+  if (['poste', 'portable', 'telephone-ip', 'imprimante', 'smartphone', 'camera-ip', 'serveur', 'nas'].includes(type)) return 'hote';   // une VM se configure comme ressource Azure (config-azure.mjs)
   return null;   // pare-feu ASA, point d'accès, cloud : documentés, sans génération de commandes
 }
 export const estIos = (type) => ['routeur', 'commutateur', 'commutateur-l3'].includes(famille(type));

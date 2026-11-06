@@ -1,3 +1,15 @@
+## JOURNAL-LABO-10 (2026-11-06)
+
+- Labo par système dès le départ : un labo Azure (ou Cisco, Système) ne montre que ses ressources, ses zones, ses liens et les équipements de son système dans l’inventaire ; l’onglet « Tous » reste pour un projet hybride. Plan d’adressage aux colonnes Azure (ressource ou VNet, sous-réseau, VNet / région).
+- Ressources Azure dans le schéma (`azure-types.mjs`, `config-azure.mjs`) : VM, App Service, Function App, compte de stockage, Azure SQL, Event Hubs, point de terminaison privé, NSG, table de routage (UDR), zone DNS privée ou publique, équilibreur de charge, Application Gateway, IP publique, passerelle NAT, passerelle VPN, Front Door, Azure Firewall, Bastion, appliance virtuelle (NVA), Key Vault, Log Analytics. Liens « Flux » et « Liaison privée », posés sans menu de ports.
+- Zones Azure : groupe de ressources, région, réseau virtuel (espace d’adressage, appairages dessinés), sous-réseau (plage, besoin, délégation, points de terminaison de service). Une ressource posée dans un sous-réseau y est déployée ; groupe et région s’héritent.
+- Configuration de chaque ressource et zone en trois niveaux, commandes Azure CLI générées dans l’ordre de déploiement (script complet .sh), « Découper selon les besoins » (VLSM avec les 5 adresses réservées par Azure), vérifications : plages hors VNet, chevauchements, appairage impossible, GatewaySubnet / AzureBastionSubnet / AzureFirewallSubnet, sous-réseau délégué pour l’intégration VNet, point de terminaison privé dans un sous-réseau délégué, routes (étiquettes de service, appliance sans IP), règles NSG, nom de compte de stockage, zone privée sans VNet lié.
+- Aucun secret : chaîne de connexion lue au déploiement (`$(az storage account show-connection-string …)`), mot de passe Windows et SQL tapés à la commande. La garde refuse aussi « password: … », AccountKey=, SharedAccessKey= et les jetons SAS (sig=).
+- « Remplir depuis le schéma » pour Azure : fiche « Réseau virtuel » par VNet (sous-réseaux en interfaces), modèle et emplacement des ressources, routes UDR, règles NSG et restrictions d’accès, enregistrements DNS (nouveau tableau de fiche), plan d’adressage par sous-réseau (adresses utilisables), blocs « Azure : … » dans la Configuration, tests de validation (nslookup privatelink, appairages Connected, routes effectives…), environnement.
+- Modèles de schéma tirés de l’Infonuagique I : TP2 (banque Tardi : WebAPP1, VNET1 et VNET2 et leurs sous-réseaux, stockage privé, points de terminaison blob et queue) et TP1 (ÉNERGIA : quatre VNet et les besoins de l’énoncé). Les plages, appairages, zones DNS et routes restent à faire par l’étudiant.
+- Commandes vérifiées dans leur forme et leur ordre, PAS exécutées dans un abonnement Azure.
+- Tests : journal 309 vérifications, navigateur 145 ; tests de comptage du catalogue Cisco rendus indépendants des cours ajoutés depuis.
+
 ## JOURNAL-LABO-09 (2026-11-06)
 
 - Correction : un nouveau labo ne montre plus les équipements des autres labos. La section « Équipements » liste seulement ceux du labo ; les autres se reprennent par « Ajouter depuis l’inventaire » ; décocher retire du labo (pas de l’inventaire).

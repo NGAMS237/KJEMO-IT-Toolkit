@@ -86,7 +86,9 @@ function champTexte(c, e, erreurs) {
 const champ = (id) => CHAMPS_TEXTE.find((c) => c.id === id);
 
 function tableauEditable(nom, e, erreurs, { titreAjout, aide = '' }) {
-  const cols = TABLEAUX[nom];
+  // Libellés adaptés au système du labo (Azure : sous-réseaux et VNet plutôt qu'interfaces et VLAN).
+  const LIBELLES = { azure: { adressage: { equipement: 'Ressource ou VNet', interface: 'Sous-réseau / carte', vlan: 'VNet / région', passerelle: 'Passerelle (Azure : .1)' } } };
+  const cols = TABLEAUX[nom].map((c) => ({ ...c, label: LIBELLES[e.categorie]?.[nom]?.[c.id] ?? c.label }));
   const lignes = e[nom];
   const exl = EXEMPLES_TABLEAUX[e.categorie]?.[nom] ?? EXEMPLES_TABLEAUX.cisco[nom] ?? {};
   const phc = (col) => (exl[col] ? ` placeholder="${esc(`ex. ${exl[col]}`)}"` : '');

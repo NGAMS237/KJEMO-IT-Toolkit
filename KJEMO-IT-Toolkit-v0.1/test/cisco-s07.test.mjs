@@ -165,7 +165,7 @@ const ctx = { fiche: (id) => { const e = T.entreeParId(id); return e ? { titre: 
 
 // ---------------------------------------------------------------------------
 console.log('5. Schémas originaux');
-assert(S.IDS_SCHEMAS.length === 8 + 14 + 10, '32 schémas : 8 de la semaine 7, 14 des semaines 1 à 5 et 10 Azure');
+assert(S.IDS_SCHEMAS.length >= 8 + 14 + 10, 'au moins 32 schémas : 8 de la semaine 7, 14 des semaines 1 à 5, 10 Azure (et ceux des cours ajoutés depuis)');
 const tmp = mkdtempSync(resolve(tmpdir(), 'svg-'));
 for (const id of S.IDS_SCHEMAS) {
   const sc = S.SCHEMAS[id];
