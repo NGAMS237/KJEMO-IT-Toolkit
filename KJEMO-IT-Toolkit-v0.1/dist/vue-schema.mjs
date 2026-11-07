@@ -76,14 +76,15 @@ export function editeurSchemaMarkup(schema, { resoudre = () => null, typesPerso 
   const filtre = etat.filtreSysteme ?? duLabo;
   const echantillon = (st) => `<svg class="sch-ech" viewBox="0 0 34 10" aria-hidden="true"><line x1="2" y1="5" x2="32" y2="5" stroke="${st.trait}" stroke-width="${Math.min(st.ep, 4)}"${st.tirets ? ` stroke-dasharray="${st.tirets.join(' ')}"` : ''} stroke-linecap="round"/></svg>`;
   const cablage = etat.cablage;
+  const peutCabler = schema.noeuds.length >= 2 || (schema.noeuds.length === 1 && schema.zones.some((z) => z.genre === 'sous-reseau'));
   const cables = `<div class="sch-groupe"><span class="sch-groupe-titre">Câbles</span><div class="sch-palette" role="toolbar" aria-label="Câbles : choisis un câble, puis clique deux équipements">`
-    + `<button type="button" class="sch-outil sch-cable" data-scable="auto" aria-pressed="${cablage?.style === 'auto'}" title="Le bon câble est choisi selon les deux équipements et les ports (console, série, sans fil, droit ou croisé)"${schema.noeuds.length < 2 ? ' disabled' : ''}><span aria-hidden="true">⚡</span> Automatique</button>`
-    + STYLES_LIEN.filter((st) => filtre === 'tous' || st.systemes.includes(filtre)).map((st) => `<button type="button" class="sch-outil sch-cable" data-scable="${esc(st.id)}" aria-pressed="${cablage?.style === st.id}" title="${esc(st.aide)}"${schema.noeuds.length < 2 ? ' disabled' : ''}>${echantillon(st)} ${esc(st.label)}</button>`).join('')
+    + `<button type="button" class="sch-outil sch-cable" data-scable="auto" aria-pressed="${cablage?.style === 'auto'}" title="Le bon câble est choisi selon les deux équipements et les ports (console, série, sans fil, droit ou croisé)"${peutCabler ? '' : ' disabled'}><span aria-hidden="true">⚡</span> Automatique</button>`
+    + STYLES_LIEN.filter((st) => filtre === 'tous' || st.systemes.includes(filtre)).map((st) => `<button type="button" class="sch-outil sch-cable" data-scable="${esc(st.id)}" aria-pressed="${cablage?.style === st.id}" title="${esc(st.aide)}"${peutCabler ? '' : ' disabled'}>${echantillon(st)} ${esc(st.label)}</button>`).join('')
     + `</div></div>`;
   const nomCable = cablage ? (cablage.style === 'auto' ? 'Câble automatique' : styleLien(cablage.style).label) : '';
   const depuisNoeud = cablage?.depuis ? schema.noeuds.find((x) => x.id === cablage.depuis.noeud) : null;
   const bandeau = cablage
-    ? `<div class="sch-bandeau" role="status"><span>${cablage.style === 'auto' ? '<span aria-hidden="true">⚡</span>' : echantillon(styleLien(cablage.style))} <b>${esc(nomCable)}</b> : ${depuisNoeud ? `depuis <b>${esc(nomNoeud(depuisNoeud, resoudre, persos))} ${esc(cablage.depuis.port)}</b>, clique maintenant le <b>deuxième</b> équipement puis choisis son port.` : 'clique le <b>premier</b> équipement, puis choisis son port dans le menu.'}</span>`
+    ? `<div class="sch-bandeau" role="status"><span>${cablage.style === 'auto' ? '<span aria-hidden="true">⚡</span>' : echantillon(styleLien(cablage.style))} <b>${esc(nomCable)}</b> : ${depuisNoeud ? `depuis <b>${esc(nomNoeud(depuisNoeud, resoudre, persos))} ${esc(cablage.depuis.port)}</b>, clique maintenant le <b>deuxième</b> équipement puis choisis son port (ou un <b>sous-réseau</b> pour l’y lier).` : 'clique le <b>premier</b> équipement, puis choisis son port dans le menu (un sous-réseau se clique aussi : App Service, point privé, équilibreur interne).'}</span>`
       + `<button type="button" class="secondary-button j-mini" id="schCablageFin">Terminer</button></div>`
     : '';
   // Un labo Cisco, Système ou Azure ne montre que son système (et « Tous » pour un projet hybride).

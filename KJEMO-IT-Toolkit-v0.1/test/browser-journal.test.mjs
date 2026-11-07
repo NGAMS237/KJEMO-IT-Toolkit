@@ -523,6 +523,15 @@ await ctx.close();
   const liensAvant = await p9.locator('#schFeuille line[data-el]').count();
   await p9.click('[data-scable="auto"]'); await clic('lb-web'); await clic('WebAPP1');
   assert(await p9.locator('.sch-menu-ports').count() === 0 && await p9.locator('#schFeuille line[data-el]').count() === liensAvant + 1 && await p9.locator('#schStyle').inputValue() === 'trafic', 'ressources Azure reliées sans menu de ports (flux)');
+  // Trait équipement ↔ sous-réseau (mode câble) : l'équipement puis le sous-réseau, ou l'inverse.
+  const clicZone = async (nom) => { const pos = await p9.evaluate((n) => { const t = [...document.querySelectorAll('#schFeuille text')].find((x) => x.textContent.startsWith(n)); return t ? [Number(t.getAttribute('x')) - 10 + 7, Number(t.getAttribute('y')) - 15 + 7] : null; }, nom); const [a, b] = await coord(pos[0], pos[1]); await p9.mouse.click(a, b); };
+  await clic('lb-web'); await clicZone('AppServiceOutboundSubnet');
+  const idSn = async (nom) => p9.locator('#cfg-sousReseau option', { hasText: nom }).getAttribute('value');
+  await p9.selectOption('#schElement', { label: 'Équipement · lb-web' });
+  assert(await p9.locator('#cfg-sousReseau').inputValue() === await idSn('AppServiceOutboundSubnet'), 'trait équipement → sous-réseau : le champ « Sous-réseau » de l’équipement est rempli');
+  await clicZone('StorageSubnet'); await clic('lb-web');
+  await p9.selectOption('#schElement', { label: 'Équipement · lb-web' });
+  assert(await p9.locator('#cfg-sousReseau').inputValue() === await idSn('StorageSubnet'), 'sous-réseau cliqué en premier, puis l’équipement : lien posé');
   await p9.click('#schCablageFin');
   // Remplir, script complet, enregistrer, PDF
   await p9.click('#schRemplir');

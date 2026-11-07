@@ -78,5 +78,23 @@ const pos = (x) => txt.indexOf(x);
 assert(pos('Réseau virtuel VNET1') < pos('Compte de stockage sttardi') && pos('Compte de stockage sttardi') < pos('App Service WebAPP1') && pos('App Service WebAPP1') < pos('Point de terminaison privé pe-sttardi-blob'), 'plan portail : réseaux, stockage, application, puis points privés (ordre de déploiement)');
 assert(e.configuration.some((b) => b.titre === 'Portail : Compte de stockage sttardi') && e.configuration.some((b) => b.titre === 'Portail : liste des captures à garder'), 'document : le plan du portail et la liste des captures sont repris dans la configuration');
 assert(!Object.keys(J.normaliserEntree(e).erreurs).length, 'document avec le plan du portail : valide');
+// Trait équipement ↔ sous-réseau (dessiné d'après la configuration, sans seconde donnée).
+{
+  const web = s.noeuds.find((n) => n.type === 'app-service');
+  const ls = SC.liensSousReseau(s);
+  const lw = ls.find((l) => l.noeud.id === web.id);
+  assert(lw && lw.etiquette === 'Intégration VNet' && lw.zone.nom === 'AppServiceOutboundSubnet', 'App Service lié à son sous-réseau d’intégration');
+  const sn = s.zones.find((z) => z.genre === 'sous-reseau' && z.nom !== 'AppServiceOutboundSubnet');
+  const s2 = JSON.parse(JSON.stringify(s)); const w2 = s2.noeuds.find((n) => n.id === web.id);
+  w2.x = 20; w2.y = 20; w2.config.integration = sn.id;
+  const traits = (sch) => SC.dessinerSchema(sch).filter((o) => o.k === 'ligne' && o.trait === '#0a8fa6' && o.tirets?.[0] === 6);
+  assert(traits(s2).length >= 1 && SC.dessinerSchema(s2).some((o) => o.k === 'etiquette' && o.t === 'Intégration VNet'), 'trait en tirets + étiquette vers le sous-réseau choisi');
+  w2.config.integration = '';
+  assert(SC.liensSousReseau(s2).every((l) => l.noeud.id !== web.id), 'intégration vidée : plus de trait');
+  w2.config.integration = 'inexistant';
+  assert(SC.liensSousReseau(s2).every((l) => l.noeud.id !== web.id), 'sous-réseau inexistant : ignoré');
+  assert(/Liens vers des sous-réseaux : .*Intégration VNet/.test(SC.decrireSchema(s)), 'description du schéma : liens vers les sous-réseaux');
+}
+
 console.log(`azure-tp2-complet : ${ok} vérification(s) réussie(s), ${ko} échec(s).`);
 process.exit(ko ? 1 : 0);

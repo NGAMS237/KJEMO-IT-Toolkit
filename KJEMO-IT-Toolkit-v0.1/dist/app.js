@@ -13,7 +13,7 @@ import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, ent
 import { pdfJournal, nomFichierPdf, pdfInventaire } from './journal-pdf.mjs';
 import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, normaliserEquipement, equipementVide, labosDe, filtrerInventaire,
          equipementsDepuisFiche } from './inventaire.mjs';
-import { FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, normaliserSchema, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
+import { LIENS_SOUS_RESEAU, FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, normaliserSchema, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
 import { editeurSchemaMarkup, feuilleSvg, menuPortsMarkup } from './vue-schema.mjs';
 import { apercuConfigMarkup, nouvelleLigne, poolsParVlan, ospfDepuisInterfaces } from './vue-config.mjs';
 import { normaliserConfig, proposerConfig, commandesNoeud, texteAvecTitres } from './config-ios.mjs';
@@ -2597,6 +2597,19 @@ function pointFeuille(ev, svg) {
   return { x: ((ev.clientX - r.left) / r.width) * FEUILLE.largeur, y: ((ev.clientY - r.top) / r.height) * FEUILLE.hauteur };
 }
 
+/** Trait équipement ↔ sous-réseau : le sous-réseau entre dans la configuration de l'équipement (intégration VNet, point privé…). */
+function lierASousReseau(noeudId, zoneId) {
+  const s = schemaCourant(); const n = s.noeuds.find((x) => x.id === noeudId); const z = s.zones.find((x) => x.id === zoneId);
+  const note = document.querySelector('#jNote'); const c = etatSchema.cablage;
+  const fin = (msg) => { etatSchema = { ...etatSchema, cablage: c ? { ...c, depuis: null, enAttente: null, zoneDepuis: null } : null, selection: n ? n.id : null }; if (note) note.textContent = msg; majBlocSchema(); };
+  if (!n || !z) return;
+  const d = LIENS_SOUS_RESEAU[n.type];
+  if (!d) return fin(`${typeNoeud(n.type).label} ne se lie pas à un sous-réseau par un trait : glisse-le dans le rectangle du sous-réseau.`);
+  n.config = { ...(n.config ?? {}), [d.champ]: z.id };
+  schemaModifie();
+  fin(`${d.etiquette} : ${n.nom || typeNoeud(n.type).label} → ${z.nom || 'sous-réseau'}. Le champ de sa configuration est rempli.`);
+}
+
 /** Port choisi dans le menu : premier bout du câble, ou création du câble au deuxième. */
 function choisirPort(port, { sansPort = false } = {}) {
   const s = schemaCourant(); const c = etatSchema.cablage; const nom = String(port ?? '').trim().slice(0, 30);
@@ -2634,8 +2647,15 @@ function brancherSchema(view) {
     // Mode câble (palette « Câbles ») : premier équipement, puis deuxième.
     if (etatSchema.cablage) {
       ev.preventDefault();
-      if (!s.noeuds.some((n) => n.id === id)) return;
       const c = etatSchema.cablage;
+      // Un sous-réseau : relie l'équipement choisi (ou attend l'équipement si le sous-réseau est cliqué en premier).
+      if (s.zones.some((z) => z.id === id && z.genre === 'sous-reseau')) {
+        if (c.depuis) lierASousReseau(c.depuis.noeud, id);
+        else { etatSchema = { ...etatSchema, cablage: { ...c, zoneDepuis: id, enAttente: null }, selection: id }; const note = document.querySelector('#jNote'); if (note) note.textContent = 'Sous-réseau choisi : clique maintenant l’équipement à lier.'; majBlocSchema(); }
+        return;
+      }
+      if (!s.noeuds.some((n) => n.id === id)) return;
+      if (c.zoneDepuis) { lierASousReseau(id, c.zoneDepuis); return; }
       if (c.depuis?.noeud === id) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: null, enAttente: null }, selection: null }; majBlocSchema(); return; }
       // Le menu des ports de cet équipement s'ouvre sur la feuille.
       etatSchema = { ...etatSchema, cablage: { ...c, enAttente: id }, selection: c.depuis ? c.depuis.noeud : id };

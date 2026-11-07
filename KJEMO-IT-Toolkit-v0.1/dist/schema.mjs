@@ -89,6 +89,27 @@ export function typeDepuisEquipement(typeEquipement) {
   return TYPES_NOEUD.some((t) => t.id === typeEquipement) ? typeEquipement : 'autre';
 }
 
+/**
+ * Équipements Azure qui se lient à un sous-réseau par un trait : le champ de leur configuration qui
+ * garde ce sous-réseau (le trait est dessiné d'après ce champ, il n'y a pas de seconde donnée).
+ */
+export const LIENS_SOUS_RESEAU = {
+  'app-service': { champ: 'integration', etiquette: 'Intégration VNet' },
+  'point-terminaison-prive': { champ: 'sousReseau', etiquette: 'Point privé' },
+  equilibreur: { champ: 'sousReseau', etiquette: 'Interne' },
+  'passerelle-app': { champ: 'sousReseau', etiquette: 'Sous-réseau dédié' },
+};
+/** Traits équipement ↔ sous-réseau : [{ noeud, zone, etiquette }] (seulement vers un sous-réseau qui existe). */
+export function liensSousReseau(schema) {
+  const out = [];
+  for (const n of schema.noeuds ?? []) {
+    const d = LIENS_SOUS_RESEAU[n.type]; const id = d && n.config?.[d.champ];
+    const z = id && (schema.zones ?? []).find((x) => x.id === id && x.genre === 'sous-reseau');
+    if (z) out.push({ noeud: n, zone: z, etiquette: d.etiquette });
+  }
+  return out;
+}
+
 export const schemaVide = () => ({ noeuds: [], liens: [], zones: [], textes: [] });
 export const idSchema = (p) => `${p}${nouvelId().slice(1, 14)}`;
 const borne = (v, min, max) => Math.min(max, Math.max(min, Math.round(Number(v) || 0)));
@@ -216,6 +237,13 @@ export function dessinerSchema(schema, { resoudre = () => null, typesPerso = [],
     ops.push({ k: 'etiquette', x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, t: 'Appairage', taille: 10.5, gras: true });
   }
   const noeuds = new Map(schema.noeuds.map((n) => [n.id, n]));
+  // Équipement ↔ sous-réseau : un trait en tirets du symbole au bord du sous-réseau (rien si l'équipement est déjà dedans).
+  for (const { noeud: n, zone: z, etiquette } of liensSousReseau(schema)) {
+    if (n.x >= z.x && n.x <= z.x + z.l && n.y >= z.y && n.y <= z.y + z.h) continue;
+    const q = { x: Math.min(Math.max(n.x, z.x), z.x + z.l), y: Math.min(Math.max(n.y, z.y), z.y + z.h) };
+    ops.push({ k: 'ligne', x1: n.x, y1: n.y, x2: q.x, y2: q.y, trait: '#0a8fa6', ep: 2, tirets: [6, 4] });
+    ops.push({ k: 'etiquette', x: (n.x + q.x) / 2, y: (n.y + q.y) / 2, t: etiquette, taille: 10, gras: true });
+  }
   // Liens ensuite (sous les équipements).
   // Plusieurs câbles entre les deux mêmes équipements (EtherChannel, redondance) : tracés côte à côte.
   const paires = new Map();
@@ -495,6 +523,8 @@ export function decrireSchema(schema, { resoudre = () => null, typesPerso = [] }
   if (schema.zones.length) morceaux.push(`Zones : ${schema.zones.map(nz).join(', ')}.`);
   const app = [];
   for (const z of schema.zones) for (const id of z.config?.appairages ?? []) { const w = schema.zones.find((x) => x.id === id); if (w && !app.some((a) => a.includes(w.nom) && a.includes(z.nom))) app.push(`${z.nom} ↔ ${w.nom}`); }
+  const ls = liensSousReseau(schema).map((l) => `${nom(l.noeud)} → ${l.zone.nom || 'sous-réseau'} (${l.etiquette})`);
+  if (ls.length) morceaux.push(`Liens vers des sous-réseaux : ${ls.join(', ')}.`);
   if (app.length) morceaux.push(`Appairages : ${app.join(', ')}.`);
   return morceaux.join(' ') || 'Schéma vide.';
 }

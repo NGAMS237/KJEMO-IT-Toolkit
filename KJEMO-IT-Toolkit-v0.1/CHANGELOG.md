@@ -1,3 +1,10 @@
+## AZURE-SCHEMA-LIEN-SOUS-RESEAU-01 (2026-11-07)
+
+- **Trait équipement ↔ sous-réseau** dans l’éditeur de schéma : en mode câble, clique l’équipement puis le sous-réseau (ou l’inverse). Le trait en tirets est dessiné du symbole au bord du sous-réseau, avec son étiquette (Intégration VNet, Point privé, Interne, Sous-réseau dédié).
+- Le trait n’est pas une seconde donnée : il remplit le champ de configuration de l’équipement (intégration de l’App Service, sous-réseau du point privé, de l’équilibreur interne ou de la passerelle d’application) ; le choisir dans la liste dessine le même trait. Le plan, le script et le PDF restent cohérents.
+- Autres équipements : message clair (glisse-le dans le sous-réseau). Un équipement déjà dans le rectangle n’a pas besoin de trait.
+- Description du schéma (accessibilité) : « Liens vers des sous-réseaux ». Tests : `azure-tp2-complet` (+5), `browser-journal` (+2 : clic réel équipement→sous-réseau et sous-réseau→équipement).
+
 ## AZURE-LABO-PREPARATION-01 (2026-11-07)
 
 - **Préparer dans le labo, appliquer ensuite dans le portail** : « Remplir depuis le schéma » ajoute au document un **plan d’exécution dans le portail**, généré depuis le schéma et dans l’ordre de déploiement : chemin dans le portail, valeurs à saisir onglet par onglet (réseaux et sous-réseaux, appairage, stockage, App Service, points privés, tables de routage, NSG, zones DNS), pièges connus et **capture à garder** pour chaque étape, plus une liste de toutes les captures. Aucune valeur secrète n’est écrite.
