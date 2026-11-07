@@ -1,5 +1,6 @@
 ## AZURE-SCHEMA-LIEN-SOUS-RESEAU-01 (2026-11-07)
 
+- **Associations multiples** : NSG, table de routage et passerelle NAT se lient à plusieurs sous-réseaux (un trait chacun, étiquette NSG / Table de routage / Sortie NAT) ; en mode câble, cliquer de nouveau le même sous-réseau retire l’association. Étiquettes décalées pour ne pas recouvrir les noms.
 - **Trait équipement ↔ sous-réseau** dans l’éditeur de schéma : en mode câble, clique l’équipement puis le sous-réseau (ou l’inverse). Le trait en tirets est dessiné du symbole au bord du sous-réseau, avec son étiquette (Intégration VNet, Point privé, Interne, Sous-réseau dédié).
 - Le trait n’est pas une seconde donnée : il remplit le champ de configuration de l’équipement (intégration de l’App Service, sous-réseau du point privé, de l’équilibreur interne ou de la passerelle d’application) ; le choisir dans la liste dessine le même trait. Le plan, le script et le PDF restent cohérents.
 - Autres équipements : message clair (glisse-le dans le sous-réseau). Un équipement déjà dans le rectangle n’a pas besoin de trait.

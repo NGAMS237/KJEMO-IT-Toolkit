@@ -2601,13 +2601,21 @@ function pointFeuille(ev, svg) {
 function lierASousReseau(noeudId, zoneId) {
   const s = schemaCourant(); const n = s.noeuds.find((x) => x.id === noeudId); const z = s.zones.find((x) => x.id === zoneId);
   const note = document.querySelector('#jNote'); const c = etatSchema.cablage;
-  const fin = (msg) => { etatSchema = { ...etatSchema, cablage: c ? { ...c, depuis: null, enAttente: null, zoneDepuis: null } : null, selection: n ? n.id : null }; if (note) note.textContent = msg; majBlocSchema(); };
+  const fin = (msg, garder = false) => { etatSchema = { ...etatSchema, cablage: c ? { ...c, depuis: garder ? c.depuis : null, enAttente: null, zoneDepuis: null } : null, selection: n ? n.id : null }; if (note) note.textContent = msg; majBlocSchema(); };
   if (!n || !z) return;
   const d = LIENS_SOUS_RESEAU[n.type];
   if (!d) return fin(`${typeNoeud(n.type).label} ne se lie pas à un sous-réseau par un trait : glisse-le dans le rectangle du sous-réseau.`);
+  const nomN = n.nom || typeNoeud(n.type).label;
+  if (d.multi) {
+    const liste = Array.isArray(n.config?.[d.champ]) ? n.config[d.champ] : [];
+    const retire = liste.includes(z.id);
+    n.config = { ...(n.config ?? {}), [d.champ]: retire ? liste.filter((x) => x !== z.id) : [...liste, z.id] };
+    schemaModifie();
+    return fin(retire ? `${d.etiquette} : ${nomN} n’est plus associé à ${z.nom || 'ce sous-réseau'}.` : `${d.etiquette} : ${nomN} → ${z.nom || 'sous-réseau'} (associé). Clique un autre sous-réseau pour en ajouter, le même pour retirer.`, !!c?.depuis);
+  }
   n.config = { ...(n.config ?? {}), [d.champ]: z.id };
   schemaModifie();
-  fin(`${d.etiquette} : ${n.nom || typeNoeud(n.type).label} → ${z.nom || 'sous-réseau'}. Le champ de sa configuration est rempli.`);
+  fin(`${d.etiquette} : ${nomN} → ${z.nom || 'sous-réseau'}. Le champ de sa configuration est rempli.`);
 }
 
 /** Port choisi dans le menu : premier bout du câble, ou création du câble au deuxième. */

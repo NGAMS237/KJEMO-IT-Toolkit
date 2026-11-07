@@ -96,5 +96,17 @@ assert(!Object.keys(J.normaliserEntree(e).erreurs).length, 'document avec le pla
   assert(/Liens vers des sous-réseaux : .*Intégration VNet/.test(SC.decrireSchema(s)), 'description du schéma : liens vers les sous-réseaux');
 }
 
+// Liens multiples (table de routage, NSG, NAT) : un trait par sous-réseau associé.
+{
+  const rts = s.noeuds.filter((n) => n.type === 'table-routage');
+  const rtv = rts.find((n) => (n.config.sousReseaux ?? []).length === 2);
+  const lr = SC.liensSousReseau(s).filter((l) => rtv && l.noeud.id === rtv.id);
+  assert(rtv && lr.length === 2 && lr.every((l) => l.zone.nom === 'VMSubnet' && l.etiquette === 'Table de routage'), 'rt-vmsubnet : un trait vers chacun des deux VMSubnet');
+  const s3 = JSON.parse(JSON.stringify(s)); const r3 = s3.noeuds.find((n) => n.id === rtv.id);
+  r3.config.sousReseaux = [];
+  assert(SC.liensSousReseau(s3).every((l) => l.noeud.id !== rtv.id), 'table de routage sans association : plus de trait');
+  assert(['nsg', 'passerelle-nat'].every((t) => SC.LIENS_SOUS_RESEAU[t]?.multi), 'NSG et passerelle NAT : associations multiples');
+}
+
 console.log(`azure-tp2-complet : ${ok} vérification(s) réussie(s), ${ko} échec(s).`);
 process.exit(ko ? 1 : 0);

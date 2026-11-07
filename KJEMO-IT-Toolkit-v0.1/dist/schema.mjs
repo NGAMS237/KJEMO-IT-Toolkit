@@ -98,14 +98,21 @@ export const LIENS_SOUS_RESEAU = {
   'point-terminaison-prive': { champ: 'sousReseau', etiquette: 'Point privé' },
   equilibreur: { champ: 'sousReseau', etiquette: 'Interne' },
   'passerelle-app': { champ: 'sousReseau', etiquette: 'Sous-réseau dédié' },
+  // Plusieurs sous-réseaux possibles (liste) : cliquer de nouveau le même sous-réseau retire l'association.
+  nsg: { champ: 'sousReseaux', etiquette: 'NSG', multi: true },
+  'table-routage': { champ: 'sousReseaux', etiquette: 'Table de routage', multi: true },
+  'passerelle-nat': { champ: 'sousReseaux', etiquette: 'Sortie NAT', multi: true },
 };
 /** Traits équipement ↔ sous-réseau : [{ noeud, zone, etiquette }] (seulement vers un sous-réseau qui existe). */
 export function liensSousReseau(schema) {
   const out = [];
   for (const n of schema.noeuds ?? []) {
-    const d = LIENS_SOUS_RESEAU[n.type]; const id = d && n.config?.[d.champ];
-    const z = id && (schema.zones ?? []).find((x) => x.id === id && x.genre === 'sous-reseau');
-    if (z) out.push({ noeud: n, zone: z, etiquette: d.etiquette });
+    const d = LIENS_SOUS_RESEAU[n.type]; if (!d) continue;
+    const v = n.config?.[d.champ];
+    for (const id of d.multi ? (Array.isArray(v) ? v : []) : [v]) {
+      const z = id && (schema.zones ?? []).find((x) => x.id === id && x.genre === 'sous-reseau');
+      if (z) out.push({ noeud: n, zone: z, etiquette: d.etiquette });
+    }
   }
   return out;
 }
@@ -242,7 +249,8 @@ export function dessinerSchema(schema, { resoudre = () => null, typesPerso = [],
     if (n.x >= z.x && n.x <= z.x + z.l && n.y >= z.y && n.y <= z.y + z.h) continue;
     const q = { x: Math.min(Math.max(n.x, z.x), z.x + z.l), y: Math.min(Math.max(n.y, z.y), z.y + z.h) };
     ops.push({ k: 'ligne', x1: n.x, y1: n.y, x2: q.x, y2: q.y, trait: '#0a8fa6', ep: 2, tirets: [6, 4] });
-    ops.push({ k: 'etiquette', x: (n.x + q.x) / 2, y: (n.y + q.y) / 2, t: etiquette, taille: 10, gras: true });
+    // Étiquette au 2/3 du trait, côté sous-réseau : loin du nom de l'équipement et des autres étiquettes.
+    ops.push({ k: 'etiquette', x: n.x + (q.x - n.x) * 0.72, y: n.y + (q.y - n.y) * 0.72, t: etiquette, taille: 10, gras: true });
   }
   // Liens ensuite (sous les équipements).
   // Plusieurs câbles entre les deux mêmes équipements (EtherChannel, redondance) : tracés côte à côte.
