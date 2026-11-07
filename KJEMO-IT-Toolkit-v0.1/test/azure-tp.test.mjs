@@ -98,7 +98,7 @@ console.log('4. Classement et aide-mémoire');
 const place = (id) => C.rubriquesDe ? true : true;
 const toutes = M.toutesLesFichesMemo();
 assert(IDS.every((id) => toutes.includes(id)) && toutes.length === new Set(toutes).size, 'les 8 fiches sont dans l’aide-mémoire, une seule fois');
-assert(M.MEMO_PAR_ID.has('az-app-service') && M.MEMO_PAR_ID.get('az-app-service').sous.length === 2, 'groupe « Azure : App Service » avec deux sous-groupes');
+assert(M.MEMO_PAR_ID.has('az-app-service') && M.MEMO_PAR_ID.get('az-app-service').sous.length === 3, 'groupe « Azure : App Service » avec trois sous-groupes (dont le montage complet)');
 assert(IDS.every((id) => (T.entreeParId(id)?.categorie ?? '') === 'Azure et Entra ID'), 'catégorie « Azure et Entra ID »');
 
 console.log('5. Contre-épreuves');

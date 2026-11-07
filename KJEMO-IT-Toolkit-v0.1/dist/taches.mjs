@@ -145,11 +145,13 @@ const PLAT_DE_METHODE = { linux: 'Linux', powershell: 'Windows', cmd: 'Windows',
 /** Plateformes d'une procédure, d'après ses méthodes (sans doublon, sans « graphique »). */
 export function plateformesDeProcedure(p) {
   const vues = [];
+  // Une fiche Azure à plusieurs méthodes : son PowerShell est celui du module Az, donc de la plateforme Azure (pas Windows).
+  const surAzure = p.methodes.some((m) => m.id === 'azure');
   for (const m of p.methodes) {
     // Un scénario tient ses plateformes de ses équipements (ios → Cisco, powershell → Windows…).
     const ids = m.id === 'scenario' ? (m.equipements ?? []).map((q) => q.methode) : [m.id];
     for (const id of ids) {
-      const pl = PLAT_DE_METHODE[id];
+      const pl = surAzure && id === 'powershell' ? 'Azure' : PLAT_DE_METHODE[id];
       if (pl && !vues.includes(pl)) vues.push(pl);
     }
   }

@@ -15,6 +15,7 @@
  * refaits. Les diapositives sont résumées dans nos mots ; elles ne sont pas
  * republiées.
  */
+import { versCli } from './cours-azure-cli.mjs';
 import { RESUME_AZ_01, RESUME_AZ_03, RESUME_AZ_04, RESUME_AZ_05, RESUME_AZ_0607 } from './cours-resume-azure.mjs';
 
 const f = (fiche, etape = null, extra = {}) => ({ fiche, etape, ...extra });
@@ -22,7 +23,7 @@ const AVERTISSEMENT = 'Les fiches expliquent comment faire avec Azure CLI dans u
 const SOURCE = 'Diapositives du cours d’infonuagique (enseignant : Hinault Romaric Donfack) fournies par l’étudiant, non republiées ici : les parcours, le résumé et les schémas sont écrits dans nos mots. En cas de doute, ton énoncé et ton enseignant font foi.';
 const NON_COUVERT_THEORIE = 'Notion à comprendre, sans commande à lancer : le résumé pliable et les schémas la couvrent.';
 
-export const COURS_AZURE_PARCOURS = [
+const COURS_AZURE_PARCOURS_BRUT = [
   // ===========================================================================
   {
     id: 'azure-01-02-infonuagique-azure',
@@ -233,3 +234,5 @@ export const COURS_AZURE_PARCOURS = [
     ],
   },
 ];
+
+export const COURS_AZURE_PARCOURS = versCli(COURS_AZURE_PARCOURS_BRUT);

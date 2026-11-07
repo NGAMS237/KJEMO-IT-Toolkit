@@ -92,6 +92,8 @@
     "test:cisco-tp-vlan": "node test/cisco-tp-vlan.test.mjs",
     "test:azure-cours": "node test/azure-cours.test.mjs",
     "test:azure-tp": "node test/azure-tp.test.mjs",
+    "test:azure-multi": "node test/azure-multi.test.mjs",
+    "test:browser-azure-multi": "node test/browser-azure-multi.test.mjs",
     "test:windows-simples": "node test/windows-simples.test.mjs",
     "test:linux-simples": "node test/linux-simples.test.mjs",
     "test:browser:choix": "node test/browser-choix.test.mjs",

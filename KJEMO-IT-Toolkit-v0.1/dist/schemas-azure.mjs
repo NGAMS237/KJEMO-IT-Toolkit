@@ -265,6 +265,29 @@ function lbChoix() {
   });
 }
 
+// 11. Montage de démonstration : application web -> stockage par point privé --------
+function tpDemo() {
+  const g = [txt(360, 20, 'Montage « VNETDemo » : entrant public, sortant et stockage privés', { gras: true, taille: 14.5 })];
+  g.push(carte(20, 44, 110, 50, 'Internet', 'public', { bord: S }));
+  g.push(carte(300, 44, 140, 50, 'Application web', 'App Service', { bord: ACC }));
+  g.push(fl(130, 69, 298, 69, { couleur: KO, tirets: true }), txt(214, 60, 'Trafic entrant', { taille: 11, couleur: S }));
+  g.push(boite(150, 120, 420, 214, { fond: 'none', bord: CYAN, tirets: true, r: 18 }), txt(250, 140, 'VNETDemo', { gras: true, taille: 12.5, couleur: CYAN }));
+  g.push(fl(370, 94, 370, 150, { couleur: ACC, tirets: true }), txt(432, 124, 'Trafic sortant', { taille: 11, couleur: S }));
+  g.push(carte(250, 152, 240, 44, 'AppServiceOutboundSubnet', 'délégué à Microsoft.Web/serverFarms', { mono: false }));
+  g.push(fl(370, 196, 370, 236, { couleur: ACC, tirets: true }));
+  g.push(carte(250, 238, 240, 76, 'StorageSubnet', 'point de terminaison privé (blob)', { bord: CYAN }));
+  g.push(fl(370, 314, 370, 350, { couleur: ACC, tirets: true }));
+  g.push(carte(280, 352, 180, 46, 'Compte de stockage', 'accès public désactivé', { bord: OK }));
+  g.push(txt(582, 256, 'Zone DNS privée', { taille: 11, couleur: S, ancre: 'start' }), txt(582, 272, 'privatelink.blob.', { taille: 10.5, couleur: S, ancre: 'start' }), txt(582, 286, 'core.windows.net', { taille: 10.5, couleur: S, ancre: 'start' }));
+  g.push(ligne(492, 276, 576, 268, { couleur: WARN, tirets: true, largeur: 1.5 }));
+  g.push(txt(360, 420, 'Seule la porte d’entrée de l’application est publique : le chemin vers le stockage reste dans le VNet.', { taille: 11.5, couleur: S }));
+  return svg({
+    id: 'sc-az-tp-demo', largeur: 720, hauteur: 432, titre: 'Montage VNETDemo : application web et stockage par point privé',
+    desc: 'Internet atteint l’application web par le trafic entrant public. Le trafic sortant de l’application part par le sous-réseau AppServiceOutboundSubnet du réseau VNETDemo, rejoint le point de terminaison privé du sous-réseau StorageSubnet, puis le compte de stockage dont l’accès public est désactivé. Une zone DNS privée résout le nom du compte en adresse privée.',
+    corps: g.join(''),
+  });
+}
+
 export const SCHEMAS_AZURE = {
   'az-hierarchie': { titre: 'Hiérarchie des ressources Azure', legende: 'Groupe d’administration, abonnement, groupe de ressources, ressource : les droits et verrous descendent la hiérarchie.', svg: hierarchie },
   'az-regions-zones': { titre: 'Régions, zones et paires régionales', legende: 'Une région compte plusieurs zones de disponibilité ; deux régions appairées protègent contre un sinistre régional.', svg: regionsZones },
@@ -275,5 +298,9 @@ export const SCHEMAS_AZURE = {
   'az-routes-systeme': { titre: 'Routes système et route personnalisée', legende: 'Azure crée les routes de base ; une route personnalisée plus précise (ou égale) les remplace.', svg: routesSysteme },
   'az-service-prive': { titre: 'Point de service ou point privé', legende: 'Le point de service limite l’accès mais garde l’adresse publique ; le point privé donne une adresse privée au service.', svg: servicePrive },
   'az-lb-composants': { titre: 'Composants d’Azure Load Balancer', legende: 'IP frontale, règle, pool de serveurs et sonde d’intégrité : un serveur dont la sonde échoue est retiré.', svg: lbComposants },
+  'az-tp-demo': { titre: 'Montage VNETDemo : application web et stockage privé', legende: 'Entrant public ; sortant par le sous-réseau d’intégration ; point privé dans StorageSubnet ; stockage fermé à Internet.', svg: tpDemo },
   'az-lb-choix': { titre: 'Choisir un service d’équilibrage de charge', legende: 'Couche 4 ou 7, régional ou global : Load Balancer, Application Gateway, Traffic Manager, Front Door.', svg: lbChoix },
 };
+
+/** Outils de dessin partagés avec schemas-azure-lb.mjs. */
+export { txt, boite, ligne, fl, carte, svg, tableau, T, S, FOND, CASE, BORD, ACC, CYAN, OK, KO, WARN };

@@ -22,6 +22,7 @@ import { etiquetteSortie, extensionDe } from './plateforme.mjs';
 import { EFFETS, METHODES, MACHINES, rendreMethode, categorieEtape, raisonRefus, raisonRefusCourte, LIBELLE_CATEGORIE } from './procedures.mjs';
 import { POSTES_LECTURE } from './trouver.mjs';
 import { figureMarkup } from './schemas-cisco.mjs';
+import { ecranMarkup } from './ecrans-portail.mjs';
 
 /** Échappement HTML complet (guillemets inclus : le texte peut aller dans un attribut). */
 export function esc(texte) {
@@ -51,7 +52,7 @@ export function badgeEffet(effet) {
  * Commandes Cisco IOS), une fiche liste ses méthodes, un scénario ses
  * équipements.
  */
-export const METHODES_PLATEFORME = { Linux: ['linux'], Windows: ['powershell', 'cmd', 'gui'], Cisco: ['ios'], Azure: ['azure', 'powershell'] };
+export const METHODES_PLATEFORME = { Linux: ['linux'], Windows: ['powershell', 'cmd', 'gui'], Cisco: ['ios'], Azure: ['gui', 'powershell', 'azure'] };
 
 export function libellesMethodes(entree, plateforme = null) {
   if (entree.tool) return [etiquetteSortie(entree.tool)];
@@ -149,7 +150,8 @@ function blocEtapeMarkup(etape, i, ctx, { compact }) {
   const rendu = etape.rendu;
   const methodeId = etape.equipement ? ctx.methodeDe(etape.equipement) : ctx.methodeId;
   if (!rendu) {
-    return etape.actions ? `<ol class="gui-actions">${etape.actions.map((a) => `<li>${inline(a)}</li>`).join('')}</ol>` : '';
+    const liste = etape.actions ? `<ol class="gui-actions">${etape.actions.map((a) => `<li>${inline(a)}</li>`).join('')}</ol>` : '';
+    return liste + (etape.ecran ? ecranMarkup(etape.ecran, `ecran-${ctx.idEtape ?? 'e'}-${i}`) : '');
   }
   let corps = '';
   if (rendu.instances.length) {

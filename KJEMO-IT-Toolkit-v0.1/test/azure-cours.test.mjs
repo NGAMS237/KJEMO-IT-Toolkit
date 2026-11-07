@@ -44,7 +44,7 @@ const IDS = ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-a
 const COURS_IDS = ['azure-01-02-infonuagique-azure', 'azure-03-reseau-virtuel', 'azure-04-resolution-noms', 'azure-05-peering-routage', 'azure-06-07-acces-prive-equilibrage'];
 const SCHEMAS_NEUFS = Object.keys(SCHEMAS_AZURE);
 const exemple = (p) => Object.fromEntries(p.params.map((x) => [x.id, x.exemple]));
-const rendu = (id, saisies = null) => { const p = T.entreeParId(id).procedure; return P.rendreMethode(p.methodes[0], p.params, saisies ?? exemple(p)); };
+const rendu = (id, saisies = null) => { const p = T.entreeParId(id).procedure; return P.rendreMethode(p.methodes.find((m) => m.id === 'azure'), p.params, saisies ?? exemple(p)); };
 const lignes = (id, saisies = null) => rendu(id, saisies).etapes.flatMap((e) => (e.rendu?.lignes ?? []).map((l) => l.copie));
 
 // ---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ for (const p of COURS_AZURE) {
   assert(p.origine === 'cours' && p.id.startsWith('cours-az-'), `origine cours : ${p.id}`);
   assert(p.methodes.length === 1 && p.methodes[0].id === 'azure', `méthode Azure unique : ${p.id}`);
   const e = T.entreeParId(p.id);
-  assert(e && e.procedure === p, `dans le catalogue : ${p.id}`);
+  assert(e && e.procedure.id === p.id && e.procedure.methodes.some((m) => m.id === 'azure'), `dans le catalogue : ${p.id}`);
   assert(e && e.plateformes.join() === 'Azure', `plateforme Azure seule : ${p.id}`, e?.plateformes?.join());
   assert(C.cheminDe(e)?.domaineId === 'azure-entra', `rangée sous Azure et Entra ID : ${p.id}`, JSON.stringify(C.cheminDe(e)));
   assert(M.groupeDeFiche(p.id) !== null, `dans l’aide-mémoire : ${p.id}`);
@@ -105,9 +105,9 @@ for (const p of COURS_AZURE) {
   assert(ro.findIndex((l) => l.startsWith('az network route-table route create')) < ro.findIndex((l) => l.includes('--route-table rt-lab') && l.includes('subnet update')), 'route personnalisée : la route est créée AVANT l’association au sous-réseau');
   const vm = lignes('cours-az-vm-creer-vnet');
   assert(vm.some((l) => l.includes('--generate-ssh-keys') && l.includes('--nsg-rule NONE') && !/password/i.test(l)), 'machine : clé SSH générée, aucun mot de passe, aucun accès entrant', vm.join(' | '));
-  const ro2 = T.entreeParId('cours-az-route-personnalisee').procedure.methodes[0].etapes;
+  const ro2 = T.entreeParId('cours-az-route-personnalisee').procedure.methodes.find((m) => m.id === 'azure').etapes;
   assert(ro2.find((x) => x.titre.startsWith('Associer'))?.effet === 'interruption' && T.entreeParId('cours-az-route-personnalisee').procedure.effet === 'interruption', 'l’association d’une table de routage est signalée comme interruption possible');
-  assert(T.entreeParId('cours-az-point-service-stockage').procedure.methodes[0].etapes.some((x) => x.effet === 'interruption'), 'la fermeture de l’accès public est signalée comme interruption possible');
+  assert(T.entreeParId('cours-az-point-service-stockage').procedure.methodes.find((m) => m.id === 'azure').etapes.some((x) => x.effet === 'interruption'), 'la fermeture de l’accès public est signalée comme interruption possible');
   assert(['cours-az-plan-adressage', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-lb-etat'].every((id) => T.entreeParId(id).procedure.effet === 'lecture'), 'quatre fiches en lecture seule');
 }
 
@@ -178,7 +178,7 @@ const resolveur = {
 assert(COURS_AZURE_PARCOURS.map((c) => c.id).join() === COURS_IDS.join(), '5 cours dans l’ordre du programme');
 {
   const ordre = K.COURS.filter((c) => c.plateformes.includes('Azure')).map((c) => c.id);
-  assert(ordre.join() === COURS_IDS.concat(['azure-tp1-energia', 'azure-tp2-tardi', 'azure-08-carte-documentation']).join(), '8 cours Azure au total', ordre.join());
+  assert(ordre.join() === COURS_IDS.concat(['azure-tp1-energia', 'azure-tp2-tardi', 'azure-tp-demo-webapp-stockage', 'azure-09-equilibreurs', 'azure-08-carte-documentation']).join(), '10 cours Azure au total', ordre.join());
 }
 for (const cid of COURS_IDS) {
   const c = K.COURS_PAR_ID.get(cid);
@@ -236,7 +236,7 @@ for (const cid of COURS_IDS) {
   const r2 = structuredClone(R.RESUME_AZ_05); r2.sections[0].schemas = ['schema-inconnu'];
   assert(K.incoherencesRappel(r2).length > 0, 'contre-épreuve : un schéma inconnu est détecté');
   const p = structuredClone(T.entreeParId('cours-az-vnet-creer').procedure);
-  p.methodes[0].etapes[2].lignes[0].cmd = 'az network vnet create --name {{inconnu}}';
+  p.methodes.find((m) => m.id === 'azure').etapes[2].lignes[0].cmd = 'az network vnet create --name {{inconnu}}';
   assert(P.incoherencesProcedure(p).length > 0, 'contre-épreuve : un paramètre non déclaré dans une fiche est détecté');
   const p2 = structuredClone(T.entreeParId('cours-az-point-service-stockage').procedure);
   p2.params.find((x) => x.id === 'compte').exemple = 'ST-LAB';
@@ -259,7 +259,7 @@ for (const [nom, r, schemas] of [['01', R.RESUME_AZ_01, ['az-modeles-service', '
   assert(schemas.every((s) => utilises.has(s)), `schémas attendus dans le résumé : ${nom}`, schemas.filter((s) => !utilises.has(s)).join());
 }
 {
-  const ctx = { fiche: (id) => { const e = T.entreeParId(id); return e ? { titre: e.titre, etapes: e.procedure.methodes[0].etapes } : null; }, assistant: () => null };
+  const ctx = { fiche: (id) => { const e = T.entreeParId(id); return e ? { titre: e.titre, etapes: e.procedure.methodes.find((m) => m.id === 'azure').etapes } : null; }, assistant: () => null };
   for (const cid of COURS_IDS) {
     const c = K.COURS_PAR_ID.get(cid);
     const html = VC.coursPageMarkup(c, 'A', {}, ctx);
@@ -277,7 +277,7 @@ for (const [nom, r, schemas] of [['01', R.RESUME_AZ_01, ['az-modeles-service', '
 // ---------------------------------------------------------------------------
 console.log('7. Les 10 schémas originaux');
 {
-  assert(SCHEMAS_NEUFS.length === 10 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 52, '10 schémas ajoutés aux 42 existants (22 + 9 de la semaine 9 + 9 de NAT + 2 du TP 3 VLAN)', String(S.IDS_SCHEMAS.length));
+  assert(SCHEMAS_NEUFS.length === 11 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 59, '11 schémas Azure du cours (dont la démo VNETDemo), plus 6 équilibreurs : 59 au total', String(S.IDS_SCHEMAS.length));
   const tmp = mkdtempSync(resolve(tmpdir(), 'svg-'));
   for (const id of SCHEMAS_NEUFS) {
     const sc = S.SCHEMAS[id]; const svg = sc.svg();
@@ -316,7 +316,7 @@ console.log('8. Pages de fiche, classement et aide-mémoire');
   assert(ids && ['cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-prive-stockage'].every((id) => ids.fiches.includes(id)), 'famille « Peering, routage et accès privé » : 5 fiches');
   // Le point de terminaison de service suit son assistant hôte (azure-stockage-exposition) : rubrique « Stockage et protection ».
   assert(C.cheminDe(T.entreeParId('cours-az-point-service-stockage'))?.famille?.id === 'stockage', 'fiche point de service : rangée avec son assistant hôte (stockage)');
-  assert(C.noeud('azure-entra', 'equilibrage')?.famille?.fiches?.join() === 'cours-az-lb-creer,cours-az-lb-etat', 'famille « Équilibrage de charge » : 2 fiches');
+  assert(C.noeud('azure-entra', 'equilibrage')?.famille?.fiches?.join() === 'cours-az-lb-creer,cours-az-lb-etat,cours-az-lb-interne,cours-az-lb-regles-nat-sortant,cours-az-lb-inter-regions,cours-az-appgw-creer,cours-az-appgw-waf,cours-az-frontdoor-creer,cours-az-trafficmanager-creer', 'famille « Équilibrage de charge » : 9 fiches');
   assert(C.noeud('azure-entra', 'acces')?.famille?.fiches?.includes('cours-az-role-coequipier'), 'famille « Connexion, contexte et accès » : le rôle de coéquipier');
   const memoIds = ['az-base', 'az-reseau', 'az-routage-prive', 'az-equilibrage'];
   assert(memoIds.every((id) => M.MEMO_PAR_ID.has(id)), '4 groupes d’aide-mémoire Azure ajoutés');

@@ -1,3 +1,13 @@
+## AZURE-MULTI-01 (2026-11-07)
+
+- Les 35 fiches Azure ont maintenant trois méthodes, dans l’ordre débutant : **portail** (interface graphique, avec écrans), **PowerShell** (module Az) et **Azure CLI** (inchangée). Le portail est l’onglet de départ. Les cours continuent de numéroter les étapes sur la CLI.
+- **Illustrations du portail** : chaque étape qui remplit un formulaire montre une reconstitution schématique de l’écran (onglets, champs à remplir numérotés, bouton à cliquer, texte alternatif). Ce sont des reconstitutions dessinées ici, PAS des captures : les libellés et la disposition peuvent différer de ton portail. 185 écrans pour 188 étapes du portail (203 étapes PowerShell).
+- **Montage de démonstration de l’enseignant (capture « VNETDemo »)** : fiche à trois méthodes (trafic entrant public, sortie par le sous-réseau d’intégration, point privé dans StorageSubnet, stockage fermé à Internet), schéma, modèle de l’éditeur de schémas et cours « Démo » en parcours à cocher.
+- **Tous les équilibreurs de charge** : 7 nouvelles fiches (Load Balancer interne, règles NAT et sortantes, Load Balancer inter-régions, Application Gateway, pare-feu web, Front Door, Traffic Manager), 6 schémas, cours « Équilibreurs » (6 groupes) ; l’aide-mémoire les range en régional, couche 7, global.
+- Classement : le PowerShell d’une fiche Azure compte pour la plateforme Azure (pas Windows) ; nouvelle famille « ⭐ TP : montage complet » ; l’aide-mémoire Azure garde ses 5 groupes avec de nouveaux sous-groupes.
+- Honnêteté : rien n’est exécuté dans Azure. Les cmdlets et options dont la forme est incertaine sont signalées dans l’étape (« vérifie avec Get-Help ») ; les pages de référence PowerShell n’ont pas toutes pu être lues.
+- Tests : `azure-multi` (1 038 vérifications), `browser-azure-multi` (40) ; comptes mis à jour (136 fiches, 10 cours Azure, 59 schémas).
+
 ## AZURE-TP-01 (2026-11-06)
 
 - 8 nouvelles fiches Azure tirées des 5 pages Learn du prof : créer une application web (App Service), restrictions d’accès IP, intégration au VNet, point privé App Service, conteneur/fichier de stockage, point privé de stockage par sous-ressource (blob, queue, file, table), gestion d’une table de routage, routes par étiquette de service. Total 128 fiches.

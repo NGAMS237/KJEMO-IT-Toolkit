@@ -13,6 +13,7 @@
  * republié. Les pages sont celles du PDF fourni et peuvent changer si
  * Microsoft le met à jour.
  */
+import { versCli } from './cours-azure-cli.mjs';
 
 const f = (fiche, etape = null, extra = {}) => ({ fiche, etape, ...extra });
 const LIRE = 'Article de lecture ou de référence, sans commande à lancer dans le Toolkit : ouvre le PDF à la page indiquée pour le lire ou t’en servir de référence.';
@@ -125,7 +126,7 @@ const GROUPES = [
     ] },
 ];
 
-export const COURS_AZURE_CARTE = [{
+const COURS_AZURE_CARTE_BRUT = [{
   id: 'azure-08-carte-documentation',
   plateformes: ['Azure'],
   titre: 'Carte de la documentation « Réseau virtuel Azure » (PDF du cours)',
@@ -152,3 +153,5 @@ export const COURS_AZURE_CARTE = [{
     { id: 'CARTE-1', sujet: 'Numéros de page du PDF', texte: 'Les pages viennent de la table des matières du PDF fourni (trois entrées ne portent pas de numéro dans la table des matières : la gestion des tables de routage, la mise à jour de l’espace d’adressage d’un réseau appairé et l’ajout ou la suppression d’interfaces réseau ; elles sont donc données par un intervalle de pages). Ouvre la page indiquée et lis quelques pages autour si l’article ne commence pas là.' },
   ],
 }];
+
+export const COURS_AZURE_CARTE = versCli(COURS_AZURE_CARTE_BRUT);

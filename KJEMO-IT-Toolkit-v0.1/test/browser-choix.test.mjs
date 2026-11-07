@@ -88,7 +88,7 @@ assert(noteGroupe.includes('Serveur') && noteGroupe.includes('samba-tool group l
 await page.goto(BASE + '/#/tache/win-ad-creer-groupe');
 await page.waitForSelector('#p-groupe', { state: 'attached' });
 assert((await page.$('#p-groupe-trouver')) === null, 'groupe à CRÉER : aucune note « à lire sur »');
-await page.goto(BASE + '/#/tache/cours-az-vnet-creer');
+await page.goto(BASE + '/#/tache/cours-az-vnet-creer/methode/azure');
 await page.waitForSelector('#p-vnet', { state: 'attached' });
 assert((await page.$('#p-vnet-trouver')) === null && (await page.$('#p-groupe-trouver')) !== null, 'Azure : le VNet à créer sans note, le groupe existant avec note');
 await page.goto(BASE + '/#/tache/cours-ubuntu-jonction-ad-graphique');

@@ -15,6 +15,7 @@
  * exécuté par le Toolkit : le travail se fait dans ton abonnement, avec tes
  * captures d'écran (le compte qui configure doit y être visible).
  */
+import { versCli } from './cours-azure-cli.mjs';
 
 const f = (fiche, etape = null, extra = {}) => ({ fiche, etape, ...extra });
 const AVERTISSEMENT = 'Les fiches expliquent comment faire avec Azure CLI dans un abonnement de laboratoire ; elles ne remplacent pas ton énoncé, ne produisent aucune capture et ne prouvent rien : « coché » veut seulement dire « je l’ai fait ». Le travail remis demande des captures du PORTAIL Azure avec le compte visible. Les ressources sont facturées tant qu’elles existent : arrête ou supprime ce que tu n’utilises plus.';
@@ -22,7 +23,7 @@ const SOURCE_TP1 = 'Énoncé « A26 - Infonuagique I - Travail pratique 1 » fou
 const SOURCE_TP2 = 'Énoncé « A26 - Infonuagique I - Travail pratique 2 » fourni par l’étudiant (non republié ici), à remettre sur LEA au plus tard le jeudi 12 novembre 2026 à 23 h 59 (−10 % par jour de retard). Résumé dans nos mots ; le schéma de l’énoncé n’est pas reproduit ; en cas de doute, c’est l’énoncé qui fait foi.';
 const CALCUL = 'Travail de réflexion et de calcul à rédiger toi-même dans le document remis : l’éditeur de schéma du Journal (modèle « TP1 ÉNERGIA », bouton « Découper selon les besoins ») calcule les plages, mais la justification est la tienne.';
 
-export const COURS_AZURE_TP_PARCOURS = [
+const COURS_AZURE_TP_PARCOURS_BRUT = [
   // ===========================================================================
   {
     id: 'azure-tp1-energia',
@@ -243,3 +244,5 @@ export const COURS_AZURE_TP_PARCOURS = [
     ],
   },
 ];
+
+export const COURS_AZURE_TP_PARCOURS = versCli(COURS_AZURE_TP_PARCOURS_BRUT);

@@ -155,7 +155,7 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 - **B15 — quotacheck** — Les notes écrivent « quotacheck -c ». La fiche écrit « -cu » (quotas utilisateur explicitement). Sur un noyau allégé, la prise en charge des quotas peut demander un paquet de modules supplémentaires.
 - **E — nom du document de référence** — L’énoncé renvoie à « S06-Exemple de partage… » alors que le fichier fourni s’appelle « S05-Exemple de partage… » : même document, numéro différent.
 
-## Fiches du cours (128)
+## Fiches du cours (136)
 
 | Fiche | Titre | Étapes | Effet |
 |---|---|---|---|
@@ -260,30 +260,38 @@ Un dossier partagé pour le groupe Samba Direction : droits 770, déclaration da
 | `cours-route-recap-rip` | Résumé de routes annoncé par RIPv2 (ip summary-address rip) | 4 | modification |
 | `cours-show-cisco` | Commandes show Cisco : toutes les lectures utiles, par groupe | 16 | lecture |
 | `cours-tp-vlan-ssh-intervlan` | TP complet : VLAN, SSH et routage inter-VLAN (de A à Z) | 39 | modification |
-| `cours-az-groupe-ressources` | Créer un groupe de ressources | 3 | modification |
-| `cours-az-verrou-ressource` | Poser un verrou contre la suppression accidentelle | 3 | modification |
-| `cours-az-role-coequipier` | Donner un rôle Azure à un coéquipier | 3 | modification |
-| `cours-az-vnet-creer` | Créer un réseau virtuel (VNet) avec son premier sous-réseau | 4 | modification |
-| `cours-az-sous-reseau-ajouter` | Ajouter un sous-réseau à un réseau virtuel | 3 | modification |
-| `cours-az-plan-adressage` | Relire le plan d’adressage d’un réseau virtuel | 4 | lecture |
-| `cours-az-ip-publique-privee` | Adresses IP Azure : publique statique et privée fixe | 4 | modification |
-| `cours-az-vm-creer-vnet` | Créer une machine virtuelle Linux dans un VNet | 5 | modification |
-| `cours-az-dns-zone-publique` | Créer une zone DNS publique Azure | 3 | modification |
-| `cours-az-dns-enregistrement-a` | Ajouter un enregistrement A ou CNAME dans une zone Azure | 5 | modification |
-| `cours-az-dns-zone-privee` | Créer une zone DNS privée et la lier à un VNet | 5 | modification |
-| `cours-az-peering-creer` | Appairer deux réseaux virtuels (peering) | 5 | modification |
-| `cours-az-peering-verifier` | Vérifier l’état d’un appairage de réseaux virtuels | 3 | lecture |
-| `cours-az-routes-effectives` | Lire les routes effectives d’une interface réseau | 2 | lecture |
-| `cours-az-route-personnalisee` | Créer une route personnalisée (UDR) vers une appliance | 8 | interruption |
-| `cours-az-point-service-stockage` | Limiter un compte de stockage à un sous-réseau (point de service) | 8 | interruption |
-| `cours-az-point-prive-stockage` | Créer un point de terminaison privé pour un compte de stockage | 7 | modification |
-| `cours-az-lb-creer` | Créer un équilibreur de charge public (Azure Load Balancer) | 8 | modification |
-| `cours-az-lb-etat` | Lire la configuration et la santé d’un Azure Load Balancer | 5 | lecture |
-| `cours-az-app-service-creer` | Créer une application App Service (conteneur Linux) | 8 | modification |
-| `cours-az-app-service-restriction-ip` | Restreindre l’accès à une application App Service (IP, sous-réseau) | 8 | interruption |
-| `cours-az-app-service-integration-vnet` | Intégrer App Service à un réseau virtuel (trafic sortant) | 5 | modification |
-| `cours-az-app-service-point-prive` | Isoler App Service avec un point de terminaison privé (entrant) | 7 | interruption |
-| `cours-az-stockage-file-conteneur` | Compte de stockage avec file et conteneur, puis accès public fermé | 7 | modification |
-| `cours-az-point-prive-stockage-sous-ressource` | Point privé par sous-ressource du stockage (blob, queue…) | 6 | modification |
-| `cours-az-table-routage-gerer` | Gérer une table de routage : lire, modifier, dissocier, supprimer | 9 | interruption |
-| `cours-az-routes-etiquettes-service` | Routes du TP2 : passerelle, plage supprimée, appliance, étiquettes | 10 | interruption |
+| `cours-az-groupe-ressources` | Créer un groupe de ressources | 3/3/3 | modification |
+| `cours-az-verrou-ressource` | Poser un verrou contre la suppression accidentelle | 4/3/3 | modification |
+| `cours-az-role-coequipier` | Donner un rôle Azure à un coéquipier | 4/3/3 | modification |
+| `cours-az-vnet-creer` | Créer un réseau virtuel (VNet) avec son premier sous-réseau | 4/4/4 | modification |
+| `cours-az-sous-reseau-ajouter` | Ajouter un sous-réseau à un réseau virtuel | 3/4/3 | modification |
+| `cours-az-plan-adressage` | Relire le plan d’adressage d’un réseau virtuel | 3/4/4 | lecture |
+| `cours-az-ip-publique-privee` | Adresses IP Azure : publique statique et privée fixe | 4/5/4 | modification |
+| `cours-az-vm-creer-vnet` | Créer une machine virtuelle Linux dans un VNet | 6/6/5 | modification |
+| `cours-az-dns-zone-publique` | Créer une zone DNS publique Azure | 3/3/3 | modification |
+| `cours-az-dns-enregistrement-a` | Ajouter un enregistrement A ou CNAME dans une zone Azure | 4/5/5 | modification |
+| `cours-az-dns-zone-privee` | Créer une zone DNS privée et la lier à un VNet | 4/5/5 | modification |
+| `cours-az-peering-creer` | Appairer deux réseaux virtuels (peering) | 4/5/5 | modification |
+| `cours-az-peering-verifier` | Vérifier l’état d’un appairage de réseaux virtuels | 3/4/3 | lecture |
+| `cours-az-routes-effectives` | Lire les routes effectives d’une interface réseau | 2/3/2 | lecture |
+| `cours-az-route-personnalisee` | Créer une route personnalisée (UDR) vers une appliance | 5/6/8 | interruption |
+| `cours-az-point-service-stockage` | Limiter un compte de stockage à un sous-réseau (point de service) | 5/6/8 | interruption |
+| `cours-az-point-prive-stockage` | Créer un point de terminaison privé pour un compte de stockage | 4/7/7 | modification |
+| `cours-az-lb-creer` | Créer un équilibreur de charge public (Azure Load Balancer) | 7/7/8 | modification |
+| `cours-az-lb-etat` | Lire la configuration et la santé d’un Azure Load Balancer | 5/6/5 | lecture |
+| `cours-az-app-service-creer` | Créer une application App Service (conteneur Linux) | 9/8/8 | modification |
+| `cours-az-app-service-restriction-ip` | Restreindre l’accès à une application App Service (IP, sous-réseau) | 7/8/8 | interruption |
+| `cours-az-app-service-integration-vnet` | Intégrer App Service à un réseau virtuel (trafic sortant) | 4/5/5 | modification |
+| `cours-az-app-service-point-prive` | Isoler App Service avec un point de terminaison privé (entrant) | 5/6/7 | interruption |
+| `cours-az-stockage-file-conteneur` | Compte de stockage avec file et conteneur, puis accès public fermé | 6/7/7 | modification |
+| `cours-az-point-prive-stockage-sous-ressource` | Point privé par sous-ressource du stockage (blob, queue…) | 4/7/6 | modification |
+| `cours-az-table-routage-gerer` | Gérer une table de routage : lire, modifier, dissocier, supprimer | 8/9/9 | interruption |
+| `cours-az-routes-etiquettes-service` | Routes du TP2 : passerelle, plage supprimée, appliance, étiquettes | 9/9/10 | interruption |
+| `cours-az-tp-demo-webapp-stockage-prive` | TP démo : une application web joint un stockage par point privé | 10/11/13 | interruption |
+| `cours-az-lb-interne` | Créer un équilibreur de charge interne (Azure Load Balancer) | 7/6/7 | modification |
+| `cours-az-lb-regles-nat-sortant` | Load Balancer : règle NAT entrante et règle sortante (SNAT) | 6/8/8 | interruption |
+| `cours-az-lb-inter-regions` | Créer un Load Balancer inter-régions (global) | 7/6/7 | modification |
+| `cours-az-appgw-creer` | Créer une Application Gateway v2 (équilibreur HTTP, couche 7) | 10/6/8 | modification |
+| `cours-az-appgw-waf` | Protéger une Application Gateway avec un WAF (politique OWASP) | 6/5/6 | modification |
+| `cours-az-frontdoor-creer` | Créer un Azure Front Door (Standard ou Premium) | 7/7/7 | modification |
+| `cours-az-trafficmanager-creer` | Créer un profil Traffic Manager (équilibrage par le DNS) | 6/6/6 | modification |

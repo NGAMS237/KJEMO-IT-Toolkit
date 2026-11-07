@@ -59,6 +59,22 @@ function tp2() {
   return s;
 }
 
+/** Démonstration de l'enseignant (VNETDemo) : application web, sortie par un sous-réseau intégré, point privé vers le stockage. */
+function demo() {
+  const s = schemaVide(); s.azure = { groupe: 'rg-demo', region: 'canadacentral' };
+  const internet = noeud('internet', 'Internet', 60, 40);
+  const app = noeud('app-service', 'WebApp', 400, 40, { niveau: 'intermediaire', plan: 'asp-demo', sku: 'B1', pile: 'conteneur', image: '', chaines: [] });
+  s.zones.push(zone('vnet', 'VNETDemo', 170, 150, 520, 330, { espace: '' }));
+  s.zones.push(zone('sous-reseau', 'AppServiceOutboundSubnet', 260, 190, 340, 80, { plage: '', delegation: 'Microsoft.Web/serverFarms' }));
+  s.zones.push(zone('sous-reseau', 'StorageSubnet', 260, 300, 340, 160, { plage: '' }));
+  const pe = noeud('point-terminaison-prive', 'pe-stdemo-blob', 400, 360, { sousRessource: 'blob', dns: true });
+  const st = noeud('stockage', 'stdemo01', 400, 520, { niveau: 'intermediaire', sku: 'Standard_LRS', conteneurs: 'blob1', files: '', acces: 'desactive' });
+  s.noeuds.push(internet, app, pe, st);
+  s.liens.push(lien(internet, app, 'trafic', 'Trafic entrant'), lien(app, pe, 'trafic', 'Trafic sortant'), lien(pe, st, 'liaison-privee'));
+  s.textes.push({ id: id('t'), texte: 'Un seul VNet, deux sous-réseaux : sortie de l’application (délégué) et point privé. Plages à remplir.', x: 14, y: 14 });
+  return s;
+}
+
 /** Hub et spoke : un réseau central (passerelle VPN, appliance) et deux réseaux périphériques appairés au centre seulement. */
 function hubSpoke() {
   const s = schemaVide(); s.azure = { groupe: 'rg-hub-spoke', region: 'canadacentral' };
@@ -86,6 +102,9 @@ export const MODELES_SCHEMA = [
   { id: 'azure-hub-spoke', label: 'Azure · Hub et spoke : passerelle partagée et appliance au centre', categorie: 'azure', construire: hubSpoke,
     titre: 'Réseau en étoile (hub et spoke) avec passerelle partagée',
     objet: 'Relier deux réseaux périphériques (spoke) à un réseau central (hub) par appairage : les spokes utilisent la passerelle VPN du hub, et leur trafic mutuel passe par une appliance du hub, car l’appairage n’est pas transitif.' },
+  { id: 'azure-demo-webapp-stockage', label: 'Démo : application web et stockage par point privé (VNETDemo)', categorie: 'azure', construire: demo,
+    titre: 'Démo : application web qui joint un stockage par point privé',
+    objet: 'Trafic entrant public vers l’application ; trafic sortant par le sous-réseau d’intégration de VNETDemo ; point de terminaison privé dans StorageSubnet ; compte de stockage sans accès public.' },
   { id: 'azure-tp2-tardi', label: 'Infonuagique I · TP2 : App Service et stockage privé (banque Tardi)', categorie: 'azure', construire: tp2,
     titre: 'TP2 : accès privé à App Service et au stockage (banque Tardi)',
     objet: 'Déployer WebAPP1 (conteneur) qui utilise une file d’attente et un conteneur blob, rendre le compte de stockage privé (points de terminaison privés dans VNET2), isoler l’application dans VNET1 et mettre en place le routage demandé.' },

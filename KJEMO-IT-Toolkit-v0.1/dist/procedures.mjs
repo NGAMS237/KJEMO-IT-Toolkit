@@ -44,6 +44,7 @@ import { validateIPv4, validerFqdn, validerNomHote, validerIPv6 } from './valida
  * Effet d'une étape ou d'une fiche. Quatre niveaux, chacun avec un libellé et
  * un symbole : la couleur ne porte JAMAIS seule l'information.
  */
+import { incoherencesEcran } from './ecrans-portail.mjs';
 export const EFFETS = {
   lecture:      { id: 'lecture',      label: 'Lecture seule',         symbole: '◉', ton: 'ok' },
   modification: { id: 'modification', label: 'Modification',          symbole: '✎', ton: 'attention' },
@@ -57,7 +58,7 @@ export const METHODES = {
   powershell: { id: 'powershell', label: 'PowerShell',        invite: 'PS>', copiable: true },
   cmd:        { id: 'cmd',        label: 'CMD',               invite: '>',  copiable: true },
   ios:        { id: 'ios',        label: 'Cisco IOS',         invite: null, copiable: true },
-  azure:      { id: 'azure',      label: 'Azure CLI / PowerShell', invite: '$', copiable: true },
+  azure:      { id: 'azure',      label: 'Azure CLI', invite: '$', copiable: true },
   gui:        { id: 'gui',        label: 'Interface graphique', invite: null, copiable: false },
   // Scénario multi-équipements : chaque étape porte l'équipement visé, et
   // chaque équipement déclare sa propre méthode (ios, powershell, linux…).
@@ -871,6 +872,7 @@ export function incoherencesProcedure(p) {
       if (e.suppose !== undefined && txt(e.suppose).length < 10) pb.push(`${nom} : « suppose » trop court`);
       if (m.id === 'gui') {
         if (e.lignes) pb.push(`${nom} : une étape graphique n'a pas de ligne de commande`);
+        if (e.ecran !== undefined) pb.push(...incoherencesEcran(e.ecran, `${nom} : écran`));
         return;
       }
       if (!Array.isArray(e.lignes) || !e.lignes.length) { pb.push(`${nom} : aucune commande`); return; }

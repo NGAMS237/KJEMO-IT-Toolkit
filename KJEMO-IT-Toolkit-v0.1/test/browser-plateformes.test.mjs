@@ -79,7 +79,7 @@ const clicPlat = async (page, p) => { await page.click(`#platFilters [data-plat=
 
 // 2. Windows, Azure : même page, seulement leurs éléments ; cours « Bientôt » (Cisco a désormais son cours : banc browser-cisco-s07)
 for (const p of ['Windows', 'Azure']) {
-  const aCours = true; // Azure : cinq cours (browser-azure-cours) ; Windows : l'examen Serveur I (EXAMEN-WS-02)
+  const aCours = true; // Azure : dix cours (browser-azure-cours) ; Windows : l'examen Serveur I (EXAMEN-WS-02)
   const { context, page, erreurs } = await nouvellePage({}, '/#/');
   await clicPlat(page, p);
   assert((await page.locator('#platEntete').innerText()).includes(p), `${p} : phrase de vue`);
@@ -92,7 +92,7 @@ for (const p of ['Windows', 'Azure']) {
   const comptes = await page.locator('#portes .groupe-carte, #home .groupe-carte').evaluateAll((els) => els.map((e) => e.querySelector('.groupe-compte')?.textContent));
   assert(comptes.every((c) => Number(c) > 0), `${p} : aucun groupe d'aide-mémoire vide sur l'accueil`, comptes.join(','));
   await page.click('#espacesNav .nav-tp');
-  if (aCours) assert(await page.locator('.cours-carte').count() === (p === 'Azure' ? 5 : 1), `${p} : page des cours = ${p === 'Azure' ? 'cinq cours' : 'le cours de l’examen'}`); else assert(await page.locator('#coursView').innerText().then((t) => t.includes(`Aucun cours ${p}`)), `${p} : page des cours = état vide clair`);
+  if (aCours) assert(await page.locator('.cours-carte').count() === (p === 'Azure' ? 10 : 1), `${p} : page des cours = ${p === 'Azure' ? 'dix cours' : 'le cours de l’examen'}`); else assert(await page.locator('#coursView').innerText().then((t) => t.includes(`Aucun cours ${p}`)), `${p} : page des cours = état vide clair`);
   assert(erreurs.length === 0, `${p} : aucune erreur JS`, erreurs.join(' | '));
   await context.close();
 }

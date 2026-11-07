@@ -19,6 +19,7 @@ import { SCHEMAS_S09 } from './schemas-cisco-s09.mjs';
 import { SCHEMAS_NAT } from './schemas-cisco-nat.mjs';
 import { SCHEMAS_TP_VLAN } from './schemas-cisco-tp-vlan.mjs';
 import { SCHEMAS_AZURE } from './schemas-azure.mjs';
+import { SCHEMAS_AZURE_LB } from './schemas-azure-lb.mjs';
 
 const T = 'var(--text-strong,#fff)';
 const S = 'var(--text-soft,#c6cbe2)';
@@ -293,6 +294,7 @@ export const SCHEMAS = {
   ...SCHEMAS_TP_VLAN,
   // Cours d'infonuagique Azure (KJEMO-AZURE-COURS-01).
   ...SCHEMAS_AZURE,
+  ...SCHEMAS_AZURE_LB,
 };
 
 export const IDS_SCHEMAS = Object.keys(SCHEMAS);

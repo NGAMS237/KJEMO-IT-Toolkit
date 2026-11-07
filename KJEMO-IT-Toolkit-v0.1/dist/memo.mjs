@@ -216,13 +216,16 @@ export const MEMO_GROUPES = [
   { id: 'az-app-service', titre: 'Azure : App Service (applications web)', icone: '🌐', couleur: '#0f766e', commandes: 'az webapp create, az webapp config access-restriction add, az webapp vnet-integration add',
     resume: 'Déployer une application en conteneur, limiter son accès, l’intégrer à un réseau virtuel (sortant) et l’isoler par un point de terminaison privé (entrant).',
     sous: [
+      { id: 'montage', titre: '⭐ Montage complet : application web et stockage privé', fiches: ['cours-az-tp-demo-webapp-stockage-prive'] },
       { id: 'deployer', titre: 'Déployer une application', fiches: ['cours-az-app-service-creer'] },
       { id: 'acces-app', titre: 'Limiter et isoler l’accès', fiches: ['cours-az-app-service-restriction-ip', 'cours-az-app-service-integration-vnet', 'cours-az-app-service-point-prive'] },
     ] },
   { id: 'az-equilibrage', titre: 'Azure : équilibrage de charge', icone: '⚖', couleur: '#b45309', commandes: 'az network lb create, az network lb probe create',
-    resume: 'Créer un Azure Load Balancer public avec sa sonde et sa règle, puis lire sa configuration.',
+    resume: 'Tous les équilibreurs de charge Azure : Load Balancer (public, interne, NAT et sortant, inter-régions), Application Gateway avec pare-feu web, Front Door et Traffic Manager.',
     sous: [
-      { id: 'lb', titre: 'Azure Load Balancer', fiches: ['cours-az-lb-creer', 'cours-az-lb-etat'] },
+      { id: 'lb', titre: 'Azure Load Balancer (régional)', fiches: ['cours-az-lb-creer', 'cours-az-lb-etat', 'cours-az-lb-interne', 'cours-az-lb-regles-nat-sortant'] },
+      { id: 'appgw', titre: 'Application Gateway et pare-feu web (couche 7)', fiches: ['cours-az-appgw-creer', 'cours-az-appgw-waf'] },
+      { id: 'global', titre: 'Équilibrage global (entre régions)', fiches: ['cours-az-lb-inter-regions', 'cours-az-frontdoor-creer', 'cours-az-trafficmanager-creer'] },
     ] },
   { id: 'bash', titre: 'Bash', icone: '⌨', couleur: '#475569', commandes: 'if, for, select, printf',
     resume: 'Écrire de petits scripts : conditions, boucles, fonctions.',
@@ -270,6 +273,9 @@ export const AJOUTS = Object.fromEntries([
   ['cours-az-groupe-ressources', 'cours-az-verrou-ressource', 'cours-az-role-coequipier', 'cours-az-vnet-creer', 'cours-az-sous-reseau-ajouter', 'cours-az-plan-adressage', 'cours-az-ip-publique-privee', 'cours-az-vm-creer-vnet', 'cours-az-dns-zone-publique', 'cours-az-dns-enregistrement-a', 'cours-az-dns-zone-privee', 'cours-az-peering-creer', 'cours-az-peering-verifier', 'cours-az-routes-effectives', 'cours-az-route-personnalisee', 'cours-az-point-service-stockage', 'cours-az-point-prive-stockage', 'cours-az-lb-creer', 'cours-az-lb-etat'].map((id) => [id, '2026-10-28']),
 ).concat(
   ['cours-az-app-service-creer', 'cours-az-app-service-restriction-ip', 'cours-az-app-service-integration-vnet', 'cours-az-app-service-point-prive', 'cours-az-stockage-file-conteneur', 'cours-az-point-prive-stockage-sous-ressource', 'cours-az-table-routage-gerer', 'cours-az-routes-etiquettes-service'].map((id) => [id, '2026-11-06']),
+
+).concat(
+  ['cours-az-tp-demo-webapp-stockage-prive', 'cours-az-lb-interne', 'cours-az-lb-regles-nat-sortant', 'cours-az-lb-inter-regions', 'cours-az-appgw-creer', 'cours-az-appgw-waf', 'cours-az-frontdoor-creer', 'cours-az-trafficmanager-creer'].map((id) => [id, '2026-11-07']),
   ['win-cache-arp', 'win-cache-netbios', 'win-ipconfig-complet', 'win-ip-liberer', 'win-tracert', 'win-pathping', 'win-winsock-reinit', 'win-route-voir', 'win-arp-voir', 'win-wifi-profils', 'win-pare-feu-etat', 'win-pare-feu-ouvrir-port', 'win-pare-feu-fermer-port', 'win-cache-identifiants', 'win-cache-store', 'win-cache-windows-update', 'win-presse-papiers', 'win-kerberos-purger', 'win-systeme-resume', 'win-version-windows', 'win-uptime', 'win-nom-poste-utilisateur', 'win-renommer-poste', 'win-whoami-groupes', 'win-licence-activation', 'win-bitlocker-etat', 'win-processus-trouver', 'win-processus-gourmands', 'win-processus-fermer', 'win-arret-redemarrage', 'win-arret-annuler', 'win-sessions-fermer', 'win-disque-verifier', 'win-robocopy-copier', 'win-fichier-chercher', 'win-fichier-empreinte', 'win-archive-creer', 'win-archive-extraire', 'win-droits-prendre-possession', 'win-winget-installer', 'win-winget-mettre-a-jour', 'win-correctifs-installes', 'win-tache-planifiee', 'win-variable-environnement', 'win-path-ajouter', 'win-bureau-distance-activer', 'win-heure-synchroniser', 'win-local-changer-mot-de-passe', 'win-local-admin-ajouter', 'win-local-desactiver', 'win-ad-membres-groupe', 'win-ad-infos-utilisateur', 'win-ad-trouver-ordinateur', 'win-ad-controleur-connecte', 'win-ad-mot-de-passe-age'].map((id) => [id, '2026-10-30']),
   ['linux-sed-remplacer', 'linux-sed-lignes', 'linux-csv-verifier', 'linux-csv-colonne', 'linux-fins-ligne-windows', 'linux-comptes-locaux-lister', 'linux-groupes-locaux-lister', 'linux-mot-de-passe-local', 'samba-compte-voir', 'samba-mot-de-passe', 'linux-clavier-voir', 'linux-clavier-changer', 'linux-clavier-session', 'linux-langue-systeme', 'win-langue-voir', 'win-clavier-fixer', 'win-clavier-raccourci', 'win-region-format', 'linux-hostname-changer', 'linux-systeme-identite', 'linux-ssh-client-installer', 'win-ssh-client-installer'].map((id) => [id, '2026-10-31']),
 ).concat(
