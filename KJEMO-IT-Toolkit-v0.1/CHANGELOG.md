@@ -11,7 +11,7 @@
 
 - Le modèle « Infonuagique I · TP2 » du labo Azure reproduit maintenant le schéma de l’énoncé en entier : VNET1 (5 sous-réseaux) et VNET2 (4), appairage, intégration VNet de WebAPP1, points privés du stockage (blob, queue) et de l’application (sites), appliance 10.3.2.100 et les deux tables de routage de l’Ex4 (VMSubnet : passerelle et 12.12.12.0/30 supprimé ; DataSubnet : 0.0.0.0/0, AppService et EventHub Canada Centre/Est vers l’appliance). Les plages CIDR sont des propositions modifiables ; « Vérifier » ne signale rien.
 - Documentation : charger le modèle remplit aussi l’environnement (remise du 12 nov. 2026, compte visible sur les captures), l’architecture par exercice, le retour arrière (plan revenu à F1) et la liste des captures à prendre par exercice ; « Remplir depuis le schéma » reprend plan d’adressage, commandes et tests.
-- Le journal accepte 16 captures par labo (au lieu de 6) : le TP2 en demande une douzaine.
+- Le journal accepte 24 captures par labo (au lieu de 6) : le TP2 en demande une douzaine.
 - Honnêteté : rien n’est exécuté dans Azure ; commandes vérifiées pour la forme et l’ordre seulement. Choix à confirmer avec l’énoncé : la table de VMSubnet est associée au VMSubnet de VNET1.
 - Tests : `azure-tp2-complet` (46 vérifications), `journal` et `browser-journal` mis à jour.
 

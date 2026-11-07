@@ -55,7 +55,7 @@ const lab = { ...J.entreeVide({ categorieId: 'azure', date: new Date('2026-11-07
 const { entree: e } = SR.remplirDepuisSchema(lab, { inventaire: [], date: new Date('2026-11-07T10:00:00') });
 assert(e.adressage.length >= 9 && e.configuration.length >= 8 && e.validation.length >= 8, 'document : plan, blocs de commandes et tests repris du schéma', `${e.adressage.length}/${e.configuration.length}/${e.validation.length}`);
 assert(/12 novembre 2026/.test(e.environnement) && /F1/.test(e.retourArriere) && /Ex4/.test(e.referencesTexte), 'document : remise, retour au plan F1 et liste de captures par exercice');
-assert(J.MAX_CAPTURES >= 14, 'journal : assez de captures pour les quatre exercices', String(J.MAX_CAPTURES));
+assert(J.MAX_CAPTURES >= 20, 'journal : assez de captures pour les quatre exercices', String(J.MAX_CAPTURES));
 assert(!Object.keys(J.normaliserEntree(e).erreurs).length, 'labo valide (aucun secret, champs conformes)', JSON.stringify(J.normaliserEntree(e).erreurs));
 const pdf = JP.pdfJournal(J.normaliserEntree(e).entree ?? e, { date: new Date('2026-11-07T10:00:00Z') });
 assert(pdf.octets?.length > 2000 && pdf.pages >= 2, 'PDF du labo généré');

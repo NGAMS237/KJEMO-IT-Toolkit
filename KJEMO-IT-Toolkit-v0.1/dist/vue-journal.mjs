@@ -182,7 +182,7 @@ export function journalEditeurMarkup({ entree: e, erreurs = {}, note = '', modif
       + `<div class="params-actions"><label class="secondary-button j-fichier${plein ? ' is-disabled' : ''}" for="jCaptureFichier"${plein ? ' aria-disabled="true"' : ''}>+ Ajouter une capture (PNG ou JPEG)</label>`
       + `<input id="jCaptureFichier" type="file" accept="image/png,image/jpeg" class="sr-only"${plein ? ' disabled' : ''}>`
       + `<span class="param-aide">Ou colle une capture d’écran avec Ctrl+V sur cette page.${imagesOk ? '' : ' <b>Ce navigateur ne peut pas conserver les images : elles seront perdues à la fermeture.</b>'}</span></div>`,
-      'Les captures qui prouvent que ça marche (jusqu’à 16) : topologie, show vlan brief, ping, session SSH, pages du portail… Vérifie qu’aucune ne montre un mot de passe.')
+      'Les captures qui prouvent que ça marche (jusqu’à 24) : topologie, show vlan brief, ping, session SSH, pages du portail… Vérifie qu’aucune ne montre un mot de passe.')
     + `</form>`
     + section('historique', 'Historique des révisions', revisions, '« Nouvelle version » ajoute une ligne ici et sur la page de garde du PDF.');
 }
