@@ -560,6 +560,7 @@ console.log('15. Azure : ressources, zones VNet et sous-réseaux, commandes Azur
   assert(AZ.verifierAzure(s2).some((x) => /Appairage VNET1 ↔ VNET2 impossible/.test(x)), 'appairage refusé si les espaces se chevauchent');
   v2.config.espace = '10.2.0.0/16';
   for (const v of [v1, v2]) { const c2 = AZ.contexteAzure(s2); const r = AZ.decouperVnet(v.config.espace, c2.sousReseaux.filter((x) => x.vnet?.id === v.id).map((x) => ({ id: x.id, nom: x.nom, besoin: 20 }))); for (const [id, p] of Object.entries(r.plages)) s2.zones.find((z) => z.id === id).config.plage = p; }
+  s2.noeuds.find((n) => n.type === 'appliance').config.ipPrivee = '';   // le test redécoupe les plages : l'IP proposée n'y serait plus
   const app = s2.noeuds.find((n) => n.type === 'app-service');
   app.config.integration = s2.zones.find((z) => z.nom === 'AppServiceOutboundSubnet').id; app.config.acces = 'desactive';
   const script = AZ.texteAzure(AZ.scriptAzure(s2));

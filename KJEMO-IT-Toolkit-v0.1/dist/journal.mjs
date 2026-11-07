@@ -23,7 +23,7 @@ import { normaliserSchema, schemaVide } from './schema.mjs';
 
 export const CLE_JOURNAL = 'kjemo.journal.v1';
 export const FORMAT_SAUVEGARDE = 'kjemo-journal-de-labo';
-export const MAX_CAPTURES = 6;
+export const MAX_CAPTURES = 16;
 export const JOURS_A_REVOIR = 60;
 
 export const CATEGORIES_JOURNAL = [

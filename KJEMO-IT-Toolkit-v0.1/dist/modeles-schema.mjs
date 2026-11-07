@@ -38,24 +38,49 @@ function tp1() {
   return s;
 }
 
-/** TP2 : l'architecture de l'énoncé (banque Tardi). */
+/**
+ * TP2 : l'architecture de l'énoncé (banque Tardi), Ex1 à Ex4 :
+ * WebAPP1 (conteneur B1, port 8080, StorageConnectionString), stockage privé (blob1, queue1),
+ * VNET1 (5 sous-réseaux) et VNET2 (4), appairage, intégration VNet, points privés (blob, queue, application),
+ * appliance 10.3.2.100 et les deux tables de routage de l'Ex4. Les plages CIDR sont des PROPOSITIONS (l'énoncé
+ * laisse le choix) : modifie-les, « Vérifier » dira si elles restent cohérentes.
+ */
 function tp2() {
   const s = schemaVide(); s.azure = { groupe: 'rg-tardi', region: 'canadacentral' };
   const internet = noeud('internet', 'Internet', 90, 50);
   const app = noeud('app-service', 'WebAPP1', 430, 50, { niveau: 'intermediaire', plan: 'asp-tardi', sku: 'B1', pile: 'conteneur', image: 'romaric/tpasr:latest', registre: 'https://index.docker.io', port: '8080',
-    chaines: [{ nom: 'StorageConnectionString', source: '', genre: 'Custom' }] });
-  s.zones.push(zone('vnet', 'VNET1', 30, 105, 790, 205, { espace: '' }));
-  ['CoreSubnet', 'GatewaySubnet', 'AppServiceOutboundSubnet', 'VMSubnet', 'AppServiceInboundSubnet'].forEach((n, i) => s.zones.push(zone('sous-reseau', n, 42 + i * 155, 135, 150, 160,
-    n === 'AppServiceOutboundSubnet' ? { plage: '', delegation: 'Microsoft.Web/serverFarms' } : { plage: '' })));
-  s.zones.push(zone('vnet', 'VNET2', 30, 325, 790, 265, { espace: '' }));
-  [['DataSubnet', 42, 180], ['GatewaySubnet', 232, 180], ['VMSubnet', 422, 180], ['StorageSubnet', 612, 200]].forEach(([n, x, l]) => s.zones.push(zone('sous-reseau', n, x, 355, l, 225, { plage: '' })));
+    chaines: [{ nom: 'StorageConnectionString', source: '', genre: 'Custom' }], integration: '', acces: 'desactive' });
+  const v1 = zone('vnet', 'VNET1', 30, 105, 790, 205, { espace: '10.1.0.0/16' });
+  const v2 = zone('vnet', 'VNET2', 30, 325, 790, 265, { espace: '10.3.0.0/16' });
+  v1.config.appairages = [v2.id]; v2.config.appairages = [v1.id]; v1.config.accesVnet = true; v2.config.accesVnet = true;
+  s.zones.push(v1);
+  const sn1 = {};
+  [['CoreSubnet', '10.1.1.0/24'], ['GatewaySubnet', '10.1.0.0/27'], ['AppServiceOutboundSubnet', '10.1.2.0/24'], ['VMSubnet', '10.1.3.0/24'], ['AppServiceInboundSubnet', '10.1.4.0/24']].forEach(([n, plage], i) => {
+    sn1[n] = zone('sous-reseau', n, 42 + i * 155, 135, 150, 160, n === 'AppServiceOutboundSubnet' ? { plage, delegation: 'Microsoft.Web/serverFarms' } : { plage });
+    s.zones.push(sn1[n]);
+  });
+  s.zones.push(v2);
+  const sn2 = {};
+  [['DataSubnet', 42, 180, '10.3.1.0/24'], ['GatewaySubnet', 232, 180, '10.3.0.0/27'], ['VMSubnet', 422, 180, '10.3.2.0/24'], ['StorageSubnet', 612, 200, '10.3.3.0/24']].forEach(([n, x, l, plage]) => {
+    sn2[n] = zone('sous-reseau', n, x, 355, l, 225, { plage }); s.zones.push(sn2[n]);
+  });
+  app.config.integration = sn1.AppServiceOutboundSubnet.id;
   const st = noeud('stockage', 'sttardi', 905, 470, { niveau: 'intermediaire', sku: 'Standard_LRS', conteneurs: 'blob1', files: 'queue1', acces: 'desactive' });
   app.config.chaines[0].source = st.id;
-  const peBlob = noeud('point-terminaison-prive', 'pe-sttardi-blob', 670, 450, { sousRessource: 'blob', dns: true });
-  const peQueue = noeud('point-terminaison-prive', 'pe-sttardi-queue', 760, 530, { sousRessource: 'queue', dns: true });
-  s.noeuds.push(internet, app, peBlob, peQueue, st);
-  s.liens.push(lien(internet, app, 'trafic', 'Trafic entrant'), lien(app, peBlob, 'trafic', 'Trafic sortant'), lien(peBlob, st, 'liaison-privee'), lien(peQueue, st, 'liaison-privee'));
-  s.textes.push({ id: id('t'), texte: 'Un point de terminaison privé par sous-ressource utilisée (blob, queue).', x: 560, y: 595 });
+  const peBlob = noeud('point-terminaison-prive', 'pe-sttardi-blob', 640, 440, { sousRessource: 'blob', dns: true });
+  const peQueue = noeud('point-terminaison-prive', 'pe-sttardi-queue', 730, 520, { sousRessource: 'queue', dns: true });
+  const peApp = noeud('point-terminaison-prive', 'pe-webapp1', 700, 210, { niveau: 'intermediaire', sousRessource: 'sites', dns: true, cible: app.id });
+  const nva = noeud('appliance', 'nva-tardi', 460, 440, { niveau: 'intermediaire', ipPrivee: '10.3.2.100', image: 'Ubuntu2204', taille: 'Standard_B2s', utilisateur: 'azureuser', transfertIp: true });
+  const route = (nom, prefixe, saut, ip = '') => ({ nom, prefixe, saut, ip });
+  const rtVm = noeud('table-routage', 'rt-vmsubnet', 905, 150, { niveau: 'intermediaire', sousReseaux: [sn1.VMSubnet.id],
+    routes: [route('vers-passerelle', '0.0.0.0/0', 'VirtualNetworkGateway'), route('supprime-12-12-12-0', '12.12.12.0/30', 'None')] });
+  const rtData = noeud('table-routage', 'rt-datasubnet', 905, 300, { niveau: 'intermediaire', sousReseaux: [sn2.DataSubnet.id], routes: [
+    route('tout-vers-nva', '0.0.0.0/0', 'VirtualAppliance', '10.3.2.100'),
+    route('appservice-central', 'AppService.CanadaCentral', 'VirtualAppliance', '10.3.2.100'), route('appservice-est', 'AppService.CanadaEast', 'VirtualAppliance', '10.3.2.100'),
+    route('eventhub-central', 'EventHub.CanadaCentral', 'VirtualAppliance', '10.3.2.100'), route('eventhub-est', 'EventHub.CanadaEast', 'VirtualAppliance', '10.3.2.100')] });
+  s.noeuds.push(internet, app, peApp, peBlob, peQueue, nva, rtVm, rtData, st);
+  s.liens.push(lien(internet, app, 'trafic', 'Trafic entrant'), lien(app, peBlob, 'trafic', 'Trafic sortant'), lien(peBlob, st, 'liaison-privee'), lien(peQueue, st, 'liaison-privee'), lien(peApp, app, 'liaison-privee'));
+  s.textes.push({ id: id('t'), texte: 'Plages CIDR proposées (à ajuster). Un point de terminaison privé par sous-ressource (blob, queue) et un pour l’application (sites).', x: 560, y: 595 });
   return s;
 }
 
@@ -107,6 +132,10 @@ export const MODELES_SCHEMA = [
     objet: 'Trafic entrant public vers l’application ; trafic sortant par le sous-réseau d’intégration de VNETDemo ; point de terminaison privé dans StorageSubnet ; compte de stockage sans accès public.' },
   { id: 'azure-tp2-tardi', label: 'Infonuagique I · TP2 : App Service et stockage privé (banque Tardi)', categorie: 'azure', construire: tp2,
     titre: 'TP2 : accès privé à App Service et au stockage (banque Tardi)',
+    environnement: 'Portail Azure, compte du cégep (le nom du compte doit être visible sur chaque capture). Région Canada Centre, groupe de ressources rg-tardi. Remise : jeudi 12 novembre 2026, 23 h 59, sur LEA (document Word ou PDF : partie 1 et captures du portail).',
+    architecture: 'Ex1 : compte de stockage (file queue1, conteneur blob1 avec un fichier) et WebAPP1 (App Service Linux, conteneur romaric/tpasr:latest, plan B1, port 8080, chaîne StorageConnectionString). Ex2 : VNET2 (DataSubnet, GatewaySubnet, VMSubnet, StorageSubnet), stockage privé avec points de terminaison privés (blob, queue) dans StorageSubnet. Ex3 : VNET1 (CoreSubnet, GatewaySubnet, AppServiceOutboundSubnet, VMSubnet, AppServiceInboundSubnet), appairage VNET1–VNET2, intégration VNet de WebAPP1, zones DNS privées liées, point de terminaison privé de l’application dans AppServiceInboundSubnet (accessible seulement depuis VNET1). Ex4 : tables de routage de VMSubnet et de DataSubnet, appliance 10.3.2.100.',
+    retourArriere: 'Fin de l’Ex1 : repasser le plan au niveau gratuit (az appservice plan update -g rg-tardi -n asp-tardi --sku F1) ; l’intégration VNet de l’Ex3 demande de remettre B1. Pour tout défaire : az group delete -n rg-tardi.',
+    captures: 'Captures à prendre (une figure chacune, nom du compte visible) : Ex1 compte de stockage + queue1 + blob1 et son fichier ; WebAPP1 (plan B1, image, port, chaîne de connexion) ; pages Messages et Lister Blobs qui fonctionnent ; plan revenu à F1. Ex2 : VNET2 et ses sous-réseaux ; stockage en accès privé ; points de terminaison privés blob et queue. Ex3 : VNET1 et ses sous-réseaux ; appairage « Connecté » ; intégration VNet ; zones DNS privées et liens ; point de terminaison de l’application ; test d’accès refusé depuis Internet. Ex4 : table de routage de VMSubnet (routes) ; table de DataSubnet (5 routes) ; association aux sous-réseaux.',
     objet: 'Déployer WebAPP1 (conteneur) qui utilise une file d’attente et un conteneur blob, rendre le compte de stockage privé (points de terminaison privés dans VNET2), isoler l’application dans VNET1 et mettre en place le routage demandé.' },
   { id: 'azure-tp1-energia', label: 'Infonuagique I · TP1 : VNet et zones DNS (ÉNERGIA, besoins par région)', categorie: 'azure', construire: tp1,
     titre: 'TP1 : planification des VNet et zones DNS (groupe ÉNERGIA)',

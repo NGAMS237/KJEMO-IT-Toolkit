@@ -2134,7 +2134,7 @@ function enregistrerJournal(view, { note = 'Enregistré dans ce navigateur.' } =
 
 async function ajouterCapture(view, fichier) {
   const e = etatJournal.brouillon;
-  if (e.captures.length >= MAX_CAPTURES) { etatJournal.noteFiche = `Six captures au maximum par labo : retires-en une avant d’en ajouter.`; dessinerJournalFiche(view); return; }
+  if (e.captures.length >= MAX_CAPTURES) { etatJournal.noteFiche = `${MAX_CAPTURES} captures au maximum par labo : retires-en une avant d’en ajouter.`; dessinerJournalFiche(view); return; }
   if (!/^image\/(png|jpeg)$/.test(fichier.type)) { etatJournal.noteFiche = 'Seules les images PNG et JPEG sont acceptées.'; dessinerJournalFiche(view); return; }
   try {
     lireFormulaireJournal(view);
@@ -2828,7 +2828,7 @@ function brancherSchema(view) {
         if (!vide && !etatSchema.modeleConfirme) { etatSchema.modeleConfirme = true; majBlocSchema('#schModeleCharger'); const x = document.querySelector('#schModeleCharger'); if (x) x.textContent = 'Confirmer : remplacer le schéma'; break; }
         const { schema: nouveau } = normaliserSchema(m.construire());
         lireFormulaireJournal(view);
-        e.schema = nouveau; if (!e.titre.trim()) e.titre = m.titre ?? ''; if (!e.objet.trim()) e.objet = m.objet ?? '';
+        e.schema = nouveau; if (!e.titre.trim()) e.titre = m.titre ?? ''; if (!e.objet.trim()) e.objet = m.objet ?? ''; if (!e.environnement.trim() && m.environnement) e.environnement = m.environnement; if (!e.architecture.trim() && m.architecture) e.architecture = m.architecture; if (!e.retourArriere.trim() && m.retourArriere) e.retourArriere = m.retourArriere; if (!e.referencesTexte.trim() && m.captures) e.referencesTexte = m.captures;
         etatSchema = { ...etatSchema, selection: null, modeleConfirme: false, cablage: null, relierDepuis: null }; schemaModifie(); dessinerJournalFiche(view);
         document.querySelector('#schFeuille')?.focus({ preventScroll: true });
         const n = document.querySelector('#jNote'); if (n) n.textContent = `Modèle chargé : ${m.label}. Complète les plages, appairages et réglages demandés par l’énoncé.`;
