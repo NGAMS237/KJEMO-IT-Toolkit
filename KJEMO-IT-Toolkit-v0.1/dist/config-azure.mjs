@@ -78,7 +78,7 @@ export const FORMULAIRES = {
     T('ipPrivee', 'IP privée (vide = dynamique)', { place: '10.1.3.4' }),
     K('ipPublique', 'IP publique (maintenance)', { niveau: 'intermediaire' }),
     C('nsg', 'NSG de la carte réseau', [['', 'Aucun (celui du sous-réseau s’applique)'], ['@nsgs', '']], { niveau: 'intermediaire', dyn: 'nsgs' }), ...LIEU],
-  appliance: [T('ipPrivee', 'IP privée', { place: '10.3.2.100' }), C('image', 'Image', [['Ubuntu2204', 'Ubuntu 22.04 LTS']]), C('taille', 'Taille', [['Standard_B2s', 'Standard_B2s']]),
+  appliance: [K('fictive', 'Appliance fictive (elle n’existe pas : son adresse sert seulement de prochain saut dans les routes)'), T('ipPrivee', 'IP privée', { place: '10.3.2.100' }), C('image', 'Image', [['Ubuntu2204', 'Ubuntu 22.04 LTS']]), C('taille', 'Taille', [['Standard_B2s', 'Standard_B2s']]),
     T('utilisateur', 'Administrateur', { place: 'azureuser' }), K('transfertIp', 'Transfert IP activé (obligatoire pour router)', { defaut: true }), ...LIEU],
   'app-service': [T('plan', 'Plan App Service', { place: 'asp-tardi' }), C('sku', 'Niveau tarifaire', [['B1', 'B1 (De base)'], ['F1', 'F1 (Gratuit)'], ['S1', 'S1 (Standard)'], ['P1v3', 'P1v3 (Premium)']]),
     C('pile', 'Publication', [['conteneur', 'Conteneur Linux'], ['dotnet', '.NET 8 (Linux)'], ['node', 'Node 20 (Linux)'], ['python', 'Python 3.12 (Linux)']]),
@@ -389,7 +389,7 @@ export function verifierAzure(schema) {
       const s = ctx.sousReseaux.find((x) => x.id === id);
       if (s && !s.c.pointsService.includes('Microsoft.Storage')) m.push(`${nom} : le sous-réseau ${s.nom} doit avoir le point de terminaison de service Microsoft.Storage.`);
     }
-    if (['vm', 'appliance', 'point-terminaison-prive', 'bastion', 'passerelle-app'].includes(n.type) && !o.sousReseau && !(n.type === 'point-terminaison-prive' && c.sousReseau)) m.push(`${nom} : pose-le dans un sous-réseau (zone « Sous-réseau »).`);
+    if (['vm', 'appliance', 'point-terminaison-prive', 'bastion', 'passerelle-app'].includes(n.type) && !(n.type === 'appliance' && c.fictive) && !o.sousReseau && !(n.type === 'point-terminaison-prive' && c.sousReseau)) m.push(`${nom} : pose-le dans un sous-réseau (zone « Sous-réseau »).`);
     if ((n.type === 'vm' || n.type === 'appliance') && c.ipPrivee && dansSn(c.ipPrivee)) m.push(`${nom} : l’IP ${c.ipPrivee} n’est pas dans ${o.sousReseau.c.plage}.`);
     if (n.type === 'point-terminaison-prive') {
       if (!cibleDuPe(schema, n)) m.push(`${nom} : choisis la ressource ciblée (ou relie-le par une liaison privée).`);
@@ -442,6 +442,20 @@ const idDe = (n, ctx) => {
     'event-hub': `$(az eventhubs namespace show -g ${o.groupe} -n ${nom} --query id -o tsv)`,
   }[n.type] ?? '';
 };
+
+/** VNet par lesquels les applications qui utilisent une ressource en sortent (intégration VNet) : ils doivent résoudre le nom privé. */
+export function vnetsConsommateurs(schema, ctx, cible) {
+  const r = new Set();
+  if (!cible) return r;
+  for (const a of schema.noeuds) {
+    if (a.type !== 'app-service') continue;
+    const c = normaliserConfigAzure('app-service', a.config) ?? {};
+    if (!c.integration || !c.chaines.some((ch) => ch.source === cible.id)) continue;
+    const sn = ctx.sousReseaux.find((x) => x.id === c.integration);
+    if (sn?.vnet) r.add(sn.vnet.id);
+  }
+  return r;
+}
 
 /** Commandes d'une zone Azure (VNet, sous-réseau, groupe). */
 export function commandesZone(schema, z, { appairages = true } = {}) {
@@ -518,6 +532,7 @@ export function commandesAzure(schema, n) {
   const assoc = (champ, option) => c.sousReseaux.map((id) => sn(id)).filter(Boolean).map((s) => `az network vnet subnet update -g ${s.vnet?.groupe ?? g} --vnet-name ${s.vnet?.nom ?? '<vnet>'} -n ${s.nom} --${option} ${nom}`);
   switch (n.type) {
     case 'vm': case 'appliance': {
+      if (n.type === 'appliance' && c.fictive) { bloc(`Appliance virtuelle fictive ${nom}`, [`# Rien à créer : l’appliance n’existe pas. Son adresse ${c.ipPrivee || '<IP>'} sert seulement de prochain saut dans les tables de routage.`]); break; }
       const windows = /^Win|windows/i.test(c.image);
       bloc(`Machine virtuelle ${nom}`, [...P, `az vm create -g ${g} -n ${nom} -l ${l} --image ${c.image} --size ${c.taille} --vnet-name ${o.vnet?.nom ?? '<vnet>'} --subnet ${o.sousReseau?.nom ?? '<sous-reseau>'}`
         + ` --admin-username ${nomAzure(c.utilisateur || 'azureuser')}${windows ? '' : ' --generate-ssh-keys'}${c.ipPrivee ? ` --private-ip-address ${c.ipPrivee}` : ''}`
@@ -595,6 +610,7 @@ export function commandesAzure(schema, n) {
         // La zone privatelink est liée au VNet du point de terminaison et aux VNet appairés (ou intégrés) qui doivent résoudre le nom.
         const vnets = new Set([s?.vnet?.id].filter(Boolean));
         for (const v of ctx.vnets) if (s?.vnet && (v.c.appairages.includes(s.vnet.id) || s.vnet.c.appairages.includes(v.id))) vnets.add(v.id);
+        for (const v of vnetsConsommateurs(schema, ctx, cible)) vnets.add(v);
         L2.push(`az network private-dns zone create -g ${g} -n ${zone}`);
         for (const id of vnets) { const v = ctx.vnets.find((x) => x.id === id); L2.push(`az network private-dns link vnet create -g ${g} -z ${zone} -n lien-${v.nom} -v ${v.groupe === g ? v.nom : `$(az network vnet show -g ${v.groupe} -n ${v.nom} --query id -o tsv)`} -e false`); }
         L2.push(`az network private-endpoint dns-zone-group create -g ${g} --endpoint-name ${nom} -n defaut --private-dns-zone ${zone} --zone-name ${gid}`);
@@ -691,7 +707,7 @@ export function commandesAzure(schema, n) {
 export const texteAzure = (r) => r.blocs.map((b) => [`# --- ${b.titre} ---`, ...b.lignes].join('\n')).join('\n');
 
 /** Ordre de déploiement : groupes, VNet (sous-réseaux, appairages), puis les ressources dans un ordre qui marche. */
-const ORDRE = ['nsg', 'table-routage', 'ip-publique', 'passerelle-nat', 'stockage', 'base-sql', 'coffre-cles', 'event-hub', 'log-analytics', 'vm', 'appliance', 'app-service', 'fonction',
+export const ORDRE = ['nsg', 'table-routage', 'ip-publique', 'passerelle-nat', 'stockage', 'base-sql', 'coffre-cles', 'event-hub', 'log-analytics', 'vm', 'appliance', 'app-service', 'fonction',
   'point-terminaison-prive', 'zone-dns', 'equilibreur', 'passerelle-app', 'bastion', 'pare-feu-azure', 'passerelle-vpn', 'front-door', 'service-cloud'];
 /** Script complet du schéma. */
 export function scriptAzure(schema) {
@@ -789,7 +805,7 @@ export function testsAzure(schema, el) {
       if (c.integration) A(`az webapp vnet-integration list -g ${o.groupe} -n ${nom} -o table`, 'Intégrée au sous-réseau choisi');
       if (c.chaines.length) A('Pages « Messages » et « Lister Blobs » de l’application', 'Le message s’ajoute à la file, les blobs sont listés');
       break;
-    case 'vm': case 'appliance': A(`az vm show -d -g ${o.groupe} -n ${nom} --query "{prive:privateIps, public:publicIps}"`, `IP privée ${c.ipPrivee || 'dans ' + (o.sousReseau?.c.plage || 'son sous-réseau')}${c.ipPublique ? ', une IP publique' : ', aucune IP publique'}`); break;
+    case 'vm': case 'appliance': if (el.type === 'appliance' && c.fictive) break; A(`az vm show -d -g ${o.groupe} -n ${nom} --query "{prive:privateIps, public:publicIps}"`, `IP privée ${c.ipPrivee || 'dans ' + (o.sousReseau?.c.plage || 'son sous-réseau')}${c.ipPublique ? ', une IP publique' : ', aucune IP publique'}`); break;
     case 'table-routage': if (c.sousReseaux.length) A(`az network nic show-effective-route-table -g ${o.groupe} -n <carte réseau d’une VM du sous-réseau> -o table`, `Routes « User » : ${c.routes.map((r) => `${r.prefixe} → ${r.saut === 'VirtualAppliance' ? r.ip : r.saut}`).join(', ')}`); break;
     case 'nsg': A(`az network nic list-effective-nsg -g ${o.groupe} -n <carte réseau d’une VM> -o table`, `Règles ${c.regles.map((r) => r.nom).join(', ') || 'attendues'}`); break;
     case 'zone-dns': for (const r of c.enregistrements.slice(0, 6)) A(`nslookup ${r.nom === '@' ? '' : `${r.nom}.`}${c.domaine}${c.privee ? ' (depuis une VM d’un VNet lié)' : ''}`, r.valeur); break;

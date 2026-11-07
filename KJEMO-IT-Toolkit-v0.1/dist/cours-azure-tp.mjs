@@ -143,6 +143,18 @@ const COURS_AZURE_TP_PARCOURS_BRUT = [
           ],
         },
         {
+          id: 'pieges', titre: 'Pièges rencontrés en faisant le TP (à éviter)',
+          points: [
+            'Liens DNS : le portail ne lie chaque zone privatelink qu’au réseau du point de terminaison (VNET2). Pour que l’application (VNET1) atteigne le stockage, ajoute un lien vers VNET1 dans CHAQUE zone : Zones DNS privées > la zone > Liens de réseau virtuel > + Ajouter, inscription automatique décochée. Si tu passes par le DNS du VNet et que l’inscription est cochée, Azure refuse (un seul lien avec inscription par réseau).',
+            'Depuis ton poste, le stockage fermé au public ne répond pas : c’est le comportement attendu, pas une panne. La preuve se fait depuis une machine du réseau (nslookup : adresse privée).',
+            'Les noms de l’énoncé s’écrivent à la lettre : conteneur « blob1 » (pas conteneur-blob1), file « queue1 », variable « StorageConnectionString », sous-réseau « GatewaySubnet » (sans tiret ni suffixe : un sous-réseau ne se renomme pas).',
+            'Propriétaire du compte de stockage ne donne pas le droit de lire les données avec Microsoft Entra : prends le rôle « Contributeur aux données » ou la clé du compte, sans jamais l’écrire dans ton document.',
+            'Abonnement étudiant : certaines régions sont refusées ; choisis une région permise et garde-la pour toutes les ressources liées (une table de routage n’apparaît pas à l’association si sa région diffère de celle du réseau).',
+            'L’appliance de l’Ex4 est fictive : ne crée aucune machine, seule l’adresse sert. La route 0.0.0.0/0 vers une passerelle inexistante coupe Internet aux machines de VMSubnet : termine tes tests avant.',
+            'Les points de terminaison privés et l’intégration VNet demandent le plan B1 ; repasse en F1 quand tu ne travailles pas pour limiter les coûts.',
+          ],
+        },
+        {
           id: 'routes', titre: 'Routes du TP',
           points: [
             'Vers l’extérieur du réseau : 0.0.0.0/0 avec le tronçon « passerelle de réseau virtuel ».',
@@ -211,7 +223,7 @@ const COURS_AZURE_TP_PARCOURS_BRUT = [
           { id: 'C1', texte: 'Créer VNET1 et ses sous-réseaux avec des plages de ton choix, sans chevauchement avec VNET2.', refs: [f('cours-az-vnet-creer', 3, { titre: 'Créer le VNet' }), f('cours-az-sous-reseau-ajouter', 2, { titre: 'Créer le sous-réseau' })], assistants: ['azure-reseau-vnets'] },
           { id: 'C2', texte: 'Faire communiquer VNET1 et VNET2 (appairage dans les deux sens, à l’état Connected).', refs: [f('cours-az-peering-creer', 2, { titre: 'Contrôler les deux plages' }), f('cours-az-peering-creer', 3, { titre: 'premier vers le second' }), f('cours-az-peering-creer', 4, { titre: 'sens inverse' }), f('cours-az-peering-creer', 5, { titre: 'Vérifier' })], note: 'L’énoncé ne cite pas le mot appairage pour cet exercice, mais l’application dans VNET1 ne peut joindre les points privés de VNET2 qu’avec un lien entre les deux réseaux (voir l’ambiguïté TP2-1).' },
           { id: 'C3', texte: 'Intégrer l’application à VNET1 par le sous-réseau de sortie délégué à App Service.', refs: [f('cours-az-app-service-integration-vnet', 2, { titre: 'Déléguer' }), f('cours-az-app-service-integration-vnet', 3, { titre: 'Intégrer' })] },
-          { id: 'C4', texte: 'Lier les zones DNS privées du stockage à VNET1 pour que l’application résolve les noms du stockage en adresses privées.', refs: [f('cours-az-point-prive-stockage-sous-ressource', 4, { titre: 'Lier la zone' })], note: 'Refais cette étape pour chaque sous-ressource (blob et queue), avec VNET1 comme réseau.' },
+          { id: 'C4', texte: 'Lier les zones DNS privées du stockage à VNET1 pour que l’application résolve les noms du stockage en adresses privées.', refs: [f('cours-az-point-prive-stockage-sous-ressource', 4, { titre: 'Lier la zone' })], note: 'Refais cette étape pour chaque sous-ressource (blob et queue), avec VNET1 comme réseau. Depuis la zone (Liens de réseau virtuel > + Ajouter), inscription automatique décochée : c’est le piège qui fait échouer Messages et Lister Blobs.' },
           { id: 'C5', texte: 'Isoler l’application pour qu’elle ne soit accessible que depuis VNET1, par un point de terminaison privé (dans le sous-réseau d’entrée), sans accès public.', refs: [f('cours-az-app-service-point-prive', 3, { titre: 'Créer le point' }), f('cours-az-app-service-point-prive', 4, { titre: 'zone DNS privée' }), f('cours-az-app-service-point-prive', 5, { titre: 'Inscrire' }), f('cours-az-app-service-point-prive', 6, { titre: 'Fermer l’accès public' })] },
           { id: 'C6', texte: 'Vérifier que les fonctions Messages et Lire Blobs fonctionnent encore, depuis une machine de VNET1.', refs: [f('cours-az-app-service-point-prive', 7, { titre: 'Contrôler la résolution' }), f('cours-az-point-prive-stockage-sous-ressource', 6, { titre: 'Contrôler la résolution' })], note: 'Depuis ton poste (hors du réseau) l’application répond maintenant 403 : le test se fait depuis une machine du VNET1 (ou via le portail de l’application selon la consigne de ton enseignant).' },
         ],

@@ -1,3 +1,12 @@
+## AZURE-LABO-PREPARATION-01 (2026-11-07)
+
+- **Préparer dans le labo, appliquer ensuite dans le portail** : « Remplir depuis le schéma » ajoute au document un **plan d’exécution dans le portail**, généré depuis le schéma et dans l’ordre de déploiement : chemin dans le portail, valeurs à saisir onglet par onglet (réseaux et sous-réseaux, appairage, stockage, App Service, points privés, tables de routage, NSG, zones DNS), pièges connus et **capture à garder** pour chaque étape, plus une liste de toutes les captures. Aucune valeur secrète n’est écrite.
+- **Piège DNS réglé dans le labo** : pour chaque point de terminaison privé, le plan (et le script CLI) liste tous les réseaux qui doivent résoudre le nom (réseau du point, réseaux appairés, réseaux d’intégration des applications qui utilisent la ressource) et rappelle de lier la zone à chacun, inscription automatique décochée.
+- **Appliance fictive** : nouvelle case sur l’appliance (« elle n’existe pas ») : aucune VM n’est générée, seule l’IP sert de prochain saut. Modèle TP2 corrigé : appliance fictive, table de routage associée aux DEUX VMSubnet, plages de ton TP réel.
+- Régions ajoutées pour les abonnements étudiants (Ouest, Ouest 2 et Centre des États-Unis).
+- Cours TP2 : section « Pièges rencontrés en faisant le TP » (liens DNS, noms exacts, rôles de données, régions, appliance fictive, coût B1/F1).
+- Honnêteté : rien n’est exécuté dans Azure ; les libellés du portail sont des repères, pas des captures. Tests : `azure-tp2-complet` (59 vérifications).
+
 ## AZURE-TP2-LABO-01 (2026-11-07)
 
 - Le modèle « Infonuagique I · TP2 » du labo Azure reproduit maintenant le schéma de l’énoncé en entier : VNET1 (5 sous-réseaux) et VNET2 (4), appairage, intégration VNet de WebAPP1, points privés du stockage (blob, queue) et de l’application (sites), appliance 10.3.2.100 et les deux tables de routage de l’Ex4 (VMSubnet : passerelle et 12.12.12.0/30 supprimé ; DataSubnet : 0.0.0.0/0, AppService et EventHub Canada Centre/Est vers l’appliance). Les plages CIDR sont des propositions modifiables ; « Vérifier » ne signale rien.

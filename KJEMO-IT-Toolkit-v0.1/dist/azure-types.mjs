@@ -49,5 +49,5 @@ export const genreZone = (id) => GENRES_ZONE.find((g) => g.id === id) ?? null;
 
 export const REGIONS = [
   ['canadacentral', 'Canada Centre'], ['canadaeast', 'Canada Est'], ['francecentral', 'France Centre'], ['francesouth', 'France Sud'],
-  ['eastus', 'Est des États-Unis'], ['westeurope', 'Europe de l’Ouest'], ['northeurope', 'Europe du Nord'],
+  ['eastus', 'Est des États-Unis'], ['westus', 'Ouest des États-Unis'], ['westus2', 'Ouest des États-Unis 2'], ['centralus', 'Centre des États-Unis'], ['westeurope', 'Europe de l’Ouest'], ['northeurope', 'Europe du Nord'],
 ];

@@ -8,6 +8,7 @@ import * as SC from '../dist/schema.mjs';
 import * as SR from '../dist/schema-remplir.mjs';
 import * as J from '../dist/journal.mjs';
 import * as JP from '../dist/journal-pdf.mjs';
+import { planPortail } from '../dist/plan-portail.mjs';
 
 let ok = 0; let ko = 0;
 const assert = (c, m, d = '') => { if (c) ok += 1; else { ko += 1; console.log(`  [FAIL]  ${m}${d ? ` — ${d}` : ''}`); } };
@@ -46,8 +47,8 @@ a('--address-prefix 12.12.12.0/30 --next-hop-type None', 'Ex4 : 12.12.12.0/30 su
 for (const p of ['0.0.0.0/0', 'AppService.CanadaCentral', 'AppService.CanadaEast', 'EventHub.CanadaCentral', 'EventHub.CanadaEast']) a(`--route-table-name rt-datasubnet`, 'Ex4 : table de DataSubnet') || 0;
 for (const p of ['0.0.0.0/0', 'AppService.CanadaCentral', 'AppService.CanadaEast', 'EventHub.CanadaCentral', 'EventHub.CanadaEast']) assert(script.includes(`--route-table-name rt-datasubnet`) && new RegExp(`rt-datasubnet -n \\S+ --address-prefix ${p.replace('.', '\\.')} --next-hop-type VirtualAppliance --next-hop-ip-address 10\\.3\\.2\\.100`).test(script), `Ex4 : DataSubnet ${p} → 10.3.2.100`);
 a('--vnet-name VNET1 -n VMSubnet --route-table rt-vmsubnet', 'Ex4 : table associée à VMSubnet'); a('--vnet-name VNET2 -n DataSubnet --route-table rt-datasubnet', 'Ex4 : table associée à DataSubnet');
-a('--private-ip-address 10.3.2.100', 'Ex4 : appliance en 10.3.2.100'); a('--ip-forwarding true', 'Ex4 : transfert IP de l’appliance');
-assert(sous('VNET2', 'VMSubnet').c.plage.startsWith('10.3.2.') , 'l’appliance est bien dans la plage de son sous-réseau');
+assert(!/az vm create[^\n]*nva/.test(script) && script.includes('Rien à créer : l’appliance n’existe pas'), 'Ex4 : appliance fictive, aucune VM créée');
+a('--vnet-name VNET2 -n VMSubnet --route-table rt-vmsubnet', 'Ex4 : la table de VMSubnet va aux deux VMSubnet (VNET2)');
 
 // Documentation
 const lab = { ...J.entreeVide({ categorieId: 'azure', date: new Date('2026-11-07T10:00:00'), existantes: [] }), titre: m.titre, objet: m.objet, environnement: m.environnement, architecture: m.architecture, retourArriere: m.retourArriere, referencesTexte: m.captures, schema: s };
@@ -59,5 +60,23 @@ assert(!Object.keys(J.normaliserEntree(e).erreurs).length, 'labo valide (aucun s
 const pdf = JP.pdfJournal(J.normaliserEntree(e).entree ?? e, { date: new Date('2026-11-07T10:00:00Z') });
 assert(pdf.octets?.length > 2000 && pdf.pages >= 2, 'PDF du labo généré');
 
+// Plan d'exécution dans le portail (préparer dans le labo, appliquer ensuite)
+const plan = planPortail(s);
+const txt = plan.blocs.map((b) => `${b.titre}\n${b.lignes.join('\n')}`).join('\n\n');
+const t = (re, m) => assert(re.test(txt), m);
+t(/Réseau virtuel VNET1[\s\S]*CoreSubnet : 10\.1\.0\.0\/24/, 'plan portail : VNET1 et ses sous-réseaux avec leurs plages');
+t(/Appairage VNET1 ↔ VNET2/, 'plan portail : appairage');
+t(/Autres registres de conteneurs ; image et étiquette = romaric\/tpasr:latest ; URL du serveur de registre = https:\/\/index\.docker\.io ; port = 8080/, 'plan portail : conteneur, image, registre, port');
+t(/nom = StorageConnectionString ; type = Custom/, 'plan portail : variable de chaîne de connexion (valeur jamais écrite)');
+t(/AppService\.CanadaEast, ; prochain saut|Étiquette de service, AppService\.CanadaEast ; prochain saut = Appliance virtuelle \(IP\), adresse 10\.3\.2\.100/, 'plan portail : route par étiquette de service');
+t(/Sous-réseaux > Associer : VNET1 \/ VMSubnet ; VNET2 \/ VMSubnet/, 'plan portail : table des VMSubnet associée aux deux');
+t(/Appliance fictive nva-fictive[\s\S]*Rien à créer dans le portail/, 'plan portail : appliance fictive, rien à créer');
+t(/PIÈGE FRÉQUENT[\s\S]*Liens de réseau virtuel : il doit y avoir UN lien par réseau de la liste \(VNET2, VNET1\)/, 'plan portail : piège des liens DNS vers chaque réseau');
+t(/pas conteneur-blob1/, 'plan portail : piège du nom de conteneur');
+assert(plan.captures.length >= 10 && J.secretDans(txt) === null && !/AccountKey|DefaultEndpointsProtocol/.test(txt), 'plan portail : au moins 10 captures listées, aucun secret');
+const pos = (x) => txt.indexOf(x);
+assert(pos('Réseau virtuel VNET1') < pos('Compte de stockage sttardi') && pos('Compte de stockage sttardi') < pos('App Service WebAPP1') && pos('App Service WebAPP1') < pos('Point de terminaison privé pe-sttardi-blob'), 'plan portail : réseaux, stockage, application, puis points privés (ordre de déploiement)');
+assert(e.configuration.some((b) => b.titre === 'Portail : Compte de stockage sttardi') && e.configuration.some((b) => b.titre === 'Portail : liste des captures à garder'), 'document : le plan du portail et la liste des captures sont repris dans la configuration');
+assert(!Object.keys(J.normaliserEntree(e).erreurs).length, 'document avec le plan du portail : valide');
 console.log(`azure-tp2-complet : ${ok} vérification(s) réussie(s), ${ko} échec(s).`);
 process.exit(ko ? 1 : 0);

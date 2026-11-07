@@ -25,6 +25,7 @@ import { normaliserEquipement, equipementVide, TYPES_EQUIPEMENT } from './invent
 import { typeNoeud, decrireSchema, normaliserSchema } from './schema.mjs';
 import { modele, clePort } from './modeles.mjs';
 import { estAzure, typeAzure, TYPES_AZURE, REGIONS } from './azure-types.mjs';
+import { planPortail } from './plan-portail.mjs';
 import { contexteAzure, notesAppairages, scriptAzure, adressageAzure, tablesAzure, modeleAzure, testsAzure, nomAzure, utilisablesAzure } from './config-azure.mjs';
 import { normaliserConfig, famille, estIos, commandesNoeud, texteAvecTitres, interfacesDepuisConfig, adressesDepuisConfig, routesDepuisConfig, vlansDepuisConfig, testsProposes, cidr } from './config-ios.mjs';
 
@@ -270,6 +271,16 @@ function remplirAzure(e, s, { inv, parId, nomsPris, bilan, date }) {
   // 4. Configuration : les commandes Azure CLI, bloc par bloc, dans l'ordre de déploiement.
   for (const b of scriptAzure(s).blocs) {
     const titre = `Azure : ${b.titre}`.slice(0, 120); const code = b.lignes.join('\n');
+    const ex = e.configuration.find((x) => x.titre === titre);
+    if (!ex) { e.configuration.push({ titre, code }); bilan.configurations += 1; }
+    else if (ex.code !== code) { ex.code = code; bilan.configurations += 1; }
+  }
+  // 4 bis. Plan d'exécution dans le portail (valeurs à saisir, pièges, captures), pour appliquer le labo sans rien deviner.
+  const plan = planPortail(s);
+  const blocsPlan = [...plan.blocs];
+  if (plan.captures.length) blocsPlan.push({ titre: 'Portail : liste des captures à garder', lignes: ['Une figure par ligne, avec une légende qui dit ce qu’elle prouve ; le compte doit être visible.', ...plan.captures.map((c, i) => `${i + 1}. ${c}`)] });
+  for (const b of blocsPlan) {
+    const titre = b.titre.slice(0, 120); const code = b.lignes.join('\n');
     const ex = e.configuration.find((x) => x.titre === titre);
     if (!ex) { e.configuration.push({ titre, code }); bilan.configurations += 1; }
     else if (ex.code !== code) { ex.code = code; bilan.configurations += 1; }
