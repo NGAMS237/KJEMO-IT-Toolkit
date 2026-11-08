@@ -93,7 +93,7 @@ export function configMarkup(schema, n, brut, { nom = '', equipement = null, tou
     }
     // Ports
     const ports = portsAffiches(schema, n, c, { equipement, tous: tousPorts });
-    const modes = fam === 'routeur' ? null : [['', '—'], ['access', 'accès'], ['trunk', 'trunk'], ...(fam === 'commutateur-l3' ? [['routed', 'routé (L3)']] : [])];
+    const modes = fam === 'routeur' ? null : [['', '—'], ['access', 'accès'], ['trunk', 'trunk'], ['desirable', 'DTP desirable'], ['auto', 'DTP auto'], ...(fam === 'commutateur-l3' ? [['routed', 'routé (L3)']] : [])];
     const lignesPorts = ports.map((p) => {
       const cp = c.ports[p.cle] ?? {}; const k = `ports|${p.cle}`;
       const vers = p.vers ? `→ ${p.vers.nom || p.vers.type}${p.portEnFace ? ` ${p.portEnFace}` : ''}` : 'non câblé';

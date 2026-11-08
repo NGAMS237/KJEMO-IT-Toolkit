@@ -1,3 +1,9 @@
+## CISCO-DTP-VTP-01 (2026-11-08)
+
+- **Formatif 06 (VTP et DTP)** : le générateur de configuration IOS du labo propose deux nouveaux modes de port, « DTP desirable » et « DTP auto » (`switchport mode dynamic desirable | auto`, avec l’encapsulation dot1q avant pour les 3560). Un routeur qui reçoit ce mode est signalé.
+- Les vérifications proposées ajoutent `show vtp status` (mode et domaine attendus, VLAN appris pour un client) et adaptent `show interfaces trunk` aux ports dynamiques.
+- Le mot de passe VTP reste volontairement hors du générateur et du journal : il se tape à la main dans le terminal (fiche VTP de l’aide-mémoire). Test : `cisco-dtp-vtp` (14 vérifications).
+
 ## AZURE-SCHEMA-LIEN-SOUS-RESEAU-01 (2026-11-07)
 
 - **Associations multiples** : NSG, table de routage et passerelle NAT se lient à plusieurs sous-réseaux (un trait chacun, étiquette NSG / Table de routage / Sortie NAT) ; en mode câble, cliquer de nouveau le même sous-réseau retire l’association. Étiquettes décalées pour ne pas recouvrir les noms.

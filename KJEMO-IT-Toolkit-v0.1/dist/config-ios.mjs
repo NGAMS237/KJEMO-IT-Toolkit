@@ -74,7 +74,9 @@ export function configVide() {
   };
 }
 
-const MODES_PORT = ['', 'access', 'trunk', 'routed'];
+// desirable / auto : négociation DTP (switchport mode dynamic desirable | auto).
+const MODES_PORT = ['', 'access', 'trunk', 'desirable', 'auto', 'routed'];
+const estDynamique = (m) => m === 'desirable' || m === 'auto';
 const PROTOCOLES = { lacp: ['active', 'passive'], pagp: ['desirable', 'auto'], on: ['on'] };
 
 /** Valide et borne une configuration brute (rien d'inconnu n'est gardé). */
@@ -144,7 +146,7 @@ export function verifierConfig(n, c) {
     if (cp.mode === 'access' && cp.vlan && !ids.includes(cp.vlan) && cp.vlan !== '1' && fam !== 'routeur') msgs.push(`Port ${p} : le VLAN ${cp.vlan} n’est pas créé sur cet équipement.`);
     if (cp.mode === 'trunk' && cp.autorises && !listeVlans(cp.autorises)) msgs.push(`Port ${p} : liste de VLAN autorisés invalide (ex. 10,20,99).`);
     if (cp.mode === 'routed' && fam === 'commutateur') msgs.push(`Port ${p} : un 2960 (niveau 2) n’a pas de port routé ; utilise un commutateur de cœur ou une SVI.`);
-    if (cp.mode === 'trunk' && fam === 'routeur') msgs.push(`Port ${p} : un routeur n’a pas de mode trunk ; utilise des sous-interfaces.`);
+    if ((cp.mode === 'trunk' || estDynamique(cp.mode)) && fam === 'routeur') msgs.push(`Port ${p} : un routeur n’a pas de mode trunk ni DTP ; utilise des sous-interfaces.`);
     adr(cp.adresse, `Port ${p}`);
     if (cp.adresse && cp.mode !== 'routed' && fam !== 'routeur') msgs.push(`Port ${p} : une adresse sur un port de commutateur demande le mode « routé » (niveau 3).`);
     if (cp.securite && cp.mode !== 'access') msgs.push(`Port ${p} : port-security seulement sur un port d’accès.`);
@@ -217,6 +219,9 @@ export function commandesIos(n, c, { nom = '' } = {}) {
       } else if (cp.mode === 'trunk') {
         if (encapsulation) l.push(' switchport trunk encapsulation dot1q');
         l.push(' switchport mode trunk'); if (cp.natif) l.push(` switchport trunk native vlan ${cp.natif}`); if (cp.autorises) l.push(` switchport trunk allowed vlan ${cp.autorises.replace(/\s+/g, '')}`);
+      } else if (estDynamique(cp.mode)) {
+        if (encapsulation) l.push(' switchport trunk encapsulation dot1q');
+        l.push(` switchport mode dynamic ${cp.mode}`);
       } else if (cp.mode === 'routed') l.push(' no switchport');
     }
     const a = cidr(cp.adresse); if (a && (routeur || cp.mode === 'routed')) l.push(` ip address ${a.ip} ${a.masque}`);
@@ -500,7 +505,7 @@ export function interfacesDepuisConfig(n, c) {
   const fam = famille(n.type);
   for (const [p, cp] of Object.entries(c.ports)) {
     if (!cp.mode && !cp.adresse && !cp.description) continue;
-    const vlan = cp.mode === 'access' ? cp.vlan : cp.mode === 'trunk' ? `trunk${cp.autorises ? ` ${cp.autorises}` : ''}` : '';
+    const vlan = cp.mode === 'access' ? cp.vlan : cp.mode === 'trunk' ? `trunk${cp.autorises ? ` ${cp.autorises}` : ''}` : estDynamique(cp.mode) ? `dynamique (${cp.mode})` : '';
     r.push({ nom: p, adresse: cidr(cp.adresse) && (fam === 'routeur' || cp.mode === 'routed') ? cp.adresse : '', vlan, etat: cp.eteint ? 'shutdown' : '', description: cp.description });
   }
   for (const s of c.sousInterfaces) r.push({ nom: `${s.port}.${s.vlan}`, adresse: cidr(s.adresse) ? s.adresse : '', vlan: s.vlan, etat: '', description: `Passerelle du VLAN ${s.vlan}` });
@@ -567,7 +572,11 @@ export function testsProposes(n, c, nom) {
   }
   if (!estIos(n.type)) return tsts;
   if (c.vlans.length) T('show vlan brief', `VLAN ${c.vlans.map((v) => v.id).join(', ')} actifs, ports d’accès dans le bon VLAN`);
-  if (Object.values(c.ports).some((p) => p.mode === 'trunk') || c.canaux.some((k) => k.usage === 'trunk')) T('show interfaces trunk', 'Trunks actifs, VLAN autorisés attendus');
+  if (Object.values(c.ports).some((p) => p.mode === 'trunk' || estDynamique(p.mode)) || c.canaux.some((k) => k.usage === 'trunk')) {
+    const dyn = Object.values(c.ports).some((p) => estDynamique(p.mode));
+    T('show interfaces trunk', dyn ? 'Ports en « trunking » ; Mode « desirable » ou « auto » selon le côté ; VLAN autorisés attendus' : 'Trunks actifs, VLAN autorisés attendus');
+  }
+  if (c.vtp.mode) T('show vtp status', `VTP Operating Mode : ${c.vtp.mode}${c.vtp.domaine ? ` ; VTP Domain Name : ${c.vtp.domaine}` : ''}${c.vtp.mode === 'client' ? ' ; les VLAN du serveur apparaissent dans show vlan brief' : ''}`);
   if (c.canaux.length) T('show etherchannel summary', `Port-channel ${c.canaux.map((k) => k.groupe).join(', ')} en (SU) ou (RU), ports en (P)`);
   if (c.stp.mode || c.stp.primaire) T('show spanning-tree summary', `Mode ${c.stp.mode || 'pvst'}${c.stp.primaire ? `, racine des VLAN ${c.stp.primaire}` : ''}`);
   if (c.sousInterfaces.length || c.svis.length || Object.values(c.ports).some((p) => p.adresse)) T('show ip interface brief', 'Interfaces adressées up/up');
