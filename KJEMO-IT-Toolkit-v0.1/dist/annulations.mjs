@@ -205,6 +205,16 @@ export const ANNULATIONS = {
   'cours-rip-configurer|ios': {
     steps: [an('supprimer RIP', 'Supprime tout le processus RIP : réseaux, version, interfaces passives.', [rt('no router rip')], '« show ip protocols » ne mentionne plus RIP.')],
   },
+  'cours-tp-pvst|ios': {
+    steps: [
+      an('retirer PortFast et BPDU guard des ports des postes', 'À faire sur S1, S2 et S3 avec leur port d’accès : le port repasse par les états normaux de Spanning Tree. Si un port est tombé en err-disabled, fais « shutdown » puis « no shutdown ».',
+        [sw('interface {{portS1}}'), swi('no spanning-tree portfast'), swi('no spanning-tree bpduguard enable')], '« show spanning-tree interface PORT portfast » n’indique plus PortFast.'),
+      an('revenir aux priorités par défaut', 'À faire sur chaque commutateur : retire les racines (principales et secondaires) pour revenir à la priorité par défaut ; une commande déjà sans effet sur ce commutateur est sans danger.',
+        [sw('no spanning-tree vlan 1 root'), sw('no spanning-tree vlan {{racineS1}} root'), sw('no spanning-tree vlan {{racineS3}} root'), sw('no spanning-tree vlan {{racineS2}} root')], '« show spanning-tree » montre à nouveau une racine unique choisie par adresse MAC.'),
+      ad('supprimer les VLAN du tableau', 'À faire sur chaque commutateur : retire chaque VLAN du tableau ; les ports qui y étaient affectés deviennent inactifs.',
+        [sw('no vlan {{vlan}}')], 'Le VLAN n’apparaît plus dans « show vlan brief ».', { repeter: { table: 'vlans', groupe: 'VLAN {{vlan}}' } }),
+    ],
+  },
   'cours-tp-vtp-dtp|ios': {
     steps: [
       ad('supprimer les VLAN du tableau (sur DS1)', 'À faire sur le serveur : retire chaque VLAN du tableau ; les clients le perdent à la prochaine annonce. Les ports qui y étaient affectés deviennent inactifs.',

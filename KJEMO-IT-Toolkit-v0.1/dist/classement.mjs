@@ -215,6 +215,7 @@ export const ARBRE = {
   'reseau-cisco': [
     F('tp-vlan', '⭐ TP complet : VLAN, SSH et routage inter-VLAN', { fiches: ['cours-tp-vlan-ssh-intervlan'] }),
     F('tp-vtp-dtp', '⭐ TP complet : VTP et DTP (DS1, AS1, AS2)', { fiches: ['cours-tp-vtp-dtp'] }),
+    F('tp-pvst', '⭐ TP complet : PVST+, PortFast et BPDU guard', { fiches: ['cours-tp-pvst'] }),
     F('show-cisco', '⭐ Commandes show (toutes en une fiche)', { fiches: ['cours-show-cisco'] }),
     F('acces', 'Accès et configuration', { sub: ['Modes, identification et accès', 'Configuration et sauvegarde'], fiches: ['cours-config-portable'] }),
     F('interfaces', 'Interfaces et port-security', { sub: ['Interfaces, MAC et port-security'], fiches: ['cours-sw-duplex-vitesse', 'cours-sw-diagnostiquer-port', 'cours-sw-ports-inutilises'] }),

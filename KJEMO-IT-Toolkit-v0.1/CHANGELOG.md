@@ -1,3 +1,9 @@
+## CISCO-TP-PVST-01 (2026-11-08)
+
+- **TP complet « PVST+, PortFast et BPDU guard »** (S1, S2, S3) rangé dans Mes cours et TP > Cisco : fiche à champs (noms, ports d'accès et VLAN, trunks, VLAN natif 99, SVI de gestion, mode STP, listes de VLAN des racines) en cinq phases : VLAN et ports, vérifications, racines PVST+, PortFast et BPDU guard, enregistrement. 20 étapes, trois annulations.
+- Racines : S1 principale pour 1, 10, 30, 50, 70 ; S3 principale pour 20, 40, 60, 80, 99 ; S2 secondaire partout. Le VLAN 1 est configuré sur sa propre ligne.
+- Parcours A à E avec ambiguïtés de l'énoncé signalées, résumé pliable et groupe dans l'aide-mémoire. Aucun secret. Test : `cisco-tp-pvst` (48 vérifications).
+
 ## CISCO-TP-VTP-DTP-01 (2026-11-08)
 
 - **TP complet « VTP et DTP » (formatif 6)** rangé dans Mes cours et TP > Cisco, à côté du TP VLAN : une fiche à champs (noms DS1, AS1, AS2, ports, mode DTP de chaque côté, domaine, version, tableau de VLAN) en cinq phases : liens et DTP, DS1 serveur (domaine, mot de passe, VLAN), AS1 et AS2 clients, vérifications, enregistrement. Cinq étapes d’annulation.
