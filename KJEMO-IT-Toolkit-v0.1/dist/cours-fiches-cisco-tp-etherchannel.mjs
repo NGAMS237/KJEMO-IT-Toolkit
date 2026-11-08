@@ -186,6 +186,6 @@ export const COURS_CISCO_TP_ETHERCHANNEL = [{
   sources: [SRC_EC, SRC_STP],
   validation: V_TP,
   origine: 'cours',
-  figures: ['ec-faisceau', 'ec-ordre', 'ec-modes', 'ec-regles'],
+  figures: ['tp-ec-topologie', 'tp-ec-propose', 'ec-ordre', 'ec-modes', 'ec-sommaire', 'tp-ec-stp', 'ec-regles', 'tp-ec-topologie-swa', 'tp-ec-correspondance'],
   rappel: { titre: 'Rappel : EtherChannel', points: ['Un EtherChannel regroupe des liens physiques en un lien logique : Spanning Tree le voit comme un seul lien et ne bloque plus les liens du groupe.', 'PAgP (Cisco) : desirable propose, auto répond. LACP (802.3ad, ouvert) : active propose, passive répond. « on » force le canal sans protocole.', 'Les ports d’un canal doivent être réglés pareil : même vitesse, même duplex, même mode, même VLAN natif, mêmes VLAN autorisés.', 'Le numéro de groupe est local à un commutateur ; éteins les ports avant de les grouper, puis rallume-les.'] },
 }];

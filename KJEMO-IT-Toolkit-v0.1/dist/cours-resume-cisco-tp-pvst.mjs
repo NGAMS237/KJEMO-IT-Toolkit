@@ -18,7 +18,7 @@ export const RESUME_TP_PVST = {
   ],
   sections: [
     {
-      id: 'pvst-plan', titre: 'Le plan du TP et les trois parties', schemas: [],
+      id: 'pvst-plan', titre: 'Le plan du TP et les trois parties', schemas: ['stp-racines'],
       points: [
         'Partie 1 : VLAN 10 à 80 et 99 sur S1, S2, S3 ; ports d’accès F0/6 (VLAN 30), F0/18 (VLAN 20), F0/11 (VLAN 10) ; trunks F0/1 à F0/4 avec VLAN natif 99 ; adresses 172.31.99.1 à .3 sur le VLAN 99.',
         'Partie 2 : PVST+ ; S1 racine principale des VLAN 1, 10, 30, 50, 70 ; S3 racine principale des VLAN 20, 40, 60, 80, 99 ; S2 racine secondaire de tous.',
@@ -26,7 +26,7 @@ export const RESUME_TP_PVST = {
       ],
     },
     {
-      id: 'pvst-lire', titre: 'Lire « show spanning-tree »', schemas: [],
+      id: 'pvst-lire', titre: 'Lire « show spanning-tree »', schemas: ['stp-boucle'],
       points: [
         'Pour chaque VLAN : « Root ID » donne la racine ; la ligne « This bridge is the root » apparaît seulement sur le commutateur racine de ce VLAN.',
         'Chaque port a un rôle (racine, désigné, alternatif) et un état (transmission, blocage) : le même port peut transmettre pour un VLAN et bloquer pour un autre.',

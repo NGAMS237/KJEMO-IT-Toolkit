@@ -18,6 +18,7 @@ import { SCHEMAS_RESEAU } from './schemas-cisco-reseau.mjs';
 import { SCHEMAS_S09 } from './schemas-cisco-s09.mjs';
 import { SCHEMAS_NAT } from './schemas-cisco-nat.mjs';
 import { SCHEMAS_TP_VLAN } from './schemas-cisco-tp-vlan.mjs';
+import { SCHEMAS_TP_ETHERCHANNEL } from './schemas-cisco-tp-etherchannel.mjs';
 import { SCHEMAS_AZURE } from './schemas-azure.mjs';
 import { SCHEMAS_AZURE_LB } from './schemas-azure-lb.mjs';
 
@@ -292,6 +293,7 @@ export const SCHEMAS = {
   // NAT, PAT, ports, NAT64, types d’adresses et récapitulation (KJEMO-CISCO-NAT-01).
   ...SCHEMAS_NAT,
   ...SCHEMAS_TP_VLAN,
+  ...SCHEMAS_TP_ETHERCHANNEL,
   // Cours d'infonuagique Azure (KJEMO-AZURE-COURS-01).
   ...SCHEMAS_AZURE,
   ...SCHEMAS_AZURE_LB,

@@ -11,7 +11,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve, dirname } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const imp = (f) => import(pathToFileURL(resolve(ROOT, 'dist', f)).href);
-const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const K = await imp('cours.mjs'); const M = await imp('memo.mjs');
+const S = await imp('schemas-cisco.mjs'); const T = await imp('taches.mjs'); const P = await imp('procedures.mjs'); const K = await imp('cours.mjs'); const M = await imp('memo.mjs');
 let passed = 0; let failed = 0;
 const assert = (c, l, d = '') => { if (c) passed++; else { failed++; console.error(`  [FAIL]  ${l}${d ? ' — ' + d : ''}`); } };
 const ID = 'cours-tp-etherchannel';
@@ -94,6 +94,43 @@ assert(cours.parcours.flatMap((p) => p.items).every((it) => it.refs.length || it
 assert(cours.ambiguites.length >= 3, 'ambiguïtés de l’énoncé signalées (tiret long, version de Packet Tracer)');
 const groupe = M.MEMO_PAR_ID.get('cisco-tp-etherchannel');
 assert(groupe && M.SECTIONS_MEMO.find((s) => s.id === 'Cisco').groupes.includes('cisco-tp-etherchannel') && M.groupeDeFiche(ID)?.id === 'cisco-tp-etherchannel', 'aide-mémoire : groupe du TP dans la section Cisco');
+
+// 8. Schémas : chaque section de chaque résumé en porte au moins un
+const IDS = ['tp-ec-topologie', 'tp-ec-topologie-swa', 'tp-ec-propose', 'tp-ec-propose-swa', 'tp-ec-correspondance', 'tp-ec-stp'];
+for (const id of IDS) {
+  const sc = S.SCHEMAS[id]; const svg = sc?.svg() ?? '';
+  assert(!!sc && sc.titre.length >= 10 && sc.legende.length >= 40, `schéma ${id} : titre et légende`);
+  assert(svg.includes('<title') && svg.includes('<desc') && svg.includes('role="img"') && !/<(image|script|a )/i.test(svg), `schéma ${id} : titre, texte alternatif, pas d’image ni de script`);
+}
+const topoS = S.SCHEMAS['tp-ec-topologie'].svg(); const topoA = S.SCHEMAS['tp-ec-topologie-swa'].svg();
+assert(['S1', 'S2', 'S3', 'PAgP', 'LACP', 'Fa0/21', 'Gi0/1', 'Fa0/23', 'desirable', 'passive'].every((t) => topoS.includes(t)), 'topologie S1, S2, S3 : noms, protocoles, ports et modes');
+assert(['SWA', 'SWB', 'SWC', 'Gi0/1', 'Fa0/21', 'Fa0/23', 'sauvegarde', 'passive'].every((t) => topoA.includes(t)) && !topoA.includes('>S1<'), 'topologie SWA, SWB, SWC : noms, ports, sauvegarde');
+const corr = S.SCHEMAS['tp-ec-correspondance'].svg();
+assert(['SWA', 'S1', 'SWC', 'S2', 'SWB', 'S3', 'passive'].every((t) => corr.includes(t)), 'correspondance : SWA = S1, SWC = S2, SWB = S3');
+assert(S.SCHEMAS['tp-ec-stp'].svg().includes('BLK') && S.SCHEMAS['tp-ec-stp'].svg().includes('racine'), 'schéma Spanning Tree : état bloqué et racine');
+assert(fiche.figures.every((x) => S.IDS_SCHEMAS.includes(x)) && IDS.every((x) => fiche.figures.includes(x) || x === 'tp-ec-propose-swa'), 'la fiche affiche ses schémas (tous connus)');
+const sansSchema = (c) => c.rappelCours.sections.filter((x) => !(x.schemas ?? []).length).map((x) => x.id);
+assert(sansSchema(cours).length === 0, 'résumé S1, S2, S3 : chaque section porte un schéma', sansSchema(cours).join());
+
+// 9. Parcours « Implémenter EtherChannel (SWA, SWB, SWC) »
+const swa = K.COURS_PAR_ID.get('cisco-tp-etherchannel-swa');
+assert(!!swa && swa.parcours.length === 5 && swa.rappelCours?.questions?.length >= 5 && sansSchema(swa).length === 0, 'cours SWA, SWB, SWC : cinq parcours, résumé illustré section par section', sansSchema(swa).join());
+const refsA = swa.parcours.flatMap((p) => p.items.flatMap((it) => it.refs));
+assert(refsA.length >= 14 && refsA.every((r) => T.entreeParId(r.fiche)) && refsA.filter((r) => r.fiche === ID).every((r) => r.etape >= 1 && r.etape <= m0.etapes.length), 'chaque renvoi du parcours SWA vise une fiche et une étape qui existent');
+assert(swa.parcours.flatMap((p) => p.items).every((it) => it.refs.length || it.couvert === false), 'une étape sans fiche est déclarée « couvert: false »');
+assert(swa.parcours[0].items.filter((it) => it.couvert === false).length === 3, 'la construction de la topologie (3 étapes) est déclarée non couverte');
+assert(swa.ambiguites.length >= 3, 'ambiguïtés du script SWA (finir, extinction, tableau)');
+assert(swa.rappelCours.sections.some((x) => x.schemas.includes('tp-ec-correspondance')) && swa.rappelCours.sections.some((x) => x.schemas.includes('tp-ec-topologie-swa')) && swa.rappelCours.sections.some((x) => x.schemas.includes('tp-ec-propose-swa')), 'résumé SWA : topologie, qui propose et correspondance des noms');
+// La fiche, remplie avec les valeurs du prof, redonne le script de réponse (SWA = S1, SWC = S2, SWB = S3).
+const prof = { ...exemple, hoteS1: 'SWA', hoteS2: 'SWC', hoteS3: 'SWB', c1PortA: 'Gi0/1', c1PortB: 'Gi0/2', c1ModeS1: 'desirable', c1ModeS3: 'desirable', c2PortA: 'Fa0/21', c2PortB: 'Fa0/22', c2ModeS1: 'active', c2ModeS2: 'active', c3PortA: 'Fa0/23', c3PortB: 'Fa0/24', c3ModeS2: 'active', c3ModeS3: 'passive' };
+assert(Object.keys(P.evaluerValeurs(fiche.params, prof).erreurs).length === 0, 'valeurs du prof (SWA, SWB, SWC) acceptées sans erreur');
+const RP = rendre(prof).slice(0, base.length);
+const lg = (n) => RP[n - 1].lignes;
+assert(lg(1).includes('hostname SWA') && lg(2).includes('hostname SWC') && lg(3).includes('hostname SWB'), 'noms d’hôte SWA, SWC, SWB dans l’ordre de la fiche');
+assert(lg(5).some((l) => /GigabitEthernet0\/1 , GigabitEthernet0\/2$/.test(l)) && lg(5).includes('channel-group 1 mode desirable') && lg(6).includes('channel-group 1 mode desirable'), 'canal 1 SWA–SWB : Gi0/1 et Gi0/2, desirable des deux côtés');
+assert(lg(8).includes('channel-group 2 mode active') && lg(9).includes('channel-group 2 mode active') && lg(8).some((l) => /FastEthernet0\/21 , FastEthernet0\/22$/.test(l)), 'canal 2 SWA–SWC : Fa0/21 et Fa0/22, active des deux côtés');
+assert(lg(11).includes('channel-group 3 mode active') && lg(12).includes('channel-group 3 mode passive') && lg(11).some((l) => /FastEthernet0\/23 , FastEthernet0\/24$/.test(l)), 'canal 3 : SWC (S2) en active, SWB (S3) en passive');
+assert(!RP.flatMap((x) => x.lignes).some((l) => /^finir$/.test(l)), 'jamais la fausse commande « finir »');
 
 console.log(`cisco-tp-etherchannel : ${passed} vérification(s) réussie(s), ${failed} échec(s).`);
 console.log('Exécution réelle (Packet Tracer, matériel) : NON EXÉCUTÉE.');

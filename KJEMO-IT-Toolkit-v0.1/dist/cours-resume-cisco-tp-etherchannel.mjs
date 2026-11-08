@@ -19,7 +19,7 @@ export const RESUME_TP_ETHERCHANNEL = {
   ],
   sections: [
     {
-      id: 'ec-plan', titre: 'Le plan du TP et les quatre parties', schemas: [],
+      id: 'ec-plan', titre: 'Le plan du TP et les quatre parties', schemas: ['tp-ec-topologie', 'ec-faisceau'],
       points: [
         'Partie 1 : noms S1, S2, S3, puis lecture de l’état des ports (show interfaces status, show interfaces trunk) et trunk statique sur tous les ports des canaux.',
         'Partie 2 : canal 1 sur F0/21 et F0/22 entre S1 et S3, en PAgP (desirable des deux côtés).',
@@ -28,12 +28,34 @@ export const RESUME_TP_ETHERCHANNEL = {
       ],
     },
     {
-      id: 'ec-lire', titre: 'Lire « show etherchannel summary »', schemas: [],
+      id: 'ec-lire', titre: 'Lire « show etherchannel summary »', schemas: ['ec-sommaire'],
       points: [
         'Une ligne par canal : numéro, port-channel avec ses lettres (SU = couche 2, en service ; SD = couche 2, hors service), protocole (PAgP ou LACP) et ports membres.',
         'Chaque port membre porte une lettre : (P) dans le canal, (I) seul, (s) suspendu, (D) éteint.',
         'Un canal en (SD) avec des ports en (I) veut dire que les deux bouts ne s’entendent pas : modes incompatibles, protocoles différents ou un côté pas encore configuré.',
       ],
+    },
+    {
+      id: 'ec-modes', titre: 'Qui propose, qui répond', schemas: ['tp-ec-propose', 'ec-modes'],
+      points: [
+        'Un canal se forme dès qu’un bout au moins propose : desirable en PAgP, active en LACP. Le bout en auto (PAgP) ou passive (LACP) répond seulement.',
+        'Dans le TP, le canal 3 est « négocié » : S3 en active propose, S2 en passive répond.',
+      ],
+    },
+    {
+      id: 'ec-ordre-tp', titre: 'L’ordre des commandes sur un commutateur', schemas: ['ec-ordre'],
+      points: ['Trunk statique, ports éteints, channel-group, ports rallumés, puis l’interface port-channel en trunk ; on répète sur le commutateur d’en face.'],
+    },
+    {
+      id: 'ec-stp-tp', titre: 'Spanning Tree et le canal Gigabit', schemas: ['tp-ec-stp'],
+      points: [
+        'Sans réglage, S3 peut être la racine et Spanning Tree bloque le canal Gigabit (Po2) côté S1 : le plus rapide ne sert pas.',
+        'En faisant de S1 la racine du VLAN 1, le canal Gigabit transmet ; c’est alors un canal Fast Ethernet qui reste en réserve.',
+      ],
+    },
+    {
+      id: 'ec-regles-tp', titre: 'Ce qui doit concorder', schemas: ['ec-regles'],
+      points: ['Même type, vitesse, duplex, mode, VLAN natif et VLAN autorisés sur tous les ports du canal et aux deux bouts.'],
     },
   ],
   commandes: [

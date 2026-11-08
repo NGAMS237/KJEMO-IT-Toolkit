@@ -277,7 +277,7 @@ for (const [nom, r, schemas] of [['01', R.RESUME_AZ_01, ['az-modeles-service', '
 // ---------------------------------------------------------------------------
 console.log('7. Les 10 schémas originaux');
 {
-  assert(SCHEMAS_NEUFS.length === 11 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 59, '11 schémas Azure du cours (dont la démo VNETDemo), plus 6 équilibreurs : 59 au total', String(S.IDS_SCHEMAS.length));
+  assert(SCHEMAS_NEUFS.length === 11 && SCHEMAS_NEUFS.every((id) => S.IDS_SCHEMAS.includes(id)) && S.IDS_SCHEMAS.length === 65, '11 schémas Azure du cours (dont la démo VNETDemo), plus 6 équilibreurs : 65 au total (dont 6 des TP EtherChannel)', String(S.IDS_SCHEMAS.length));
   const tmp = mkdtempSync(resolve(tmpdir(), 'svg-'));
   for (const id of SCHEMAS_NEUFS) {
     const sc = S.SCHEMAS[id]; const svg = sc.svg();

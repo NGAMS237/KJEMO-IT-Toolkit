@@ -20,7 +20,7 @@ export const RESUME_TP_VTP_DTP = {
   ],
   sections: [
     {
-      id: 'vtpdtp-ordre', titre: 'Le plan du TP et les cinq phases', schemas: [],
+      id: 'vtpdtp-ordre', titre: 'Le plan du TP et les cinq phases', schemas: ['vtp-modes'],
       points: [
         'DS1 est le serveur, AS1 et AS2 sont les clients ; F0/7 relie AS1 à DS1 et F0/9 relie AS2 à DS1 (exemple de l’énoncé).',
         'Phases : 1 liens et DTP, 2 DS1 serveur (domaine, mot de passe, VLAN 10 à 50), 3 AS1 et AS2 clients, 4 vérifier chez les clients, 5 enregistrer.',
@@ -28,7 +28,7 @@ export const RESUME_TP_VTP_DTP = {
       ],
     },
     {
-      id: 'vtpdtp-lire', titre: 'Lire les sorties', schemas: [],
+      id: 'vtpdtp-lire', titre: 'Lire les sorties', schemas: ['dtp-modes'],
       points: [
         '« show interfaces trunk » : la colonne Mode donne desirable (DS1) ou auto (AS), Status doit dire trunking ; une liste vide veut dire qu’aucun trunk n’est monté.',
         '« show vtp status » : comparer le mode, le domaine, la version et « Configuration Revision » entre les trois commutateurs ; la révision doit être la même.',
@@ -36,7 +36,7 @@ export const RESUME_TP_VTP_DTP = {
       ],
     },
     {
-      id: 'vtpdtp-reel', titre: 'En réel : fixer les trunks plutôt que négocier', schemas: [],
+      id: 'vtpdtp-reel', titre: 'En réel : fixer les trunks plutôt que négocier', schemas: ['vtp-revision'],
       points: [
         'On préfère « switchport mode trunk » des deux côtés, avec « switchport nonegotiate » : le trunk monte à coup sûr et le port n’envoie plus de trames DTP.',
         'La négociation laisse un appareil branché obtenir un trunk (saut de VLAN) ; les ports vers les postes restent en « access ».',

@@ -1,3 +1,9 @@
+## CISCO-TP-ETHERCHANNEL-02 (2026-11-08)
+
+- **Parcours « Implémenter EtherChannel (SWA, SWB, SWC) »** dans Mes cours et TP > Cisco : cinq parcours (créer le réseau, canal 1 PAgP, canal 2 LACP, canal 3 LACP de sauvegarde, vérifier et défaire) qui renvoient vers la fiche du TP EtherChannel. Table de correspondance : SWA se saisit dans S1, SWC dans S2, SWB dans S3. Les trois étapes de construction de la topologie dans Packet Tracer sont déclarées non couvertes. Ambiguïtés du texte du prof signalées (« finir » n'est pas une commande IOS, tableau des canaux, pas de partie Spanning Tree).
+- **Six schémas originaux** : topologie de chaque TP (S1, S2, S3 et SWA, SWB, SWC), qui propose et qui répond (un par TP), correspondance des noms et Spanning Tree avant et après « root primary » sur S1. Chaque section des deux résumés EtherChannel porte au moins un schéma ; la fiche les affiche en tête. Les résumés des TP VTP/DTP et PVST+ reçoivent aussi leurs schémas existants.
+- Test `cisco-tp-etherchannel` : 80 vérifications (schémas, parcours, valeurs du prof rendues par la fiche).
+
 ## CISCO-TP-ETHERCHANNEL-01 (2026-11-08)
 
 - **TP complet « EtherChannel PAgP et LACP »** (S1, S2, S3) rangé dans Mes cours et TP > Cisco : fiche à champs (noms, ports, numéros de groupe et mode de chaque commutateur pour trois canaux, façon de rendre S1 racine du VLAN 1) en cinq phases : noms et état des ports, canal 1 en PAgP, canal 2 en LACP, canal 3 en LACP négocié (passive / active), Spanning Tree et enregistrement. 17 étapes, quatre annulations.
