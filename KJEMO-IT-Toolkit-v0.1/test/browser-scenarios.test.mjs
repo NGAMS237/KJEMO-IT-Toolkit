@@ -285,6 +285,7 @@ console.log('11. Compteurs cohérents, filtre de contenu, 211 routes, favoris et
   assert(m && Number(m[2]) + Number(m[4]) + Number(m[5]) === Number(m[1]) && m[6] === '211' && m[3] === '4', `légende cohérente (${legende.slice(0, 90)}…)`);
   assert(Number(nav[0][1]) === Number(m[1]), 'le total du menu est le nombre d’entrées de la légende');
   assert(await page.locator('#natureFilters .chip').count() === 4 && await page.locator('#platFilters .chip').count() === 5, 'filtre de contenu : 4 puces ; filtre de plateforme : 5 puces');
+  await page.click('#voirCatalogue');   // UX-ACCUEIL-01 : le filtre « Contenu » s'ouvre avec la liste, plus sur l'accueil à portes
   await page.click('[data-nature="commande"]');
   assert(await page.locator('#toolGrid .task-row').count() === Number(m[4]) && await page.$$eval('#toolGrid .task-row', (r) => r.every((x) => x.dataset.kind === 'commande')), `filtre « Commandes » : ${m[4]} lignes, toutes des commandes`);
   await page.click('[data-nature="fiche"]');

@@ -25,6 +25,23 @@ import { plateformeDe, estLectureSeule } from './plateforme.mjs';
 import { PROCEDURES_PILOTES } from './procedures-pilotes.mjs';
 import { PROCEDURES_VAGUE2 } from './procedures-vague2.mjs';
 import { PROCEDURES_VAGUE3 } from './procedures-vague3.mjs';
+import { PROCEDURES_COURS } from './procedures-cours.mjs';
+import { PROCEDURES_WINDOWS } from './procedures-windows.mjs';
+import { PROCEDURES_WINDOWS_SIMPLES } from './procedures-windows-simples.mjs';
+import { PROCEDURES_WINDOWS_POSTE } from './procedures-windows-poste.mjs';
+import { PROCEDURES_WINDOWS_AD } from './procedures-windows-ad-simples.mjs';
+import { completerTrouver } from './trouver.mjs';
+import { COURS_SAMBA_MEMO } from './cours-fiches-samba.mjs';
+import { PROCEDURES_DOMAINE_RECONSTRUIRE } from './procedures-domaine-reconstruire.mjs';
+import { PROCEDURES_LINUX_ACCES_OUTILS } from './procedures-linux-acces-outils.mjs';
+import { PROCEDURES_KIOSQUE } from './procedures-kiosque.mjs';
+import { PROCEDURES_WINDOWS_EXAMEN } from './procedures-windows-examen.mjs';
+import { completerAnnulations } from './annulations.mjs';
+import { completerOptionsGraphiques } from './options-graphiques.mjs';
+import { PROCEDURES_WINDOWS_SSH } from './procedures-windows-ssh.mjs';
+import { PROCEDURES_WINDOWS_LANGUE } from './procedures-windows-langue.mjs';
+import { PROCEDURES_LINUX_SIMPLES, PROCEDURES_LINUX_COMPTES, PROCEDURES_LINUX_CLAVIER, PROCEDURES_LINUX_SYSTEME } from './procedures-linux-simples.mjs';
+import { aliasesDe } from './cours.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { CATEGORIES } from './categories.mjs';
 import { initialiser as initialiserClassement } from './classement.mjs';
@@ -128,11 +145,13 @@ const PLAT_DE_METHODE = { linux: 'Linux', powershell: 'Windows', cmd: 'Windows',
 /** Plateformes d'une procédure, d'après ses méthodes (sans doublon, sans « graphique »). */
 export function plateformesDeProcedure(p) {
   const vues = [];
+  // Une fiche Azure à plusieurs méthodes : son PowerShell est celui du module Az, donc de la plateforme Azure (pas Windows).
+  const surAzure = p.methodes.some((m) => m.id === 'azure');
   for (const m of p.methodes) {
     // Un scénario tient ses plateformes de ses équipements (ios → Cisco, powershell → Windows…).
     const ids = m.id === 'scenario' ? (m.equipements ?? []).map((q) => q.methode) : [m.id];
     for (const id of ids) {
-      const pl = PLAT_DE_METHODE[id];
+      const pl = surAzure && id === 'powershell' ? 'Azure' : PLAT_DE_METHODE[id];
       if (pl && !vues.includes(pl)) vues.push(pl);
     }
   }
@@ -161,7 +180,8 @@ function entreeProcedure(p) {
     plateformes: plateformesDeProcedure(p),
     effet: p.effet,
     resume: p.resume,
-    intentions: p.intentions,
+    // Les lettres et numéros d'un travail pratique (« TP2 B7 ») retrouvent la fiche.
+    intentions: [...p.intentions, ...aliasesDe(p.id)],
     motsCles: p.motsCles ?? [],
     commandes: motsDeCommande(lignes),
     doc: '',
@@ -335,7 +355,7 @@ function entreeAssistant(t) {
 // ---------------------------------------------------------------------------
 
 /** Toutes les fiches rédigées à la main, pilotes puis seconde vague. */
-export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...SCENARIOS];
+export const PROCEDURES_REDIGEES = [...PROCEDURES_PILOTES, ...PROCEDURES_VAGUE2, ...PROCEDURES_VAGUE3, ...PROCEDURES_COURS, ...COURS_SAMBA_MEMO, ...PROCEDURES_DOMAINE_RECONSTRUIRE, ...PROCEDURES_WINDOWS_EXAMEN, ...PROCEDURES_LINUX_ACCES_OUTILS, ...PROCEDURES_KIOSQUE, ...PROCEDURES_WINDOWS, ...PROCEDURES_WINDOWS_SIMPLES, ...PROCEDURES_WINDOWS_POSTE, ...PROCEDURES_WINDOWS_AD, ...PROCEDURES_WINDOWS_LANGUE, ...PROCEDURES_WINDOWS_SSH, ...PROCEDURES_LINUX_SIMPLES, ...PROCEDURES_LINUX_COMPTES, ...PROCEDURES_LINUX_CLAVIER, ...PROCEDURES_LINUX_SYSTEME, ...SCENARIOS];
 const procedures = PROCEDURES_REDIGEES.map(entreeProcedure);
 const commandes = COMMANDES_RAPIDES.map(entreeCommande);
 const assistants = tools.map(entreeAssistant);
@@ -345,6 +365,9 @@ const ASSISTANTS_REPLIES = new Set(procedures.map((p) => p.assistant).filter(Boo
 
 /** Toutes les entrées, sans rien replier : pour les contrôles de couverture. */
 export const TOUTES_LES_ENTREES = [...procedures, ...commandes, ...assistants];
+
+// « À lire sur : poste + commande » sous les cases (trouver.mjs) : complété une fois, en place.
+for (const e of TOUTES_LES_ENTREES) if (e.procedure) { completerOptionsGraphiques(e.procedure); completerAnnulations(e.procedure); completerTrouver(e.procedure, e.plateformes); }
 
 /** Entrées listées en recherche : un assistant couvert par une fiche n'est pas listé deux fois. */
 export const ENTREES_LISTEES = [...procedures, ...commandes, ...assistants.filter((a) => !ASSISTANTS_REPLIES.has(a.id))];

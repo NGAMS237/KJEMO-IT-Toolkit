@@ -27,12 +27,24 @@
     <div class="app-shell">
       <aside class="sidebar" aria-label="Navigation principale">
         <div class="brand"><span class="brand-mark">K</span><span>KJEMO <b>IT Toolkit</b></span></div>
-        <nav id="navigation"></nav>
+        <nav id="espacesNav" class="espaces-nav" aria-label="Mes espaces">
+          <a href="#/" data-espace="accueil" class="nav-accueil"><span class="nav-icon" aria-hidden="true">⌂</span><span class="nav-label">Accueil</span></a>
+          <a href="#/cours" data-espace="cours" class="nav-tp"><span class="nav-icon" aria-hidden="true">✎</span><span class="nav-label">Mes cours et TP</span></a>
+          <a href="#/memo" data-espace="memo" class="nav-memo"><span class="nav-icon" aria-hidden="true">⌘</span><span class="nav-label">Aide-mémoire</span></a>
+          <a href="#/catalogue" data-espace="catalogue" class="nav-pro"><span class="nav-icon" aria-hidden="true">▣</span><span class="nav-label">Catalogue pro</span></a>
+          <a href="#/labo" data-espace="labo" class="nav-labo"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-label">Mon laboratoire</span></a>
+          <a href="#/journal" data-espace="journal" class="nav-journal"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Journal de labo</span></a>
+        </nav>
+        <details class="nav-catalogue" open>
+          <summary>Catalogue</summary>
+          <nav id="navigation"></nav>
+        </details>
         <div class="sidebar-note">Scripts publics, exécutés localement.<br><b>Vérifie toujours l’aperçu.</b></div>
       </aside>
       <main id="main">
         <header class="topbar">
           <button id="menuButton" class="icon-button" aria-label="Ouvrir le menu">☰</button>
+          <a id="accueilBtn" class="accueil-btn" href="#/" aria-label="Retour à l’accueil"><span aria-hidden="true">⌂</span> Accueil</a>
           <span class="topbar-title">KJEMO IT Toolkit</span>
           <div class="topbar-actions" id="topbarActions"></div>
         </header>
@@ -54,6 +66,8 @@
             <p class="notice notice-compact"><b>Le Toolkit n’exécute rien :</b> il te montre les commandes, c’est toi qui les lances. Lis chaque effet avant de copier, et teste en laboratoire.</p>
           </div>
 
+          <div id="espacesZone" class="espaces-zone"></div>
+
           <div id="commonErrorZone"></div>
           <div id="shortcutsZone"></div>
 
@@ -71,8 +85,13 @@
           <div id="toolGrid" class="tool-grid" role="list" aria-labelledby="toolsTitle"></div>
           <div id="catalogueFooter" class="catalogue-footer"></div>
         </section>
+        <div id="modaleVoile" class="modale-voile" hidden></div>
         <section id="toolView" class="tool-view" hidden></section>
         <section id="taskView" class="tool-view task-view" hidden aria-live="off"></section>
+        <section id="portesView" class="tool-view portes-view" hidden aria-live="off"></section>
+        <section id="coursView" class="tool-view cours-view" hidden aria-live="off"></section>
+        <section id="laboView" class="tool-view labo-view" hidden aria-live="off"></section>
+        <section id="journalView" class="tool-view journal-view" hidden aria-live="off"></section>
       </main>
     </div>
     <template id="toolTemplate">

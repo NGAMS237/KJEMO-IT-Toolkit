@@ -2,20 +2,46 @@
 // GitHub Pages publie dist/ à la racine ; './generators.mjs' est donc accessible.
 import { tools, normalizeScript, textToCode, EXECUTION_NOTES,
          searchTools, searchCommonErrors } from './generators.mjs';
-import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT } from './categories.mjs';
+import { categoriesVisibles, categorieParNom, CATEGORIE_TOUT, CATEGORIES } from './categories.mjs';
 import { plateformeDe, sortieDe, estBash, estIOS, estDocumentationSeule, estLectureSeule,
          extensionDe, nomFichierDe, etiquetteSortie, commandesExecution } from './plateforme.mjs';
 import { normalizeScriptSh, EXECUTION_NOTES_BASH } from './noyau-bash.mjs';
 import { normalizeIos, EXECUTION_NOTES_IOS } from './noyau-cisco.mjs';
+import { plateformesDeProcedure } from './taches.mjs';
+import { CLE_JOURNAL, MAX_CAPTURES, TABLEAUX, lireJournal, normaliserEntree, entreeVide, publierVersion, prochaineReference,
+         filtrerJournal, entreeDepuisFiche, valeursPourJournal, entreeExemple, sauvegardeJournal, lireSauvegarde, jour } from './journal.mjs';
+import { pdfJournal, nomFichierPdf, pdfInventaire } from './journal-pdf.mjs';
+import { CLE_INVENTAIRE, TABLEAUX_EQUIPEMENT, TYPES_EQUIPEMENT, lireInventaire, normaliserEquipement, equipementVide, labosDe, filtrerInventaire,
+         equipementsDepuisFiche } from './inventaire.mjs';
+import { LIENS_SOUS_RESEAU, FEUILLE, typeNoeud, styleLien, schemaVide, idSchema, aimanter, normaliserTypesPerso, normaliserSchema, typeDepuisEquipement, schemaDepuisFiche, dessinerSchema, versSvg, decrireSchema } from './schema.mjs';
+import { editeurSchemaMarkup, feuilleSvg, menuPortsMarkup } from './vue-schema.mjs';
+import { apercuConfigMarkup, nouvelleLigne, poolsParVlan, ospfDepuisInterfaces } from './vue-config.mjs';
+import { normaliserConfig, proposerConfig, commandesNoeud, texteAvecTitres } from './config-ios.mjs';
+import { normaliserConfigAzure, FORMULAIRES, FORMULAIRES_ZONE, estAzure, decouperVnet, contexteAzure, commandesAzure, commandesZone, scriptAzure, texteAzure, nomAzure } from './config-azure.mjs';
+import { apercuAzureMarkup } from './vue-azure.mjs';
+import { modeleSchema } from './modeles-schema.mjs';
+import { remplirDepuisSchema, phraseBilan, SYSTEME_DU_TYPE } from './schema-remplir.mjs';
+import { MODELES, MODELE_PERSO, modele, modelesDuType, portsDuNoeud, portsOccupes, cableAutomatique, clePort } from './modeles.mjs';
+import { ROUTE_INVENTAIRE, routeEquipement, lireRouteInventaire, inventaireListeMarkup, equipementMarkup, equipementsLaboMarkup } from './vue-inventaire.mjs';
+import { ROUTE_JOURNAL, routeEntreeJournal, lireRouteJournal, journalListeMarkup, journalEditeurMarkup } from './vue-journal.mjs';
 import { ENTREES_LISTEES, TOUTES_LES_ENTREES, chercher, entreeParId, ficheDeAssistant,
          compteParCategorie, couverture, liensDeAssistant } from './taches.mjs';
-import { ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
+import { METHODES_PLATEFORME, ligneResultatMarkup, tachePageMarkup, etapesMarkup, formulaireMarkup, tableMarkup, lignesSaisies,
          resumeScriptMarkup, badgeEffet, esc, enteteAssistantMeta, versionsCourtesMarkup } from './vue-taches.mjs';
 import { cheminDe, filDeEntree, lireRoute, routePortee, domaineIdDe, domaineNomDe, dans, noeud } from './classement.mjs';
 import { filArianeMarkup, maillonsDePortee, nomDePortee, rubriqueMarkup, groupeEnteteMarkup, groupes,
          bandeauMasqueMarkup } from './vue-navigation.mjs';
 import { rendreMethode, evaluerValeurs, validerParametre, texteCopiable, raisonRefus,
          dossierMarkdown } from './procedures.mjs';
+import { COURS, COURS_PAR_ID, ROUTE_COURS, ROUTE_LABO, lireRouteTache, lireRouteCours, routeParcours, GABARIT_TP } from './cours.mjs';
+import { CLE_LABO, CLE_PROGRESSION, normaliserLabo, saisiesDepuisLabo, normaliserProgression, basculer,
+         texteEditeurModele, csvDepuisLignes, lignesDepuisTexte, avancement } from './labo.mjs';
+import { ROUTE_MEMO, ROUTE_CATALOGUE, MEMO_GROUPES, MEMO_PAR_ID, FILTRES_MEMO, idsNouveaux, fichesDuCours, filtrerGroupe,
+         compteGroupe, groupeDeFiche, lireRouteMemo, routeMemo } from './memo.mjs';
+import { portesAccueilMarkup, groupeCarteMarkup, memoPageMarkup, memoGroupePageMarkup, cataloguePageMarkup,
+         retourMemoFicheMarkup, retoursMarkup } from './vue-portes.mjs';
+import { coursListeMarkup, coursPageMarkup, coursIntrouvableMarkup, laboMarkup, espacesMarkup,
+         retourParcoursMarkup } from './vue-cours.mjs';
 import { MODES, MODE_DEFAUT, CLE_MODE, THEMES, THEME_DEFAUT, CLE_THEME,
          creerPreference } from './preferences.mjs';
 
@@ -41,6 +67,17 @@ let currentTool = null;
 // choisie et valeurs saisies. Les valeurs ne vivent que le temps d'une fiche :
 // ouvrir une autre fiche repart de zéro (aucun état gardé par erreur).
 let currentTache = null;
+let espace = null;            // null | { type:'cours', coursId, lettre } | { type:'labo' } | { type:'memo', groupeId } | { type:'catalogue' }
+// Fiche en fenêtre : la page d'où l'on vient reste derrière (fond = { espace, hash }), on ferme par la croix, Échap ou le fond.
+let fond = null;               // null = fiche en pleine page (lien direct) ; sinon { espace: null|{…}, hash }
+let pasModale = 0;             // fiches enchaînées dans la fenêtre (0 = une seule : fermer = retour arrière)
+let hashPage = '#/';           // dernière page vue hors fiche
+let declencheur = null;        // id de la fiche d'où la fenêtre a été ouverte (pour rendre le focus)
+let fermetureModale = false;   // vrai pendant la fermeture : on garde la position de défilement
+let memoFiltre = 'tous';       // 'tous' | 'nouveau' | 'tp' : puces de l'aide-mémoire
+let contexteParcours = null;  // { coursId, lettre } quand la fiche est ouverte depuis un parcours
+let etapeAffichee = null;     // dernière étape montrée par un lien (évite de la remontrer à chaque événement)
+let etapeCible = null;        // numéro d'étape à montrer à l'ouverture d'une fiche
 let methodeTache = null;
 let saisiesTache = {};
 let vueLocale = null;           // 'rapide' | 'pas' | null : choix LOCAL à la fiche ouverte (le mode global donne le défaut)
@@ -63,7 +100,9 @@ function portee() {
     sujetId: domaineId && familleSel ? sujetSel : null,
   };
 }
-const listeBase = () => (vueAssistants ? TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant') : ENTREES_LISTEES);
+const compatiblePlateforme = (e, plat = platFiltre) => !plat || e.plateformes.includes(plat);
+const listeBase = () => (vueAssistants ? TOUTES_LES_ENTREES.filter((e) => e.kind === 'assistant') : ENTREES_LISTEES)
+  .filter((e) => compatiblePlateforme(e));
 function gardePortee() {
   const p = portee();
   return p.familleId ? (e) => dans(e, { familleId: p.familleId, sujetId: p.sujetId }) : null;
@@ -189,15 +228,14 @@ function sousNavigationMarkup(nomDomaine) {
 
 function renderNavigation() {
   const nav = document.querySelector('#navigation');
-  const comptesTaches = compteParCategorie(ENTREES_LISTEES);
-  nav.innerHTML = categories.map((category) => {
+  const liste = listeBase();
+  const comptesTaches = compteParCategorie(liste);
+  nav.innerHTML = categories.filter((c) => c === CAT_TOUT || (comptesTaches.get(c) ?? 0) > 0).map((category) => {
     const meta    = category === CAT_TOUT ? null : categorieParNom(category);
     const icone   = category === CAT_TOUT ? '\u2261' : (meta?.icon ?? '\u25CB');
     // Mêmes décomptes que les cartes de l'accueil : en vue « tâches », ce sont des entrées
     // (procédures, scénarios, commandes, assistants non couverts) ; en vue « assistants », des assistants.
-    const count   = vueAssistants
-      ? (category === CAT_TOUT ? tools.length : (categoriesAffichees.find((c) => c.name === category)?.count ?? 0))
-      : (category === CAT_TOUT ? ENTREES_LISTEES.length : (comptesTaches.get(category) ?? 0));
+    const count = category === CAT_TOUT ? liste.length : (comptesTaches.get(category) ?? 0);
     const actif   = category === selectedCategory;
     // Les noms canoniques sont longs et le panneau est étroit : le libellé est
     // tronqué visuellement, mais reste lisible au survol et complet pour les
@@ -223,10 +261,9 @@ function renderNavigation() {
 function renderCategoryGrid() {
   const grille = document.querySelector('#categoryGrid');
   if (!grille) return;
-  const comptes = vueAssistants
-    ? new Map(categoriesAffichees.map((c) => [c.name, c.count]))
-    : compteParCategorie(ENTREES_LISTEES);
-  const total = vueAssistants ? tools.length : ENTREES_LISTEES.length;
+  const liste = listeBase();
+  const comptes = compteParCategorie(liste);
+  const total = liste.length;
 
   // Carte compacte : icône, nom, nombre de tâches. Les descriptions longues ne
   // sont plus affichées (elles restent dans le titre au survol).
@@ -244,6 +281,7 @@ function renderCategoryGrid() {
   grille.innerHTML =
     carte(CAT_TOUT, '\u2261', 'Parcourir l\u2019ensemble du catalogue.', total, selectedCategory === CAT_TOUT && (vueCatalogue || vueAssistants))
     + categoriesAffichees
+        .filter((c) => (comptes.get(c.name) ?? 0) > 0)
         .map((c) => carte(c.name, c.icon, c.description, comptes.get(c.name) ?? 0, selectedCategory === c.name, c.sous))
         .join('');
 
@@ -251,7 +289,9 @@ function renderCategoryGrid() {
   let legende = document.querySelector('#catalogueLegende');
   if (!legende) { legende = document.createElement('p'); legende.id = 'catalogueLegende'; legende.className = 'catalogue-legende'; grille.insertAdjacentElement('afterend', legende); }
   const cv = couverture();
-  legende.textContent = vueAssistants
+  legende.textContent = platFiltre
+    ? `${total} ${vueAssistants ? "assistants" : "entrées"} compatibles avec ${platFiltre}. Une tâche peut proposer plusieurs méthodes ; la méthode compatible est ouverte en premier.`
+    : vueAssistants
     ? `${tools.length} assistants complets (scripts générés avec formulaire).`
     : `${ENTREES_LISTEES.length} entrées : ${cv.procedures} fiches (dont ${cv.scenarios} scénarios), ${cv.commandesRapides} commandes rapides, ${cv.assistantsListes} assistants complets listés. Les ${cv.assistants} assistants restent tous accessibles. Une tâche à plusieurs méthodes compte une fois.`;
 
@@ -280,6 +320,21 @@ function lireStockage(cle, defaut) {
   } catch {
     return defaut;
   }
+}
+
+function lireObjet(cle) {
+  try {
+    const brut = localStorage.getItem(cle);
+    if (!brut) return {};
+    const val = JSON.parse(brut);
+    return val && typeof val === 'object' && !Array.isArray(val) ? val : {};
+  } catch {
+    return {};
+  }
+}
+
+function stockageDisponible() {
+  try { localStorage.setItem('kjemo.test.v1', '1'); localStorage.removeItem('kjemo.test.v1'); return true; } catch { return false; }
 }
 
 function ecrireStockage(cle, valeur) {
@@ -325,10 +380,18 @@ function outilDepuisHash() {
 
 /** Fiche tâche demandée par l'URL (#/tache/<id>), si l'identifiant porte une procédure. */
 function tacheDepuisHash() {
-  const m = /^#\/tache\/([A-Za-z0-9_-]+)$/.exec(location.hash || '');
-  if (!m) return null;
-  const e = entreeParId(m[1]);
+  const r = lireRouteTache(location.hash);
+  if (!r) return null;
+  const e = entreeParId(r.id);
   return e && e.procedure ? e : null;
+}
+
+/** Étape et parcours d'origine demandés par l'URL d'une fiche (#/tache/<id>/etape/<n>/depuis/<cours>/<lettre>). */
+function contexteDepuisHash() {
+  const r = lireRouteTache(location.hash);
+  const cours = r?.coursId ? COURS_PAR_ID.get(r.coursId) : null;
+  const parcoursOk = cours && cours.parcours.some((x) => x.lettre === r.lettre);
+  return { etape: r?.etape ?? null, methode: r?.methode ?? null, depuis: parcoursOk ? { coursId: r.coursId, lettre: r.lettre } : null };
 }
 
 function ecrireHash(cible) {
@@ -338,21 +401,37 @@ function ecrireHash(cible) {
 }
 
 /** Ouvre une fiche : met à jour l'état, l'URL et l'historique local. */
-function ouvrirOutil(tool, { pousserHash = true } = {}) {
+function noterFond(espaceAvant) {
+  if (currentTool || currentTache) { if (fond) pasModale += 1; return; }   // déjà dans une fenêtre : le fond reste
+  fond = { espace: espaceAvant ?? null, hash: hashPage };
+  pasModale = 0;
+}
+
+function ouvrirOutil(tool, { pousserHash = true, espaceAvant = espace } = {}) {
+  noterFond(espaceAvant);
   currentTool = tool;
   currentTache = null;
+  espace = null;
   noterConsultation(tool.id);
   if (pousserHash) ecrireHash(`#/outil/${tool.id}`);
   render();
 }
 
 /** Ouvre une fiche tâche. Les valeurs saisies repartent de zéro. */
-function ouvrirTache(entree, { pousserHash = true } = {}) {
+function ouvrirTache(entree, { pousserHash = true, etape = null, depuis = null, methode = null, espaceAvant = espace } = {}) {
+  noterFond(espaceAvant);
   currentTool = null;
+  espace = null;
   currentTache = entree;
-  methodeTache = entree.procedure.methodes[0].id;
+  contexteParcours = depuis;
+  const langages = METHODES_PLATEFORME[platFiltre] ?? [];
+  // Un lien de parcours peut imposer la méthode (#/tache/<id>/methode/<m>/etape/<n>) : les étapes sont numérotées PAR méthode.
+  const imposee = methode ? entree.procedure.methodes.find((m) => m.id === methode) : null;
+  const choisie = imposee ?? entree.procedure.methodes.find((m) => langages.includes(m.id)) ?? entree.procedure.methodes[0];
+  methodeTache = choisie.id;
+  etapeCible = etape && etape <= (choisie.etapes?.length ?? 0) ? etape : null;
   saisiesTache = {};
-  vueLocale = null;
+  vueLocale = etapeCible ? 'pas' : null;   // un lien d'étape ne montre jamais la vue rapide, qui n'a pas d'étapes numérotées
   noterConsultation(entree.id);
   if (pousserHash) ecrireHash(`#/tache/${entree.id}`);
   render();
@@ -367,12 +446,35 @@ function ouvrirEntree(entree, opts) {
 function revenirAccueil({ pousserHash = true } = {}) {
   currentTool = null;
   currentTache = null;
+  espace = null;
   if (pousserHash) ecrireHash(routePortee(portee()));
   render();
 }
 
 /** Applique l'URL courante à l'état de l'application. */
+function espaceDepuisHash() {
+  if (location.hash === ROUTE_LABO) return { type: 'labo' };
+  const rj = lireRouteJournal(location.hash);
+  if (rj) return { type: 'journal', id: rj.id };
+  const ri = lireRouteInventaire(location.hash);
+  if (ri) return { type: 'inventaire', id: ri.id };
+  const pm = lireRouteMemo(location.hash);
+  if (pm) return pm.type === 'catalogue' ? { type: 'catalogue' } : { type: 'memo', groupeId: pm.groupeId };
+  const c = lireRouteCours(location.hash);
+  if (!c) return null;
+  return { type: 'cours', coursId: c.coursId, lettre: c.lettre };
+}
+
 function appliquerHash() {
+  const nouvelEspace = espaceDepuisHash();
+  if (nouvelEspace) {
+    espace = nouvelEspace; currentTool = null; currentTache = null;
+    render();
+    return;
+  }
+  const etaitEspace = espace !== null;
+  const espaceAvant = espace;
+  espace = null;
   const tache = tacheDepuisHash();
   const tool = outilDepuisHash();
   if (!tache && !tool) {
@@ -397,11 +499,15 @@ function appliquerHash() {
     }
   }
   if (tache) {
-    if (currentTache?.id !== tache.id) ouvrirTache(tache, { pousserHash: false });
+    const ctx = contexteDepuisHash();
+    const memeLien = currentTache?.id === tache.id && etapeCible === null && (ctx.methode === null || ctx.methode === methodeTache) && (ctx.etape === null || ctx.etape === etapeAffichee);
+    if (!memeLien || etaitEspace) ouvrirTache(tache, { pousserHash: false, espaceAvant, ...ctx });
   } else if (tool) {
-    if (currentTool?.id !== tool.id) ouvrirOutil(tool, { pousserHash: false });
+    if (currentTool?.id !== tool.id || etaitEspace) ouvrirOutil(tool, { pousserHash: false, espaceAvant });
   } else if (currentTool || currentTache) {
     revenirAccueil({ pousserHash: false });
+  } else if (etaitEspace) {
+    render();
   }
 }
 
@@ -412,8 +518,8 @@ function appliquerHash() {
 function raccourcisMarkup() {
   if (currentQuery()) return '';
   const parId = (id) => entreeParId(id);
-  const favoris = lireFavoris().map(parId).filter(Boolean);
-  const recents = lireHistorique().map(parId).filter(Boolean)
+  const favoris = lireFavoris().map(parId).filter(Boolean).filter((e) => compatiblePlateforme(e));
+  const recents = lireHistorique().map(parId).filter(Boolean).filter((e) => compatiblePlateforme(e))
     .filter((t) => !favoris.some((f) => f.id === t.id));
 
   const puce = (t, cls) =>
@@ -471,12 +577,14 @@ function searchResults(over = {}) {
   if (vueAssistants) {
     return searchTools(requete, categorie)
       .map((r) => ({ entree: entreeParId(r.tool.id), motif: r.reason, score: r.score }))
-      .filter((r) => !garde || garde(r.entree));
+      .filter((r) => compatiblePlateforme(r.entree, plat) && (!garde || garde(r.entree)));
   }
   const kinds = NATURES.find((n) => n.id === nature)?.kinds ?? null;
   const opts = { categorie, plateforme: plat, kinds, garde };
   if (mode === 'accueil') {
-    return chercher('', { ...opts, kinds: ['procedure'] }).map((r) => ({ ...r, motif: null }));
+    // « Tâches courantes » : les tâches phares. Les fiches issues d'un cours ou de l'aide-mémoire Windows restent trouvables
+    // par la recherche, par les rubriques du catalogue et par « Mes cours et TP ».
+    return chercher('', { ...opts, kinds: ['procedure'] }).filter((r) => !['cours', 'memo'].includes(r.entree.procedure?.origine)).map((r) => ({ ...r, motif: null }));
   }
   const res = chercher(requete, opts);
   if (mode === 'liste') {
@@ -587,6 +695,8 @@ function bandeauxMasque(results, query) {
 }
 
 function renderHome() {
+  majNavEspaces();
+  renderNavigation();
   renderCategoryGrid();
   renderPlatFilters();
   const grid    = document.querySelector('#toolGrid');
@@ -597,6 +707,13 @@ function renderHome() {
   // Pendant une recherche, les résultats passent avant la grille des catégories
   // (qui les repoussait sous la ligne de flottaison). La barre latérale garde
   // le filtre par catégorie, et la grille revient dès que la recherche est vidée.
+  // Accueil « trois portes » : seulement sans recherche, sans rubrique et sans filtre de contenu.
+  const accueilPortes = mode === 'accueil';
+  document.querySelector('#home')?.classList.toggle('is-portes', accueilPortes);
+  const zoneNat = document.querySelector('#natureFilters');
+  if (zoneNat) zoneNat.hidden = accueilPortes;
+  const zonePortes = document.querySelector('#espacesZone');
+  if (zonePortes) zonePortes.innerHTML = accueilPortes ? portesAccueilHtml() : '';
   document.querySelector('#categoriesSection')?.classList.toggle('is-collapsed', Boolean(query) && selectedCategory === CAT_TOUT);
   document.querySelector('#categoriesSection')?.classList.toggle('is-compact', Boolean(p.domaineId));
 
@@ -617,7 +734,7 @@ function renderHome() {
   const zoneRub = document.querySelector('#rubriquesZone');
   if (zoneRub) {
     zoneRub.innerHTML = p.domaineId
-      ? rubriqueMarkup({ liste: listeBase(), assistants: vueAssistants, domaineId: p.domaineId, domaineNom: p.domaineNom,
+      ? retoursMarkup({ libelle: 'Retour au catalogue professionnel', route: ROUTE_CATALOGUE }) + rubriqueMarkup({ liste: listeBase(), assistants: vueAssistants, domaineId: p.domaineId, domaineNom: p.domaineNom,
           familleId: p.familleId, sujetId: p.sujetId, requete: query,
           totalPartout: query ? searchResults({ categorie: CAT_TOUT }).length : null })
       : '';
@@ -655,8 +772,8 @@ function renderHome() {
     if (vueAssistants) {
       pied.innerHTML = '<button type="button" class="secondary-button" id="versTaches">Chercher une commande ou une procédure</button>';
     } else if (mode === 'accueil') {
-      pied.innerHTML = `<button type="button" class="secondary-button" id="voirCatalogue">Parcourir tout le catalogue (${ENTREES_LISTEES.length} entrées)</button>`
-        + `<button type="button" class="secondary-button" id="voirAssistants">Les ${tools.length} assistants complets</button>`;
+      pied.innerHTML = `<button type="button" class="secondary-button" id="voirCatalogue">Parcourir tout le catalogue (${listeBase().length} entrées${platFiltre ? ` compatibles ${platFiltre}` : ""})</button>`
+        + `<button type="button" class="secondary-button" id="voirAssistants">Les ${TOUTES_LES_ENTREES.filter((e) => e.kind === "assistant" && compatiblePlateforme(e)).length} assistants complets${platFiltre ? ` compatibles ${platFiltre}` : ""}</button>`;
     } else if (mode === 'liste' && selectedCategory === CAT_TOUT) {
       pied.innerHTML = '<button type="button" class="secondary-button" id="replierCatalogue">Revenir aux tâches courantes</button>';
     } else pied.innerHTML = '';
@@ -678,7 +795,7 @@ function renderHome() {
   }
 
   const favoris = new Set(lireFavoris());
-  const ligne = ({ entree, motif }) => ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null });
+  const ligne = ({ entree, motif }) => ligneResultatMarkup(entree, { favori: favoris.has(entree.id), motif: query ? motif : null, plateforme: platFiltre });
   // Catalogue des assistants sans portée : l'ordre historique des outils est conservé (pas de titres de groupe).
   if (mode === 'liste' && !(vueAssistants && !p.domaineId)) {
     // Liste complète d'une portée : titres de groupe (domaine, famille, sujet, section).
@@ -1221,7 +1338,7 @@ function enteteNavigationFiche(vue, entree, titre, boutonId) {
   const bouton = vue.querySelector(`#${boutonId}`);
   const p = portee();
   if (p.domaineId && bouton) bouton.textContent = `← Retour : ${nomDePortee(p)}`;
-  bouton?.addEventListener('click', () => revenirAccueil());
+  bouton?.addEventListener('click', () => { if (!fermerModale()) revenirAccueil(); });
 }
 
 function renderTool() {
@@ -1230,6 +1347,7 @@ function renderTool() {
   const riskLabels = { diagnostic: 'DIAGNOSTIC — aucune modification', safe: 'RÉVERSIBLE — vérifier avant exécution', caution: 'ATTENTION — modifie la configuration', destructive: 'DESTRUCTIF — confirmation indispensable' };
   view.innerHTML = `<div class="tool-header"><button class="back-button" id="backButton">← Tous les outils</button><div><div class="tag">${textToCode((tool.subcategory ? tool.category.toUpperCase() + ' \u00B7 ' + tool.subcategory : tool.category.toUpperCase()) + ' \u00B7 ASSISTANT COMPLET')}</div><h1>${tool.icon} ${tool.title}</h1>${enteteAssistantMeta(entreeParId(tool.id), { favori: estFavori(tool.id) })}<span class="risk ${tool.risk}">${riskLabels[tool.risk]}</span></div></div>${ficheRapideMarkup(tool)}${resumeScriptMarkup(resumeScript(tool))}${ficheNavMarkup(tool)}${modeBlockMarkup(tool)}<div id="tabContent"></div>`;
   enteteNavigationFiche(view, entreeParId(tool.id), tool.title, 'backButton');
+  barreModale(view);
   const favTool = view.querySelector('#toolFav');
   favTool.addEventListener('click', () => {
     const actif = basculerFavori(tool.id);
@@ -1519,12 +1637,19 @@ function renderTache() {
     favori: estFavori(entree.id),
     assistantTitre: assistant?.title ?? null,
     prete: renduCourant().manquants.length === 0,
+    prerequisTitres: Object.fromEntries((p.prerequis ?? []).filter((r) => r.fiche).map((r) => [r.fiche, entreeParId(r.fiche)?.titre ?? r.fiche])),
   });
   document.title = `${p.titre} — KJEMO IT Toolkit`;
 
   enteteNavigationFiche(view, entree, p.titre, 'taskBack');
+  const coursOrigine = contexteParcours ? COURS_PAR_ID.get(contexteParcours.coursId) : null;
+  if (coursOrigine) view.insertAdjacentHTML('afterbegin', retourParcoursMarkup(coursOrigine.titre, contexteParcours.lettre, coursOrigine.id));
+  else { const gm = groupeDeFiche(entree.id); if (gm) view.insertAdjacentHTML('afterbegin', retourMemoFicheMarkup(gm)); }
+  barreModale(view);
 
   const fav = view.querySelector('#taskFav');
+  fav.insertAdjacentHTML('afterend', ' <button type="button" class="secondary-button j-documenter" id="taskJournal" title="Crée un labo dans le Journal avec le titre, l’adressage et les commandes de cette fiche">Documenter dans le journal</button>');
+  view.querySelector('#taskJournal').addEventListener('click', () => documenterFiche(entree));
   fav.addEventListener('click', () => {
     const actif = basculerFavori(entree.id);
     fav.textContent = actif ? '★' : '☆';
@@ -1605,6 +1730,15 @@ function renderTache() {
   }
 
   const exemples = view.querySelector('#exemplesBtn');
+  const depuisLabo = saisiesDepuisLabo(p, lireObjet(CLE_LABO));
+  if (exemples && Object.keys(depuisLabo).length) {
+    exemples.insertAdjacentHTML('afterend', ' <button type="button" class="secondary-button" id="laboBtn">Utiliser mon laboratoire</button>');
+    view.querySelector('#laboBtn').addEventListener('click', () => {
+      Object.assign(saisiesTache, depuisLabo);
+      renderTache();
+      document.querySelector('#laboBtn')?.focus();
+    });
+  }
   if (exemples) {
     exemples.addEventListener('click', () => {
       p.params.forEach((prm) => {
@@ -1616,16 +1750,31 @@ function renderTache() {
   }
   majNoteExemples();
   majErreursTables();
+  montrerEtapeCible(view);
 
   // Copie : le texte est CALCULÉ (procedures.mjs), jamais lu dans le DOM — les
   // invites, les numéros, les libellés d'équipement et les repères restent donc
   // hors du presse-papiers. Un secret n'existe pas ici : il se tape sur l'équipement.
   view.querySelector('.tache').addEventListener('click', async (ev) => {
-    const btn = ev.target.closest('.copy-step, .copy-seg, .copy-phase, .copy-eq, #copyAll');
+    const btn = ev.target.closest('.copy-step, .copy-seg, .copy-phase, .copy-eq, .copy-machine, #copyAll');
     if (btn) return copier(btn, view);
     const dl = ev.target.closest('#dlDossier');
     if (dl) return telechargerDossier(dl, view);
   });
+}
+
+/** Montre l'étape demandée par un lien de parcours : défilement, repère visible, focus sans saut. */
+function montrerEtapeCible(view) {
+  if (!etapeCible) return;
+  const n = etapeCible;
+  etapeCible = null;
+  const li = view.querySelector(`#etape-${n}`);
+  if (!li) return;
+  etapeAffichee = n;
+  li.classList.add('etape-cible');
+  li.setAttribute('tabindex', '-1');
+  li.scrollIntoView?.({ block: 'start' });
+  li.focus?.({ preventScroll: true });
 }
 
 /** Résout le texte, la méthode (normalisation) et l'indice d'un bouton de copie. */
@@ -1635,6 +1784,10 @@ function cibleDeCopie(btn, rendu, methode) {
   if (btn.matches('.copy-eq')) {
     const q = rendu.parEquipement.find((x) => x.id === btn.dataset.eq);
     return { texte: q.texte, raison: q.raison, methodeId: q.methode, manquants: rendu.manquants };
+  }
+  if (btn.matches('.copy-machine')) {
+    const q = rendu.parMachine.find((x) => x.id === btn.dataset.machine);
+    return { texte: q.texte, raison: q.raison, methodeId: methode.id, manquants: rendu.manquants };
   }
   if (btn.matches('.copy-phase')) {
     const ph = rendu.phases[Number(btn.dataset.phase)];
@@ -1675,7 +1828,7 @@ async function copier(btn, view) {
   }
   try {
     await navigator.clipboard.writeText(texteCopiable(cible.texte, cible.methodeId, { espaceFinal: Boolean(cible.espaceFinal) }));
-    if (indice) indice.textContent = btn.matches('#copyAll') ? 'Toutes les commandes sont copiées.' : btn.matches('.copy-eq') ? 'Séquence de cet équipement copiée.' : btn.matches('.copy-phase') ? 'Bloc copié.' : btn.matches('.copy-seg') ? 'Segment copié.' : 'Commande copiée.';
+    if (indice) indice.textContent = btn.matches('#copyAll') ? 'Toutes les commandes sont copiées.' : btn.matches('.copy-eq') ? 'Séquence de cet équipement copiée.' : btn.matches('.copy-machine') ? 'Séquence de ce poste copiée.' : btn.matches('.copy-phase') ? 'Bloc copié.' : btn.matches('.copy-seg') ? 'Segment copié.' : 'Commande copiée.';
     btn.classList.add('is-copied');
     setTimeout(() => btn.classList.remove('is-copied'), 1600);
   } catch {
@@ -1702,16 +1855,1513 @@ function telechargerDossier(btn, view) {
   if (hint) hint.textContent = 'Dossier téléchargé.';
 }
 
+// ---------------------------------------------------------------------------
+// Journal de labo (JOURNAL-LABO-01)
+// Les labos vivent dans le stockage du navigateur ; les captures (JPEG) dans
+// IndexedDB, car elles sont trop lourdes pour localStorage. Aucun envoi : le PDF
+// et la sauvegarde sont fabriqués ici et téléchargés. Sans stockage, l'écran
+// fonctionne et dit que rien n'est conservé.
+// ---------------------------------------------------------------------------
+const imagesMemoire = new Map();   // id → Uint8Array (copie de travail, et seule copie si IndexedDB est refusé)
+let imagesOk = typeof indexedDB !== 'undefined';
+let baseImages = null;
+function ouvrirBaseImages() {
+  if (!imagesOk) return Promise.resolve(null);
+  if (!baseImages) {
+    baseImages = new Promise((ok) => {
+      try {
+        const req = indexedDB.open('kjemo-journal', 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('captures');
+        req.onsuccess = () => ok(req.result);
+        req.onerror = () => { imagesOk = false; ok(null); };
+        req.onblocked = () => { imagesOk = false; ok(null); };
+      } catch { imagesOk = false; ok(null); }
+    });
+  }
+  return baseImages;
+}
+async function operationImages(mode, action) {
+  const db = await ouvrirBaseImages();
+  if (!db) return null;
+  return new Promise((ok) => {
+    try {
+      const tx = db.transaction('captures', mode); const st = tx.objectStore('captures');
+      const req = action(st);
+      tx.oncomplete = () => ok(req ? req.result : true);
+      tx.onerror = () => ok(null); tx.onabort = () => ok(null);
+    } catch { ok(null); }
+  });
+}
+async function lireImage(id) {
+  if (imagesMemoire.has(id)) return imagesMemoire.get(id);
+  const v = await operationImages('readonly', (st) => st.get(id));
+  if (v) { const u = v instanceof Uint8Array ? v : new Uint8Array(v); imagesMemoire.set(id, u); return u; }
+  return null;
+}
+async function ecrireImage(id, octets) {
+  imagesMemoire.set(id, octets);
+  const r = await operationImages('readwrite', (st) => st.put(octets, id));
+  if (r === null) imagesOk = false;
+}
+async function nettoyerImages(gardees) {
+  const cles = await operationImages('readonly', (st) => st.getAllKeys());
+  if (!Array.isArray(cles)) return;
+  const inutiles = cles.filter((k) => !gardees.has(k));
+  if (inutiles.length) await operationImages('readwrite', (st) => { inutiles.forEach((k) => st.delete(k)); return null; });
+}
+
+let journalMemoire = null;
+let inventaireMemoire = null;
+function lireEquipements() {
+  if (!inventaireMemoire) inventaireMemoire = lireInventaire(lireObjet(CLE_INVENTAIRE)).equipements;
+  return inventaireMemoire;
+}
+function ecrireEquipements(liste) {
+  inventaireMemoire = liste;
+  return ecrireStockage(CLE_INVENTAIRE, { equipements: liste });
+}
+/** Les équipements d'un labo, résolus dans l'inventaire (un lien vers un équipement supprimé est ignoré). */
+function equipementsDuLabo(e) {
+  const inv = lireEquipements();
+  return (e.equipements ?? []).map((l) => ({ equipement: inv.find((q) => q.id === l.id), role: l.role })).filter((x) => x.equipement);
+}
+/** L'auteur du dernier labo modifié : on ne retape pas son nom à chaque document. */
+function auteurParDefaut() {
+  return [...lireEntreesJournal()].sort((a, b) => String(b.modifieLe).localeCompare(String(a.modifieLe))).find((e) => e.auteur)?.auteur ?? '';
+}
+function lireEntreesJournal() {
+  if (!journalMemoire) journalMemoire = lireJournal(lireObjet(CLE_JOURNAL)).entrees;
+  return journalMemoire;
+}
+function ecrireEntreesJournal(entrees) {
+  journalMemoire = entrees;
+  return ecrireStockage(CLE_JOURNAL, { entrees });
+}
+
+let etatJournal = { categorieId: null, filtre: 'tous', requete: '', note: '', nouvelleCategorie: 'cisco',
+  brouillonId: null, brouillon: null, erreurs: {}, noteFiche: '', modifie: false, versionOuverte: false, confirmerSuppression: false };
+const urlsImages = new Map();      // id → URL d'objet pour l'aperçu (libérées quand l'image disparaît)
+function urlImage(id) {
+  if (urlsImages.has(id)) return urlsImages.get(id);
+  const o = imagesMemoire.get(id);
+  if (!o) return null;
+  const u = URL.createObjectURL(new Blob([o], { type: 'image/jpeg' }));
+  urlsImages.set(id, u);
+  return u;
+}
+
+function titresDesFiches(ids) {
+  return Object.fromEntries(ids.map((f) => [f, entreeParId(f)?.procedure?.titre ?? entreeParId(f)?.titre ?? f]));
+}
+
+/**
+ * Donne un fichier fabriqué ici (PDF, sauvegarde) à la personne.
+ * Dans l'aperçu claude.ai, la page est isolée : un lien de téléchargement n'y
+ * fait rien, on passe donc par la fonction d'enregistrement de l'aperçu, qui
+ * demande confirmation. Partout ailleurs (GitHub Pages, serveur local), c'est
+ * un téléchargement ordinaire. Renvoie { ok, message }.
+ */
+async function enregistrerFichier(nom, contenu, type) {
+  const blob = new Blob([contenu], { type });
+  if (typeof window.claude?.use === 'function') {
+    let dl = null;
+    try { dl = await window.claude.use('downloads'); } catch { dl = null; }
+    if (dl) {
+      try {
+        await dl.save({ filename: nom, data: blob });
+        return { ok: true, message: `enregistré : ${nom}` };
+      } catch (err) {
+        const code = err?.code ?? 'unavailable';
+        if (code === 'declined') return { ok: false, message: 'Enregistrement annulé : rien n’a été enregistré.' };
+        if (code === 'rate_limited') return { ok: false, message: 'Une demande d’enregistrement est déjà ouverte : réponds-y, puis réessaie.' };
+        return { ok: false, message: 'Cet aperçu ne permet pas d’enregistrer de fichier. Ouvre le Toolkit depuis son adresse habituelle (GitHub Pages ou ton ordinateur).' };
+      }
+    }
+  }
+  const lien = document.createElement('a');
+  lien.href = URL.createObjectURL(blob);
+  lien.download = nom;
+  document.body.appendChild(lien); lien.click(); lien.remove();
+  setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
+  return { ok: true, message: `téléchargé : ${nom}` };
+}
+
+function renderJournal() {
+  if (espace.id) renderJournalFiche(); else renderJournalListe();
+}
+
+function renderJournalListe() {
+  const view = document.querySelector('#journalView');
+  const toutes = lireEntreesJournal();
+  const ej = etatJournal;
+  const entrees = filtrerJournal(toutes, { categorieId: ej.categorieId, filtre: ej.filtre, requete: ej.requete });
+  const compte = (cat) => filtrerJournal(toutes, { categorieId: cat, filtre: ej.filtre, requete: ej.requete }).length;
+  view.innerHTML = journalListeMarkup({ entrees, total: toutes.length, compte, categorieId: ej.categorieId, filtre: ej.filtre, requete: ej.requete,
+    note: ej.note, stockageOk: stockageDisponible(), imagesOk, nouvelleCategorie: ej.nouvelleCategorie, nbEquipements: lireEquipements().length });
+  document.title = 'Journal de labo — KJEMO IT Toolkit';
+  view.querySelectorAll('[data-jcat]').forEach((b) => b.addEventListener('click', () => {
+    etatJournal.categorieId = b.dataset.jcat || null; etatJournal.note = '';
+    renderJournalListe(); document.querySelector(`[data-jcat="${b.dataset.jcat}"]`)?.focus();
+  }));
+  view.querySelector('#jFiltre').addEventListener('change', (ev) => { etatJournal.filtre = ev.target.value; renderJournalListe(); document.querySelector('#jFiltre')?.focus(); });
+  view.querySelector('#jRecherche').addEventListener('input', (ev) => {
+    etatJournal.requete = ev.target.value;
+    const pos = ev.target.selectionStart;
+    renderJournalListe();
+    const champ = document.querySelector('#jRecherche'); champ?.focus(); champ?.setSelectionRange?.(pos, pos);
+  });
+  view.querySelector('#jNouvelleCat').addEventListener('change', (ev) => { etatJournal.nouvelleCategorie = ev.target.value; });
+  view.querySelector('#jExemple').addEventListener('click', () => {
+    const e = entreeExemple(etatJournal.nouvelleCategorie, { existantes: lireEntreesJournal().map((x) => x.reference), auteur: auteurParDefaut() });
+    ouvrirBrouillon(e, { nouveau: true, note: 'Exemple rempli : lis-le, exporte le PDF pour voir le résultat, puis adapte-le ou supprime-le. Il n’est enregistré que si tu cliques sur « Enregistrer ».' });
+  });
+  view.querySelector('#jNouveauForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const e = entreeVide({ categorieId: etatJournal.nouvelleCategorie, auteur: auteurParDefaut(), existantes: lireEntreesJournal().map((x) => x.reference) });
+    ouvrirBrouillon({ ...e, titre: '' }, { nouveau: true });
+  });
+  view.querySelector('#jSauver').addEventListener('click', async () => {
+    const entrees2 = lireEntreesJournal();
+    const captures = {};
+    for (const e of entrees2) for (const c of e.captures) {
+      const o = await lireImage(c.id);
+      if (o) { let bin = ''; for (let i = 0; i < o.length; i += 0x8000) bin += String.fromCharCode(...o.subarray(i, i + 0x8000)); captures[c.id] = btoa(bin); }
+    }
+    const res = await enregistrerFichier(`journal-de-labo_${jour()}.json`, `${sauvegardeJournal(entrees2, captures, new Date(), lireEquipements(), lireTypesPerso())}\n`, 'application/json;charset=utf-8');
+    etatJournal.note = res.ok ? `Sauvegarde ${res.message} (${entrees2.length} labo(s), ${Object.keys(captures).length} capture(s), ${lireEquipements().length} équipement(s)).` : res.message;
+    renderJournalListe(); document.querySelector('#jSauver')?.focus();
+  });
+  view.querySelector('#jRestaurer').addEventListener('change', async (ev) => {
+    const f = ev.target.files?.[0];
+    if (!f) return;
+    const r = lireSauvegarde(await f.text(), lireEntreesJournal());
+    if (r.erreur) { etatJournal.note = r.erreur; renderJournalListe(); return; }
+    for (const [id, b64] of Object.entries(r.captures)) {
+      const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      await ecrireImage(id, u);
+    }
+    const ids = new Set(r.entrees.map((e) => e.id));
+    const fusion = [...lireEntreesJournal().filter((e) => !ids.has(e.id)), ...r.entrees];
+    const ok = ecrireEntreesJournal(fusion);
+    const eqs = lireInventaire({ equipements: r.equipements }).equipements;
+    if (eqs.length) { const idsEq = new Set(eqs.map((q) => q.id)); ecrireEquipements([...lireEquipements().filter((q) => !idsEq.has(q.id)), ...eqs]); }
+    const tps = normaliserTypesPerso(r.typesPerso);
+    if (tps.length) { const idsT = new Set(tps.map((x) => x.id)); ecrireTypesPerso(normaliserTypesPerso([...lireTypesPerso().filter((x) => !idsT.has(x.id)), ...tps])); }
+    etatJournal.note = `${r.entrees.length} labo(s)${eqs.length ? ` et ${eqs.length} équipement(s)` : ''} restauré(s)${r.doublons.length ? ` (${r.doublons.length} remplacé(s) : ${r.doublons.join(', ')})` : ''}${r.ecartees ? `, ${r.ecartees} écarté(s) car invalides` : ''}.${ok ? '' : ' Attention : le stockage est indisponible, rien ne sera conservé.'}`;
+    renderJournalListe(); document.querySelector('#jNote')?.focus?.();
+  });
+  // Ménage : les images qu'aucun labo n'utilise plus.
+  nettoyerImages(new Set(lireEntreesJournal().flatMap((e) => e.captures.map((c) => c.id)))).catch(() => {});
+}
+
+/** Ouvre un brouillon (nouveau ou existant) dans la fiche d'un labo. */
+function ouvrirBrouillon(entree, { nouveau = false, note = '' } = {}) {
+  etatSchema = { selection: null, relierDepuis: null, typeOuvert: false, viderConfirme: false, cablage: null };
+  etatJournal = { ...etatJournal, brouillonId: entree.id, brouillon: structuredClone(entree), erreurs: {}, noteFiche: note,
+    modifie: nouveau, versionOuverte: false, confirmerSuppression: false, nouveau };
+  const cible = routeEntreeJournal(entree.id);
+  if (location.hash !== cible) location.hash = cible; else render();
+}
+
+async function renderJournalFiche() {
+  const view = document.querySelector('#journalView');
+  const ej = etatJournal;
+  if (ej.brouillonId !== espace.id || !ej.brouillon) {
+    const e = lireEntreesJournal().find((x) => x.id === espace.id);
+    if (!e) {
+      view.innerHTML = `<h1>Labo introuvable</h1><p>Ce labo n’existe pas (ou plus) dans ce navigateur. Il a peut-être été créé dans un autre navigateur : restaure ta sauvegarde depuis la liste.</p><p><a href="${ROUTE_JOURNAL}">Retour au Journal de labo</a></p>`;
+      document.title = 'Labo introuvable — KJEMO IT Toolkit';
+      return;
+    }
+    etatJournal = { ...ej, brouillonId: e.id, brouillon: structuredClone(e), erreurs: {}, noteFiche: '', modifie: false, versionOuverte: false, confirmerSuppression: false, nouveau: false };
+    etatSchema = { selection: null, relierDepuis: null, typeOuvert: false, viderConfirme: false, cablage: null };
+  }
+  // Charge les images avant le dessin (sinon l'aperçu clignote).
+  for (const c of etatJournal.brouillon.captures) await lireImage(c.id);
+  dessinerJournalFiche(view);
+}
+
+function dessinerJournalFiche(view = document.querySelector('#journalView')) {
+  const ej = etatJournal; const e = ej.brouillon;
+  const imagesUrl = Object.fromEntries(e.captures.map((c) => [c.id, urlImage(c.id)]).filter(([, u]) => u));
+  const defil = window.scrollY;
+  view.innerHTML = journalEditeurMarkup({ entree: e, erreurs: ej.erreurs, note: ej.noteFiche, modifie: ej.modifie, versionOuverte: ej.versionOuverte,
+    confirmerSuppression: ej.confirmerSuppression, imagesUrl, titresFiches: titresDesFiches(e.fiches), routeFiche: (id) => `#/tache/${id}`, imagesOk,
+    equipementsHtml: equipementsLaboMarkup({ liens: e.equipements, inventaire: lireEquipements(), erreurs: ej.erreurs, systemePrefere: e.categorie }),
+    schemaHtml: editeurSchemaMarkup(e.schema, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: ej.erreurs, categorie: e.categorie }) });
+  window.scrollTo(0, defil);
+  document.title = `${e.titre || 'Nouveau labo'} — Journal de labo — KJEMO IT Toolkit`;
+  brancherJournalFiche(view);
+}
+
+/** Relit le formulaire dans le brouillon (sans valider). */
+function lireFormulaireJournal(view) {
+  const e = etatJournal.brouillon;
+  view.querySelectorAll('[data-j]').forEach((i) => { e[i.dataset.j] = i.value; });
+  view.querySelectorAll('[data-jt]').forEach((i) => {
+    const t = e[i.dataset.jt]; const r = Number(i.dataset.row);
+    if (t?.[r]) t[r][i.dataset.col] = i.value;
+  });
+  view.querySelectorAll('[data-jcap]').forEach((i) => { const c = e.captures[Number(i.dataset.jcap)]; if (c) c.legende = i.value; });
+  // Équipements : les cases cochées, dans l'ordre déjà connu, puis les nouvelles.
+  const coches = [...view.querySelectorAll('[data-jeq]')].filter((c) => c.checked).map((c) => c.dataset.jeq);
+  if (view.querySelector('[data-jeq]')) {
+    const roles = Object.fromEntries([...view.querySelectorAll('[data-jeqrole]')].map((i) => [i.dataset.jeqrole, i.value]));
+    const avant = e.equipements.filter((l) => coches.includes(l.id)).map((l) => l.id);
+    e.equipements = [...avant, ...coches.filter((id) => !avant.includes(id))].map((id) => ({ id, role: roles[id] ?? e.equipements.find((l) => l.id === id)?.role ?? '' }));
+  }
+}
+
+/** Valide et enregistre le brouillon. Renvoie l'entrée enregistrée, ou null (erreurs affichées). */
+function enregistrerJournal(view, { note = 'Enregistré dans ce navigateur.' } = {}) {
+  lireFormulaireJournal(view);
+  const { entree, erreurs } = normaliserEntree({ ...etatJournal.brouillon, modifieLe: jour() });
+  if (Object.keys(erreurs).length) {
+    etatJournal = { ...etatJournal, erreurs, noteFiche: '' };
+    dessinerJournalFiche(view);
+    const premier = Object.keys(erreurs)[0];
+    document.querySelector(`[aria-describedby="jerr-${premier.replace(/\./g, '-')}"]`)?.focus();
+    return null;
+  }
+  const autres = lireEntreesJournal().filter((x) => x.id !== entree.id);
+  // Deux labos ne partagent jamais une référence (sauvegarde fusionnée, duplication…).
+  if (autres.some((x) => x.reference === entree.reference)) entree.reference = prochaineReference(entree.categorie, entree.creeLe.slice(0, 4), autres.map((x) => x.reference));
+  const ok = ecrireEntreesJournal([...autres, entree]);
+  etatJournal = { ...etatJournal, brouillon: structuredClone(entree), erreurs: {}, modifie: false, nouveau: false,
+    noteFiche: ok ? note : 'Le stockage de ce navigateur est indisponible : ce labo ne sera pas conservé après fermeture.' };
+  return entree;
+}
+
+async function ajouterCapture(view, fichier) {
+  const e = etatJournal.brouillon;
+  if (e.captures.length >= MAX_CAPTURES) { etatJournal.noteFiche = `${MAX_CAPTURES} captures au maximum par labo : retires-en une avant d’en ajouter.`; dessinerJournalFiche(view); return; }
+  if (!/^image\/(png|jpeg)$/.test(fichier.type)) { etatJournal.noteFiche = 'Seules les images PNG et JPEG sont acceptées.'; dessinerJournalFiche(view); return; }
+  try {
+    lireFormulaireJournal(view);
+    const octets = await versJpeg(fichier);
+    const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+    await ecrireImage(id, octets);
+    e.captures.push({ id, nom: (fichier.name || `capture-${e.captures.length + 1}.png`).slice(0, 120), legende: '' });
+    etatJournal.modifie = true;
+    etatJournal.noteFiche = `Capture ajoutée (${Math.round(octets.length / 1024)} Ko). Écris sa légende, puis enregistre.`;
+    dessinerJournalFiche(view);
+    document.querySelector(`#jc-${e.captures.length - 1}`)?.focus();
+  } catch {
+    etatJournal.noteFiche = 'Cette image n’a pas pu être lue.'; dessinerJournalFiche(view);
+  }
+}
+
+/** Image → JPEG (fond blanc, 1600 px au plus) : un format que le PDF sait intégrer, et un poids raisonnable. */
+async function versJpeg(fichier) {
+  const url = URL.createObjectURL(fichier);
+  try {
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * k)); const h = Math.max(1, Math.round(img.naturalHeight * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.86));
+    return new Uint8Array(await blob.arrayBuffer());
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function brancherJournalFiche(view) {
+  brancherSchema(view);
+  const ej = () => etatJournal;
+  const marquer = () => { if (!etatJournal.modifie) { etatJournal.modifie = true; const n = view.querySelector('#jNote'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; } };
+  view.querySelector('#jForm').addEventListener('input', marquer);
+  view.querySelector('#jForm').addEventListener('change', (ev) => {
+    marquer();
+    if (ev.target.matches('[data-j="etat"],[data-j="categorie"]')) { lireFormulaireJournal(view); dessinerJournalFiche(view); document.querySelector(`#${ev.target.id}`)?.focus(); }
+  });
+  view.querySelector('#jForm').addEventListener('submit', (ev) => ev.preventDefault());
+  view.querySelector('#jForm').addEventListener('click', (ev) => {
+    const ajout = ev.target.closest('[data-jadd]'); const retrait = ev.target.closest('[data-jdel]'); const capdel = ev.target.closest('[data-jcapdel]');
+    if (!ajout && !retrait && !capdel) return;
+    lireFormulaireJournal(view);
+    const e = ej().brouillon;
+    if (ajout) {
+      const nom = ajout.dataset.jadd;
+      e[nom].push(Object.fromEntries(TABLEAUX[nom].map((c) => [c.id, c.id === 'resultat' ? 'a-tester' : ''])));
+      etatJournal.modifie = true; dessinerJournalFiche(view);
+      document.querySelector(`[data-jt="${nom}"][data-row="${e[nom].length - 1}"]`)?.focus();
+    } else if (retrait) {
+      e[retrait.dataset.jdel].splice(Number(retrait.dataset.row), 1);
+      etatJournal.erreurs = {}; etatJournal.modifie = true; dessinerJournalFiche(view);
+      document.querySelector(`[data-jadd="${retrait.dataset.jdel}"]`)?.focus();
+    } else {
+      e.captures.splice(Number(capdel.dataset.jcapdel), 1);
+      etatJournal.erreurs = {}; etatJournal.modifie = true; dessinerJournalFiche(view);
+      document.querySelector('#jCaptureFichier')?.focus();
+    }
+  });
+  view.querySelectorAll('[data-jeq]').forEach((c) => c.addEventListener('change', () => {
+    lireFormulaireJournal(view); etatJournal.modifie = true; dessinerJournalFiche(view);
+    const suite = c.checked ? `#jeq-role-${c.dataset.jeq}` : '#jEqAjout';
+    (document.querySelector(suite) ?? document.querySelector('#jEqNouveau'))?.focus();
+  }));
+  view.querySelector('#jEqAjouter')?.addEventListener('click', () => {
+    const sel = view.querySelector('#jEqAjout'); const id = sel?.value;
+    if (!id) { sel?.focus(); return; }
+    lireFormulaireJournal(view);
+    if (!etatJournal.brouillon.equipements.some((l) => l.id === id)) etatJournal.brouillon.equipements.push({ id, role: '' });
+    etatJournal.modifie = true; dessinerJournalFiche(view);
+    document.querySelector(`#jeq-role-${id}`)?.focus();
+  });
+  // Quitter vers l'inventaire : le labo est enregistré d'abord (sinon on reste, erreurs affichées).
+  const partir = (cible) => { if (etatJournal.modifie && !enregistrerJournal(view)) return; location.hash = cible; };
+  view.querySelector('#jEqNouveau')?.addEventListener('click', () => {
+    if (etatJournal.modifie && !enregistrerJournal(view)) return;
+    if (etatJournal.nouveau && !enregistrerJournal(view)) return;
+    const lab = etatJournal.brouillon;
+    const sys = { cisco: 'cisco', systeme: 'systeme', azure: 'azure' }[lab.categorie] ?? 'autre';
+    ouvrirEquipement(equipementVide({ systemeId: sys }), { nouveau: true, retour: { id: lab.id, reference: lab.reference } });
+  });
+  view.querySelectorAll('[data-jeqouvrir], #jEqInventaire').forEach((a) => a.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    if (a.dataset.jeqouvrir) etatInventaire.retour = { id: etatJournal.brouillon.id, reference: etatJournal.brouillon.reference };
+    partir(a.getAttribute('href'));
+  }));
+  view.querySelector('#jCaptureFichier')?.addEventListener('change', (ev) => { const f = ev.target.files?.[0]; if (f) ajouterCapture(view, f); });
+  view.querySelector('#jEnregistrer').addEventListener('click', () => {
+    if (enregistrerJournal(view)) { dessinerJournalFiche(view); document.querySelector('#jEnregistrer')?.focus(); }
+  });
+  view.querySelector('#jPdf').addEventListener('click', async () => {
+    const e = enregistrerJournal(view, { note: '' });
+    if (!e) return;
+    const captures = {};
+    for (const c of e.captures) { const o = await lireImage(c.id); if (o) captures[c.id] = o; }
+    let r = null;
+    try { r = pdfJournal(e, { captures, titresFiches: titresDesFiches(e.fiches), equipements: equipementsDuLabo(e), inventaire: lireEquipements(), typesPerso: lireTypesPerso() }); } catch { r = null; }
+    if (r) {
+      const res = await enregistrerFichier(nomFichierPdf(e), r.octets, 'application/pdf');
+      etatJournal.noteFiche = res.ok ? `PDF ${res.message} (${r.pages} pages). Range-le avec tes documents.` : res.message;
+    } else {
+      etatJournal.noteFiche = 'Le PDF n’a pas pu être fabriqué. Enregistre, recharge la page et réessaie.';
+    }
+    dessinerJournalFiche(view); document.querySelector('#jPdf')?.focus();
+  });
+  view.querySelector('#jVersion').addEventListener('click', () => {
+    lireFormulaireJournal(view);
+    etatJournal.versionOuverte = !etatJournal.versionOuverte; dessinerJournalFiche(view);
+    document.querySelector(etatJournal.versionOuverte ? '#jVersionResume' : '#jVersion')?.focus();
+  });
+  view.querySelector('#jVersionAnnuler')?.addEventListener('click', () => { etatJournal.versionOuverte = false; dessinerJournalFiche(view); document.querySelector('#jVersion')?.focus(); });
+  view.querySelector('#jVersionForm')?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const resume = view.querySelector('#jVersionResume').value; const majeure = view.querySelector('#jVersionMajeure').checked;
+    lireFormulaireJournal(view);
+    const v = normaliserEntree(etatJournal.brouillon);
+    if (Object.keys(v.erreurs).length) { etatJournal = { ...etatJournal, erreurs: v.erreurs, versionOuverte: false }; dessinerJournalFiche(view); return; }
+    const r = publierVersion(v.entree, { resume, majeure });
+    if (r.erreur) { etatJournal.noteFiche = r.erreur; dessinerJournalFiche(view); document.querySelector('#jVersionResume')?.focus(); return; }
+    etatJournal.brouillon = r.entree; etatJournal.versionOuverte = false;
+    enregistrerJournal(view, { note: `Version ${r.entree.version} publiée et enregistrée.` });
+    dessinerJournalFiche(view); document.querySelector('#jVersion')?.focus();
+  });
+  view.querySelector('#jDupliquer').addEventListener('click', () => {
+    lireFormulaireJournal(view);
+    const v = normaliserEntree(etatJournal.brouillon);
+    if (Object.keys(v.erreurs).length) { etatJournal = { ...etatJournal, erreurs: v.erreurs }; dessinerJournalFiche(view); return; }
+    const copie = entreeVide({ categorieId: v.entree.categorie, existantes: lireEntreesJournal().map((x) => x.reference) });
+    const nouvelle = { ...v.entree, id: copie.id, reference: copie.reference, titre: `${v.entree.titre} (copie)`.slice(0, 120), version: '1.0', etat: 'brouillon',
+      creeLe: copie.creeLe, modifieLe: copie.modifieLe, revisions: [{ version: '1.0', date: copie.creeLe, resume: `Copie de ${v.entree.reference}` }],
+      captures: v.entree.captures.map((c) => ({ ...c })) };
+    // Les images sont partagées par référence : on les copie sous de nouveaux identifiants.
+    Promise.all(nouvelle.captures.map(async (c) => { const o = await lireImage(c.id); const id = `${c.id}d${Date.now().toString(36)}`.slice(0, 80); if (o) await ecrireImage(id, o); c.id = id; }))
+      .then(() => ouvrirBrouillon(nouvelle, { nouveau: true, note: `Copie de ${v.entree.reference} : enregistre-la pour la garder.` }));
+  });
+  view.querySelector('#jSupprimer').addEventListener('click', () => { lireFormulaireJournal(view); etatJournal.confirmerSuppression = true; dessinerJournalFiche(view); document.querySelector('#jSupprimerNon')?.focus(); });
+  view.querySelector('#jSupprimerNon')?.addEventListener('click', () => { etatJournal.confirmerSuppression = false; dessinerJournalFiche(view); document.querySelector('#jSupprimer')?.focus(); });
+  view.querySelector('#jSupprimerOui')?.addEventListener('click', () => {
+    const id = etatJournal.brouillonId;
+    ecrireEntreesJournal(lireEntreesJournal().filter((x) => x.id !== id));
+    etatJournal = { ...etatJournal, brouillonId: null, brouillon: null, note: 'Labo supprimé.' };
+    location.hash = ROUTE_JOURNAL;
+  });
+}
+
+// Ctrl+V d'une capture d'écran sur la fiche d'un labo.
+document.addEventListener('paste', (ev) => {
+  if (espace?.type !== 'journal' || !espace.id || !etatJournal.brouillon) return;
+  const item = [...(ev.clipboardData?.items ?? [])].find((i) => i.kind === 'file' && /^image\/(png|jpeg)$/.test(i.type));
+  if (!item) return;
+  ev.preventDefault();
+  const f = item.getAsFile();
+  if (f) ajouterCapture(document.querySelector('#journalView'), f);
+});
+
+/** « Documenter dans le journal » depuis une fiche : crée le labo prérempli et l'ouvre. */
+function documenterFiche(entree) {
+  const p = entree.procedure; const m = methodeActive();
+  const rendu = renduCourant();
+  const valeurs = valeursPourJournal(evaluerValeurs(p.params ?? [], saisiesTache));
+  const { entree: e, erreurs } = entreeDepuisFiche(p, { methode: m, rendu, valeurs, plateformes: plateformesDeProcedure(p), auteur: auteurParDefaut(),
+    existantes: lireEntreesJournal().map((x) => x.reference) });
+  const manquants = rendu.etapes.filter((x) => x.rendu?.bloque).length;
+  const note = Object.keys(erreurs).length ? 'Certaines valeurs ont été refusées : vérifie les champs signalés.'
+    : `Labo créé depuis la fiche${manquants ? ` (${manquants} étape(s) sans valeurs non reprises : remplis les champs de la fiche pour les avoir)` : ''}. Complète-le, puis enregistre.`;
+  // Équipements proposés par la fiche (TP VLAN : commutateur et routeur) : un équipement du même nom est réutilisé, jamais écrasé.
+  const proposes = equipementsDepuisFiche(valeurs);
+  let crees = 0;
+  if (proposes.length) {
+    const inv = [...lireEquipements()];
+    for (const { equipement, role } of proposes) {
+      let q = inv.find((x) => x.nom.toLowerCase() === equipement.nom.toLowerCase() && x.systeme === equipement.systeme);
+      if (!q) { q = equipement; inv.push(q); crees += 1; }
+      e.equipements.push({ id: q.id, role });
+    }
+    if (crees) ecrireEquipements(inv);
+    const idDe = (type) => { const nom = proposes.find((x) => x.equipement.type === type)?.equipement.nom; return inv.find((x) => x.nom === nom)?.id ?? null; };
+    e.schema = schemaDepuisFiche(valeurs, { commutateur: idDe('commutateur'), routeur: idDe('routeur') });
+  }
+  ouvrirBrouillon(e, { nouveau: true, note: proposes.length ? `${note} ${crees ? `${crees} équipement(s) ajouté(s) à l’inventaire` : 'Équipements déjà présents dans l’inventaire'} : ${proposes.map((x) => x.equipement.nom).join(', ')}.` : note });
+  if (Object.keys(erreurs).length) etatJournal.erreurs = erreurs;
+}
+
+// ---------------------------------------------------------------------------
+// Schéma d'architecture d'un labo (JOURNAL-LABO-05)
+// Le schéma vit dans le brouillon du labo ; il est enregistré avec lui.
+// Pendant un glisser, seule la feuille SVG est redessinée ; le panneau des
+// propriétés l'est au relâchement.
+// ---------------------------------------------------------------------------
+const CLE_TYPES_SCHEMA = 'kjemo.schema.types.v1';
+let typesPersoMemoire = null;
+function lireTypesPerso() {
+  if (!typesPersoMemoire) { try { typesPersoMemoire = normaliserTypesPerso(JSON.parse(localStorage.getItem(CLE_TYPES_SCHEMA) ?? '[]')); } catch { typesPersoMemoire = []; } }
+  return typesPersoMemoire;
+}
+function ecrireTypesPerso(liste) { typesPersoMemoire = liste; return ecrireStockage(CLE_TYPES_SCHEMA, liste); }
+let etatSchema = { selection: null, relierDepuis: null, typeOuvert: false, viderConfirme: false, cablage: null };
+const resoudreEquipement = (id) => lireEquipements().find((q) => q.id === id) ?? null;
+const schemaCourant = () => etatJournal.brouillon.schema;
+
+function majFeuilleSchema() {
+  const f = document.querySelector('#schFeuille');
+  if (f) f.innerHTML = feuilleSvg(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), selection: etatSchema.selection })
+    + (etatSchema.cablage?.enAttente ? menuPortsMarkup(schemaCourant(), etatSchema.cablage.enAttente, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso() }) : '');
+  if (f) { if (etatSchema.relierDepuis || etatSchema.cablage) f.dataset.relier = '1'; else delete f.dataset.relier; }
+}
+function majBlocSchema(focus = null) {
+  const bloc = document.querySelector('#schBloc');
+  if (!bloc) return;
+  bloc.innerHTML = editeurSchemaMarkup(schemaCourant(), { resoudre: resoudreEquipement, typesPerso: lireTypesPerso(), inventaire: lireEquipements(), etat: etatSchema, erreurs: etatJournal.erreurs, categorie: etatJournal.brouillon.categorie });
+  const v = document.querySelector('#schVider'); if (v && etatSchema.viderConfirme) v.textContent = 'Confirmer : vider le schéma';
+  if (focus) document.querySelector(focus)?.focus({ preventScroll: true });
+}
+function schemaModifie() {
+  if (!etatJournal.modifie) { etatJournal.modifie = true; const n = document.querySelector('#jNote'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; }
+}
+/** Une place libre sur la feuille (aucun équipement à moins de 80 unités). */
+function placeLibre(s) {
+  for (let y = 90; y <= 510; y += 105) for (let x = 110; x <= 890; x += 130) {
+    if (!s.noeuds.some((n) => Math.hypot(n.x - x, n.y - y) < 80)) return { x, y };
+  }
+  return { x: 500, y: 300 };
+}
+function ajouterNoeud(attrs) {
+  const s = schemaCourant();
+  if (s.noeuds.length >= 80) return null;
+  const p = placeLibre(s);
+  const n = { id: idSchema('n'), type: 'autre', typePerso: null, nom: '', note: '', equipementId: null, ports: '', ...p, ...attrs };
+  if (n.modele === undefined) n.modele = n.type === 'perso' || n.type === 'autre' ? MODELE_PERSO : (MODELES.find((m) => m.type === n.type && m.defaut)?.id ?? MODELE_PERSO);
+  s.noeuds.push(n);
+  return n;
+}
+function ajouterEquipementAuSchema(q) {
+  // Le modèle noté dans la fiche (« Catalyst 2960-24TT (accès) ») donne les ports, sinon celui du type.
+  const type = typeDepuisEquipement(q.type);
+  const mod = MODELES.find((m) => m.type === type && q.modele && (m.label === q.modele || q.modele.includes(m.id)))?.id;
+  const n = ajouterNoeud({ type, equipementId: q.id, ...(mod ? { modele: mod } : {}) });
+  const e = etatJournal.brouillon;
+  if (n && !e.equipements.some((l) => l.id === q.id)) e.equipements.push({ id: q.id, role: '' });
+  return n;
+}
+function retirerElement(id) {
+  const s = schemaCourant();
+  s.noeuds = s.noeuds.filter((x) => x.id !== id);
+  s.liens = s.liens.filter((x) => x.id !== id && x.de !== id && x.a !== id);
+  s.zones = s.zones.filter((x) => x.id !== id);
+  s.textes = s.textes.filter((x) => x.id !== id);
+}
+const trouverElement = (id) => {
+  const s = schemaCourant();
+  return s.noeuds.find((x) => x.id === id) ?? s.zones.find((x) => x.id === id) ?? s.textes.find((x) => x.id === id) ?? s.liens.find((x) => x.id === id) ?? null;
+};
+/**
+ * Reporte l'interface (et son adresse) saisie sur un câble dans la fiche de
+ * l'équipement de l'inventaire relié au nœud. Renvoie un message, ou ''.
+ */
+function reporterInterface(noeudId, itf, adresse, description = '') {
+  const n = schemaCourant().noeuds.find((x) => x.id === noeudId);
+  const q = n?.equipementId ? resoudreEquipement(n.equipementId) : null;
+  const nomItf = String(itf ?? '').trim(); const adr = String(adresse ?? '').trim();
+  if (!q || !nomItf) return '';
+  const copie = structuredClone(q);
+  const existante = copie.interfaces.find((i) => clePort(i.nom) === clePort(nomItf));
+  if (existante) {
+    const avant = JSON.stringify(existante);
+    if (adr) existante.adresse = adr;
+    if (description && !existante.description) existante.description = description;
+    if (JSON.stringify(existante) === avant) return '';
+  } else copie.interfaces.push({ nom: nomItf, adresse: adr, vlan: '', etat: '', description });
+  const { equipement, erreurs } = normaliserEquipement({ ...copie, modifieLe: jour() });
+  if (Object.keys(erreurs).length) return '';
+  ecrireEquipements(lireEquipements().map((x) => (x.id === q.id ? equipement : x)));
+  return `Interface ${nomItf}${adr ? ` (${adr})` : ''} enregistrée dans la fiche de ${q.nom}.`;
+}
+/** Adresse connue d'une interface dans la fiche de l'équipement du nœud. */
+function adresseConnue(noeudId, itf) {
+  const n = schemaCourant().noeuds.find((x) => x.id === noeudId);
+  const q = n?.equipementId ? resoudreEquipement(n.equipementId) : null;
+  return q?.interfaces.find((i) => clePort(i.nom) === clePort(itf))?.adresse ?? '';
+}
+
+
+// ---------------------------------------------------------------------------
+// Configuration d'un équipement du schéma (JOURNAL-LABO-09) : n.config
+// ---------------------------------------------------------------------------
+const nomNoeudApp = (n) => resoudreEquipement(n.equipementId)?.nom || n.nom || typeNoeud(n.type).label;
+/** Pose une valeur dans la configuration du nœud par son chemin « a|b|c » (crée ce qui manque). */
+/** Élément Azure (ressource ou zone) : sa configuration se décrit par les formulaires de config-azure. */
+const estElementAzure = (el) => Boolean(el && (('type' in el && estAzure(el.type)) || ('l' in el && el.genre)));
+const configVideDe = (el) => (estElementAzure(el) ? normaliserConfigAzure(el.genre || el.type, null, { zone: Boolean(el.genre) }) : normaliserConfig(null));
+function poserConfig(n, chemin, valeur) {
+  if (!n.config) n.config = configVideDe(n);
+  if (estElementAzure(n)) {
+    const parts = chemin.split('|'); let o = n.config;
+    for (const k of parts.slice(0, -1)) { const cle = /^\d+$/.test(k) ? Number(k) : k; if (o[cle] == null) o[cle] = {}; o = o[cle]; }
+    o[parts.at(-1)] = valeur; return;
+  }
+  const parts = chemin.split('|');
+  if (parts[0] === 'ports') {
+    const nom = parts[1];
+    if (!n.config.ports[nom]) n.config.ports[nom] = normaliserConfig({ ports: { [nom]: {} } }).ports[nom];
+    n.config.ports[nom][parts[2]] = valeur; return;
+  }
+  let o = n.config;
+  for (const k of parts.slice(0, -1)) { const cle = /^\d+$/.test(k) ? Number(k) : k; if (o[cle] == null) o[cle] = {}; o = o[cle]; }
+  o[parts.at(-1)] = valeur;
+}
+/** Liste de la configuration désignée par « a|b ». */
+function listeConfig(n, chemin) {
+  if (!n.config) n.config = configVideDe(n);
+  return chemin.split('|').reduce((o, k) => o?.[k], n.config);
+}
+function majApercuConfig(n) {
+  const a = document.querySelector('#cfgApercu');
+  if (a) a.innerHTML = estElementAzure(n) ? apercuAzureMarkup(schemaCourant(), n) : apercuConfigMarkup(n, n.config, { nom: nomNoeudApp(n) });
+}
+/** L'adresse d'un port configuré passe sur le câble branché à ce port et dans la fiche de l'équipement. */
+function synchroniserAdressePort(n, port, adresse) {
+  for (const l of schemaCourant().liens) {
+    if (l.de === n.id && clePort(l.etiquetteDe) === clePort(port)) l.adresseDe = adresse;
+    if (l.a === n.id && clePort(l.etiquetteA) === clePort(port)) l.adresseA = adresse;
+  }
+  return reporterInterface(n.id, port, adresse);
+}
+function texteConfigNoeud(n) {
+  if (estElementAzure(n)) return texteAzure(n.genre ? commandesZone(schemaCourant(), n) : commandesAzure(schemaCourant(), n));
+  const c = normaliserConfig(n.config);
+  return texteAvecTitres(n, commandesNoeud(n, c, { nom: nomNoeudApp(n) }));
+}
+
+
+/** Nouvelle zone Azure : un sous-réseau se pose dans le VNet choisi (sinon le premier), un VNet sous les autres. */
+function ajouterZoneAzure(genre) {
+  const s = schemaCourant();
+  if (s.zones.length >= 60) return null;
+  const sel = etatSchema.selection ? s.zones.find((z) => z.id === etatSchema.selection) : null;
+  const noms = { vnet: `VNET${s.zones.filter((z) => z.genre === 'vnet').length + 1}`, 'sous-reseau': 'Subnet', groupe: 'rg-labo', region: 'Canada Centre' };
+  let x = 40; let y = 110; let l = 460; let h = 250;
+  if (genre === 'sous-reseau') {
+    const v = sel?.genre === 'vnet' ? sel : s.zones.find((z) => z.genre === 'vnet');
+    const enfants = v ? s.zones.filter((z) => z.genre === 'sous-reseau' && z.x >= v.x && z.y >= v.y && z.x + z.l <= v.x + v.l && z.y + z.h <= v.y + v.h).length : 0;
+    l = 180; h = 120;
+    if (v) { x = v.x + 12 + (enfants % Math.max(1, Math.floor((v.l - 12) / 190))) * 190; y = v.y + 30 + Math.floor(enfants / Math.max(1, Math.floor((v.l - 12) / 190))) * 130; }
+    x = Math.min(x, 1000 - l); y = Math.min(y, 600 - h);
+  } else if (genre === 'vnet') {
+    const n = s.zones.filter((z) => z.genre === 'vnet').length;
+    x = 30 + (n % 2) * 480; y = 100 + Math.floor(n / 2) * 250; l = 460; h = 240;
+    x = Math.min(x, 1000 - l); y = Math.min(y, 600 - h);
+  } else if (genre === 'groupe') { x = 10; y = 20; l = 980; h = 575; }
+  else { x = 5; y = 10; l = 990; h = 588; }
+  const z = { id: idSchema('z'), nom: noms[genre] ?? 'Zone', genre, couleur: 'bleu', x, y, l, h };
+  z.config = configVideDe(z);
+  s.zones.push(z);
+  return z;
+}
+
+/** Boutons du panneau Azure (ressource ou zone). */
+async function actionConfigAzure(b, n, montrer) {
+  const zone = Boolean(n.genre); const genre = n.genre || n.type;
+  if (b.id === 'cfgBascule') { etatSchema.cfgOuvert = etatSchema.cfgOuvert === false; majBlocSchema('#cfgBascule'); return; }
+  if (b.dataset.cfgadd) {
+    const liste = listeConfig(n, b.dataset.cfgadd);
+    const def = (zone ? FORMULAIRES_ZONE : FORMULAIRES)[genre]?.find((f) => f.id === b.dataset.cfgadd);
+    if (!Array.isArray(liste) || !def) return;
+    if (liste.length >= 60) { montrer('Limite atteinte pour cette liste.', `[data-cfgadd="${b.dataset.cfgadd}"]`); return; }
+    liste.push(Object.fromEntries(def.colonnes.map((c) => [c.id, c.type === 'choix' && !c.dyn ? c.options[0][0] : ''])));
+    schemaModifie();
+    majBlocSchema(`#cfg-${`${b.dataset.cfgadd}|${liste.length - 1}|${def.colonnes[0].id}`.replace(/[^\w-]/g, '_')}`); return;
+  }
+  if (b.dataset.cfgdel) {
+    const parts = b.dataset.cfgdel.split('|'); const i = Number(parts.pop()); const liste = listeConfig(n, parts.join('|'));
+    if (Array.isArray(liste)) { liste.splice(i, 1); schemaModifie(); }
+    majBlocSchema(`[data-cfgadd="${parts.join('|')}"]`); return;
+  }
+  const a = b.dataset.cfgaction; const sel = `[data-cfgaction="${a}"]`;
+  if (a === 'copier') { let ok = false; try { await navigator.clipboard.writeText(texteConfigNoeud(n)); ok = true; } catch { ok = false; } montrer(ok ? 'Commandes copiées.' : 'La copie est bloquée ici : sélectionne le texte des commandes et copie-le (Ctrl+C).', sel); return; }
+  if (a === 'telecharger') {
+    const res = await enregistrerFichier(`${etatJournal.brouillon.reference}_${nomAzure(n.nom, genre)}.sh`, `#!/usr/bin/env bash\n${texteConfigNoeud(n)}\n`, 'text/x-shellscript');
+    montrer(res.ok ? `Commandes ${res.message}.` : res.message, sel); return;
+  }
+  if (a === 'effacer') {
+    if (!etatSchema.cfgEffacer) { etatSchema.cfgEffacer = true; majBlocSchema(sel); const x = document.querySelector(sel); if (x) x.textContent = 'Confirmer : effacer la configuration'; return; }
+    etatSchema.cfgEffacer = false; n.config = configVideDe(n); schemaModifie(); montrer('Configuration remise à zéro.', '[data-cfgaction="copier"]'); return;
+  }
+  if (a === 'decouper' && n.genre === 'vnet') {
+    const s = schemaCourant(); const ctx = contexteAzure(s);
+    const v = ctx.vnets.find((x) => x.id === n.id); const sns = ctx.sousReseaux.filter((x) => x.vnet?.id === n.id);
+    const r = decouperVnet(v?.c.espace, sns.map((x) => ({ id: x.id, nom: x.nom, besoin: x.c.besoin })));
+    for (const [id, plage] of Object.entries(r.plages)) { const z = s.zones.find((x) => x.id === id); if (z) { z.config = z.config ?? configVideDe(z); z.config.plage = plage; } }
+    if (Object.keys(r.plages).length) schemaModifie();
+    montrer(r.erreur ?? `${Object.keys(r.plages).length} plage(s) attribuée(s)${r.reste ? ` ; ${r.reste} adresse(s) libres pour la croissance` : ''}. Vérifie et justifie tes choix.`, sel);
+  }
+}
+
+/** Boutons du panneau « Configuration ». */
+async function actionConfig(b, view) {
+  const montrer = (note, focus) => { etatSchema.cfgNote = note; majBlocSchema(focus); etatSchema.cfgNote = ''; };
+  if (b.dataset.cfgaction === 'scriptComplet') {
+    const r = scriptAzure(schemaCourant());
+    const res = await enregistrerFichier(`${etatJournal.brouillon.reference}_azure.sh`, `#!/usr/bin/env bash\n# ${etatJournal.brouillon.titre || etatJournal.brouillon.reference} : déploiement Azure (vérifié dans sa forme, pas exécuté)\nset -e\n${texteAzure(r)}\n`, 'text/x-shellscript');
+    montrer(res.ok ? `Script complet ${res.message}${r.avertissements.length ? ` (${r.avertissements.length} avertissement(s) à régler avant de l’exécuter)` : ''}.` : res.message, '[data-cfgaction="scriptComplet"]');
+    return;
+  }
+  const n = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+  if (!n || 'de' in n || 'texte' in n) return;
+  if (estElementAzure(n)) { await actionConfigAzure(b, n, montrer); return; }
+  if (b.id === 'cfgBascule') { etatSchema.cfgOuvert = etatSchema.cfgOuvert === false; majBlocSchema('#cfgBascule'); return; }
+  if (b.dataset.cfgadd) {
+    const liste = listeConfig(n, b.dataset.cfgadd); const ligne = nouvelleLigne(b.dataset.cfgadd, normaliserConfig(n.config));
+    if (!Array.isArray(liste) || !ligne) return;
+    if (liste.length >= 64) { montrer('Limite atteinte pour cette liste.', `[data-cfgadd="${b.dataset.cfgadd}"]`); return; }
+    liste.push(ligne); schemaModifie();
+    const i = liste.length - 1; const premier = Object.keys(ligne)[0];
+    majBlocSchema(`#cfg-${`${b.dataset.cfgadd}|${i}|${premier}`.replace(/[^\w-]/g, '_')}`); return;
+  }
+  if (b.dataset.cfgdel) {
+    const parts = b.dataset.cfgdel.split('|'); const i = Number(parts.pop());
+    const liste = listeConfig(n, parts.join('|'));
+    if (Array.isArray(liste)) { liste.splice(i, 1); schemaModifie(); }
+    majBlocSchema(`[data-cfgadd="${parts.join('|')}"]`); return;
+  }
+  const a = b.dataset.cfgaction; const sel = `[data-cfgaction="${a}"]`;
+  if (a === 'proposer') {
+    const niveau = normaliserConfig(n.config).niveau;
+    const r = proposerConfig(schemaCourant(), n.id, n.config, { niveau });
+    n.config = r.config; schemaModifie();
+    // Les adresses proposées sur les ports passent aussi sur les câbles et dans la fiche.
+    for (const [p, cp] of Object.entries(n.config.ports)) if (cp.adresse) synchroniserAdressePort(n, p, cp.adresse);
+    montrer(r.ajouts.length ? `Proposé : ${r.ajouts.join(' · ')}. Vérifie et complète.` : 'Rien de nouveau à proposer : câble les équipements, nomme les zones « VLAN 10 · NOM · 192.168.10.0/24 », ou monte le niveau.', sel);
+    return;
+  }
+  if (a === 'copier') {
+    let ok = false; try { await navigator.clipboard.writeText(texteConfigNoeud(n)); ok = true; } catch { ok = false; }
+    montrer(ok ? 'Commandes copiées.' : 'La copie est bloquée ici : sélectionne le texte des commandes et copie-le (Ctrl+C).', sel); return;
+  }
+  if (a === 'telecharger') {
+    const nom = nomNoeudApp(n).replace(/[^\w.-]+/g, '_');
+    const res = await enregistrerFichier(`${etatJournal.brouillon.reference}_${nom}_config.txt`, `${texteConfigNoeud(n)}\n`, 'text/plain');
+    montrer(res.ok ? `Configuration ${res.message}.` : res.message, sel); return;
+  }
+  if (a === 'effacer') {
+    if (!etatSchema.cfgEffacer) { etatSchema.cfgEffacer = true; majBlocSchema(sel); const x = document.querySelector(sel); if (x) x.textContent = 'Confirmer : effacer la configuration'; return; }
+    etatSchema.cfgEffacer = false; n.config = null; schemaModifie(); montrer('Configuration effacée.', '[data-cfgaction="proposer"]'); return;
+  }
+  if (a === 'tousPorts') { etatSchema.cfgTousPorts = !etatSchema.cfgTousPorts; majBlocSchema(sel); return; }
+  if (a === 'dhcpParVlan') {
+    n.config = normaliserConfig(n.config); const k = poolsParVlan(n.config); if (k) schemaModifie();
+    montrer(k ? `${k} pool(s) DHCP ajouté(s).` : 'Aucune sous-interface ou SVI adressée sans pool.', sel); return;
+  }
+  if (a === 'ospfReseaux') {
+    n.config = normaliserConfig(n.config); const k = ospfDepuisInterfaces(n.config); if (k) schemaModifie();
+    montrer(k ? `${k} réseau(x) annoncé(s) en OSPF.` : 'Aucun nouveau réseau adressé à annoncer.', sel);
+  }
+}
+
+/** Coordonnées de feuille d'un événement pointeur. */
+function pointFeuille(ev, svg) {
+  const r = svg.getBoundingClientRect();
+  return { x: ((ev.clientX - r.left) / r.width) * FEUILLE.largeur, y: ((ev.clientY - r.top) / r.height) * FEUILLE.hauteur };
+}
+
+/** Trait équipement ↔ sous-réseau : le sous-réseau entre dans la configuration de l'équipement (intégration VNet, point privé…). */
+function lierASousReseau(noeudId, zoneId) {
+  const s = schemaCourant(); const n = s.noeuds.find((x) => x.id === noeudId); const z = s.zones.find((x) => x.id === zoneId);
+  const note = document.querySelector('#jNote'); const c = etatSchema.cablage;
+  const fin = (msg, garder = false) => { etatSchema = { ...etatSchema, cablage: c ? { ...c, depuis: garder ? c.depuis : null, enAttente: null, zoneDepuis: null } : null, selection: n ? n.id : null }; if (note) note.textContent = msg; majBlocSchema(); };
+  if (!n || !z) return;
+  const d = LIENS_SOUS_RESEAU[n.type];
+  if (!d) return fin(`${typeNoeud(n.type).label} ne se lie pas à un sous-réseau par un trait : glisse-le dans le rectangle du sous-réseau.`);
+  const nomN = n.nom || typeNoeud(n.type).label;
+  if (d.multi) {
+    const liste = Array.isArray(n.config?.[d.champ]) ? n.config[d.champ] : [];
+    const retire = liste.includes(z.id);
+    n.config = { ...(n.config ?? {}), [d.champ]: retire ? liste.filter((x) => x !== z.id) : [...liste, z.id] };
+    schemaModifie();
+    return fin(retire ? `${d.etiquette} : ${nomN} n’est plus associé à ${z.nom || 'ce sous-réseau'}.` : `${d.etiquette} : ${nomN} → ${z.nom || 'sous-réseau'} (associé). Clique un autre sous-réseau pour en ajouter, le même pour retirer.`, !!c?.depuis);
+  }
+  n.config = { ...(n.config ?? {}), [d.champ]: z.id };
+  schemaModifie();
+  fin(`${d.etiquette} : ${nomN} → ${z.nom || 'sous-réseau'}. Le champ de sa configuration est rempli.`);
+}
+
+/** Port choisi dans le menu : premier bout du câble, ou création du câble au deuxième. */
+function choisirPort(port, { sansPort = false } = {}) {
+  const s = schemaCourant(); const c = etatSchema.cablage; const nom = String(port ?? '').trim().slice(0, 30);
+  if (!c?.enAttente || (!nom && !sansPort)) return;
+  const n = s.noeuds.find((x) => x.id === c.enAttente);
+  const note = document.querySelector('#jNote');
+  if (nom && portsOccupes(n, s.liens).has(clePort(nom))) { if (note) note.textContent = `Le port ${nom} est déjà câblé : choisis-en un autre.`; return; }
+  if (!c.depuis) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: { noeud: n.id, port: nom }, enAttente: null }, selection: n.id }; majBlocSchema('#schFeuille'); return; }
+  const a = s.noeuds.find((x) => x.id === c.depuis.noeud);
+  const style = c.style === 'auto' ? cableAutomatique(a.type, c.depuis.port, n.type, nom) : c.style;
+  const l = { id: idSchema('l'), de: a.id, a: n.id, style, etiquette: style === 'trunk' ? '802.1Q' : '', etiquetteDe: c.depuis.port, etiquetteA: nom,
+    adresseDe: adresseConnue(a.id, c.depuis.port), adresseA: adresseConnue(n.id, nom) };
+  s.liens.push(l);
+  // Chaque port câblé entre dans la fiche de son équipement, avec sa destination en description.
+  const nomDe = (x) => resoudreEquipement(x.equipementId)?.nom || x.nom || typeNoeud(x.type).label;
+  const m1 = reporterInterface(a.id, l.etiquetteDe, '', `Vers ${nomDe(n)} ${l.etiquetteA}`);
+  const m2 = reporterInterface(n.id, l.etiquetteA, '', `Vers ${nomDe(a)} ${l.etiquetteDe}`);
+  etatSchema = { ...etatSchema, cablage: { ...c, depuis: null, enAttente: null }, selection: l.id };
+  schemaModifie(); majBlocSchema('#schAdrDe');
+  if (note) note.textContent = `${styleLien(style).label} : ${nomDe(a)} ${l.etiquetteDe} ↔ ${nomDe(n)} ${l.etiquetteA}.${m1 || m2 ? ' Ports ajoutés aux fiches de l’inventaire.' : ''} Saisis les adresses si besoin.`;
+}
+
+function brancherSchema(view) {
+  const bloc = view.querySelector('#schBloc');
+  if (!bloc) return;
+  let glisse = null;   // { id, mode: 'deplacer'|'taille', dx, dy, bouge }
+  bloc.addEventListener('pointerdown', (ev) => {
+    const svg = ev.target.closest('svg.schema-svg'); if (!svg) return;
+    const cible = ev.target.closest('[data-el]'); const p = pointFeuille(ev, svg); const s = schemaCourant();
+    if (!cible) {   // fond : désélection (le mode câble reste actif)
+      if (etatSchema.selection || etatSchema.relierDepuis) { etatSchema = { ...etatSchema, selection: null, relierDepuis: null }; majBlocSchema(); }
+      return;
+    }
+    const id = cible.dataset.el;
+    // Mode câble (palette « Câbles ») : premier équipement, puis deuxième.
+    if (etatSchema.cablage) {
+      ev.preventDefault();
+      const c = etatSchema.cablage;
+      // Un sous-réseau : relie l'équipement choisi (ou attend l'équipement si le sous-réseau est cliqué en premier).
+      if (s.zones.some((z) => z.id === id && z.genre === 'sous-reseau')) {
+        if (c.depuis) lierASousReseau(c.depuis.noeud, id);
+        else { etatSchema = { ...etatSchema, cablage: { ...c, zoneDepuis: id, enAttente: null }, selection: id }; const note = document.querySelector('#jNote'); if (note) note.textContent = 'Sous-réseau choisi : clique maintenant l’équipement à lier.'; majBlocSchema(); }
+        return;
+      }
+      if (!s.noeuds.some((n) => n.id === id)) return;
+      if (c.zoneDepuis) { lierASousReseau(id, c.zoneDepuis); return; }
+      if (c.depuis?.noeud === id) { etatSchema = { ...etatSchema, cablage: { ...c, depuis: null, enAttente: null }, selection: null }; majBlocSchema(); return; }
+      // Le menu des ports de cet équipement s'ouvre sur la feuille.
+      etatSchema = { ...etatSchema, cablage: { ...c, enAttente: id }, selection: c.depuis ? c.depuis.noeud : id };
+      // Ressource sans port (Azure, nuage) : pas de menu, le lien se pose directement.
+      const nd = s.noeuds.find((x) => x.id === id);
+      if (!portsDuNoeud(nd, { equipement: resoudreEquipement(nd.equipementId), liens: s.liens }).length) { choisirPort('', { sansPort: true }); return; }
+      majBlocSchema('#schPortChoix');
+      return;
+    }
+    // Mode « Relier » : le deuxième équipement crée le lien.
+    if (etatSchema.relierDepuis && s.noeuds.some((n) => n.id === id)) {
+      if (id !== etatSchema.relierDepuis && !s.liens.some((l) => (l.de === etatSchema.relierDepuis && l.a === id) || (l.a === etatSchema.relierDepuis && l.de === id))) {
+        const l = { id: idSchema('l'), de: etatSchema.relierDepuis, a: id, style: 'droit', etiquette: '', etiquetteDe: '', etiquetteA: '', adresseDe: '', adresseA: '' };
+        s.liens.push(l); etatSchema = { ...etatSchema, selection: l.id, relierDepuis: null }; schemaModifie(); majBlocSchema('#schItfDe');
+      } else { etatSchema = { ...etatSchema, relierDepuis: null }; majBlocSchema(); }
+      ev.preventDefault(); return;
+    }
+    const el = trouverElement(id); if (!el) return;
+    etatSchema = { ...etatSchema, selection: id, viderConfirme: false };
+    if ('de' in el) { majBlocSchema(); return; }   // un lien se choisit, il ne se déplace pas
+    const zoneTaille = 'l' in el && p.x > el.x + el.l - 18 && p.y > el.y + el.h - 18;
+    glisse = { id, mode: zoneTaille ? 'taille' : 'deplacer', dx: p.x - el.x, dy: p.y - el.y, bouge: false };
+    svg.setPointerCapture?.(ev.pointerId);
+    majFeuilleSchema(); ev.preventDefault();
+  });
+  bloc.addEventListener('pointermove', (ev) => {
+    if (!glisse) return;
+    const svg = bloc.querySelector('svg.schema-svg'); if (!svg) return;
+    const p = pointFeuille(ev, svg); const el = trouverElement(glisse.id); if (!el) return;
+    if (glisse.mode === 'taille') { el.l = Math.max(60, Math.min(FEUILLE.largeur - el.x, aimanter(p.x - el.x))); el.h = Math.max(40, Math.min(FEUILLE.hauteur - el.y, aimanter(p.y - el.y))); }
+    else {
+      const borneX = 'l' in el ? [0, FEUILLE.largeur - el.l] : [40, FEUILLE.largeur - 40]; const borneY = 'l' in el ? [0, FEUILLE.hauteur - el.h] : ['texte' in el ? 14 : 30, FEUILLE.hauteur - ('texte' in el ? 4 : 60)];
+      el.x = Math.max(borneX[0], Math.min(borneX[1], aimanter(p.x - glisse.dx))); el.y = Math.max(borneY[0], Math.min(borneY[1], aimanter(p.y - glisse.dy)));
+    }
+    glisse.bouge = true; majFeuilleSchema();
+  });
+  const fin = () => { if (!glisse) return; const bouge = glisse.bouge; glisse = null; if (bouge) schemaModifie(); majBlocSchema(); };
+  bloc.addEventListener('pointerup', fin); bloc.addEventListener('pointercancel', fin);
+  bloc.addEventListener('keydown', (ev) => {
+    if (ev.target.closest?.('.sch-menu-ports')) {
+      if (ev.key === 'Escape') { ev.preventDefault(); etatSchema = { ...etatSchema, cablage: { ...etatSchema.cablage, enAttente: null } }; majBlocSchema('#schFeuille'); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); choisirPort(ev.target.id === 'schPortLibre' ? ev.target.value : ev.target.value); }
+      return;
+    }
+    if (ev.target.id !== 'schFeuille') return;
+    const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+    if (ev.key === 'Escape') { ev.preventDefault(); etatSchema = { ...etatSchema, selection: null, relierDepuis: null, cablage: null }; majBlocSchema('#schFeuille'); return; }
+    if (!el) return;
+    if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); retirerElement(el.id); etatSchema.selection = null; schemaModifie(); majBlocSchema('#schFeuille'); return; }
+    const pas = ev.shiftKey ? 50 : 10; const d = { ArrowLeft: [-pas, 0], ArrowRight: [pas, 0], ArrowUp: [0, -pas], ArrowDown: [0, pas] }[ev.key];
+    if (!d || 'de' in el) return;
+    ev.preventDefault();
+    const lw = 'l' in el ? el.l : 0; const lh = 'h' in el ? el.h : 0;
+    el.x = Math.max(0, Math.min(FEUILLE.largeur - (lw || 40), el.x + d[0])); el.y = Math.max(14, Math.min(FEUILLE.hauteur - (lh || 60), el.y + d[1]));
+    schemaModifie(); majFeuilleSchema();
+  });
+  bloc.addEventListener('input', (ev) => {
+    if (ev.target.id === 'azGroupe') { const s = schemaCourant(); s.azure = { ...(s.azure ?? {}), groupe: ev.target.value }; schemaModifie(); return; }
+    const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null; if (!el) return;
+    if (ev.target.dataset?.cfg && ev.target.type === 'text') {
+      poserConfig(el, ev.target.dataset.cfg, ev.target.value); schemaModifie(); majApercuConfig(el);
+      if (estElementAzure(el) && 'l' in el) majFeuilleSchema();
+      return;
+    }
+    if (ev.target.id === 'schPorts') { el.ports = ev.target.value; schemaModifie(); return; }
+    const champ = { schNom: 'nom', schNote: 'note', schEtiquette: 'etiquette', schItfDe: 'etiquetteDe', schItfA: 'etiquetteA', schAdrDe: 'adresseDe', schAdrA: 'adresseA', schZoneNom: 'nom', schTexte: 'texte' }[ev.target.id];
+    if (!champ) return;
+    el[champ] = ev.target.value; schemaModifie(); majFeuilleSchema();
+  });
+  bloc.addEventListener('change', (ev) => {
+    const id = ev.target.id; const el = etatSchema.selection ? trouverElement(etatSchema.selection) : null;
+    if (id === 'azRegion' || id === 'azGroupe') { const s = schemaCourant(); s.azure = { ...(s.azure ?? {}), [id === 'azRegion' ? 'region' : 'groupe']: ev.target.value }; schemaModifie(); return; }
+    if (id === 'schElement') { etatSchema = { ...etatSchema, selection: ev.target.value || null, relierDepuis: null, cfgEffacer: false }; majBlocSchema('#schElement'); return; }
+    if (!el) return;
+    if (ev.target.dataset?.cfgmulti) {
+      const ch = ev.target.dataset.cfgmulti; const actuel = listeConfig(el, ch);
+      const liste = Array.isArray(actuel) ? actuel : [];
+      const v = ev.target.value; const nouvelle = ev.target.checked ? [...new Set([...liste, v])] : liste.filter((x) => x !== v);
+      poserConfig(el, ch, nouvelle); schemaModifie(); majFeuilleSchema(); majApercuConfig(el); return;
+    }
+    const chemin = ev.target.dataset?.cfg;
+    if (chemin) {
+      const t = ev.target;
+      const v = t.type === 'checkbox' ? t.checked : t.value;
+      poserConfig(el, chemin, v); schemaModifie();
+      if (/^ports\|[^|]+\|adresse$/.test(chemin)) {
+        const msg = synchroniserAdressePort(el, chemin.split('|')[1], String(v).trim()); majFeuilleSchema();
+        const note = document.querySelector('#jNote'); if (msg && note) note.textContent = msg;
+      }
+      if (t.type === 'text') { majApercuConfig(el); return; }
+      // Les choix (niveau, mode d'un port, protocole…) changent les champs montrés.
+      majBlocSchema(t.type === 'radio' ? 'input[name="cfgNiveau"]:checked' : `#${t.id}`);
+      return;
+    }
+    // Interface ou adresse d'un côté de câble : complète l'adresse connue, puis reporte dans l'inventaire.
+    const cote = { schItfDe: 'De', schAdrDe: 'De', schItfA: 'A', schAdrA: 'A' }[id];
+    if (cote && 'de' in el) {
+      const noeud = cote === 'De' ? el.de : el.a;
+      if (id.startsWith('schItf') && !el[`adresse${cote}`]) {
+        const connue = adresseConnue(noeud, el[`etiquette${cote}`]);
+        if (connue) { el[`adresse${cote}`] = connue; const champAdr = document.querySelector(`#schAdr${cote}`); if (champAdr) champAdr.value = connue; majFeuilleSchema(); }
+      }
+      const nd = schemaCourant().noeuds.find((x) => x.id === noeud);
+      const cleCfg = nd?.config ? Object.keys(nd.config.ports ?? {}).find((k) => clePort(k) === clePort(el[`etiquette${cote}`])) : null;
+      if (cleCfg && id.startsWith('schAdr')) nd.config.ports[cleCfg].adresse = el[`adresse${cote}`];
+      const msg = reporterInterface(noeud, el[`etiquette${cote}`], el[`adresse${cote}`]);
+      const note = document.querySelector('#jNote'); if (msg && note) note.textContent = msg;
+      return;
+    }
+    if (id === 'schModele') {
+      const mod = ev.target.value;
+      if (mod === MODELE_PERSO && !el.ports) el.ports = modele(el.modele)?.ports ?? '';
+      el.modele = mod;
+    } else if (id === 'schPorts') { el.ports = ev.target.value; }
+    else if (id === 'schType') {
+      const v = ev.target.value;
+      if (v.startsWith('perso:')) { el.type = 'perso'; el.typePerso = v.slice(6); el.modele = MODELE_PERSO; }
+      else { el.type = v; el.typePerso = null; el.modele = MODELES.find((m) => m.type === v && m.defaut)?.id ?? MODELE_PERSO; }
+    }
+    else if (id === 'schStyle') el.style = ev.target.value;
+    else if (id === 'schZoneCouleur') el.couleur = ev.target.value;
+    else if (id === 'schZoneGenre') { el.genre = ev.target.value || undefined; el.config = el.genre ? configVideDe(el) : undefined; if (!el.genre) { delete el.genre; delete el.config; } }
+    else if (id === 'schZoneL') el.l = Math.max(60, Math.min(FEUILLE.largeur - el.x, aimanter(Number(ev.target.value) || 60)));
+    else if (id === 'schZoneH') el.h = Math.max(40, Math.min(FEUILLE.hauteur - el.y, aimanter(Number(ev.target.value) || 40)));
+    else return;
+    schemaModifie(); majBlocSchema(`#${id}`);
+  });
+  bloc.addEventListener('click', async (ev) => {
+    // Menu des ports : un clic sur un port libre le choisit.
+    const liste = ev.target.closest?.('#schPortChoix');
+    if (liste) { if (liste.value) choisirPort(liste.value); return; }
+    const b = ev.target.closest('button, a[data-jeqouvrir]'); if (!b) return;
+    if (b.id === 'cfgBascule' || b.dataset.cfgadd || b.dataset.cfgdel || b.dataset.cfgaction) { await actionConfig(b, view); return; }
+    if (b.id === 'schPortOk') { choisirPort(document.querySelector('#schPortLibre')?.value || document.querySelector('#schPortChoix')?.value); return; }
+    if (b.id === 'schPortAnnuler') { etatSchema = { ...etatSchema, cablage: { ...etatSchema.cablage, enAttente: null } }; majBlocSchema('#schFeuille'); return; }
+    if (b.dataset.sfiltre) { etatSchema = { ...etatSchema, filtreSysteme: b.dataset.sfiltre }; majBlocSchema(`[data-sfiltre="${b.dataset.sfiltre}"]`); return; }
+    const s = schemaCourant(); const e = etatJournal.brouillon;
+    if (b.matches('a[data-jeqouvrir]')) {   // vers la fiche de l'équipement : le labo est enregistré d'abord
+      ev.preventDefault();
+      if (etatJournal.modifie && !enregistrerJournal(view)) return;
+      etatInventaire.retour = { id: e.id, reference: e.reference };
+      location.hash = b.getAttribute('href'); return;
+    }
+    if (b.dataset.scable) {
+      const st = b.dataset.scable;
+      etatSchema = { ...etatSchema, cablage: etatSchema.cablage?.style === st ? null : { style: st, depuis: null, enAttente: null }, relierDepuis: null, selection: null };
+      majBlocSchema(`[data-scable="${st}"]`);
+      document.querySelector('#schFeuille')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      return;
+    }
+    if (b.dataset.sadd) {
+      const v = b.dataset.sadd; let nouvel = null;
+      if (v === 'zone') { nouvel = { id: idSchema('z'), nom: 'Nouvelle zone', couleur: 'bleu', x: 40, y: 360, l: 300, h: 200 }; s.zones.push(nouvel); }
+      else if (v.startsWith('zone:')) nouvel = ajouterZoneAzure(v.slice(5));
+      else if (v === 'texte') { nouvel = { id: idSchema('t'), texte: 'Texte', x: 30, y: 34 }; s.textes.push(nouvel); }
+      else if (v.startsWith('perso:')) nouvel = ajouterNoeud({ type: 'perso', typePerso: v.slice(6) });
+      else nouvel = ajouterNoeud({ type: v });
+      if (nouvel) { etatSchema = { ...etatSchema, selection: nouvel.id, relierDepuis: null }; schemaModifie(); majBlocSchema(v.startsWith('zone') ? '#schZoneNom' : v === 'texte' ? '#schTexte' : '#schNom'); }
+      return;
+    }
+    switch (b.id) {
+      case 'schTypeOuvrir': etatSchema.typeOuvert = !etatSchema.typeOuvert; majBlocSchema(etatSchema.typeOuvert ? '#schTypeNom' : '#schTypeOuvrir'); break;
+      case 'schTypeAjouter': {
+        const nom = document.querySelector('#schTypeNom')?.value ?? ''; const code = document.querySelector('#schTypeCode')?.value ?? '';
+        const liste = normaliserTypesPerso([...lireTypesPerso(), { id: `t${Date.now().toString(36)}`, nom, code }]);
+        if (liste.length === lireTypesPerso().length) { const c = document.querySelector('#schTypeNom'); c?.setAttribute('aria-invalid', 'true'); c?.focus(); break; }
+        ecrireTypesPerso(liste); etatSchema.typeOuvert = false; majBlocSchema(`[data-sadd="perso:${liste.at(-1).id}"]`); break;
+      }
+      case 'schEqAjouter': { const q = resoudreEquipement(document.querySelector('#schEq')?.value); if (q) { const n = ajouterEquipementAuSchema(q); if (n) { etatSchema.selection = n.id; schemaModifie(); dessinerJournalFiche(view); document.querySelector('#schNote')?.focus({ preventScroll: true }); } } break; }
+      case 'schLabo': {
+        let k = 0; for (const l of e.equipements) { const q = resoudreEquipement(l.id); if (q && !s.noeuds.some((n) => n.equipementId === q.id) && ajouterEquipementAuSchema(q)) k++; }
+        if (k) schemaModifie(); majBlocSchema('#schLabo');
+        const n = document.querySelector('#jNote'); if (n) n.textContent = k ? `${k} équipement(s) placé(s) sur le schéma.` : 'Tous les équipements du labo sont déjà sur le schéma.';
+        break;
+      }
+      case 'schRemplir': {
+        lireFormulaireJournal(view);
+        const r = remplirDepuisSchema(etatJournal.brouillon, { inventaire: lireEquipements(), typesPerso: lireTypesPerso() });
+        // L'inventaire est enregistré tout de suite (les fiches existent) ; le labo, lui, attend « Enregistrer ».
+        ecrireEquipements(r.inventaire);
+        etatJournal = { ...etatJournal, brouillon: r.entree, noteFiche: phraseBilan(r.bilan), modifie: true };
+        dessinerJournalFiche(view);
+        document.querySelector('#schRemplir')?.focus({ preventScroll: true });
+        break;
+      }
+      case 'schModeleCharger': {
+        const m = modeleSchema(document.querySelector('#schModeleLabo')?.value);
+        if (!m) break;
+        const vide = !s.noeuds.length && !s.zones.length && !s.textes.length;
+        if (!vide && !etatSchema.modeleConfirme) { etatSchema.modeleConfirme = true; majBlocSchema('#schModeleCharger'); const x = document.querySelector('#schModeleCharger'); if (x) x.textContent = 'Confirmer : remplacer le schéma'; break; }
+        const { schema: nouveau } = normaliserSchema(m.construire());
+        lireFormulaireJournal(view);
+        e.schema = nouveau; if (!e.titre.trim()) e.titre = m.titre ?? ''; if (!e.objet.trim()) e.objet = m.objet ?? ''; if (!e.environnement.trim() && m.environnement) e.environnement = m.environnement; if (!e.architecture.trim() && m.architecture) e.architecture = m.architecture; if (!e.retourArriere.trim() && m.retourArriere) e.retourArriere = m.retourArriere; if (!e.referencesTexte.trim() && m.captures) e.referencesTexte = m.captures;
+        etatSchema = { ...etatSchema, selection: null, modeleConfirme: false, cablage: null, relierDepuis: null }; schemaModifie(); dessinerJournalFiche(view);
+        document.querySelector('#schFeuille')?.focus({ preventScroll: true });
+        const n = document.querySelector('#jNote'); if (n) n.textContent = `Modèle chargé : ${m.label}. Complète les plages, appairages et réglages demandés par l’énoncé.`;
+        break;
+      }
+      case 'schCablageFin': etatSchema = { ...etatSchema, cablage: null }; majBlocSchema('#schFeuille'); break;
+      case 'schVersInventaire': {
+        const n = trouverElement(etatSchema.selection); if (!n || !('type' in n) || n.equipementId) break;
+        const persos = new Map(lireTypesPerso().map((t) => [t.id, t]));
+        const nom = n.nom || (n.type === 'perso' ? persos.get(n.typePerso)?.nom : null) || 'Équipement';
+        const typeEq = TYPES_EQUIPEMENT.some((t) => t.id === n.type) ? n.type : 'autre';
+        const { equipement, erreurs } = normaliserEquipement({ ...equipementVide({ systemeId: SYSTEME_DU_TYPE[n.type] ?? 'autre', typeId: typeEq }), nom, adresse: n.note });
+        if (Object.keys(erreurs).length) break;
+        ecrireEquipements([...lireEquipements(), equipement]);
+        n.equipementId = equipement.id;
+        if (!e.equipements.some((l) => l.id === equipement.id)) e.equipements.push({ id: equipement.id, role: '' });
+        // Les interfaces déjà saisies sur ses câbles passent dans sa fiche.
+        for (const l of s.liens) { if (l.de === n.id) reporterInterface(n.id, l.etiquetteDe, l.adresseDe); if (l.a === n.id) reporterInterface(n.id, l.etiquetteA, l.adresseA); }
+        schemaModifie(); dessinerJournalFiche(view);
+        const note = document.querySelector('#jNote'); if (note) note.textContent = `${nom} ajouté à l’inventaire et au labo.`;
+        break;
+      }
+      case 'schRelier':
+        etatSchema.relierDepuis = etatSchema.relierDepuis ? null : etatSchema.selection; majBlocSchema('#schFeuille');
+        document.querySelector('#schFeuille')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+        break;
+      case 'schInverser': { const l = trouverElement(etatSchema.selection); if (l && 'de' in l) { [l.de, l.a] = [l.a, l.de]; [l.etiquetteDe, l.etiquetteA] = [l.etiquetteA, l.etiquetteDe]; schemaModifie(); majBlocSchema('#schInverser'); } break; }
+      case 'schSupprimer': if (etatSchema.selection) { retirerElement(etatSchema.selection); etatSchema.selection = null; schemaModifie(); majBlocSchema('#schFeuille'); } break;
+      case 'schVider':
+        if (!etatSchema.viderConfirme) { etatSchema.viderConfirme = true; majBlocSchema('#schVider'); break; }
+        e.schema = schemaVide(); etatSchema = { ...etatSchema, selection: null, relierDepuis: null, viderConfirme: false }; schemaModifie(); majBlocSchema('#schFeuille'); break;
+      case 'schSvg': {
+        const ops = dessinerSchema(s, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso() });
+        const svg = versSvg(ops, { titre: `${e.titre || e.reference} : schéma d’architecture`, description: decrireSchema(s, { resoudre: resoudreEquipement, typesPerso: lireTypesPerso() }) });
+        const res = await enregistrerFichier(`${e.reference}_schema.svg`, `<?xml version="1.0" encoding="UTF-8"?>\n${svg}\n`, 'image/svg+xml');
+        const n = document.querySelector('#jNote'); if (n) n.textContent = res.ok ? `Schéma ${res.message}.` : res.message;
+        break;
+      }
+      default: break;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Inventaire des équipements (JOURNAL-LABO-03)
+// ---------------------------------------------------------------------------
+let etatInventaire = { systemeId: null, requete: '', note: '', nouveauSysteme: 'cisco',
+  brouillonId: null, brouillon: null, erreurs: {}, noteFiche: '', modifie: false, confirmerSuppression: false, nouveau: false, retour: null };
+
+function renderInventaire() { if (espace.id) renderEquipement(); else renderInventaireListe(); }
+
+function renderInventaireListe() {
+  const view = document.querySelector('#journalView');
+  const tous = lireEquipements(); const ei = etatInventaire; const entrees = lireEntreesJournal();
+  const projets = (id) => labosDe(id, entrees);
+  view.innerHTML = inventaireListeMarkup({ equipements: filtrerInventaire(tous, { systemeId: ei.systemeId, requete: ei.requete }), total: tous.length,
+    compte: (sys) => filtrerInventaire(tous, { systemeId: sys, requete: ei.requete }).length, systemeId: ei.systemeId, requete: ei.requete, projets, note: ei.note, nouveauSysteme: ei.nouveauSysteme });
+  document.title = 'Inventaire des équipements — KJEMO IT Toolkit';
+  etatInventaire.retour = null;
+  view.querySelectorAll('[data-isys]').forEach((b) => b.addEventListener('click', () => { etatInventaire.systemeId = b.dataset.isys || null; renderInventaireListe(); document.querySelector(`[data-isys="${b.dataset.isys}"]`)?.focus(); }));
+  view.querySelector('#iRecherche').addEventListener('input', (ev) => {
+    etatInventaire.requete = ev.target.value; const pos = ev.target.selectionStart;
+    renderInventaireListe(); const c = document.querySelector('#iRecherche'); c?.focus(); c?.setSelectionRange?.(pos, pos);
+  });
+  view.querySelector('#iNouveauSys').addEventListener('change', (ev) => { etatInventaire.nouveauSysteme = ev.target.value; });
+  view.querySelector('#iNouveauForm').addEventListener('submit', (ev) => { ev.preventDefault(); ouvrirEquipement(equipementVide({ systemeId: etatInventaire.nouveauSysteme }), { nouveau: true }); });
+  view.querySelector('#iPdf').addEventListener('click', async () => {
+    let r = null;
+    try { r = pdfInventaire(filtrerInventaire(lireEquipements(), {}), { projets: (id) => projets(id).map((p) => p.reference), auteur: auteurParDefaut() }); } catch { r = null; }
+    if (r) {
+      const res = await enregistrerFichier(`inventaire-equipements_${jour()}.pdf`, r.octets, 'application/pdf');
+      etatInventaire.note = res.ok ? `PDF ${res.message} (${r.pages} pages).` : res.message;
+    } else etatInventaire.note = 'Le PDF n’a pas pu être fabriqué.';
+    renderInventaireListe(); document.querySelector('#iPdf')?.focus();
+  });
+}
+
+function ouvrirEquipement(eq, { nouveau = false, retour = null, note = '' } = {}) {
+  etatInventaire = { ...etatInventaire, brouillonId: eq.id, brouillon: structuredClone(eq), erreurs: {}, noteFiche: note, modifie: nouveau, confirmerSuppression: false, nouveau, retour };
+  const cible = routeEquipement(eq.id);
+  if (location.hash !== cible) location.hash = cible; else render();
+}
+
+function renderEquipement() {
+  const view = document.querySelector('#journalView'); const ei = etatInventaire;
+  if (ei.brouillonId !== espace.id || !ei.brouillon) {
+    const q = lireEquipements().find((x) => x.id === espace.id);
+    if (!q) {
+      view.innerHTML = `<h1>Équipement introuvable</h1><p>Cet équipement n’existe pas (ou plus) dans ce navigateur.</p><p><a href="${ROUTE_INVENTAIRE}">Retour à l’inventaire</a></p>`;
+      document.title = 'Équipement introuvable — KJEMO IT Toolkit'; return;
+    }
+    etatInventaire = { ...ei, brouillonId: q.id, brouillon: structuredClone(q), erreurs: {}, noteFiche: '', modifie: false, confirmerSuppression: false, nouveau: false };
+  }
+  dessinerEquipement(view);
+}
+
+function dessinerEquipement(view = document.querySelector('#journalView')) {
+  const ei = etatInventaire; const q = ei.brouillon;
+  const labos = labosDe(q.id, lireEntreesJournal()).map((l) => ({ id: l.id, reference: l.reference, titre: l.titre, role: l.equipements.find((x) => x.id === q.id)?.role ?? '' }));
+  const defil = window.scrollY;
+  view.innerHTML = equipementMarkup({ equipement: q, erreurs: ei.erreurs, note: ei.noteFiche, modifie: ei.modifie, labos, confirmerSuppression: ei.confirmerSuppression, retour: ei.retour });
+  window.scrollTo(0, defil);
+  document.title = `${q.nom || 'Nouvel équipement'} — Inventaire — KJEMO IT Toolkit`;
+  brancherEquipement(view);
+}
+
+function lireFormulaireEquipement(view) {
+  const q = etatInventaire.brouillon;
+  view.querySelectorAll('[data-i]').forEach((i) => { q[i.dataset.i] = i.value; });
+  view.querySelectorAll('[data-it]').forEach((i) => { const t = q[i.dataset.it]; const r = Number(i.dataset.row); if (t?.[r]) t[r][i.dataset.col] = i.value; });
+  // Un type qui n'existe pas pour ce système reprend le premier type du système.
+  const t = TYPES_EQUIPEMENT.find((x) => x.id === q.type);
+  if (!t || !t.systemes.includes(q.systeme)) q.type = TYPES_EQUIPEMENT.find((x) => x.systemes.includes(q.systeme)).id;
+}
+
+function enregistrerEquipement(view) {
+  lireFormulaireEquipement(view);
+  const { equipement, erreurs } = normaliserEquipement({ ...etatInventaire.brouillon, modifieLe: jour() });
+  if (Object.keys(erreurs).length) {
+    etatInventaire = { ...etatInventaire, erreurs, noteFiche: '' }; dessinerEquipement(view);
+    document.querySelector(`[aria-describedby="ierr-${Object.keys(erreurs)[0].replace(/\./g, '-')}"]`)?.focus();
+    return null;
+  }
+  const autres = lireEquipements().filter((x) => x.id !== equipement.id);
+  const ok = ecrireEquipements([...autres, equipement]);
+  let note = ok ? 'Enregistré dans l’inventaire.' : 'Le stockage de ce navigateur est indisponible : cet équipement ne sera pas conservé.';
+  if (autres.some((x) => x.nom.toLowerCase() === equipement.nom.toLowerCase())) note += ` Attention : un autre équipement s’appelle déjà « ${equipement.nom} ».`;
+  // Créé depuis un labo : on l'y ajoute.
+  const r = etatInventaire.retour;
+  if (etatInventaire.nouveau && r) {
+    const entrees = lireEntreesJournal();
+    const lab = entrees.find((x) => x.id === r.id);
+    if (lab && !lab.equipements.some((x) => x.id === equipement.id)) {
+      const maj = { ...lab, equipements: [...lab.equipements, { id: equipement.id, role: '' }] };
+      ecrireEntreesJournal(entrees.map((x) => (x.id === lab.id ? maj : x)));
+      if (etatJournal.brouillonId === lab.id) etatJournal.brouillon = structuredClone(maj);
+      note += ` Ajouté au labo ${lab.reference}.`;
+    }
+  }
+  etatInventaire = { ...etatInventaire, brouillon: structuredClone(equipement), erreurs: {}, modifie: false, nouveau: false, noteFiche: note };
+  return equipement;
+}
+
+function brancherEquipement(view) {
+  const form = view.querySelector('#iForm');
+  form.addEventListener('input', () => { if (!etatInventaire.modifie) { etatInventaire.modifie = true; const n = view.querySelector('#iNoteFiche'); if (n && !n.textContent) n.textContent = 'Modifications non enregistrées.'; } });
+  form.addEventListener('submit', (ev) => ev.preventDefault());
+  form.addEventListener('change', (ev) => {
+    if (!ev.target.matches('[data-i="systeme"],[data-i="type"]')) return;
+    lireFormulaireEquipement(view); etatInventaire.modifie = true; dessinerEquipement(view); document.querySelector(`#${ev.target.id}`)?.focus();
+  });
+  form.addEventListener('click', (ev) => {
+    const ajout = ev.target.closest('[data-iadd]'); const retrait = ev.target.closest('[data-idel]');
+    if (!ajout && !retrait) return;
+    lireFormulaireEquipement(view);
+    const q = etatInventaire.brouillon;
+    if (ajout) {
+      const nom = ajout.dataset.iadd;
+      q[nom].push(Object.fromEntries(TABLEAUX_EQUIPEMENT[nom].colonnes.map((c) => [c.id, ''])));
+      etatInventaire.modifie = true; dessinerEquipement(view);
+      document.querySelector(`[data-it="${nom}"][data-row="${q[nom].length - 1}"]`)?.focus();
+    } else {
+      q[retrait.dataset.idel].splice(Number(retrait.dataset.row), 1);
+      etatInventaire.erreurs = {}; etatInventaire.modifie = true; dessinerEquipement(view);
+      document.querySelector(`[data-iadd="${retrait.dataset.idel}"]`)?.focus();
+    }
+  });
+  view.querySelector('#iEnregistrer').addEventListener('click', () => { if (enregistrerEquipement(view)) { dessinerEquipement(view); document.querySelector('#iEnregistrer')?.focus(); } });
+  view.querySelector('#iRetour')?.addEventListener('click', (ev) => {
+    if (!etatInventaire.modifie) return;
+    if (!enregistrerEquipement(view)) ev.preventDefault();
+  });
+  view.querySelector('#iSupprimer').addEventListener('click', () => { lireFormulaireEquipement(view); etatInventaire.confirmerSuppression = true; dessinerEquipement(view); document.querySelector('#iSupprimerNon')?.focus(); });
+  view.querySelector('#iSupprimerNon')?.addEventListener('click', () => { etatInventaire.confirmerSuppression = false; dessinerEquipement(view); document.querySelector('#iSupprimer')?.focus(); });
+  view.querySelector('#iSupprimerOui')?.addEventListener('click', () => {
+    const id = etatInventaire.brouillonId; const retour = etatInventaire.retour;
+    ecrireEquipements(lireEquipements().filter((x) => x.id !== id));
+    const entrees = lireEntreesJournal();
+    const nomSupprime = lireEquipements().find((x) => x.id === id)?.nom ?? etatInventaire.brouillon?.nom ?? '';
+    const detacher = (sch) => ({ ...sch, noeuds: sch.noeuds.map((n) => (n.equipementId === id ? { ...n, equipementId: null, nom: n.nom || nomSupprime } : n)) });
+    const touche = (x) => x.equipements.some((l) => l.id === id) || x.schema.noeuds.some((n) => n.equipementId === id);
+    if (entrees.some(touche)) ecrireEntreesJournal(entrees.map((x) => (touche(x) ? { ...x, equipements: x.equipements.filter((l) => l.id !== id), schema: detacher(x.schema) } : x)));
+    if (etatJournal.brouillon) { etatJournal.brouillon.equipements = etatJournal.brouillon.equipements.filter((l) => l.id !== id); etatJournal.brouillon.schema = detacher(etatJournal.brouillon.schema); }
+    etatInventaire = { ...etatInventaire, brouillonId: null, brouillon: null, note: 'Équipement supprimé.', retour: null };
+    location.hash = retour ? routeEntreeJournal(retour.id) : ROUTE_INVENTAIRE;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Mes cours et TP · Mon laboratoire
+// Aucun secret : le laboratoire n'a pas de champ de mot de passe ni de disque, la
+// progression ne garde que des identifiants d'éléments, et une case cochée n'est
+// jamais une preuve. Tout passe par un stockage protégé ; sans lui, l'écran
+// fonctionne et dit que rien n'est conservé.
+// ---------------------------------------------------------------------------
+function contexteCours() {
+  return {
+    fiche: (id) => {
+      const e = entreeParId(id);
+      if (!e?.procedure) return null;
+      return { titre: e.procedure.titre, etapes: e.procedure.methodes[0].etapes };
+    },
+    assistant: (id) => tools.find((t) => t.id === id)?.title ?? null,
+  };
+}
+
+// Copie en mémoire : si le stockage est refusé, la case reste cochée pour la session (et l'écran le dit).
+let progressionMemoire = null;
+function lireProgression() {
+  if (!progressionMemoire) progressionMemoire = normaliserProgression(lireObjet(CLE_PROGRESSION), COURS);
+  return progressionMemoire;
+}
+
+function telechargerTexte(nom, texte, type) {
+  enregistrerFichier(nom, texte, type).catch(() => {});
+}
+
+function renderCours() {
+  const view = document.querySelector('#coursView');
+  const ctx = contexteCours();
+  const progression = lireProgression();
+  if (!espace.coursId) {
+    view.innerHTML = coursListeMarkup(platFiltre ? COURS.filter((c) => (c.plateformes ?? []).includes(platFiltre)) : COURS, progression, ctx, platFiltre);
+    document.title = platFiltre ? `Mes cours ${platFiltre} — KJEMO IT Toolkit` : 'Mes cours et TP — KJEMO IT Toolkit';
+  } else {
+    const cours = COURS_PAR_ID.get(espace.coursId);
+    if (!cours) { view.innerHTML = coursIntrouvableMarkup(); document.title = 'Cours introuvable — KJEMO IT Toolkit'; return; }
+    // Le résumé pliable garde son état (ouvert/fermé) quand on coche un élément et que la page se redessine.
+    const dejaVu = view.querySelector('#resume-cours');
+    const resumeOuvert = espace.lettre === 'resume' || Boolean(dejaVu?.open);
+    view.innerHTML = coursPageMarkup(cours, espace.lettre === 'resume' ? null : espace.lettre, progression, ctx, { resumeOuvert });
+    if (espace.lettre === 'resume') view.querySelector('#resume-cours')?.scrollIntoView?.({ block: 'start' });
+    document.title = `${cours.titre} — KJEMO IT Toolkit`;
+    view.querySelectorAll('input[type="checkbox"][data-item]').forEach((c) => c.addEventListener('change', () => {
+      const suite = basculer(lireProgression(), cours.id, c.dataset.item);
+      progressionMemoire = suite;
+      const ok = ecrireStockage(CLE_PROGRESSION, suite);
+      if (!ok) c.title = 'Le stockage du navigateur est indisponible : cette case ne sera pas conservée.';
+      renderCours();
+      document.querySelector(`#item-${c.dataset.item.replace(/\./g, '-')}`)?.focus();
+    }));
+  }
+  view.querySelector('#gabaritBtn')?.addEventListener('click', () => {
+    telechargerTexte('gabarit-tp.json', `${JSON.stringify(GABARIT_TP, null, 2)}\n`, 'application/json;charset=utf-8');
+  });
+}
+
+let etatLabo = { erreurs: {}, enregistre: false, csvTexte: null, csvErreurs: [], csvPret: false };
+
+function csvParDefaut() { return texteEditeurModele(); }
+
+function renderLabo() {
+  const view = document.querySelector('#laboView');
+  if (etatLabo.csvTexte === null) etatLabo.csvTexte = csvParDefaut();
+  const { valeurs } = normaliserLabo(lireObjet(CLE_LABO));
+  view.innerHTML = laboMarkup({ valeurs, erreurs: etatLabo.erreurs, csvTexte: etatLabo.csvTexte, csvErreurs: etatLabo.csvErreurs,
+    csvPret: etatLabo.csvPret, enregistre: etatLabo.enregistre, stockageOk: stockageDisponible() });
+  document.title = 'Mon laboratoire — KJEMO IT Toolkit';
+  view.querySelector('#laboForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const brut = {};
+    view.querySelectorAll('[data-labo]').forEach((i) => { brut[i.dataset.labo] = i.value; });
+    const { valeurs: v, erreurs } = normaliserLabo(brut);
+    // On enregistre ce qui est valide ; ce qui est refusé reste affiché avec sa raison.
+    const ok = ecrireStockage(CLE_LABO, v);
+    etatLabo = { ...etatLabo, erreurs, enregistre: ok && Object.keys(erreurs).length === 0 };
+    renderLabo();
+    document.querySelector('#laboNote')?.focus?.();
+  });
+  view.querySelector('#laboClear').addEventListener('click', () => {
+    try { localStorage.removeItem(CLE_LABO); } catch { /* stockage indisponible : rien à effacer */ }
+    etatLabo = { ...etatLabo, erreurs: {}, enregistre: false };
+    renderLabo();
+    document.querySelector('#laboClear')?.focus();
+  });
+  const verifier = () => {
+    const texte = view.querySelector('#csvTexte').value;
+    const r = lignesDepuisTexte(texte);
+    const vide = r.lignes.length === 0 && r.erreurs.length === 0;
+    etatLabo = { ...etatLabo, csvTexte: texte,
+      csvErreurs: vide ? [{ ligne: 0, message: 'Aucune ligne de compte.' }] : r.erreurs,
+      csvPret: !vide && r.erreurs.length === 0 && csvDepuisLignes(r.lignes) !== null };
+    return r;
+  };
+  view.querySelector('#csvVerifier').addEventListener('click', () => {
+    verifier(); renderLabo(); document.querySelector('#csvVerifier')?.focus();
+  });
+  view.querySelector('#csvTelecharger').addEventListener('click', () => {
+    const r = verifier();
+    if (!etatLabo.csvPret) { renderLabo(); document.querySelector('#csvTelecharger')?.focus(); return; }
+    telechargerTexte('comptes_tp2_MODELE.csv', csvDepuisLignes(r.lignes), 'text/csv;charset=utf-8');
+    renderLabo(); document.querySelector('#csvTelecharger')?.focus();
+  });
+}
+
+/** Les entrées colorées de la barre latérale : l'état courant est annoncé (aria-current). */
+function majNavEspaces() {
+  const suffixe = platFiltre ? ` ${platFiltre}` : '';
+  const libelles = { cours: platFiltre ? `Mes cours${suffixe}` : 'Mes cours et TP', memo: `Aide-mémoire${suffixe}`, catalogue: `Catalogue pro${suffixe}` };
+  document.querySelectorAll('#espacesNav a').forEach((a) => {
+    const l = libelles[a.dataset.espace]; const cible = a.querySelector('.nav-label');
+    if (l && cible && cible.textContent !== l) cible.textContent = l;
+  });
+  const surAccueil = !espace && !currentTool && !currentTache && modeListe() === 'accueil';
+  document.querySelectorAll('#espacesNav a').forEach((a) => {
+    const e = a.dataset.espace;
+    const actif = e === 'accueil' ? surAccueil : (espace?.type === e || (e === 'journal' && espace?.type === 'inventaire'));
+    if (actif) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    a.classList.toggle('active', actif);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Accueil à trois portes, aide-mémoire, catalogue professionnel (KJEMO-UX-ACCUEIL-01)
+// ---------------------------------------------------------------------------
+let liesCache = null;
+const fichesLiees = () => (liesCache ??= new Set(COURS.flatMap((c) => [...fichesDuCours(c)])));
+const platsDe = (id) => entreeParId(id)?.plateformes ?? [];
+const optsMemo = (filtre = memoFiltre) => ({ filtre, plat: platFiltre, plateformesDe: platsDe, lies: fichesLiees(), nouveaux: idsNouveaux() });
+
+function ligneMemo(id) {
+  const e = entreeParId(id);
+  if (!e) return null;
+  return { id, titre: e.titre, resume: e.resume ?? '', effet: e.effet, plateformes: e.plateformes ?? [],
+    assistant: !e.procedure && e.kind === 'assistant', route: e.procedure ? null : (e.route ?? null),
+    nbEtapes: e.procedure?.methodes?.[0]?.etapes?.length ?? 0, nouveau: idsNouveaux().has(id), lieTp: fichesLiees().has(id) };
+}
+const sousAvecLignes = (sous) => sous.map((x) => ({ ...x, fiches: x.fiches.map(ligneMemo).filter(Boolean) })).filter((x) => x.fiches.length);
+const compteMemoTotal = (filtre = 'tous') => MEMO_GROUPES.reduce((n, g) => n + compteGroupe(g, optsMemo(filtre)), 0);
+const compteParFiltreMemo = () => Object.fromEntries(FILTRES_MEMO.map((f) => [f.id, compteMemoTotal(f.id)]));
+
+function portesAccueilHtml() {
+  const cours = COURS.find((c) => !platFiltre || (c.plateformes ?? []).includes(platFiltre)) ?? null;
+  let tp = null;
+  if (cours) {
+    const prog = lireProgression();
+    let faits = 0; let total = 0; let reprise = null;
+    for (const q of cours.parcours) {
+      const a = avancement(cours, q, prog);
+      faits += a.faits; total += a.total;
+      if (!reprise && a.faits < a.total) reprise = q.lettre;
+    }
+    tp = { titre: cours.titre, faits, total, href: routeParcours(cours.id, reprise) };
+  }
+  const memoCartes = MEMO_GROUPES.filter((g) => !platFiltre || compteGroupe(g, optsMemo('tous')) > 0)
+    .map((g) => groupeCarteMarkup(g, compteGroupe(g, optsMemo('tous')), { nouveaux: compteGroupe(g, optsMemo('nouveau')) }));
+  const catalogueTotal = ENTREES_LISTEES.filter((e) => compatiblePlateforme(e)).length;
+  const statuts = platFiltre ? null : PLATEFORMES_FILTRE.map((p) => ({
+    plat: p,
+    cours: COURS.filter((c) => (c.plateformes ?? []).includes(p)).length,
+    memo: MEMO_GROUPES.reduce((n, g) => n + compteGroupe(g, { ...optsMemo('tous'), plat: p }), 0),
+    catalogue: ENTREES_LISTEES.filter((e) => compatiblePlateforme(e, p)).length,
+  }));
+  return portesAccueilMarkup({ tp, memoCartes, memoTotal: compteMemoTotal('tous'), catalogueTotal, hrefCours: ROUTE_COURS, hrefLabo: ROUTE_LABO, plat: platFiltre, statuts });
+}
+
+const BLOCS_CATALOGUE = [
+  { titre: 'Windows : postes et serveurs', ids: ['poste-windows', 'analyse-disques', 'windows-server', 'imprimantes'] },
+  { titre: 'Annuaire et stratégies', ids: ['active-directory', 'gpo'] },
+  { titre: 'Réseau, Linux et cloud', ids: ['reseau', 'reseau-cisco', 'linux', 'azure-entra'] },
+];
+
+function donneesCatalogue() {
+  const liste = ENTREES_LISTEES.filter((e) => compatiblePlateforme(e));
+  const comptes = compteParCategorie(liste);
+  const blocs = BLOCS_CATALOGUE.map((b) => ({
+    titre: b.titre,
+    domaines: b.ids.map((id) => CATEGORIES.find((c) => c.id === id)).filter(Boolean)
+      .map((c) => ({ id: c.id, nom: c.name, icone: c.icon, sous: c.description, compte: comptes.get(c.name) ?? 0, route: routePortee({ domaineId: c.id }) })),
+  })).filter((b) => b.domaines.length);
+  return { blocs, plat: platFiltre, total: liste.length };
+}
+
+function renderPortes() {
+  majNavEspaces();
+  const view = document.querySelector('#portesView');
+  if (espace.type === 'catalogue') {
+    view.innerHTML = cataloguePageMarkup(donneesCatalogue());
+    document.title = 'Catalogue professionnel — KJEMO IT Toolkit';
+  } else {
+    const g = espace.groupeId ? MEMO_PAR_ID.get(espace.groupeId) : null;
+    const filtres = FILTRES_MEMO;
+    const compteParFiltre = compteParFiltreMemo();
+    if (g) {
+      view.innerHTML = memoGroupePageMarkup({ g, sous: sousAvecLignes(filtrerGroupe(g, optsMemo())), filtre: memoFiltre, filtres, compteParFiltre, plat: platFiltre });
+      document.title = `${g.titre} — Aide-mémoire — KJEMO IT Toolkit`;
+    } else {
+      const groupes = MEMO_GROUPES.map((x) => ({ g: x, compte: compteGroupe(x, optsMemo()),
+        nouveaux: compteGroupe(x, optsMemo('nouveau')), sous: sousAvecLignes(filtrerGroupe(x, optsMemo())) }));
+      view.innerHTML = memoPageMarkup({ groupes, filtre: memoFiltre, filtres, compteParFiltre, plat: platFiltre, total: compteParFiltre.tous });
+      document.title = 'Aide-mémoire — KJEMO IT Toolkit';
+    }
+  }
+  view.querySelectorAll('[data-memo-filtre]').forEach((b) => b.addEventListener('click', () => {
+    memoFiltre = b.dataset.memoFiltre;
+    renderPortes();
+    view.querySelector(`[data-memo-filtre="${memoFiltre}"]`)?.focus();
+  }));
+  view.querySelectorAll('[data-memo-plat]').forEach((b) => b.addEventListener('click', () => {
+    platFiltre = b.dataset.memoPlat || null;
+    renderPortes();
+    view.querySelector(`[data-memo-plat="${platFiltre ?? ''}"]`)?.focus();
+  }));
+  view.querySelector('#memoToutDeplier')?.addEventListener('click', () => view.querySelectorAll('details.groupe-bloc').forEach((d) => { d.open = true; }));
+  view.querySelector('#memoToutReplier')?.addEventListener('click', () => view.querySelectorAll('details.groupe-bloc').forEach((d) => { d.open = false; }));
+  view.querySelector('#filtreSortie')?.addEventListener('click', () => {
+    platFiltre = null; renderPortes();
+    view.querySelector('h1')?.setAttribute('tabindex', '-1'); view.querySelector('h1')?.focus();
+  });
+  view.querySelector('#memoSansFiltre')?.addEventListener('click', (ev) => {
+    ev.preventDefault(); memoFiltre = 'tous'; platFiltre = null; renderPortes();
+  });
+}
+
+/** Où mène Échap : toujours un seul pas en arrière, jamais hors de l'application. */
+function routeParent() {
+  if (espace?.type === 'memo') return espace.groupeId && MEMO_PAR_ID.has(espace.groupeId) ? ROUTE_MEMO : '#/';
+  if (espace?.type === 'catalogue' || espace?.type === 'labo') return '#/';
+  if (espace?.type === 'journal') return espace.id ? ROUTE_JOURNAL : '#/';
+  if (espace?.type === 'inventaire') return espace.id ? ROUTE_INVENTAIRE : ROUTE_JOURNAL;
+  if (espace?.type === 'cours') return espace.coursId ? ROUTE_COURS : '#/';
+  if (currentTache) {
+    if (contexteParcours) return routeParcours(contexteParcours.coursId, contexteParcours.lettre);
+    const g = groupeDeFiche(currentTache.id);
+    return g ? routeMemo(g.id) : null;
+  }
+  return null;
+}
+
+const enFiche = () => Boolean(currentTool || currentTache);
+const modaleActive = () => Boolean(fond && enFiche());
+
+/** Barre de la fenêtre : la croix est toujours en haut, même quand on a défilé. */
+function barreModale(view) {
+  if (!modaleActive()) return;
+  view.insertAdjacentHTML('afterbegin', `<div class="modale-barre"><button type="button" class="modale-x" id="modaleFermer" aria-label="Fermer la fiche et revenir à la page">✕ Fermer</button>`
+    + `<span class="modale-aide">Échap ferme la fiche : tu restes sur la même page.</span></div>`);
+  view.querySelector('#modaleFermer')?.addEventListener('click', () => fermerModale());
+}
+
+/** Ferme la fenêtre : retour à la page d'origine, à la même place. */
+function fermerModale() {
+  if (!modaleActive()) return false;
+  fermetureModale = true;
+  declencheur = (currentTache ?? entreeParId(currentTool?.id))?.id ?? null;
+  const cible = fond.hash || '#/';
+  location.hash = cible;   // comme « Retour » : « Précédent » du navigateur rouvre la fiche
+  return true;
+}
+
 function render() {
   renderNavigation();
   renderModeSelector();
   renderThemeSelector();
   document.body.dataset.mode = modeCourant();
-  document.querySelector('#home').hidden = Boolean(currentTool || currentTache);
+  const fiche = enFiche();
+  const modale = modaleActive();
+  const vu = modale ? fond.espace : espace;           // la page visible (derrière la fenêtre, ou à la place)
+  if (!fiche) { hashPage = location.hash || '#/'; fond = null; pasModale = 0; }
+  document.querySelector('#home').hidden = Boolean(vu) || (fiche && !modale);
   document.querySelector('#toolView').hidden = !currentTool;
   document.querySelector('#taskView').hidden = !currentTache;
-  if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
-  if (currentTool || currentTache) window.scrollTo?.({ top: 0 });
+  const estPortes = vu?.type === 'memo' || vu?.type === 'catalogue';
+  document.querySelector('#portesView').hidden = !estPortes;
+  document.querySelector('#coursView').hidden = vu?.type !== 'cours';
+  document.querySelector('#laboView').hidden = vu?.type !== 'labo';
+  document.querySelector('#journalView').hidden = vu?.type !== 'journal' && vu?.type !== 'inventaire';
+  for (const id of ['#toolView', '#taskView']) {
+    const el = document.querySelector(id);
+    const ici = modale && !el.hidden;
+    el.classList.toggle('fiche-modale', ici);
+    if (ici) { el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Fiche'); }
+    else { el.removeAttribute('role'); el.removeAttribute('aria-label'); }
+  }
+  const voile = document.querySelector('#modaleVoile');
+  if (voile) voile.hidden = !modale;
+  document.body.classList.toggle('modale-ouverte', modale);
+  if (!currentTache) etapeAffichee = null;
+  const versEtape = Boolean(etapeCible);   // montrerEtapeCible consomme etapeCible : on retient s'il faut défiler jusqu'à l'étape
+  const restaurer = fermetureModale && !fiche;
+  if (!fiche) fermetureModale = false;
+  if (modale) { if (currentTool) renderTool(); else renderTache(); }   // la page de fond reste telle quelle
+  else if (espace?.type === 'cours') renderCours();
+  else if (espace?.type === 'labo') renderLabo();
+  else if (espace?.type === 'journal') renderJournal();
+  else if (espace?.type === 'inventaire') renderInventaire();
+  else if (estPortes) renderPortes();
+  else if (currentTool) renderTool(); else if (currentTache) renderTache(); else renderHome();
+  if (modale) {
+    const vue = document.querySelector(currentTool ? '#toolView' : '#taskView');
+    if (!versEtape) vue.scrollTop = 0;
+    if (!vue.dataset.focusFait || vue.dataset.focusFait !== (currentTache ?? currentTool).id) {
+      vue.dataset.focusFait = (currentTache ?? currentTool).id;
+      document.querySelector('#modaleFermer')?.focus({ preventScroll: true });
+    }
+  } else {
+    document.querySelector('#taskView').dataset.focusFait = '';
+    document.querySelector('#toolView').dataset.focusFait = '';
+    if ((fiche || espace) && !versEtape && !restaurer) window.scrollTo?.({ top: 0 });
+    if (restaurer && declencheur) {
+      document.querySelector(`[href="#/tache/${declencheur}"], [href="#/outil/${declencheur}"], [data-tool="${declencheur}"]`)?.focus?.({ preventScroll: true });
+      declencheur = null;
+    }
+  }
+  majNavEspaces();
 }
 
 const champRecherche = document.querySelector('#search');
@@ -1723,7 +3373,7 @@ function majEffacer() {
 
 champRecherche.addEventListener('input', () => {
   majEffacer();
-  if (!currentTool && !currentTache) renderHome();
+  if (!currentTool && !currentTache && !espace) renderHome();
 });
 
 if (boutonEffacer) {
@@ -1731,7 +3381,7 @@ if (boutonEffacer) {
     champRecherche.value = '';
     majEffacer();
     champRecherche.focus();
-    if (!currentTool && !currentTache) renderHome();
+    if (!currentTool && !currentTache && !espace) renderHome();
   });
 }
 
@@ -1741,7 +3391,7 @@ champRecherche.addEventListener('keydown', (ev) => {
     ev.preventDefault();
     champRecherche.value = '';
     majEffacer();
-    if (!currentTool && !currentTache) renderHome();
+    if (!currentTool && !currentTache && !espace) renderHome();
   }
 });
 majEffacer();
@@ -1760,21 +3410,67 @@ majMenu(false);
 boutonMenu.addEventListener('click', () => majMenu(!panneau.classList.contains('open')));
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && panneau.classList.contains('open')) {
+    ev.preventDefault();
     majMenu(false);
     boutonMenu.focus();
   }
 });
+
+// Échap = un pas en arrière (fiche → groupe ou parcours → page d'origine → accueil).
+// Jamais dans un champ de saisie, ni quand Échap vient de fermer le menu.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape' || ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target?.tagName ?? '')) return;
+  if (modaleActive()) { ev.preventDefault(); fermerModale(); return; }
+  const cible = routeParent();
+  if (cible) { ev.preventDefault(); location.hash = cible; }
+});
+
+// Fenêtre : un clic sur le fond la ferme (la barre latérale reste utilisable : thème, mode, navigation).
+document.querySelector('#modaleVoile')?.addEventListener('click', () => fermerModale());
+// Les liens « Retour à… » d'une fiche ouverte en fenêtre ferment simplement la fenêtre : la page d'origine est déjà derrière.
+document.addEventListener('click', (ev) => {
+  if (!modaleActive()) return;
+  if (ev.target.closest?.('#retourMemo, #retourParcours')) { ev.preventDefault(); fermerModale(); }
+});
+
+// Tableau « Où en est chaque plateforme » : un clic règle le filtre sur cette plateforme.
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('[data-plat-go]');
+  if (!b) return;
+  platFiltre = b.dataset.platGo; renderHome();
+  document.querySelector('#platEntete, #portes')?.scrollIntoView?.({ block: 'start' });
+});
+
+// « Accueil » : depuis l'accueil lui-même (recherche, rubrique), le bouton remet tout à plat.
+document.querySelectorAll('a[href="#/"][data-espace="accueil"], #accueilBtn').forEach((a) => a.addEventListener('click', (ev) => {
+  fermerMenu?.();
+  if (location.hash !== '#/' && location.hash !== '') return;   // navigation normale : hashchange fait le travail
+  ev.preventDefault();
+  vueAssistants = false; vueCatalogue = false; natureFiltre = null; selectedCategory = CAT_TOUT; familleSel = null; sujetSel = null;
+  currentTool = null; currentTache = null; espace = null;
+  champRecherche.value = ''; majEffacer();
+  render();
+}));
 
 // Bouton Retour / Suivant du navigateur, et lien partagé collé dans la barre d'adresse
 window.addEventListener('popstate', appliquerHash);
 window.addEventListener('hashchange', appliquerHash);
 
 // Ouvrir directement la fiche demandée par l'URL au chargement
-const tacheInitiale = tacheDepuisHash();
-const outilInitial = outilDepuisHash();
-if (tacheInitiale) {
+const espaceInitial = espaceDepuisHash();
+const tacheInitiale = espaceInitial ? null : tacheDepuisHash();
+const outilInitial = espaceInitial ? null : outilDepuisHash();
+if (espaceInitial) {
+  espace = espaceInitial;
+} else if (tacheInitiale) {
+  const ctxInitial = contexteDepuisHash();
   currentTache = tacheInitiale;
-  methodeTache = tacheInitiale.procedure.methodes[0].id;
+  const methodeInitiale = tacheInitiale.procedure.methodes.find((m) => m.id === ctxInitial.methode) ?? tacheInitiale.procedure.methodes[0];
+  methodeTache = methodeInitiale.id;
+  contexteParcours = ctxInitial.depuis;
+  etapeCible = ctxInitial.etape && ctxInitial.etape <= methodeInitiale.etapes.length ? ctxInitial.etape : null;
+  vueLocale = etapeCible ? 'pas' : null;
   noterConsultation(tacheInitiale.id);
 } else if (outilInitial) {
   currentTool = outilInitial;

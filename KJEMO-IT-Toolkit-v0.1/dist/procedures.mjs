@@ -34,7 +34,7 @@ import {
 import {
   validateNomUnite, validateCheminAbsolu, validatePortTcp, validateEntierBorne,
 } from './validateurs-linux.mjs';
-import { validateIPv4, validerFqdn, validerNomHote } from './validateurs.mjs';
+import { validateIPv4, validerFqdn, validerNomHote, validerIPv6 } from './validateurs.mjs';
 
 // ---------------------------------------------------------------------------
 // Vocabulaire
@@ -44,6 +44,7 @@ import { validateIPv4, validerFqdn, validerNomHote } from './validateurs.mjs';
  * Effet d'une étape ou d'une fiche. Quatre niveaux, chacun avec un libellé et
  * un symbole : la couleur ne porte JAMAIS seule l'information.
  */
+import { incoherencesEcran } from './ecrans-portail.mjs';
 export const EFFETS = {
   lecture:      { id: 'lecture',      label: 'Lecture seule',         symbole: '◉', ton: 'ok' },
   modification: { id: 'modification', label: 'Modification',          symbole: '✎', ton: 'attention' },
@@ -57,7 +58,7 @@ export const METHODES = {
   powershell: { id: 'powershell', label: 'PowerShell',        invite: 'PS>', copiable: true },
   cmd:        { id: 'cmd',        label: 'CMD',               invite: '>',  copiable: true },
   ios:        { id: 'ios',        label: 'Cisco IOS',         invite: null, copiable: true },
-  azure:      { id: 'azure',      label: 'Azure CLI / PowerShell', invite: '$', copiable: true },
+  azure:      { id: 'azure',      label: 'Azure CLI', invite: '$', copiable: true },
   gui:        { id: 'gui',        label: 'Interface graphique', invite: null, copiable: false },
   // Scénario multi-équipements : chaque étape porte l'équipement visé, et
   // chaque équipement déclare sa propre méthode (ios, powershell, linux…).
@@ -67,6 +68,20 @@ export const METHODES = {
 /** Méthodes qu'un équipement de scénario peut employer (une console, jamais l'interface graphique). */
 export const METHODES_EQUIPEMENT = ['ios', 'powershell', 'cmd', 'linux', 'azure'];
 
+/**
+ * Postes d'un TP à plusieurs machines (champ `machine` d'une étape). Une
+ * commande ne se colle que sur SON poste : la copie globale est refusée dès que
+ * deux postes interviennent, et chaque poste a sa propre séquence.
+ */
+export const MACHINES = {
+  serveur: { id: 'serveur', label: 'Serveur Samba (terminal Linux)', court: 'Serveur' },
+  'client-ubuntu': { id: 'client-ubuntu', label: 'Client Ubuntu Desktop', court: 'Client Ubuntu' },
+  'client-windows': { id: 'client-windows', label: 'Client Windows 11', court: 'Client Windows' },
+  hyperviseur: { id: 'hyperviseur', label: 'Hyperviseur (interface graphique)', court: 'Hyperviseur' },
+};
+
+import { POSTES_LECTURE } from './trouver.mjs';
+
 export const REPERE_OUVRANT = '‹';
 export const REPERE_FERMANT = '›';
 
@@ -75,7 +90,7 @@ export const REPERE_FERMANT = '›';
 // ---------------------------------------------------------------------------
 
 const CONTROLE = /[\u0000-\u001f\u007f]/;
-const FAMILLES_ROUTEUR = { fa: 'FastEthernet', fastethernet: 'FastEthernet', gi: 'GigabitEthernet', gigabitethernet: 'GigabitEthernet', te: 'TenGigabitEthernet', tengigabitethernet: 'TenGigabitEthernet' };
+const FAMILLES_ROUTEUR = { fa: 'FastEthernet', fastethernet: 'FastEthernet', gi: 'GigabitEthernet', gigabitethernet: 'GigabitEthernet', te: 'TenGigabitEthernet', tengigabitethernet: 'TenGigabitEthernet', se: 'Serial', serial: 'Serial' };
 // Caractères qui changeraient la nature d'une ligne collée dans un terminal.
 const META_SHELL = /[;&|`$<>\\"'(){}!*?\[\]~#%^]/;
 
@@ -126,7 +141,7 @@ export const TYPES_PARAM = {
     const t = String(v ?? '').trim();
     const m = /^([A-Za-z]+)(\d{1,2})\/(\d{1,2})(?:\/(\d{1,2}))?$/.exec(t);
     const fam = m && FAMILLES_ROUTEUR[m[1].toLowerCase()];
-    if (!m || !fam) return ko(`${p.label} : une seule interface physique, au format Gi0/0, Gi0/0/0 ou Fa0/0 (ni sous-interface, ni plage).`);
+    if (!m || !fam) return ko(`${p.label} : une seule interface physique, au format Gi0/0, Gi0/0/0, Se0/0/0 ou Fa0/0 (ni sous-interface, ni plage).`);
     const nums = [m[2], m[3], m[4]].filter((x) => x !== undefined);
     if (nums.some((n) => n.length > 1 && n.startsWith('0'))) return ko(`${p.label} : pas de zéro de tête dans les numéros.`);
     return ok(`${fam}${nums.join('/')}`);
@@ -149,13 +164,113 @@ export const TYPES_PARAM = {
     }
     return ok(sortie.join(','));
   },
+  // Périphérique bloc : /dev/sdX, /dev/vdX, /dev/nvmeXnY, /dev/mdN. Jamais présumé :
+  // la fiche l'exige, la personne le lit d'abord dans « lsblk ». `portee` :
+  // disque (sans numéro de partition), partition (avec), md (matrice RAID).
+  peripherique: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    const portee = p.portee ?? 'disque';
+    const motifs = {
+      disque: /^\/dev\/(?:sd[a-z]{1,2}|vd[a-z]{1,2}|xvd[a-z]{1,2}|nvme\d{1,2}n\d{1,2})$/,
+      partition: /^\/dev\/(?:(?:sd[a-z]{1,2}|vd[a-z]{1,2}|xvd[a-z]{1,2})\d{1,2}|nvme\d{1,2}n\d{1,2}p\d{1,2})$/,
+      md: /^\/dev\/md\d{1,3}$/,
+    };
+    const attendu = { disque: 'un DISQUE entier, par exemple /dev/sdb (sans numéro de partition)', partition: 'une PARTITION, par exemple /dev/sdb1', md: 'une matrice RAID, par exemple /dev/md0' };
+    if (!motifs[portee]) return ko(`${p.label} : portée inconnue.`);
+    return motifs[portee].test(s) ? ok(s) : ko(`${p.label} : ${attendu[portee]}. Lis « lsblk » pour trouver le tien — il n'est jamais présumé.`);
+  },
+  // Étiquette ext4 : 16 caractères au plus (limite du superbloc).
+  etiquetteExt4: (v, p) => {
+    const s = String(v ?? '').trim();
+    return /^[A-Za-z0-9_-]{1,16}$/.test(s) ? ok(s) : ko(`${p.label} : 1 à 16 caractères parmi lettres, chiffres, « _ » et « - » (limite d'une étiquette ext4).`);
+  },
+  // UUID de système de fichiers, tel que blkid l'affiche.
+  uuid: (v, p) => {
+    const s = String(v ?? '').trim();
+    return /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/.test(s) ? ok(s) : ko(`${p.label} : un UUID de 36 caractères (8-4-4-4-12), tel que « blkid » l'affiche.`);
+  },
   prefixe: (v, p) => {
     const s = String(v ?? '').trim().replace(/^\//, '');
     if (!/^\d{1,2}$/.test(s) || Number(s) < 8 || Number(s) > 30) return ko(`${p.label} : un nombre de 8 à 30 (par exemple 24).`);
     return ok(String(Number(s)));
   },
   identifiant: (v, p) => texteSimple(v, p.label, { max: 80, motif: /^[A-Za-z0-9_.@-]+$/ }),
+  // KJEMO-UX-MEMO-WINDOWS-01 : types des fiches Windows (annuaire, DHCP, partages).
+  // Nom distinctif d'Active Directory : OU=Ventes,DC=lab,DC=local (au moins un composant DC=).
+  dn: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    const composant = '(?:OU|CN|DC)=[A-Za-z0-9_.-](?:[A-Za-z0-9_. -]{0,62}[A-Za-z0-9_.-])?';
+    if (s.length > 200 || !new RegExp(`^${composant}(?:,${composant})*$`).test(s) || !/(?:^|,)DC=/.test(s)) {
+      return ko(`${p.label} : un nom distinctif comme OU=Ventes,DC=lab,DC=local (composants OU=, CN= ou DC=, séparés par des virgules, sans espace autour des virgules, avec au moins un DC=). Get-ADDomain donne celui du domaine.`);
+    }
+    return ok(s);
+  },
+  // Chemin Windows simple : C:\Partages\Ventes (lettre de lecteur, sans espace, sans « .. »).
+  cheminWin: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    if (!/^[A-Za-z]:\\(?:[A-Za-z0-9_.-]+\\?)+$/.test(s) || /(^|\\)\.\.?(\\|$)/.test(s) || s.length > 120) {
+      return ko(`${p.label} : un chemin comme C:\\Partages\\Ventes (lettre de lecteur, dossiers sans espace ni caractère spécial, sans « .. »).`);
+    }
+    return ok(s.replace(/\\$/, ''));
+  },
+  // Compte ou groupe : Nom ou DOMAINE\Nom (le « \ » est permis ici seulement, entre le domaine et le nom).
+  principal: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (CONTROLE.test(s)) return ko(`${p.label} : aucun saut de ligne ni caractère de contrôle.`);
+    return /^(?:[A-Za-z0-9_.-]{1,30}\\)?[A-Za-z0-9_.-]{1,64}$/.test(s) ? ok(s) : ko(`${p.label} : un nom (jdupont) ou DOMAINE\\nom (LAB\\Ventes_G), sans espace ni autre caractère spécial.`);
+  },
+  // Adresse MAC au format du DHCP Windows : 00-15-5D-01-02-03.
+  mac: (v, p) => {
+    const s = String(v ?? '').trim();
+    return /^(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$/.test(s) ? ok(s.toUpperCase()) : ko(`${p.label} : une adresse MAC au format 00-15-5D-01-02-03 (six paires séparées par des tirets).`);
+  },
+  // KJEMO-CISCO-COURS-RESEAU-01 : adresse MAC au format IOS (aaaa.bbbb.cccc) et texte sans accent (IOS exige l'ASCII).
+  macIos: (v, p) => {
+    const s = String(v ?? '').trim().toLowerCase();
+    return /^[0-9a-f]{4}\.[0-9a-f]{4}\.[0-9a-f]{4}$/.test(s) ? ok(s) : ko(`${p.label} : une adresse MAC au format IOS aaaa.bbbb.cccc (trois groupes de quatre chiffres hexadécimaux).`);
+  },
+  texteAscii: (v, p) => {
+    const s = String(v ?? '');
+    if (/[^\x20-\x7e]/.test(s.replace(/[\r\n]/g, '\u0000'))) return ko(`${p.label} : lettres sans accent seulement (IOS n'accepte que l'ASCII).`);
+    return texteSimple(v, p.label, { max: p.max ?? 80 });
+  },
+  // Réseau en notation CIDR : 192.168.1.0/24 (adresse valide, préfixe de 8 à 30).
+  // Nom d'une ressource Azure (groupe, réseau, sous-réseau…) : 1 à 64 caractères, lettres, chiffres, « - », « _ » et « . »,
+  // commence par une lettre ou un chiffre et ne finit ni par un point ni par un tiret.
+  nomAzure: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (!s) return ko(`${p.label} est obligatoire.`);
+    if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}[A-Za-z0-9_]$|^[A-Za-z0-9]$/.test(s)) return ko(`${p.label} : 1 à 64 caractères (lettres, chiffres, « - », « _ », « . »), qui commence par une lettre ou un chiffre et ne finit pas par « . » ni « - ».`);
+    return ok(s);
+  },
+  // Nom d'un compte de stockage Azure : 3 à 24 caractères, minuscules et chiffres seulement, unique dans tout Azure.
+  compteStockage: (v, p) => {
+    const s = String(v ?? '').trim();
+    if (!s) return ko(`${p.label} est obligatoire.`);
+    return /^[a-z0-9]{3,24}$/.test(s) ? ok(s) : ko(`${p.label} : 3 à 24 caractères, minuscules et chiffres seulement (ni tiret, ni majuscule).`);
+  },
+  cidr: (v, p) => {
+    const m = /^([^/]+)\/(\d{1,2})$/.exec(String(v ?? '').trim());
+    if (!m) return ko(`${p.label} : un réseau au format 192.168.1.0/24.`);
+    const a = adapter(validateIPv4(m[1]));
+    if (!a.ok) return ko(`${p.label} : ${a.error}`);
+    const n = Number(m[2]);
+    return n >= 8 && n <= 30 && m[2] === String(n) ? ok(`${a.valeur}/${n}`) : ko(`${p.label} : un préfixe de 8 à 30 (par exemple /24).`);
+  },
   ipv4:    (v, p) => adapter(validateIPv4(v)),
+  // KJEMO-CISCO-S09-01 : adresse IPv6 seule, ou réseau/adresse IPv6 avec préfixe (1 à 128).
+  ipv6:    (v, p) => { const s = String(v ?? '').trim(); if (s.includes('/')) return ko(`${p.label} : une adresse IPv6 sans préfixe (le /64 se tape à part).`); const r = validerIPv6(s); return r.ok ? ok(s) : ko(`${p.label} : ${r.error}`); },
+  cidr6:   (v, p) => {
+    const m = /^([^/]+)\/(\d{1,3})$/.exec(String(v ?? '').trim());
+    if (!m) return ko(`${p.label} : une adresse IPv6 avec son préfixe, par exemple 2001:db8:acad:1::1/64.`);
+    const a = validerIPv6(m[1]);
+    if (!a.ok) return ko(`${p.label} : ${a.error}`);
+    const n = Number(m[2]);
+    return n >= 1 && n <= 128 && m[2] === String(n) ? ok(`${m[1].trim()}/${n}`) : ko(`${p.label} : un préfixe de 1 à 128 (en général /64).`);
+  },
   hote:    (v) => adapter(validerNomHote(v)),
   fqdn:    (v) => adapter(validerFqdn(v)),
   unite:   (v, p) => adapter(validateNomUnite(v, p.label)),
@@ -235,6 +350,10 @@ export function coherencePlanVlan(lignes, valides = {}, param = {}) {
       if (vus.nom.has(nom)) erreurs.push({ ligne: i, col: 'nom', message: `Ligne ${n} : le nom « ${l.nom} » est déjà celui de la ligne ${vus.nom.get(nom) + 1}.` });
       else vus.nom.set(nom, i);
     }
+    // Un VLAN réservé à la gestion (ou à un autre usage) ne peut pas figurer dans le plan.
+    for (const id of param.exclureVlan ?? []) {
+      if (valides[id] !== undefined && String(valides[id]) === String(l.vlan)) erreurs.push({ ligne: i, col: 'vlan', message: `Ligne ${n} : le VLAN ${l.vlan} est déjà le VLAN de gestion (${id}) : choisis un autre numéro.` });
+    }
     const pf = Number(l.prefixe);
     const res = ipv4Entier(l.reseau); const gw = ipv4Entier(l.passerelle); const poste = ipv4Entier(l.poste);
     if (res !== null && Number.isInteger(pf)) {
@@ -252,10 +371,21 @@ export function coherencePlanVlan(lignes, valides = {}, param = {}) {
       if (vus.port.has(p)) erreurs.push({ ligne: i, col: 'ports', message: `Ligne ${n} : le port ${p} est déjà affecté à la ligne ${vus.port.get(p) + 1}.` });
       else vus.port.set(p, i);
       for (const id of param.exclure ?? []) {
-        if (valides[id] && valides[id] === p) erreurs.push({ ligne: i, col: 'ports', message: `Ligne ${n} : le port ${p} est aussi la liaison de ce plan (${id === 'trunkSw' ? 'trunk côté commutateur' : id}) : un port ne peut pas être à la fois d’accès et de liaison.` });
+        if (valides[id] && valides[id] === p) erreurs.push({ ligne: i, col: 'ports', message: `Ligne ${n} : le port ${p} est aussi la liaison de ce plan (${id === 'trunkSw' ? 'trunk côté commutateur' : id === 'portGestion' ? 'port du poste de gestion' : id}) : un port ne peut pas être à la fois d’accès et de liaison.` });
       }
     }
   });
+  // Le réseau du VLAN de gestion ne doit chevaucher aucun réseau du plan.
+  const g = param.reseauGestion;
+  if (g && valides[g.passerelle] && valides[g.prefixe]) {
+    const gw = ipv4Entier(valides[g.passerelle]); const gpf = Number(valides[g.prefixe]);
+    if (gw !== null && Number.isInteger(gpf)) {
+      const gm = masqueDepuisPrefixe(gpf); const gres = (gw & gm) >>> 0; const gdif = (gres | (~gm >>> 0)) >>> 0;
+      for (const x of sous) {
+        if (x.reseau <= gdif && gres <= x.diffusion) erreurs.push({ ligne: x.i, col: 'reseau', message: `Ligne ${x.i + 1} : ce réseau chevauche celui du VLAN de gestion (${entierIpv4(gres)}/${gpf}). Chaque VLAN a son propre réseau.` });
+      }
+    }
+  }
   for (let a = 0; a < sous.length; a++) {
     for (let b = a + 1; b < sous.length; b++) {
       if (sous[a].reseau <= sous[b].diffusion && sous[b].reseau <= sous[a].diffusion) {
@@ -330,6 +460,23 @@ export function evaluerValeurs(params, saisies = {}) {
     if (!tables[p.id].ok) {
       if (tables[p.id].vide && !tables[p.id].erreurs.length) vides.push(p.id);
       else erreurs[p.id] = tables[p.id].messages[0] ?? `${p.label} : valeurs à corriger.`;
+    }
+  }
+  // Vérifications croisées entre paramètres simples : deux disques distincts,
+  // une limite stricte au moins égale à la limite souple.
+  for (const p of params ?? []) {
+    if (p.type === 'table' || !(p.id in valides) || p.id in erreurs) continue;
+    for (const autre of p.distinctDe ?? []) {
+      const q = (params ?? []).find((x) => x.id === autre);
+      if (q && autre in valides && !(autre in erreurs) && String(valides[autre]) !== '' && valides[autre] === valides[p.id]) {
+        erreurs[p.id] = `${p.label} : doit être différent de « ${q.label} » (même valeur saisie deux fois).`;
+      }
+    }
+    if (p.superieurA) {
+      const q = (params ?? []).find((x) => x.id === p.superieurA);
+      if (q && p.superieurA in valides && !(p.superieurA in erreurs) && Number(valides[p.id]) < Number(valides[p.superieurA])) {
+        erreurs[p.id] = `${p.label} : doit être supérieure ou égale à « ${q.label} ».`;
+      }
     }
   }
   return { valides, erreurs, vides, tables };
@@ -475,10 +622,11 @@ export function phasesDeMethode(rendu) {
     const categorie = categorieEtape(e);
     const titre = e.phase ?? null;
     const eq = e.equipement ?? null;
+    const machine = e.machine ?? null;
     const derniere = phases[phases.length - 1];
-    if (derniere && derniere.categorie === categorie && derniere.titre === titre && derniere.equipement === eq) {
+    if (derniere && derniere.categorie === categorie && derniere.titre === titre && derniere.equipement === eq && derniere.machine === machine) {
       derniere.indices.push(index);
-    } else phases.push({ categorie, titre, equipement: eq, indices: [index] });
+    } else phases.push({ categorie, titre, equipement: eq, machine, indices: [index] });
   });
   const aff = { action: 'Appliquer', verification: 'Vérifier', persistance: 'Enregistrer', dernier: 'Dernier recours' };
   return phases.map((ph, n) => {
@@ -501,7 +649,7 @@ export function phasesDeMethode(rendu) {
     else if (bloque) raison = 'manquants';
     else texte = commandes.map((e) => e.rendu.texteCopie).join('\n');
     return {
-      numero: n, categorie: ph.categorie, titre: ph.titre ?? (ph.categorie === 'action' ? titreAction : aff[ph.categorie]), equipement: ph.equipement,
+      numero: n, categorie: ph.categorie, titre: ph.titre ?? (ph.categorie === 'action' ? titreAction : aff[ph.categorie]), equipement: ph.equipement, machine: ph.machine,
       indices: ph.indices, manquants, interactif, texte, raison, nbCommandes: copiables.length,
     };
   });
@@ -516,6 +664,7 @@ export function raisonRefus(raison) {
     'aucune-commande': 'Aucune commande à copier ici.',
     'plusieurs-machines': 'Ce bloc vise plusieurs machines (une par ligne du tableau) : chacune a sa propre copie.',
     'plusieurs-equipements': 'Ces commandes visent plusieurs équipements : elles ne se collent pas dans un seul terminal.',
+    'plusieurs-postes': 'Ces étapes se font sur plusieurs machines (serveur, clients) : chaque poste a sa propre copie, jamais un bloc unique.',
   })[raison] ?? '';
 }
 
@@ -528,6 +677,7 @@ export function raisonRefusCourte(raison) {
     'aucune-commande': 'Aucune commande à copier ici.',
     'plusieurs-machines': 'Une copie par machine (une par ligne du tableau).',
     'plusieurs-equipements': 'Plusieurs équipements : pas de copie unique.',
+    'plusieurs-postes': 'Plusieurs machines : une copie par poste.',
   })[raison] ?? '';
 }
 
@@ -547,7 +697,9 @@ export function rendreMethode(methode, params, saisies) {
   // Procédure à un seul équipement : copie de toute la séquence si elle est sûre.
   const interactifGlobal = copiables.some((e) => e.rendu.interactif);
   let texteComplet = null; let raisonComplet = null;
+  const machines = [...new Set(etapes.filter((e) => e.machine).map((e) => e.machine))];
   if (equipements) raisonComplet = 'plusieurs-equipements';
+  else if (machines.length > 1) raisonComplet = 'plusieurs-postes';
   else if (!copiables.length) raisonComplet = 'aucune-commande';
   else if (copiables.some((e) => e.rendu.multi)) raisonComplet = 'plusieurs-machines';
   else if (interactifGlobal) raisonComplet = 'interactif';
@@ -572,7 +724,20 @@ export function rendreMethode(methode, params, saisies) {
     return { ...eq, texte, raison, nbEtapes: idx.length };
   });
 
-  return { evaluation, etapes, phases, manquants: manquantsTous, texteComplet, raisonComplet, parEquipement };
+  // Procédure à plusieurs postes : une séquence par machine (jamais mélangée), dans l'ordre d'apparition.
+  const parMachine = machines.length > 1 ? machines.map((id) => {
+    const idx = etapes.map((e, i) => (e.machine === id ? i : -1)).filter((i) => i >= 0);
+    const miens = idx.map((i) => etapes[i]).filter((e) => e.rendu && !e.facultatif && !e.dernierRecours);
+    let texte = null; let raison = null;
+    if (!miens.length) raison = 'aucune-commande';
+    else if (miens.some((e) => e.rendu.multi)) raison = 'plusieurs-machines';
+    else if (miens.some((e) => e.rendu.interactif)) raison = 'interactif';
+    else if (miens.some((e) => e.rendu.bloque)) raison = 'manquants';
+    else texte = miens.map((e) => e.rendu.texteCopie).join('\n');
+    return { id, label: MACHINES[id]?.label ?? id, court: MACHINES[id]?.court ?? id, texte, raison, nbEtapes: idx.length };
+  }) : [];
+
+  return { evaluation, etapes, phases, manquants: manquantsTous, texteComplet, raisonComplet, parEquipement, parMachine };
 }
 
 // ---------------------------------------------------------------------------
@@ -634,6 +799,7 @@ export function incoherencesProcedure(p) {
   if (!Array.isArray(p.intentions) || p.intentions.length < 2) pb.push('intentions de recherche : au moins 2');
   if (!Array.isArray(p.sources) || !p.sources.length) pb.push('aucune source');
   for (const s of p.sources ?? []) if (!/^https:\/\//.test(s.url ?? '')) pb.push(`source non HTTPS : ${s.label}`);
+  for (const q of p.params ?? []) if (q.trouver && (!(MACHINES[q.trouver.poste] || POSTES_LECTURE[q.trouver.poste]) || !(q.trouver.commande || q.trouver.texte))) pb.push(`paramètre ${q.id} : « trouver » doit nommer un poste connu et une commande`);
   if (!Array.isArray(p.methodes) || !p.methodes.length) pb.push('aucune méthode');
   if (p.kind && !['procedure', 'scenario'].includes(p.kind)) pb.push(`nature inconnue : ${p.kind}`);
   if (scenario) {
@@ -641,6 +807,10 @@ export function incoherencesProcedure(p) {
     if (txt(p.topologie).length < 20) pb.push('scénario : topologie absente');
   }
 
+  for (const [k, r] of (p.prerequis ?? []).entries()) {
+    if (txt(r?.texte).length < 10) pb.push(`prérequis ${k + 1} : texte absent`);
+    if (r?.fiche !== undefined && !/^[a-zA-Z0-9][a-zA-Z0-9-]*$/.test(txt(r.fiche))) pb.push(`prérequis ${k + 1} : identifiant de fiche mal formé`);
+  }
   const ids = new Set(); const colonnes = new Set();
   for (const prm of p.params ?? []) {
     if (ids.has(prm.id)) pb.push(`paramètre en double : ${prm.id}`);
@@ -696,8 +866,13 @@ export function incoherencesProcedure(p) {
       if (e.effet && !EFFETS[e.effet]) pb.push(`${nom} : effet inconnu ${e.effet}`);
       if (m.id === 'scenario' && !eqIds.has(e.equipement)) pb.push(`${nom} : équipement « ${e.equipement} » non déclaré`);
       if (m.id !== 'scenario' && e.equipement) pb.push(`${nom} : « equipement » n'a de sens que dans un scénario`);
+      if (e.machine !== undefined && !MACHINES[e.machine]) pb.push(`${nom} : machine inconnue « ${e.machine} »`);
+      if (m.etapes.some((x) => x.machine) && !e.machine) pb.push(`${nom} : la fiche désigne des machines, cette étape n'en désigne aucune`);
+      if (e.annulation && (!e.facultatif || !['modification', 'destructif', 'interruption'].includes(e.effet))) pb.push(`${nom} : une étape d'annulation est facultative et modifie quelque chose`);
+      if (e.suppose !== undefined && txt(e.suppose).length < 10) pb.push(`${nom} : « suppose » trop court`);
       if (m.id === 'gui') {
         if (e.lignes) pb.push(`${nom} : une étape graphique n'a pas de ligne de commande`);
+        if (e.ecran !== undefined) pb.push(...incoherencesEcran(e.ecran, `${nom} : écran`));
         return;
       }
       if (!Array.isArray(e.lignes) || !e.lignes.length) { pb.push(`${nom} : aucune commande`); return; }
@@ -748,7 +923,9 @@ export function incoherencesProcedure(p) {
     }
   }
   for (const prm of p.params ?? []) {
-    const utilise = (p.methodes ?? []).some((m) => (m.etapes ?? []).some((e) => (e.lignes ?? []).some((l) => parametresUtilises(l.cmd).includes(prm.id))
+    // Un préfixe est « utilisé » quand son masque pointé {{<id>Masque}} l'est.
+    const idsUtiles = prm.type === 'prefixe' ? [prm.id, `${prm.id}Masque`] : [prm.id];
+    const utilise = (p.methodes ?? []).some((m) => (m.etapes ?? []).some((e) => (e.lignes ?? []).some((l) => parametresUtilises(l.cmd).some((x) => idsUtiles.includes(x)))
       || (prm.type === 'table' && e.repeter?.table === prm.id)
       || (e.repeter && (e.lignes ?? []).some((l) => parametresUtilises(l.cmd).includes(prm.id)))));
     if (!utilise) pb.push(`paramètre ${prm.id} déclaré mais jamais utilisé`);
