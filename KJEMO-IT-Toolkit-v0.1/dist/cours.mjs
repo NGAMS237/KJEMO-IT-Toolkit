@@ -25,6 +25,7 @@ import { COURS_CISCO_NAT_PARCOURS } from './cours-cisco-nat.mjs';
 import { COURS_CISCO_TP_VLAN_PARCOURS } from './cours-cisco-tp-vlan.mjs';
 import { COURS_CISCO_TP_VTP_DTP_PARCOURS } from './cours-cisco-tp-vtp-dtp.mjs';
 import { COURS_CISCO_TP_PVST_PARCOURS } from './cours-cisco-tp-pvst.mjs';
+import { COURS_CISCO_TP_ETHERCHANNEL_PARCOURS } from './cours-cisco-tp-etherchannel.mjs';
 import { COURS_AZURE_PARCOURS } from './cours-azure.mjs';
 import { COURS_AZURE_TP_PARCOURS } from './cours-azure-tp.mjs';
 import { COURS_AZURE_CARTE } from './cours-azure-carte.mjs';
@@ -292,6 +293,7 @@ export const COURS = [
   ...COURS_CISCO_TP_VLAN_PARCOURS,
   ...COURS_CISCO_TP_VTP_DTP_PARCOURS,
   ...COURS_CISCO_TP_PVST_PARCOURS,
+  ...COURS_CISCO_TP_ETHERCHANNEL_PARCOURS,
   ...COURS_AZURE_PARCOURS,
   ...COURS_AZURE_TP_PARCOURS,
   ...COURS_AZURE_DEMO_PARCOURS,
@@ -313,7 +315,7 @@ function variantes(coursCle, item) {
   return [`${coursCle} ${sans}`, sans, `${coursCle} ${sans.replace(/^([a-z])(\d)/, '$1 $2')}`];
 }
 
-const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco', 'cisco-s09-dhcp-ipv6': 's09', 'cisco-nat-adressage-recap': 'nat', 'cisco-tp-vlan-ssh-intervlan': 'tp vlan', 'cisco-tp-vtp-dtp': 'tp vtp dtp', 'cisco-tp-pvst': 'tp pvst', 'azure-01-02-infonuagique-azure': 'azure 01', 'azure-03-reseau-virtuel': 'azure 03', 'azure-04-resolution-noms': 'azure 04', 'azure-05-peering-routage': 'azure 05', 'azure-06-07-acces-prive-equilibrage': 'azure 06', 'azure-tp1-energia': 'tp1 azure', 'azure-tp2-tardi': 'tp2 azure', 'azure-08-carte-documentation': 'azure carte', 'azure-tp-demo-webapp-stockage': 'demo azure', 'azure-09-equilibreurs': 'equilibreurs azure' };
+const CLE_COURS = { 'serveurs2-tp2': 'tp2', 'cisco-s07-etherchannel': 's07', 'cisco-s01-revision-vlsm': 's01', 'cisco-s02-commutateur-securite': 's02', 'cisco-s02-s03-routage': 's03', 'cisco-s05-vlan-vtp-dtp': 's05', 'cisco-tp2-routage-statique': 'tp2 cisco', 'cisco-s09-dhcp-ipv6': 's09', 'cisco-nat-adressage-recap': 'nat', 'cisco-tp-vlan-ssh-intervlan': 'tp vlan', 'cisco-tp-vtp-dtp': 'tp vtp dtp', 'cisco-tp-pvst': 'tp pvst', 'cisco-tp-etherchannel': 'tp etherchannel', 'azure-01-02-infonuagique-azure': 'azure 01', 'azure-03-reseau-virtuel': 'azure 03', 'azure-04-resolution-noms': 'azure 04', 'azure-05-peering-routage': 'azure 05', 'azure-06-07-acces-prive-equilibrage': 'azure 06', 'azure-tp1-energia': 'tp1 azure', 'azure-tp2-tardi': 'tp2 azure', 'azure-08-carte-documentation': 'azure carte', 'azure-tp-demo-webapp-stockage': 'demo azure', 'azure-09-equilibreurs': 'equilibreurs azure' };
 
 const ALIAS = (() => {
   const m = new Map();

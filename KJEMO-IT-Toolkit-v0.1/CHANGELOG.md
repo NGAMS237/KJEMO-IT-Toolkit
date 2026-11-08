@@ -1,3 +1,9 @@
+## CISCO-TP-ETHERCHANNEL-01 (2026-11-08)
+
+- **TP complet « EtherChannel PAgP et LACP »** (S1, S2, S3) rangé dans Mes cours et TP > Cisco : fiche à champs (noms, ports, numéros de groupe et mode de chaque commutateur pour trois canaux, façon de rendre S1 racine du VLAN 1) en cinq phases : noms et état des ports, canal 1 en PAgP, canal 2 en LACP, canal 3 en LACP négocié (passive / active), Spanning Tree et enregistrement. 17 étapes, quatre annulations.
+- Chaque bloc suit l'ordre du TP : trunk statique, ports éteints, `channel-group`, ports rallumés, puis l'interface `port-channel` en trunk. Plage de ports écrite avec une virgule (le tiret long des scripts de l'énoncé fait échouer la commande).
+- Parcours A à E avec ambiguïtés de l'énoncé signalées, résumé pliable (cinq questions à réponse cachée) et groupe dans l'aide-mémoire. Aucun secret. Test : `cisco-tp-etherchannel` (50 vérifications) ; compteurs de `cours`, `memo`, `cisco-reseau` et `cisco-show` mis à jour (139 fiches, 12 cours Cisco).
+
 ## CISCO-TP-PVST-01 (2026-11-08)
 
 - **TP complet « PVST+, PortFast et BPDU guard »** (S1, S2, S3) rangé dans Mes cours et TP > Cisco : fiche à champs (noms, ports d'accès et VLAN, trunks, VLAN natif 99, SVI de gestion, mode STP, listes de VLAN des racines) en cinq phases : VLAN et ports, vérifications, racines PVST+, PortFast et BPDU guard, enregistrement. 20 étapes, trois annulations.

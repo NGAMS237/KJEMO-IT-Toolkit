@@ -156,6 +156,11 @@ export const MEMO_GROUPES = [
     sous: [
       { id: 'tp-pvst', titre: 'Le TP en une suite, phase par phase', fiches: ['cours-tp-pvst'] },
     ] },
+  { id: 'cisco-tp-etherchannel', titre: '⭐ TP complet : EtherChannel PAgP et LACP', icone: '🔗', couleur: '#0369a1', commandes: 'channel-group, interface port-channel, show etherchannel summary, spanning-tree vlan 1 root primary',
+    resume: 'Le TP EtherChannel en une seule fiche à remplir : trois canaux (PAgP, LACP, LACP négocié), trunks sur les port-channel, puis S1 racine du VLAN 1 pour libérer le canal Gigabit.',
+    sous: [
+      { id: 'tp-etherchannel', titre: 'Le TP en une suite, phase par phase', fiches: ['cours-tp-etherchannel'] },
+    ] },
   { id: 'cisco-show', titre: '⭐ Commandes show Cisco (toutes)', icone: '🔎', couleur: '#0369a1', commandes: 'show ip interface brief, show running-config, show ip route, show vlan brief, show cdp neighbors',
     resume: 'Une seule fiche qui range par groupe toutes les commandes « show » utiles : interfaces, VLAN, Spanning Tree, EtherChannel, routage, DHCP, NAT, sécurité, journaux.',
     sous: [
@@ -251,7 +256,7 @@ export const MEMO_GROUPES = [
 export const SECTIONS_MEMO = [
   { id: 'Linux', titre: 'Linux et serveurs', icone: '🐧', groupes: ['fichiers', 'texte', 'comptes', 'services', 'reseau', 'stockage', 'samba', 'bash'] },
   { id: 'Windows', titre: 'Windows', icone: '🪟', groupes: ['win-examen', 'win-poste', 'win-systeme', 'win-fichiers', 'win-reseau', 'win-ad', 'win-gpo', 'win-serveur'] },
-  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', epingle: [{ fiche: 'cours-tp-vlan-ssh-intervlan', titre: 'TP complet : VLAN, SSH et routage inter-VLAN', texte: 'De la création des VLAN jusqu’au routage entre VLAN, en passant par SSH : une seule fiche à remplir, en neuf phases.' }, { fiche: 'cours-show-cisco', titre: 'Commandes show Cisco', texte: 'Toutes les commandes « show » utiles, rangées par groupe, dans une seule fiche.' }], groupes: ['cisco-tp-vlan', 'cisco-tp-vtp-dtp', 'cisco-tp-pvst', 'cisco-show', 'cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
+  { id: 'Cisco', titre: 'Cisco — dans l’ordre du cours', icone: '🔌', epingle: [{ fiche: 'cours-tp-vlan-ssh-intervlan', titre: 'TP complet : VLAN, SSH et routage inter-VLAN', texte: 'De la création des VLAN jusqu’au routage entre VLAN, en passant par SSH : une seule fiche à remplir, en neuf phases.' }, { fiche: 'cours-show-cisco', titre: 'Commandes show Cisco', texte: 'Toutes les commandes « show » utiles, rangées par groupe, dans une seule fiche.' }], groupes: ['cisco-tp-vlan', 'cisco-tp-vtp-dtp', 'cisco-tp-pvst', 'cisco-tp-etherchannel', 'cisco-show', 'cisco-acces-ports', 'cisco-vlan-vtp', 'cisco-commutation', 'cisco-adressage-routage', 'cisco-dhcp-ipv6', 'cisco-nat'] },
   { id: 'Azure', titre: 'Azure', icone: '☁', groupes: ['az-base', 'az-reseau', 'az-routage-prive', 'az-app-service', 'az-equilibrage'] },
 ];
 
@@ -276,7 +281,7 @@ export const AJOUTS = Object.fromEntries([
 ).concat(
   ['cours-base-peripherique', 'cours-sw-gestion-ip', 'cours-sw-duplex-vitesse', 'cours-sw-diagnostiquer-port', 'cours-sw-ports-inutilises', 'cours-sw-portsec',
     'cours-config-portable', 'cours-rt-interface-ip', 'cours-rt-statique', 'cours-rt-defaut-flottante', 'cours-rt-tester', 'cours-rip-configurer', 'cours-rip-verifier',
-    'cours-vtp-reseau', 'cours-vtp-transparent-etendus', 'cours-dtp-trunk', 'cours-vtp-dtp-depanner', 'cours-tp-vtp-dtp', 'cours-tp-pvst'].map((id) => [id, '2026-10-28']),
+    'cours-vtp-reseau', 'cours-vtp-transparent-etendus', 'cours-dtp-trunk', 'cours-vtp-dtp-depanner', 'cours-tp-vtp-dtp', 'cours-tp-pvst', 'cours-tp-etherchannel'].map((id) => [id, '2026-10-28']),
 ).concat(
   ['win-local-voir-comptes', 'win-local-creer-utilisateur', 'win-ad-voir-ou', 'win-ad-voir-utilisateurs', 'win-ad-creer-ou', 'win-ad-creer-utilisateur', 'win-ad-creer-groupe', 'win-ad-ajouter-membre', 'win-ad-reinit-mot-de-passe', 'win-ad-desactiver-compte', 'win-ad-deplacer-objet', 'win-ad-joindre-domaine', 'win-gpo-lister', 'win-gpo-resultat', 'win-gpo-creer-lier', 'win-dhcp-installer', 'win-dhcp-etendue', 'win-dhcp-reservation', 'win-dhcp-baux', 'win-dns-zone-directe', 'win-dns-zone-inverse', 'win-dns-enregistrement-a', 'win-partage-creer', 'win-partage-ntfs', 'win-partage-voir', 'win-partage-connecter'].map((id) => [id, '2026-10-28']),
 ).concat(

@@ -85,7 +85,7 @@ console.log('4. Visibilité : classement, aide-mémoire, cours, recherche');
   assert(g && g.sous.flatMap((s) => s.fiches).join() === ID, 'groupe d’aide-mémoire « Commandes show Cisco »');
   const cis = M.SECTIONS_MEMO.find((x) => x.id === 'Cisco');
   const pins = [].concat(cis.epingle ?? []).map((p) => p.fiche);
-  assert(cis.groupes[3] === 'cisco-show' && pins.includes(ID), 'quatrième groupe de la section Cisco (après les trois TP), et fiche épinglée');
+  assert(cis.groupes[4] === 'cisco-show' && pins.includes(ID), 'cinquième groupe de la section Cisco (après les quatre TP), et fiche épinglée');
   const groupes = M.MEMO_GROUPES.map((x) => ({ g: x, compte: 1, nouveaux: 0, sous: x.sous.map((s) => ({ ...s, fiches: [] })) }));
   const h = (plat) => V.memoPageMarkup({ groupes, filtre: 'tous', filtres: M.FILTRES_MEMO, compteParFiltre: { tous: 1, nouveau: 0, tp: 0 }, plat, total: 1 });
   assert(h(null).includes(`data-epingle="${ID}"`) && h(null).includes(`href="#/tache/${ID}"`), 'bandeau épinglé : visible sans filtre');

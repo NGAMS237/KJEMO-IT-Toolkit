@@ -205,6 +205,18 @@ export const ANNULATIONS = {
   'cours-rip-configurer|ios': {
     steps: [an('supprimer RIP', 'Supprime tout le processus RIP : réseaux, version, interfaces passives.', [rt('no router rip')], '« show ip protocols » ne mentionne plus RIP.')],
   },
+  'cours-tp-etherchannel|ios': {
+    steps: [
+      ai('défaire le canal 1 (PAgP)', 'À faire sur les deux commutateurs du canal : éteint les ports, retire le groupe, supprime l’interface logique, puis rallume. Les ports restent en mode trunk : remets-les en accès si besoin.',
+        [sw('interface range {{c1PortA}} , {{c1PortB}}'), swr('shutdown'), swr('no channel-group'), sw('no interface port-channel {{c1Groupe}}'), sw('interface range {{c1PortA}} , {{c1PortB}}'), swr('no shutdown')], '« show etherchannel summary » ne liste plus le groupe du canal 1.'),
+      ai('défaire le canal 2 (LACP)', 'Même démarche pour les ports et le groupe du canal 2, sur les deux commutateurs.',
+        [sw('interface range {{c2PortA}} , {{c2PortB}}'), swr('shutdown'), swr('no channel-group'), sw('no interface port-channel {{c2Groupe}}'), sw('interface range {{c2PortA}} , {{c2PortB}}'), swr('no shutdown')], '« show etherchannel summary » ne liste plus le groupe du canal 2.'),
+      ai('défaire le canal 3 (LACP négocié)', 'Même démarche pour les ports et le groupe du canal 3, sur S2 et S3.',
+        [sw('interface range {{c3PortA}} , {{c3PortB}}'), swr('shutdown'), swr('no channel-group'), sw('no interface port-channel {{c3Groupe}}'), sw('interface range {{c3PortA}} , {{c3PortB}}'), swr('no shutdown')], '« show etherchannel summary » ne liste plus le groupe du canal 3.'),
+      an('retirer la racine du VLAN 1', 'À faire sur S1 : revient à la priorité par défaut ; la commande qui ne correspond pas à ce que tu as tapé est sans effet.',
+        [sw('no spanning-tree vlan 1 root'), sw('no spanning-tree vlan 1 priority')], '« show spanning-tree » montre à nouveau une racine choisie par adresse MAC.'),
+    ],
+  },
   'cours-tp-pvst|ios': {
     steps: [
       an('retirer PortFast et BPDU guard des ports des postes', 'À faire sur S1, S2 et S3 avec leur port d’accès : le port repasse par les états normaux de Spanning Tree. Si un port est tombé en err-disabled, fais « shutdown » puis « no shutdown ».',

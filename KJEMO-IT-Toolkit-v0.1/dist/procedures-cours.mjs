@@ -23,6 +23,7 @@ import { COURS_CISCO_NAT } from './cours-fiches-cisco-nat.mjs';
 import { COURS_CISCO_SHOW } from './cours-fiches-cisco-show.mjs';
 import { COURS_CISCO_TP_VLAN } from './cours-fiches-cisco-tp-vlan.mjs';
 import { COURS_CISCO_TP_VTP_DTP } from './cours-fiches-cisco-tp-vtp-dtp.mjs';
+import { COURS_CISCO_TP_ETHERCHANNEL } from './cours-fiches-cisco-tp-etherchannel.mjs';
 import { COURS_CISCO_TP_PVST } from './cours-fiches-cisco-tp-pvst.mjs';
 
-export const PROCEDURES_COURS = completerAzure([...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO, ...COURS_FORMATIFS, ...COURS_CISCO, ...COURS_CISCO_RESEAU, ...COURS_CISCO_S09, ...COURS_CISCO_NAT, ...COURS_CISCO_SHOW, ...COURS_CISCO_TP_VLAN, ...COURS_CISCO_TP_VTP_DTP, ...COURS_CISCO_TP_PVST, ...COURS_AZURE, ...COURS_AZURE_TP, ...COURS_AZURE_DEMO, ...COURS_AZURE_LB]);
+export const PROCEDURES_COURS = completerAzure([...COURS_BASES, ...COURS_STOCKAGE, ...COURS_SAMBA, ...COURS_CLIENTS, ...COURS_MEMO, ...COURS_FORMATIFS, ...COURS_CISCO, ...COURS_CISCO_RESEAU, ...COURS_CISCO_S09, ...COURS_CISCO_NAT, ...COURS_CISCO_SHOW, ...COURS_CISCO_TP_VLAN, ...COURS_CISCO_TP_VTP_DTP, ...COURS_CISCO_TP_PVST, ...COURS_CISCO_TP_ETHERCHANNEL, ...COURS_AZURE, ...COURS_AZURE_TP, ...COURS_AZURE_DEMO, ...COURS_AZURE_LB]);

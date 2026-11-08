@@ -93,6 +93,7 @@
     "test:cisco-dtp-vtp": "node test/cisco-dtp-vtp.test.mjs",
     "test:cisco-tp-vtp-dtp": "node test/cisco-tp-vtp-dtp.test.mjs",
     "test:cisco-tp-pvst": "node test/cisco-tp-pvst.test.mjs",
+    "test:cisco-tp-etherchannel": "node test/cisco-tp-etherchannel.test.mjs",
     "test:azure-cours": "node test/azure-cours.test.mjs",
     "test:azure-tp": "node test/azure-tp.test.mjs",
     "test:azure-multi": "node test/azure-multi.test.mjs",

@@ -183,7 +183,7 @@ const resolveur = {
 assert(COURS_CISCO_RESEAU_PARCOURS.map((c) => c.id).join() === COURS_IDS.join(), '5 cours dans l’ordre du semestre');
 {
   const ordre = K.COURS.filter((c) => c.plateformes.includes('Cisco')).map((c) => c.id);
-  assert(ordre.length === 11 && ordre.includes('cisco-tp2-routage-statique') && ordre.includes('cisco-s09-dhcp-ipv6') && ordre.at(-1) === 'cisco-tp-pvst' && ordre.includes('cisco-tp-vtp-dtp') && ordre.includes('cisco-tp-vlan-ssh-intervlan') && ordre.includes('cisco-nat-adressage-recap') && ordre.includes('cisco-s07-etherchannel'), '11 cours Cisco au total (5 nouveaux, la semaine 7, la semaine 9, NAT, le TP 3 VLAN, le TP VTP et DTP et le TP PVST+)');
+  assert(ordre.length === 12 && ordre.includes('cisco-tp2-routage-statique') && ordre.includes('cisco-s09-dhcp-ipv6') && ordre.at(-1) === 'cisco-tp-etherchannel' && ordre.includes('cisco-tp-vtp-dtp') && ordre.includes('cisco-tp-vlan-ssh-intervlan') && ordre.includes('cisco-nat-adressage-recap') && ordre.includes('cisco-s07-etherchannel'), '12 cours Cisco au total (5 nouveaux, la semaine 7, la semaine 9, NAT, le TP 3 VLAN, le TP VTP et DTP et le TP PVST+)');
 }
 for (const cid of COURS_IDS) {
   const c = K.COURS_PAR_ID.get(cid);
