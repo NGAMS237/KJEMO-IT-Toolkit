@@ -91,6 +91,7 @@
     "test:browser:journal": "node test/browser-journal.test.mjs",
     "test:cisco-tp-vlan": "node test/cisco-tp-vlan.test.mjs",
     "test:cisco-dtp-vtp": "node test/cisco-dtp-vtp.test.mjs",
+    "test:cisco-tp-vtp-dtp": "node test/cisco-tp-vtp-dtp.test.mjs",
     "test:azure-cours": "node test/azure-cours.test.mjs",
     "test:azure-tp": "node test/azure-tp.test.mjs",
     "test:azure-multi": "node test/azure-multi.test.mjs",

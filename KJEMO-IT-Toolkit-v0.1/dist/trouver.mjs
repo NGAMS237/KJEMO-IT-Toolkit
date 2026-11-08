@@ -114,6 +114,7 @@ const FICHES = {
   'cours-vtp-reseau': { domaine: null },
   'cours-sw-gestion-ip': { vlan: null },
   'cours-tp-vlan-ssh-intervlan': { domaine: null, vlan: null },
+  'cours-tp-vtp-dtp': { domaine: null },
   'win-local-changer-mot-de-passe': { compte: t('windows', 'Get-LocalUser') },
   'win-local-admin-ajouter': { compte: t('windows', 'Get-LocalUser') },
   'win-local-desactiver': { compte: t('windows', 'Get-LocalUser') },

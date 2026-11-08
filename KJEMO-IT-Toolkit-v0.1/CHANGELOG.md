@@ -1,3 +1,10 @@
+## CISCO-TP-VTP-DTP-01 (2026-11-08)
+
+- **TP complet « VTP et DTP » (formatif 6)** rangé dans Mes cours et TP > Cisco, à côté du TP VLAN : une fiche à champs (noms DS1, AS1, AS2, ports, mode DTP de chaque côté, domaine, version, tableau de VLAN) en cinq phases : liens et DTP, DS1 serveur (domaine, mot de passe, VLAN), AS1 et AS2 clients, vérifications, enregistrement. Cinq étapes d’annulation.
+- Parcours en cinq lettres (A à E) avec les questions du formatif (réponses expliquées), résumé pliable (DTP, VTP, ordre qui marche, pièges, cinq questions à réponse cachée) et groupe dans l’aide-mémoire.
+- Dépannage intégré : trunk absent (câble croisé, deux « auto »), domaine, mot de passe ou version différents, révision plus haute, VLAN créés avant le domaine. Choix « trunk » fixe possible en réel.
+- Le mot de passe VTP n’est jamais saisi ni écrit : la ligne s’arrête avant, il se tape sur chaque commutateur. Tests : `cisco-tp-vtp-dtp` (35 vérifications) ; compteurs de `cours`, `memo`, `cisco-reseau` et `cisco-show` mis à jour (137 fiches, 10 cours Cisco).
+
 ## CISCO-DTP-VTP-01 (2026-11-08)
 
 - **Formatif 06 (VTP et DTP)** : le générateur de configuration IOS du labo propose deux nouveaux modes de port, « DTP desirable » et « DTP auto » (`switchport mode dynamic desirable | auto`, avec l’encapsulation dot1q avant pour les 3560). Un routeur qui reçoit ce mode est signalé.

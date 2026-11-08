@@ -205,6 +205,20 @@ export const ANNULATIONS = {
   'cours-rip-configurer|ios': {
     steps: [an('supprimer RIP', 'Supprime tout le processus RIP : réseaux, version, interfaces passives.', [rt('no router rip')], '« show ip protocols » ne mentionne plus RIP.')],
   },
+  'cours-tp-vtp-dtp|ios': {
+    steps: [
+      ad('supprimer les VLAN du tableau (sur DS1)', 'À faire sur le serveur : retire chaque VLAN du tableau ; les clients le perdent à la prochaine annonce. Les ports qui y étaient affectés deviennent inactifs.',
+        [sw('no vlan {{vlan}}')], 'Le VLAN n’apparaît plus dans « show vlan brief » de DS1, puis des clients.', { repeter: { table: 'vlans', groupe: 'VLAN {{vlan}}' } }),
+      an('sortir du jeu de VTP (sur chaque commutateur)', 'À faire sur DS1, AS1 et AS2 : le commutateur passe en mode transparent (il garde ses VLAN et n’en reçoit plus) et le mot de passe VTP est retiré.',
+        [sw('vtp mode transparent'), sw('no vtp password')], '« show vtp status » indique le mode Transparent.'),
+      an('remettre les ports de DS1 en négociation automatique', 'Remet les deux ports de DS1 au réglage par défaut (selon le modèle, « dynamic auto » ou « dynamic desirable »).',
+        [sw('interface {{dsPort1}}'), swi('switchport mode dynamic auto'), sw('interface {{dsPort2}}'), swi('switchport mode dynamic auto')], '« show interfaces trunk » ne montre plus le mode « desirable » sur DS1.'),
+      an('remettre le port de AS1 en négociation automatique', 'Sur AS1, remet le port vers DS1 au réglage par défaut.',
+        [sw('interface {{as1Port}}'), swi('switchport mode dynamic auto')], 'Le port suit à nouveau la négociation DTP.'),
+      an('remettre le port de AS2 en négociation automatique', 'Sur AS2, remet le port vers DS1 au réglage par défaut.',
+        [sw('interface {{as2Port}}'), swi('switchport mode dynamic auto')], 'Le port suit à nouveau la négociation DTP.'),
+    ],
+  },
   'cours-vtp-reseau|ios': {
     steps: [
       an('sortir du jeu de VTP', 'Passe en mode transparent : le commutateur garde ses VLAN locaux et ne reçoit plus ceux des autres. Retire aussi le mot de passe VTP.', [sw('vtp mode transparent'), sw('no vtp password')], '« show vtp status » indique le mode Transparent.'),

@@ -23,6 +23,7 @@ import { COURS_CISCO_RESEAU_PARCOURS } from './cours-cisco-reseau.mjs';
 import { COURS_CISCO_S09_PARCOURS } from './cours-cisco-s09.mjs';
 import { COURS_CISCO_NAT_PARCOURS } from './cours-cisco-nat.mjs';
 import { COURS_CISCO_TP_VLAN_PARCOURS } from './cours-cisco-tp-vlan.mjs';
+import { COURS_CISCO_TP_VTP_DTP_PARCOURS } from './cours-cisco-tp-vtp-dtp.mjs';
 import { COURS_AZURE_PARCOURS } from './cours-azure.mjs';
 import { COURS_AZURE_TP_PARCOURS } from './cours-azure-tp.mjs';
 import { COURS_AZURE_CARTE } from './cours-azure-carte.mjs';
@@ -288,6 +289,7 @@ export const COURS = [
   ...COURS_CISCO_S09_PARCOURS,
   ...COURS_CISCO_NAT_PARCOURS,
   ...COURS_CISCO_TP_VLAN_PARCOURS,
+  ...COURS_CISCO_TP_VTP_DTP_PARCOURS,
   ...COURS_AZURE_PARCOURS,
   ...COURS_AZURE_TP_PARCOURS,
   ...COURS_AZURE_DEMO_PARCOURS,
